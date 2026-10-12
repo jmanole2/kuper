@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ama nu — by Yucatán Herbal</title>
+<style>
+@font-face{font-family:"Instrument Serif";src:url(fonts/instrument-serif-latin-400-normal.woff2) format("woff2");font-weight:400;font-style:normal}
+@font-face{font-family:"Instrument Serif";src:url(fonts/instrument-serif-latin-400-italic.woff2) format("woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-latin-400-normal.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-latin-500-normal.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-latin-600-normal.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Fraunces";src:url(fonts/fraunces-latin-500-normal.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"Fraunces";src:url(fonts/fraunces-latin-600-normal.woff2) format("woff2");font-weight:600}
+
+:root{
+  --bone:#F6F2EC; --surface:#FFFFFF; --stone:#EDE6DB; --sand:#E3D9CA;
+  --ink:#2A2420; --ink-2:#4A413A; --muted:#857A70; --line:rgba(42,36,32,.10);
+  --honey:#F5E3B3; --honey-t:#8A5A12;
+  --sage:#E1E8DA;  --sage-t:#3F5A3A;
+  --lilac:#E9E2F2; --lilac-t:#5E4A84;
+  --coral:#F6DED4; --coral-t:#9A4A33;
+  --sky:#DDECF1;   --sky-t:#2F6377;
+  --char:#E4E2DF;  --char-t:#3A3632;
+  --serif:"Instrument Serif",Georgia,serif;
+  --sans:"Hanken Grotesk","Helvetica Neue",sans-serif;
+  --mark:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bone);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1440px;margin:0 auto;padding:0 64px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:5px 10px;border-radius:999px}
+.h2{font-family:var(--serif);font-weight:400;font-size:64px;line-height:1.02;letter-spacing:-.02em}
+.h2 em{font-style:italic;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:#fff;font-weight:500;font-size:15px;padding:15px 22px;border-radius:6px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn svg{width:16px;height:16px}
+
+/* wordmark */
+.mark{font-family:var(--mark);font-weight:600;line-height:.78;letter-spacing:-.03em;display:inline-flex;flex-direction:column;align-items:center}
+.mark span:last-child{margin-top:-.02em}
+
+/* nav */
+nav{display:flex;align-items:center;justify-content:space-between;padding:26px 0}
+nav .mark{font-size:26px}
+nav ul{display:flex;gap:36px;list-style:none;font-size:15px;color:var(--ink-2)}
+nav .right{display:flex;align-items:center;gap:22px;font-size:15px}
+nav .cart{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);padding:9px 14px;border-radius:6px;background:var(--surface)}
+nav .cart b{font-weight:600;background:var(--ink);color:#fff;font-size:11px;border-radius:999px;width:18px;height:18px;display:grid;place-items:center}
+
+/* hero */
+.hero-top{display:grid;grid-template-columns:1.25fr .75fr;gap:64px;align-items:end;padding:56px 0 48px}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:132px;line-height:.92;letter-spacing:-.035em}
+.hero h1 em{color:var(--muted)}
+.hero-side p{font-size:18px;color:var(--ink-2);max-width:400px;margin-bottom:28px}
+.hero-side .ctas{display:flex;gap:12px}
+.hero-photo{position:relative;border-radius:20px;overflow:hidden;aspect-ratio:1170/772;background:var(--stone)}
+.hero-photo img{width:100%;height:100%;object-fit:cover}
+.hero-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(246,242,236,0) 60%,rgba(42,36,32,.42));pointer-events:none}
+.pin{position:absolute;z-index:2;transform:translate(-50%,-50%)}
+.pin i{display:block;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,255,255,.35),0 0 0 14px rgba(255,255,255,.14)}
+.pin .lbl{position:absolute;white-space:nowrap;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:8px;padding:9px 13px;font-size:13px;line-height:1.3;color:var(--ink)}
+.pin .lbl small{display:block;color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.pin .ln{position:absolute;height:1px;background:rgba(255,255,255,.85);transform-origin:0 0}
+.hero-foot{position:absolute;left:28px;right:28px;bottom:24px;z-index:2;display:flex;justify-content:space-between;align-items:end;color:#fff}
+.hero-foot .stats{display:flex;gap:40px}
+.hero-foot .stats div b{display:block;font-family:var(--serif);font-weight:400;font-size:44px;line-height:1}
+.hero-foot .stats div span{font-size:13px;opacity:.9}
+
+/* values strip */
+.values{display:flex;justify-content:space-between;align-items:center;padding:34px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink-2)}
+.values span{display:inline-flex;align-items:center;gap:12px}
+.values span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--sand)}
+
+/* needs (fanned cards) */
+.needs{padding:140px 0 120px;text-align:center}
+.needs .h2{margin:14px auto 18px;max-width:820px}
+.needs .lead{color:var(--muted);max-width:520px;margin:0 auto}
+.fan{position:relative;height:520px;margin-top:64px}
+.fcard{position:absolute;top:40px;left:50%;width:270px;height:380px;border-radius:18px;padding:12px;text-align:left;display:flex;flex-direction:column;border:1px solid var(--line)}
+.fcard .ph{flex:1;border-radius:10px;overflow:hidden;background:var(--stone)}
+.fcard .ph img{width:100%;height:100%;object-fit:cover}
+.fcard .meta{display:flex;justify-content:space-between;align-items:center;padding:14px 6px 4px}
+.fcard .meta b{font-weight:600;font-size:16px;display:block;line-height:1.2}
+.fcard .meta span{font-size:13px;color:var(--muted)}
+.fcard .go{width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
+.fcard .go svg{width:14px;height:14px}
+
+/* collection bento */
+.collection{padding:40px 0 140px}
+.sec-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:48px}
+.sec-head .h2{margin-top:12px}
+.filters{display:flex;gap:8px}
+.filters a{font-size:14px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2)}
+.filters a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:300px;gap:16px}
+.cell{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.cell .ph{flex:1;overflow:hidden}
+.cell .ph img{width:100%;height:100%;object-fit:cover}
+.cell .info{padding:16px 18px 18px;display:flex;justify-content:space-between;align-items:end;gap:12px}
+.cell .info b{display:block;font-weight:600;font-size:16px;line-height:1.25}
+.cell .info span{font-size:13px;color:var(--muted)}
+.cell .price{font-family:var(--serif);font-size:24px;line-height:1;white-space:nowrap}
+.cell .tag{position:absolute;top:14px;left:14px}
+.cell.big{grid-column:span 2;grid-row:span 2}
+.cell.big .info b{font-size:22px}
+.cell.big .price{font-size:32px}
+.cell.text{padding:32px;justify-content:space-between;background:var(--ink);color:#F6F2EC;border-color:var(--ink)}
+.cell.text h3{font-family:var(--serif);font-weight:400;font-size:38px;line-height:1.05;letter-spacing:-.02em}
+.cell.text p{color:rgba(246,242,236,.65);font-size:14px}
+.cell.text a{display:inline-flex;align-items:center;gap:8px;font-size:14px;border-bottom:1px solid rgba(246,242,236,.4);padding-bottom:3px;align-self:flex-start}
+
+/* bars row */
+.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-top:16px}
+.bar{border-radius:12px;padding:10px 10px 14px;border:1px solid var(--line);background:var(--surface)}
+.bar .ph{border-radius:8px;overflow:hidden;aspect-ratio:1/1}
+.bar .ph img{width:100%;height:100%;object-fit:cover}
+.bar b{display:block;font-size:14px;font-weight:600;margin:12px 4px 0;line-height:1.2}
+.bar span{display:block;font-size:12px;color:var(--muted);margin:2px 4px 0}
+.bar .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+/* ingredients orbit */
+.ingr{position:relative;background:var(--surface);border-radius:28px;padding:110px 64px 120px;overflow:hidden;border:1px solid var(--line)}
+.ingr .water{position:absolute;left:50%;bottom:-70px;transform:translateX(-50%);font-family:var(--serif);font-size:330px;line-height:1;letter-spacing:-.04em;color:var(--bone);white-space:nowrap;pointer-events:none}
+.ingr-head{text-align:center;position:relative}
+.ingr-head .h2{margin-top:12px}
+.orbit{position:relative;height:640px;margin-top:40px}
+.ring{position:absolute;left:50%;top:50%;border-radius:50%;border:1px solid var(--line);transform:translate(-50%,-50%)}
+.glow{position:absolute;left:50%;top:50%;width:520px;height:520px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(245,214,140,.55),rgba(245,214,140,0) 65%)}
+.orbit .center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:170px;border-radius:16px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(90,60,20,.35)}
+.node{position:absolute;width:250px}
+.node .t{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px}
+.node .t i{width:10px;height:10px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 5px var(--bone)}
+.node p{font-size:14px;color:var(--muted);margin:6px 0 0 20px;line-height:1.5}
+
+/* ritual */
+.ritual{padding:140px 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
+.step{border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line)}
+.step .ph{height:220px;overflow:hidden;background:var(--stone)}
+.step .ph img{width:100%;height:100%;object-fit:cover}
+.step .bd{padding:26px 28px 30px}
+.step .n{font-family:var(--serif);font-size:20px;color:var(--muted)}
+.step h3{font-family:var(--serif);font-weight:400;font-size:36px;line-height:1.05;margin:6px 0 10px}
+.step p{font-size:15px;color:var(--ink-2)}
+
+/* accessories + quote */
+.duo{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.acc{border-radius:16px;overflow:hidden;position:relative;min-height:520px;background:var(--stone)}
+.acc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.acc .cap{position:absolute;left:24px;bottom:24px;right:24px;display:flex;justify-content:space-between;align-items:end}
+.acc .cap div{background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-radius:10px;padding:16px 18px}
+.acc .cap b{display:block;font-size:17px}
+.acc .cap span{font-size:13px;color:var(--muted)}
+.quote{border-radius:16px;background:var(--honey);padding:48px;display:flex;flex-direction:column;justify-content:space-between}
+.quote blockquote{font-family:var(--serif);font-size:42px;line-height:1.12;letter-spacing:-.015em;color:#3B2A12}
+.quote .who{display:flex;align-items:center;gap:14px;font-size:14px;color:#6E5326}
+.quote .who i{width:44px;height:44px;border-radius:50%;background:#E9CF8D;display:grid;place-items:center;font-style:normal;font-family:var(--serif);font-size:20px;color:#3B2A12}
+.quote .stars{display:flex;gap:4px;margin-bottom:22px}
+.quote .stars svg{width:16px;height:16px;fill:#8A5A12}
+
+/* faq */
+.faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:64px;padding:140px 0 120px}
+.faq .item{border-bottom:1px solid var(--line);padding:24px 0;display:flex;justify-content:space-between;gap:24px;font-size:19px}
+.faq .item:first-child{border-top:1px solid var(--line)}
+.faq .item p{font-size:15px;color:var(--muted);margin-top:10px;max-width:560px}
+.faq .pm{font-size:22px;line-height:1;color:var(--muted)}
+
+/* footer */
+footer{background:var(--ink);color:var(--bone);border-radius:28px 28px 0 0;padding:80px 64px 0;overflow:hidden}
+.f-top{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr;gap:48px}
+.f-top h4{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1.05;margin-bottom:22px}
+.news{display:flex;border:1px solid rgba(246,242,236,.2);border-radius:8px;padding:6px;max-width:440px}
+.news span{flex:1;padding:10px 12px;color:rgba(246,242,236,.5);font-size:15px}
+.news b{background:var(--bone);color:var(--ink);padding:10px 18px;border-radius:5px;font-weight:500;font-size:14px}
+.f-top ul{list-style:none;font-size:15px;color:rgba(246,242,236,.7);display:grid;gap:10px}
+.f-top .eyebrow{color:rgba(246,242,236,.45);margin-bottom:16px}
+.f-mark{display:flex;justify-content:center;margin-top:80px}
+.f-mark .mark{font-size:290px;color:#3A322C;flex-direction:row;gap:.18em;line-height:.8;margin-bottom:-60px}
+
+/* sticky bar */
+.sticky{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 18px;box-shadow:0 18px 40px -20px rgba(42,36,32,.35);font-size:14px;white-space:nowrap}
+.sticky .sw{display:flex}
+.sticky .sw i{width:22px;height:22px;border-radius:50%;border:2px solid #fff;margin-left:-6px}
+.sticky .sw i:first-child{margin-left:0}
+.sticky .btn{padding:11px 16px;font-size:14px}
+
+/* ---------- mobile ---------- */
+@media (max-width:760px){
+  .wrap{padding:0 18px}
+  nav{padding:18px 0}
+  nav ul,nav .right .lnk{display:none}
+  nav .mark{font-size:22px}
+  .hero-top{grid-template-columns:1fr;gap:22px;padding:24px 0 28px}
+  .hero h1{font-size:64px}
+  .hero-side p{font-size:16px}
+  .hero-side .ctas{flex-wrap:wrap}
+  .hero-photo{aspect-ratio:4/5}
+  .hero-photo img{object-position:18% 50%}
+  .pin{display:none}
+  .hero-foot{left:16px;right:16px;bottom:16px}
+  .hero-foot .stats{gap:22px}
+  .hero-foot .stats div b{font-size:32px}
+  .hero-foot .loc{display:none}
+  .values{flex-wrap:wrap;gap:12px 20px;justify-content:flex-start;font-size:14px;padding:24px 0}
+  .h2{font-size:42px}
+  .needs{padding:80px 0 60px}
+  .fan{height:auto;display:flex;gap:12px;overflow:hidden;margin:36px 0 0}
+  .fcard{position:static;transform:none!important;flex:none;width:230px;height:320px}
+  .collection{padding:20px 0 80px}
+  .sec-head{flex-direction:column;align-items:flex-start;gap:18px;margin-bottom:28px}
+  .filters{flex-wrap:wrap}
+  .bento{grid-template-columns:1fr 1fr;grid-auto-rows:240px;gap:10px}
+  .cell.big{grid-column:span 2;grid-row:span 2}
+  .cell.text{grid-column:span 2;padding:24px}
+  .cell .info{padding:12px;flex-direction:column;align-items:flex-start;gap:4px}
+  .cell .info span{font-size:12px}
+  .cell .price{font-size:20px}
+  .bars{grid-template-columns:repeat(2,1fr);gap:10px}
+  .bar:nth-child(n+5){display:none}
+  .ingr{padding:64px 18px 70px;border-radius:20px}
+  .ingr .water{font-size:120px;bottom:-24px}
+  .orbit{height:auto;display:flex;flex-direction:column;align-items:center;margin-top:30px}
+  .ring,.glow{display:none}
+  .orbit .center{position:relative;left:auto;top:auto;transform:none;width:150px;margin-bottom:28px}
+  .node{position:static;width:100%;padding:14px 0;border-top:1px solid var(--line)}
+  .ritual{padding:80px 0}
+  .steps{grid-template-columns:1fr;gap:12px;margin-top:32px}
+  .step .ph{height:220px}
+  .duo{grid-template-columns:1fr}
+  .acc{min-height:380px}
+  .quote{padding:30px}
+  .quote blockquote{font-size:30px;margin-bottom:28px}
+  .faq{grid-template-columns:1fr;gap:28px;padding:80px 0 70px}
+  .faq .item{font-size:17px}
+  footer{padding:56px 18px 0;border-radius:20px 20px 0 0}
+  .f-top{grid-template-columns:1fr 1fr;gap:32px}
+  .f-top > div:first-child{grid-column:span 2}
+  .f-top h4{font-size:32px}
+  .f-mark .mark{font-size:110px;margin-bottom:-22px}
+  .sticky{left:12px;right:12px;transform:none;justify-content:space-between;bottom:14px}
+  .sticky .txt-d{display:none}
+  .sticky{white-space:normal;gap:10px;font-size:13px;line-height:1.3}
+  .sticky .btn{flex:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="arrow" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="arrow-ur" viewBox="0 0 16 16"><path d="M4.5 11.5l7-7M5.5 4.5h6v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="bag" viewBox="0 0 16 16"><path d="M3 5.5h10l-.8 8H3.8z M5.5 5.5V4.5a2.5 2.5 0 015 0v1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="star" viewBox="0 0 16 16"><path d="M8 1.5l1.9 4.1 4.5.5-3.3 3.1.9 4.4L8 11.4l-4 2.2.9-4.4L1.6 6.1l4.5-.5z"/></symbol>
+</svg>
+
+<div class="wrap">
+  <nav>
+    <a class="mark"><span>ama</span><span>nu</span></a>
+    <ul><li>Tienda</li><li>Cabello</li><li>Cuerpo</li><li>Ingredientes</li><li>Nuestra historia</li></ul>
+    <div class="right">
+      <a class="lnk">Buscar</a><a class="lnk">Cuenta</a>
+      <a class="cart"><svg width="16" height="16"><use href="#bag"/></svg>Bolsa <b>2</b></a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-top">
+      <h1>Cuidado que<br>nace en <em>Yucatán.</em></h1>
+      <div class="hero-side">
+        <span class="tag" style="background:var(--honey);color:var(--honey-t);margin-bottom:20px">Nuevo · Colección Miel</span>
+        <p>Shampoos sólidos, aceites y jabones hechos con miel melipona, avena y plantas de la península. Sin sulfatos, sin plástico de un solo uso.</p>
+        <div class="ctas">
+          <a class="btn">Comprar ahora <svg><use href="#arrow"/></svg></a>
+          <a class="btn ghost">Haz el test capilar</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-photo">
+      <img src="assets/hero.jpg" alt="Línea completa de productos ama nu sobre escalones de piedra caliza">
+      <div class="pin" style="left:13.3%;top:31.5%">
+        <span class="ln" style="left:-2px;top:0;width:80px;transform:rotate(-115deg)"></span>
+        <div class="lbl" style="left:-120px;top:-110px"><small>Shampoo sólido</small>Miel de Yucatán + avena</div>
+        <i></i>
+      </div>
+      <div class="pin hide-m" style="left:25.6%;top:31.5%">
+        <span class="ln" style="left:7px;top:0;width:118px;transform:rotate(-62deg)"></span>
+        <div class="lbl" style="left:62px;top:-128px"><small>Detox Clean</small>Carbón activado</div>
+        <i></i>
+      </div>
+      <div class="pin" style="left:7.2%;top:58%">
+        <span class="ln" style="left:7px;top:0;width:70px;transform:rotate(28deg)"></span>
+        <div class="lbl" style="left:62px;top:24px"><small>Tónico capilar</small>Romero · Cafeína</div>
+        <i></i>
+      </div>
+      <div class="pin hide-m" style="left:71%;top:48%">
+        <span class="ln" style="left:7px;top:0;width:96px;transform:rotate(-30deg)"></span>
+        <div class="lbl" style="left:84px;top:-78px"><small>Neceser</small>Algodón crudo</div>
+        <i></i>
+      </div>
+      <div class="hero-foot">
+        <div class="stats">
+          <div><b>7</b><span>fórmulas sólidas</span></div>
+          <div><b>0</b><span>sulfatos ni parabenos</span></div>
+          <div><b>~80</b><span>lavados por barra</span></div>
+        </div>
+        <span class="loc" style="font-size:13px;opacity:.9">Hecho a mano en Mérida, Yucatán</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="values">
+    <span>Ingredientes de la península</span><span>Sin plástico en barras</span><span>Cruelty free</span><span>Vegano, excepto la miel</span><span>Envíos a todo México</span>
+  </div>
+
+  <section class="needs">
+    <span class="eyebrow">Encuentra tu barra</span>
+    <h2 class="h2">¿Qué necesita <em>tu cabello</em> hoy?</h2>
+    <p class="lead">Cada barra resuelve una cosa y la resuelve bien. Empieza por lo que más te molesta.</p>
+    <div class="fan">
+      <div class="fcard" style="background:var(--char);transform:translateX(-160%) translateY(70px) rotate(-13deg)">
+        <div class="ph"><img src="assets/bar-detox.jpg" alt="Barra Detox Clean"></div>
+        <div class="meta"><div><b>Raíz grasa</b><span>Detox Clean</span></div><span class="go"><svg><use href="#arrow-ur"/></svg></span></div>
+      </div>
+      <div class="fcard" style="background:var(--sage);transform:translateX(-105%) translateY(18px) rotate(-6deg)">
+        <div class="ph"><img src="assets/tonic.jpg" alt="Tónico Root and Grow" style="object-position:50% 35%"></div>
+        <div class="meta"><div><b>Caída</b><span>Root &amp; Grow</span></div><span class="go"><svg><use href="#arrow-ur"/></svg></span></div>
+      </div>
+      <div class="fcard" style="background:var(--honey);transform:translateX(-50%) rotate(0deg);z-index:3">
+        <div class="ph"><img src="assets/glow.jpg" alt="Aceite Honey Glow" style="object-position:50% 40%"></div>
+        <div class="meta"><div><b>Resequedad</b><span>Honey Bliss + Glow</span></div><span class="go"><svg><use href="#arrow-ur"/></svg></span></div>
+      </div>
+      <div class="fcard" style="background:var(--lilac);transform:translateX(5%) translateY(18px) rotate(6deg);z-index:2">
+        <div class="ph"><img src="assets/bar-curly.jpg" alt="Barra Curly Love"></div>
+        <div class="meta"><div><b>Rizos sin frizz</b><span>Curly Love</span></div><span class="go"><svg><use href="#arrow-ur"/></svg></span></div>
+      </div>
+      <div class="fcard" style="background:var(--coral);transform:translateX(60%) translateY(70px) rotate(13deg);z-index:1">
+        <div class="ph"><img src="assets/bar-mango.jpg" alt="Barra Mango Repair"></div>
+        <div class="meta"><div><b>Puntas dañadas</b><span>Mango Repair</span></div><span class="go"><svg><use href="#arrow-ur"/></svg></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="collection">
+    <div class="sec-head">
+      <div><span class="eyebrow">La colección</span><h2 class="h2">Pocas cosas, <em>bien hechas.</em></h2></div>
+      <div class="filters"><a class="on">Todo</a><a>Shampoo sólido</a><a>Acondicionador</a><a>Cuerpo</a><a>Accesorios</a></div>
+    </div>
+    <div class="bento">
+      <div class="cell big">
+        <span class="tag" style="background:var(--honey);color:var(--honey-t)">Línea Honey</span>
+        <div class="ph"><img src="assets/lineup.jpg" alt="Tónico, aceite, jabón, perfume y vela ama nu" style="object-position:40% 50%"></div>
+        <div class="info"><div><b>Rutina Honey completa</b><span>Tónico, aceite de ducha, jabón corporal, hair perfume y vela</span></div><span class="price">desde $189</span></div>
+      </div>
+      <div class="cell">
+        <div class="ph"><img src="assets/glow.jpg" alt="Aceite de ducha Honey Glow" style="object-position:50% 40%"></div>
+        <div class="info"><div><b>Honey Glow</b><span>Aceite de ducha</span></div><span class="price">$349</span></div>
+      </div>
+      <div class="cell">
+        <span class="tag" style="background:var(--sage);color:var(--sage-t)">Nuevo</span>
+        <div class="ph"><img src="assets/tonic.jpg" alt="Tónico capilar Root and Grow" style="object-position:50% 40%"></div>
+        <div class="info"><div><b>Root &amp; Grow</b><span>Tónico capilar</span></div><span class="price">$319</span></div>
+      </div>
+      <div class="cell">
+        <div class="ph"><img src="assets/jabon.jpg" alt="Jabón corporal Honey Bliss" style="object-position:50% 45%"></div>
+        <div class="info"><div><b>Honey Bliss</b><span>Jabón corporal · 250 ml</span></div><span class="price">$289</span></div>
+      </div>
+      <div class="cell text">
+        <span class="eyebrow" style="color:rgba(246,242,236,.5)">Kit de inicio</span>
+        <div>
+          <h3>Barra + tónico + neceser por $749</h3>
+          <p style="margin-top:12px">Ahorra 18% y prueba la rutina completa durante un mes.</p>
+        </div>
+        <a>Armar mi kit <svg width="14" height="14"><use href="#arrow"/></svg></a>
+      </div>
+    </div>
+
+    <div class="bars">
+      <div class="bar"><div class="ph"><img src="assets/bar-honey.jpg" alt=""></div><b>Honey Bliss</b><span><i class="dot" style="background:#E9B949"></i>Shampoo · $189</span></div>
+      <div class="bar"><div class="ph"><img src="assets/bar-detox.jpg" alt=""></div><b>Detox Clean</b><span><i class="dot" style="background:#3A3632"></i>Shampoo · $189</span></div>
+      <div class="bar"><div class="ph"><img src="assets/bar-root.jpg" alt=""></div><b>Root &amp; Grow</b><span><i class="dot" style="background:#86A06A"></i>Shampoo · $189</span></div>
+      <div class="bar"><div class="ph"><img src="assets/bar-coco.jpg" alt=""></div><b>Balance Coco</b><span><i class="dot" style="background:#6FB3CF"></i>Shampoo · $189</span></div>
+      <div class="bar"><div class="ph"><img src="assets/bar-mango.jpg" alt=""></div><b>Mango Repair</b><span><i class="dot" style="background:#EE8D5F"></i>Acondic. · $199</span></div>
+      <div class="bar"><div class="ph"><img src="assets/bar-curly.jpg" alt=""></div><b>Curly Love</b><span><i class="dot" style="background:#A58AD0"></i>Acondic. · $199</span></div>
+      <div class="bar"><div class="ph"><img src="assets/bar-pure.jpg" alt=""></div><b>Pure Scalp</b><span><i class="dot" style="background:#D9CDB4"></i>Acondic. · $199</span></div>
+    </div>
+  </section>
+
+  <section class="ingr">
+    <div class="water">Yucatán</div>
+    <div class="ingr-head">
+      <span class="eyebrow">Ingredientes</span>
+      <h2 class="h2">Lo que pones en tu piel<br><em>tiene nombre y origen.</em></h2>
+    </div>
+    <div class="orbit">
+      <div class="glow"></div>
+      <div class="ring" style="width:440px;height:440px"></div>
+      <div class="ring" style="width:720px;height:720px;border-style:dashed"></div>
+      <div class="center"><img src="assets/glow.jpg" alt="Aceite Honey Glow"></div>
+      <div class="node" style="left:4%;top:8%"><div class="t"><i></i>Miel melipona</div><p>De abejas nativas sin aguijón. Humecta y deja la piel suave.</p></div>
+      <div class="node" style="right:4%;top:14%"><div class="t"><i></i>Avena coloidal</div><p>Calma la piel sensible y el cuero cabelludo irritado.</p></div>
+      <div class="node" style="left:8%;bottom:10%"><div class="t"><i></i>Aceite de coco</div><p>Prensado en frío. Nutre sin dejar sensación grasa.</p></div>
+      <div class="node" style="right:7%;bottom:6%"><div class="t"><i></i>Romero y cafeína</div><p>Estimulan la raíz. La base de la línea Root &amp; Grow.</p></div>
+    </div>
+  </section>
+
+  <section class="ritual">
+    <div class="sec-head" style="margin-bottom:0">
+      <div><span class="eyebrow">El ritual</span><h2 class="h2">Tres pasos. <em>Nada más.</em></h2></div>
+      <a class="btn ghost">Ver todas las rutinas <svg><use href="#arrow"/></svg></a>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="ph"><img src="assets/shampoos.jpg" alt="Shampoos sólidos"></div><div class="bd"><span class="n">01</span><h3>Limpia</h3><p>Frota la barra húmeda entre las manos y aplica la espuma en la raíz. Una barra dura unos dos meses.</p></div></div>
+      <div class="step"><div class="ph"><img src="assets/conditioners.jpg" alt="Acondicionadores sólidos"></div><div class="bd"><span class="n">02</span><h3>Nutre</h3><p>Acondicionador sólido de medios a puntas. Deja actuar un minuto y enjuaga con agua tibia.</p></div></div>
+      <div class="step"><div class="ph"><img src="assets/scents.jpg" alt="Hair perfume y vela aromática" style="object-position:30% 60%"></div><div class="bd"><span class="n">03</span><h3>Perfuma</h3><p>Dos atomizaciones de Hair Perfume sobre el cabello seco. Aroma a miel e hibisco todo el día.</p></div></div>
+    </div>
+  </section>
+
+  <section class="duo">
+    <div class="acc">
+      <img src="assets/scrunchies.jpg" alt="Scrunchies y cepillo ama nu">
+      <div class="cap"><div><b>Accesorios del ritual</b><span>Scrunchies, pinzas, cepillo y masajeador</span></div><a class="btn" style="background:#fff;color:var(--ink)">Ver accesorios</a></div>
+    </div>
+    <div class="quote">
+      <div>
+        <div class="stars"><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg></div>
+        <blockquote>“Dejé el shampoo de botella hace cuatro meses. Mi cabello está más ligero y la barra Honey Bliss todavía no se termina.”</blockquote>
+      </div>
+      <div class="who"><i>M</i><div><b style="color:#3B2A12">Mariana R.</b><br>Mérida · Compra verificada</div></div>
+    </div>
+  </section>
+
+  <section class="faq">
+    <div><span class="eyebrow">Preguntas</span><h2 class="h2" style="margin-top:12px">Antes de <em>tu primera barra.</em></h2></div>
+    <div>
+      <div class="item"><div>¿Cuánto dura una barra de shampoo?<p>Entre 60 y 80 lavados, el equivalente a dos o tres botellas de 250 ml. Guárdala seca entre usos para que rinda más.</p></div><span class="pm">−</span></div>
+      <div class="item"><div>¿Sirve para cabello teñido?</div><span class="pm">+</span></div>
+      <div class="item"><div>¿Hacen envíos fuera de Yucatán?</div><span class="pm">+</span></div>
+      <div class="item"><div>¿Qué hago si no sé cuál elegir?</div><span class="pm">+</span></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="f-top">
+    <div>
+      <h4>Recibe la guía de cuidado<br>y 10% en tu primer pedido.</h4>
+      <div class="news"><span>tu@correo.com</span><b>Suscribirme</b></div>
+    </div>
+    <div><div class="eyebrow">Tienda</div><ul><li>Shampoo sólido</li><li>Acondicionador</li><li>Cuerpo</li><li>Accesorios</li></ul></div>
+    <div><div class="eyebrow">ama nu</div><ul><li>Nuestra historia</li><li>Ingredientes</li><li>Puntos de venta</li><li>Mayoreo</li></ul></div>
+    <div><div class="eyebrow">Ayuda</div><ul><li>Envíos</li><li>Devoluciones</li><li>Contacto</li><li>Instagram</li></ul></div>
+  </div>
+  <div class="f-mark"><span class="mark"><span>ama</span><span>nu</span></span></div>
+</footer>
+
+<div class="sticky">
+  <span class="sw"><i style="background:#E9B949"></i><i style="background:#86A06A"></i><i style="background:#A58AD0"></i><i style="background:#EE8D5F"></i></span>
+  <span><span class="txt-d">¿No sabes cuál elegir? </span>Test capilar en 1 minuto</span>
+  <a class="btn">Empezar <svg><use href="#arrow"/></svg></a>
+</div>
+
+</body>
+</html>
