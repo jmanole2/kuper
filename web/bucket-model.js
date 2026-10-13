@@ -14,29 +14,39 @@
 import * as THREE from 'three';
 
 export const BUCKET_DIMS = {
-  A: 180,   // Ø exterior del reborde superior
+  A: 177,   // Ø exterior del reborde superior
   B: 170,   // Ø interior de la boca
   C: 164,   // Ø exterior de la base
   D: 11.5,  // Ø de la oreja del asa
-  E: 210,   // altura del envase (reborde superior → base)
+  E: 188,   // altura del envase (reborde superior → base)
   F: 2.2,   // espesor de pared
   G: 3.0,   // espesor del piso
   H: 3.5,   // espesor del reborde superior
 
   // Medidas leídas del dibujo (no tienen letra en el plano)
-  neckH: 21,        // cuello bajo el reborde
-  bevelH: 8,        // transición cuello → collar
+  neckH: 11.5,      // cuello bajo el reborde
+  bevelH: 5,        // transición cuello → collar
   collarH: 19,      // altura del collar (donde van las orejas)
   collarR: 94.5,    // radio del collar
   bodyTopR: 89,     // radio del cuerpo justo bajo el collar
 
   // Tapa y asa (estimadas de las fotos)
-  lidRise: 8.5,     // cuánto sobresale la tapa sobre el reborde
+  lidRise: 8,       // cuánto sobresale el aro de la tapa sobre el reborde (altura de los dientes)
+  lidDepth: 6.5,    // qué tan abajo del aro queda la repisa donde están los "hoyos" entre dientes
+  cupDepth: 11,     // qué tan abajo del aro queda el panel central (con el texto)
+  lidGap: 6,        // altura donde termina la falda de la tapa, medida desde donde empieza el collar (más alto = tapa más corta)
   lidWall: 1.6,     // espesor de la pared de la tapa
-  tabAngle: 22,     // posición de la lengüeta de la banda (grados desde el frente hacia la derecha)
-  handleRise: 88,   // altura del arco del asa sobre la tapa
-  handleW: 18,      // ancho de la cinta del asa
-  handleT: 2.4,     // grosor de la cinta del asa
+  teethCount: 40,   // cantidad de dientes ("hoyitos") alrededor del aro de la tapa
+  toothW: 2.6,      // ancho de cada diente
+  tabAngle: 90,     // posición de la lengüeta de la banda (grados desde el frente hacia la derecha)
+  handleRise: 100,  // altura del arco del asa
+  handleLeg: 34,    // largo de las patas rectas del asa, sobre las orejas
+  handleW: 2,       // ancho de la cinta (tangente a la cubeta, de frente a atrás)
+  handleT: 15,      // grosor de la cinta (hacia afuera de la cubeta)
+  handleBevel: 0.35,// bevel del asa: 0 = plana, 0.9 = muy chaflanada
+  handlePin: 0,     // (sin uso, se conserva por compatibilidad)
+  earOffset: 3,     // altura de la punta del asa respecto al centro de la banda (+ sube, - baja)
+  earDetail: 0,     // 1 = dibuja oreja, orificio y anillo aunque haya asa (no existe en la cubeta real)
 };
 
 /* ---------- utilidades ---------- */
@@ -143,7 +153,7 @@ export function createBucket(opts = {}) {
   const yN = yFl - d.neckH;
   const yBev = yN - d.bevelH;
   const yCb = yBev - d.collarH;
-  const yEar = yCb + d.collarH / 2;
+  const yEar = yCb + d.collarH / 2 + d.earOffset;
   const rMouth = d.B / 2, rFl = d.A / 2, rNeck = rMouth + 1.6;
   const rCol = d.collarR, rBodyTop = d.bodyTopR, rBase = d.C / 2;
   const yFloorUnder = 4.5, yFloorTop = yFloorUnder + d.G;
@@ -199,10 +209,12 @@ export function createBucket(opts = {}) {
   gate.position.y = yFloorUnder - 0.1;
   body.add(gate);
 
-  // orejas del asa (con orificio)
+  // orejas del asa: con asa puesta quedan tapadas por la punta del asa, así que no se dibujan
+  // (nada sobresale de la banda). Sin asa, o con earDetail > 0, se ven la oreja, el orificio y el anillo.
   const earR = d.D / 2;
   const earOuter = rCol + 2.4;
   for (const sgn of [-1, 1]) {
+    if (withHandle && !(d.earDetail > 0)) break;
     const boss = mk(new THREE.CylinderGeometry(earR, earR, 4.4, 40), matPP);
     boss.rotation.z = Math.PI / 2;
     boss.position.set(sgn * (rCol + 0.2), yEar, 0);
@@ -222,12 +234,14 @@ export function createBucket(opts = {}) {
   /* ===== TAPA ===== */
   const lid = new THREE.Group();
   lid.name = 'lid';
-  const yR = yTop + d.lidRise;      // borde superior de la tapa
-  const yP = yR - 3;                // panel central hundido
-  const yU = yP - 2;                // cara inferior del panel
-  const R = rFl + 5.2;              // radio exterior de la falda
-  const rW = 90.5;                  // radio de la pared interior del aro superior
-  const yB = yBev + 2;              // borde inferior de la falda
+  const yR = yTop + d.lidRise;                 // borde superior (aro) de la tapa
+  const yU2 = yTop + 0.6;                      // cara inferior de la zona del aro (apoyada sobre el reborde)
+  const yL = Math.max(yR - d.lidDepth, yU2 + d.lidWall);  // repisa donde están los dientes y los "hoyos"
+  const yP = Math.min(yL, yR - d.cupDepth);    // panel central, hundido dentro de la boca
+  const R = rFl + 5.2;                         // radio exterior de la falda
+  const rW = R - 3.7;                          // radio de la pared interior del aro superior
+  const rC = rMouth - 3;                       // radio de la copa central (entra en la boca)
+  const yB = yBev + d.lidGap;                  // borde inferior de la falda
 
   if (withLid) {
     const lidPts = rounded([
@@ -235,14 +249,14 @@ export function createBucket(opts = {}) {
       [R, yB, 0.5],
       [R, yR, 1.8],
       [rW, yR, 0.8],
-      [rW, yP, 0.6],
-      [0, yP],
-      [0, yU],
-      [rMouth - 2.2, yU],
-      [rMouth - 2.2, yU - 12],     // tapón interior que sella la boca
-      [rMouth - 0.8, yU - 12],
-      [rMouth - 0.8, yU],
-      [R - d.lidWall, yU],
+      [rW, yL, 0.6],               // pared interior del aro, hasta la repisa
+      [rC, yL, 1.0],               // repisa
+      [rC, yP, 0.8],               // pared de la copa central
+      [0, yP],                     // panel
+      [0, yP - 2],
+      [rC + 2, yP - 2, 0.8],       // fondo de la copa (hace de tapón dentro de la boca)
+      [rC + 2, yU2],
+      [R - d.lidWall, yU2],        // cara inferior apoyada en el reborde
       [R - d.lidWall, yB],
     ]);
     lid.add(mk(new THREE.LatheGeometry(lidPts, segments), matPP));
@@ -254,19 +268,20 @@ export function createBucket(opts = {}) {
     const matPanel = matPP.clone();
     if (bump) { matPanel.bumpMap = bump; matPanel.bumpScale = 2; }
     matPanel.polygonOffset = true; matPanel.polygonOffsetFactor = -1; matPanel.polygonOffsetUnits = -1;
-    const panel = new THREE.Mesh(new THREE.CircleGeometry(rW - 0.1, segments), matPanel);
+    const panel = new THREE.Mesh(new THREE.CircleGeometry(rC - 0.1, segments), matPanel);
     panel.rotation.x = -Math.PI / 2;
     panel.position.y = yP + 0.04;
     panel.receiveShadow = true;
     lid.add(panel);
 
-    // dientes (costillas) entre el aro y el panel
+    // dientes (costillas) entre la pared del aro y la repisa
+    const toothLen = Math.min(rW - rC - 1, 5.5);
     const tooth = new THREE.Shape();
-    tooth.moveTo(rW, yP);
+    tooth.moveTo(rW, yL);
     tooth.lineTo(rW, yR - 0.4);
-    tooth.lineTo(rW - 4.6, yP);
+    tooth.lineTo(rW - toothLen, yL);
     tooth.closePath();
-    lid.add(radialArray(tooth, 2.6, matPP, 90));
+    lid.add(radialArray(tooth, d.toothW, matPP, Math.max(1, Math.round(d.teethCount))));
 
     // línea de corte (perforación) visible entre la tapa y el collar
     const cut = mk(new THREE.CylinderGeometry(R - 1.3, R - 1.3, 1.6, segments, 1, true), matCream);
@@ -285,11 +300,11 @@ export function createBucket(opts = {}) {
 
     // flecha moldeada sobre el aro, al frente
     const arrow = new THREE.Shape();
-    arrow.moveTo(-1.4, 1.6); arrow.lineTo(1.4, 1.6); arrow.lineTo(0, -1.6); arrow.closePath();
+    arrow.moveTo(-1.1, 1.1); arrow.lineTo(1.1, 1.1); arrow.lineTo(0, -1.1); arrow.closePath();
     const ag = new THREE.ExtrudeGeometry(arrow, { depth: 0.5, bevelEnabled: false });
     ag.rotateX(-Math.PI / 2);
     const arrowMesh = mk(ag, matPP);
-    arrowMesh.position.set(3, yR, 92.2);
+    arrowMesh.position.set(3, yR, (rW + R - 1.8) / 2 + 0.3);
     lid.add(arrowMesh);
 
     model.add(lid);
@@ -301,9 +316,13 @@ export function createBucket(opts = {}) {
   handlePivot.position.y = yEar;
 
   if (withHandle) {
-    const xp = earOuter + d.handleT / 2;
-    const legH = (withLid ? yR : yTop) - 4 - yEar;
-    const b = d.handleRise;
+    // La cinta es un listón doblado como cinturón alrededor del eje de las orejas:
+    //   handleW = ancho de la cinta (tangente a la cubeta, de frente a atrás)
+    //   handleT = grosor de la cinta (en el plano del arco, hacia afuera de la cubeta)
+    // Las patas quedan planas contra la tapa y la banda, y terminan en una punta redondeada.
+    const xp = R - 1 + d.handleT / 5;                // eje de las patas: la cara interior se incrusta 1 mm en la banda de la tapa (queda PEGADA)
+    const legH = d.handleLeg;                        // largo de las patas rectas sobre las orejas
+    const b = d.handleRise;                          // altura del arco
     const pts = [];
     for (let i = 0; i < 6; i++) pts.push(new THREE.Vector3(-xp, (legH * i) / 6, 0));
     const N = 72;
@@ -314,23 +333,66 @@ export function createBucket(opts = {}) {
     for (let j = 1; j <= 6; j++) pts.push(new THREE.Vector3(xp, legH * (1 - j / 6), 0));
 
     const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    // sección con bevel: centro más grueso y bordes del ancho chaflanados
     const sec = new THREE.Shape();
     const hw = d.handleW / 2, ht = d.handleT / 2;
-    sec.moveTo(-ht, -hw); sec.lineTo(ht, -hw); sec.lineTo(ht, hw); sec.lineTo(-ht, hw); sec.closePath();
+    const c = hw * Math.min(Math.max(d.handleBevel, 0), 0.9);   // ancho del chaflán
+    const e = ht * 0.45;                                        // grosor (mitad) en el borde
+    sec.moveTo(-e, -hw); sec.lineTo(e, -hw); sec.lineTo(ht, -(hw - c)); sec.lineTo(ht, hw - c);
+    sec.lineTo(e, hw); sec.lineTo(-e, hw); sec.lineTo(-ht, hw - c); sec.lineTo(-ht, -(hw - c)); sec.closePath();
     const strap = mk(new THREE.ExtrudeGeometry(sec, { steps: 240, bevelEnabled: false, extrudePath: curve }), matHandle);
     handlePivot.add(strap);
 
-    for (const sgn of [-1, 1]) {
-      const disc = mk(new THREE.CylinderGeometry(d.handleW / 2, d.handleW / 2, d.handleT, 40), matHandle);
-      disc.rotation.z = Math.PI / 2;
-      disc.position.x = sgn * xp;
-      handlePivot.add(disc);
+   // Punta redondeada integrada a cada pata.
+// Forma de "D": la parte recta queda unida a la cinta
+// y la parte inferior termina en un semicírculo.
+// No es una moneda ni un cilindro completo.
+const capR = d.handleT / 2;
+const capDepth = d.handleW;
 
-      const pin = mk(new THREE.CylinderGeometry(2.4, 2.4, 5, 24), matHandle);
-      pin.rotation.z = Math.PI / 2;
-      pin.position.x = sgn * (xp - d.handleT / 2 - 2);
-      handlePivot.add(pin);
-    }
+// Forma D en el plano X-Y.
+// El diámetro queda arriba y el semicírculo baja desde el final de la pata.
+function makeRoundedEnd(sgn) {
+  const sh = new THREE.Shape();
+
+  // La parte recta coincide con el extremo de la pata.
+  sh.moveTo(-capR, 0);
+  sh.lineTo(capR, 0);
+
+  // Semicírculo inferior.
+  const N = 16;
+  for (let i = 0; i <= N; i++) {
+    const a = Math.PI * (i / N);
+    const x = Math.cos(a) * capR;
+    const y = -Math.sin(a) * capR;
+    sh.lineTo(x, y);
+  }
+
+  sh.closePath();
+
+  const geo = new THREE.ExtrudeGeometry(sh, {
+    depth: capDepth,
+    bevelEnabled: false,
+    curveSegments: 16,
+  });
+
+  // Centrar el espesor de la cinta en Z.
+  geo.translate(0, 0, -capDepth / 2);
+
+  const tip = mk(geo, matHandle);
+
+  // Cada punta queda exactamente debajo de su pata.
+  tip.rotation.y = Math.PI / 2;
+  tip.position.set(sgn * xp, 0, 0);
+
+  return tip;
+}
+
+for (const sgn of [-1, 1]) {
+  handlePivot.add(makeRoundedEnd(sgn));
+}
+
+    // Sin disco ni pasador: la punta de cada pata es simplemente la sección de la cinta (ancho × grosor, con bevel), cortada plana y pegada a la banda.
     handlePivot.rotation.x = handleAngle;
     model.add(handlePivot);
   }
