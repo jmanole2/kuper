@@ -18,7 +18,6 @@
 <link rel="modulepreload" href="assets/vendor/three/three.module.min.js">
 <link rel="modulepreload" href="assets/js/product-scene.js">
 <link rel="preload" href="logo.png" as="image" fetchpriority="high">
-<link rel="preload" href="isotipo.png" as="image" fetchpriority="high">
 <link rel="preload" href="assets/images/hero-video-poster.jpg" as="image" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&amp;family=Inter:wght@300..700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -37,7 +36,6 @@
 <header class="np-nav" id="siteNav">
   <a class="np-nav-logo" href="#inicio" aria-label="Volver al inicio">
     <img class="np-nav-logo-base" src="logo.png" alt="Novaplástica" width="927" height="390" fetchpriority="high">
-    <img class="np-nav-logo-mark" src="isotipo.png" alt="" width="284" height="284" aria-hidden="true" fetchpriority="high">
   </a>
   <nav class="np-nav-menu" aria-label="Navegación principal">
     <ul class="np-nav-links">
@@ -455,27 +453,48 @@
       <span class="exp-label">PRODUCTOS</span>
     </div>
 
-    <div class="catalog-shell">
-      <header class="catalog-heading">
+    <div class="np-cat">
+      <header class="np-cat-heading">
         <div>
-          <span class="catalog-kicker exp-card-tag" id="catalogKicker">PRODUCTOS GRADO ALIMENTICIO</span>
+          <span class="np-cat-kicker exp-card-tag" id="catalogKicker">PRODUCTOS GRADO ALIMENTICIO</span>
           <h2 class="exp-title">PRODUCTOS</h2>
         </div>
-        <p id="catalogIntro">Formatos para contacto con alimentos, disponibles en distintas capacidades y configuraciones.</p>
+        <div class="np-cat-tabs" id="catalogTabs" role="tablist" aria-label="Categorías del catálogo">
+          <button class="np-cat-tab" type="button" role="tab" aria-selected="true" data-catalog-index="0">Grado alimenticio</button>
+          <button class="np-cat-tab" type="button" role="tab" aria-selected="false" data-catalog-index="1">Grado industrial</button>
+          <button class="np-cat-tab" type="button" role="tab" aria-selected="false" data-catalog-index="2">Otros productos y servicios</button>
+        </div>
       </header>
 
-      <div class="catalog-tabs" id="catalogTabs" role="tablist" aria-label="Categorías del catálogo">
-        <button class="catalog-tab active" type="button" role="tab" aria-selected="true" data-catalog-index="0">Grado alimenticio</button>
-        <button class="catalog-tab" type="button" role="tab" aria-selected="false" data-catalog-index="1">Grado industrial</button>
-        <button class="catalog-tab" type="button" role="tab" aria-selected="false" data-catalog-index="2">Otros productos y servicios</button>
+      <div class="np-cat-stage" id="catalogStage">
+        <span class="np-cat-guide" aria-hidden="true"></span>
+        <button class="np-cat-capsule np-cat-prev" id="catalogPrev" type="button" aria-label="Producto anterior">
+          <svg viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8"/></svg>
+          <span class="np-cat-capsule-label"><small>Anterior</small><span id="catalogPrevName"></span></span>
+        </button>
+        <button class="np-cat-capsule np-cat-next" id="catalogNext" type="button" aria-label="Producto siguiente">
+          <span class="np-cat-capsule-label"><small>Siguiente</small><span id="catalogNextName"></span></span>
+          <svg viewBox="0 0 12 20" aria-hidden="true"><path d="M2 2l8 8-8 8"/></svg>
+        </button>
+        <canvas class="np-cat-canvas" id="catalogCanvas" aria-hidden="true"></canvas>
+        <div class="np-cat-drag" id="catalogDrag" role="img" aria-label="Modelo 3D del producto seleccionado. Arrastra para girarlo."></div>
+        <figure class="np-cat-service" id="catalogService" hidden>
+          <img src="assets/images/experience/company/printing-equipment.png" alt="Equipo de impresión utilizado en la planta de Novaplastica" loading="lazy" decoding="async">
+        </figure>
+        <span class="np-cat-hint" id="catalogHint">Arrastra para girar</span>
       </div>
 
-      <div class="catalog-content" aria-live="polite">
-        <div class="catalog-specification" id="catalogSpecification"></div>
-        <div class="catalog-gallery" id="catalogGallery"></div>
+      <div class="np-cat-footer">
+        <div class="np-cat-name-wrap">
+          <h3 class="np-cat-name" id="catalogName"><span>Cubeta de</span><strong>19 L</strong></h3>
+          <p class="np-cat-meta" id="catalogMeta">Cubetas</p>
+        </div>
+        <nav class="np-cat-pager" id="catalogPager" aria-label="Productos de la categoría"></nav>
+        <div class="np-cat-sheet">
+          <div class="np-cat-sheet-tabs" id="catalogSheetTabs" role="tablist" aria-label="Información del producto"></div>
+          <div class="np-cat-sheet-body" id="catalogSheet" role="tabpanel"></div>
+        </div>
       </div>
-
-      <p class="catalog-legal" id="catalogLegal"></p>
     </div>
   </div>
 </section>
