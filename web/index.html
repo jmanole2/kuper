@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Novaplástica</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./assets/vendor/three/three.module.min.js",
+    "three/addons/": "./assets/vendor/three/addons/"
+  }
+}
+</script>
+<link rel="modulepreload" href="assets/vendor/three/three.module.min.js">
+<link rel="modulepreload" href="assets/js/product-scene.js">
+<link rel="preload" href="logo.png" as="image" fetchpriority="high">
+<link rel="preload" href="isotipo.png" as="image" fetchpriority="high">
+<link rel="preload" href="assets/images/hero-video-poster.jpg" as="image" fetchpriority="high">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/client-adjustments.css">
+<script type="module" src="assets/js/section-panels.js"></script>
+<script type="module" src="assets/js/product-scene.js"></script>
+</head>
+<body>
+
+<div class="values-backdrop" id="valuesBackdrop"></div>
+<canvas id="app"></canvas>
+
+<!-- Menú: hijo directo del body para que sea realmente fijo y quede por encima de todo -->
+<header class="site-nav container-fluid">
+  <div class="row g-0 align-items-center w-100">
+    <div class="logo col-6 col-lg-3">
+      <a class="brand-logo" href="#inicio" aria-label="Volver al inicio">
+        <img class="brand-logo-base" src="logo.png" alt="Novaplástica" width="927" height="390" fetchpriority="high">
+        <img class="brand-logo-mark" src="isotipo.png" alt="" width="284" height="284" aria-hidden="true" fetchpriority="high">
+      </a>
+    </div>
+    <nav class="col-lg-6 d-none d-lg-block" aria-label="Navegación principal">
+      <ul class="nav-links justify-content-center">
+        <li><a href="#experiencia">Experiencia</a></li>
+        <li><a href="#valores">Nosotros</a></li>
+        <li><a href="#brandValues">Valores</a></li>
+        <li><a href="#recognitions">Certificaciones</a></li>
+        <li><a href="#coverage">Cobertura</a></li>
+        <li><a href="#catalogo">Productos</a></li>
+         <li><a href="#materiaPrima">Materia Prima</a></li>
+           <li><a href="#clientes">Clientes</a></li>
+        
+      </ul>
+    </nav>
+    <div class="nav-action col-6 col-lg-3 d-flex justify-content-end">
+      <button class="nav-toggle d-lg-none" id="navToggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileNav"><span></span><span></span><span></span></button>
+      <a class="cta" href="#contacto">Contacto</a>
+    </div>
+  </div>
+</header>
+
+<div class="hero container-fluid" id="inicio">
+  <video class="hero-background-video" muted loop playsinline preload="none" poster="assets/images/hero-video-poster.jpg" data-src="loop.mp4" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
+  <div class="hero-bg">
+    <div class="hbg-fondo"></div>
+    <div class="hbg-sombras"></div>
+    <div class="hbg-luces"></div>
+    <div class="hbg-rayos"></div>
+    <div class="hbg-piso">
+      <div class="hbg-piso-sombras"></div>
+      <div class="hbg-piso-luces"></div>
+    </div>
+    <div class="hbg-horizonte-sombra"></div>
+    <div class="hbg-horizonte"></div>
+    <div class="hbg-vignette"></div>
+    <svg width="0" height="0" style="position:absolute">
+      <!-- Antes cada feTurbulence se re-animaba con <animate> (SMIL) sin
+           parar, lo que obliga al navegador a recalcular ruido fractal en
+           CADA frame sobre un elemento gigante (420% del hero) — el gasto
+           más pesado de todo el fondo y la causa más probable del tranco.
+           El ruido queda fijo (una sola vez); el movimiento ya lo da el
+           translateX de la animación CSS, así que visualmente casi no se
+           nota la diferencia pero el costo por frame baja muchísimo. -->
+      <filter id="heroBordeOrganico">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0026 0.0095" numOctaves="3" seed="5" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="140" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="6"/>
+      </filter>
+      <filter id="heroBordeOrganico2">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0028 0.011" numOctaves="3" seed="9" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="120" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="5"/>
+      </filter>
+      <filter id="heroBordeOrganico3">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0038 0.0135" numOctaves="2" seed="13" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="80" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="3"/>
+      </filter>
+    </svg>
+  </div>
+
+  <svg class="connectors" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <line x1="28" y1="58" x2="36" y2="58"></line>
+    <line x1="68" y1="42" x2="86" y2="42"></line>
+  </svg>
+  <div class="dot" style="left:36%; top:58%;" data-bucket-direction="-1" tabindex="0" role="button" aria-label="Destacar certificación ISO"></div>
+  <div class="dot" style="left:68%; top:42%;" data-bucket-direction="1" tabindex="0" role="button" aria-label="Destacar envases de plástico"></div>
+
+  <!-- Pista de interacción (la oculta bucket-drag.js al primer arrastre).
+       TEXTO: edita los dos <span>.  ICONO: es el <svg>.  POSICIÓN/TAMAÑO: ver ".bucket-hint" en client-adjustments.css -->
+  <div class="bucket-hint" id="bucketHint" aria-hidden="true">
+    <svg class="bucket-hint-icon" viewBox="0 0 34 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <g class="bucket-hint-arrows"><path d="M11 4H2M5 1L2 4l3 3"/><path d="M19 4h12M28 1l3 3-3 3"/></g>
+      <g class="bucket-hint-hand" transform="translate(6 0)"><path d="M22 14a8 8 0 0 1-8 8"/><path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1"/><path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></g>
+    </svg>
+    <div class="bucket-hint-text">
+      <span class="bucket-hint-title">Gira la cubeta</span>
+      <span class="bucket-hint-sub">Arrastra con el mouse o tu dedo</span>
+    </div>
+  </div>
+
+  <div class="hero-callouts container-fluid">
+    <div class="row h-100">
+      <div class="hero-callout-column col-5 col-md-4">
+        <div class="callout callout-envases">
+          <div class="label">Somos una empresa mexicana <br> especializada en inyección de plástico.</div>
+        </div>
+      </div>
+      <div class="hero-callout-column col-6 col-md-5 offset-md-3">
+        <div class="callout callout-envases">
+          <div class="label">ENVASES<br/>DE PLÁSTICO</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sección 01: Experiencia -->
+<section class="exp-section" id="experiencia">
+  <div class="exp-inner container-fluid">
+    <div class="exp-eyebrow">
+      <span class="exp-num">01</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">EXPERIENCIA</span>
+    </div>
+
+    <div class="exp-grid row align-items-start">
+      <div class="exp-left col-12 col-lg-7">
+        <h2 class="exp-title">SOLUCIONES EN INYECCIÓN <br> DE PLÁSTICO</h2>
+
+        <div class="exp-pills" id="expPills" role="tablist" aria-label="Líneas de producto">
+          <button class="exp-pill active" type="button" role="tab" aria-selected="true" data-grade="alimenticio">Grado Alimenticio</button>
+          <button class="exp-pill" type="button" role="tab" aria-selected="false" data-grade="industrial">Grado Industrial</button>
+          <button class="exp-pill" type="button" role="tab" aria-selected="false" data-grade="especiales">Proyectos Especiales</button>
+        </div>
+
+        <div class="exp-feature row align-items-center">
+          <div class="exp-photo-wrap col-12 col-sm-4">
+            <img class="exp-photo" id="expPhoto" src="assets/images/cubetas.webp" alt="Muestra de tapas fabricadas por Novaplastica" style="object-position: 16% center;" loading="lazy" decoding="async" fetchpriority="low">
+          </div>
+          <div class="exp-feature-text col-12 col-sm-8" aria-live="polite">
+            <h3 id="expTitle">Envases seguros para tus alimentos</h3>
+            <p id="expText">Fabricamos cubetas y tapas en polietileno y polipropileno para contacto con alimentos, con certificación FSSC 22000 e ISO 9001. Atendemos a marcas de lácteos, chocolates e ingredientes.</p>
+            <p class="exp-feature-sub" id="expCaption">Cumplen FDA 21 CFR 177.1520 y directivas europeas para contacto con alimentos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="exp-right col-12 col-lg-5">
+        <div class="exp-card">
+          <div class="exp-card-top">
+            <span class="exp-card-tag">DESTACADO</span>
+            <span class="exp-card-arrow">↗</span>
+          </div>
+          <h3>Experiencia que respalda cada proyecto</h3>
+          <div class="exp-stats" aria-label="Cifras destacadas de Novaplastica">
+            <!-- <div class="exp-stat">
+              <strong>+30</strong>
+              <span>Años fabricando envases de plástico</span>
+            </div> -->
+            <div class="exp-stat">
+              <strong>+15</strong>
+              <span>Diseños de línea</span>
+            </div>
+            <div class="exp-stat">
+              <strong>Alcance</strong>
+              <span>Vendemos en todo México y exportamos a EE. UU. y el Caribe</span>
+            </div>
+          </div>
+          <div class="exp-card-image">
+            <img id="expCarouselImg" src="assets/images/novaplastica_2.jpeg" alt="Colaborador operando equipo de impresión en Novaplastica" loading="lazy" decoding="async" fetchpriority="low">
+            <span class="exp-card-count" id="expCount">1/3</span>
+          </div>
+          <div class="exp-card-dots" id="expDots">
+            <span class="exp-dot active" data-i="0"></span>
+            <span class="exp-dot" data-i="1"></span>
+            <span class="exp-dot" data-i="2"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Sección 02: Misión, Visión y Políticas -->
+<section class="values-section" id="valores">
+  <div class="values-sticky">
+    <div class="values-eyebrow">
+      <span class="exp-num">02</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">NOSOTROS</span>
+    </div>
+    <h2 class="values-title">MISIÓN, VISIÓN Y POLÍTICAS</h2>
+    <figure class="values-process-media">
+      <video id="valuesProcessVideo" muted playsinline loop preload="none" aria-label="Proceso de impresión de Novaplastica">
+        <source src="assets/videos/mission-process.mp4" type="video/mp4">
+      </video>
+    </figure>
+    <div class="values-grid container-fluid">
+      <div class="row h-100 justify-content-between ">
+        <div class="values-slot-col col-6 col-md-4 col-xl-4"><div class="values-slot" id="valSlotA"></div></div>
+        <div class="values-slot-col col-6 col-md-4 col-xl-4"><div class="values-slot" id="valSlotB"></div></div>
+        <div class="w-100"></div>
+        <div class="values-slot-col col-6 col-md-4 col-xl-4"><div class="values-slot" id="valSlotC"></div></div>
+        <div class="values-slot-col col-6 col-md-4 col-xl-4"><div class="values-slot" id="valSlotD"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Sección 03: Valores -->
+<section class="brand-values-section" id="brandValues">
+  <div class="brand-values-sticky" id="brandValuesSticky">
+    <div class="brand-values-eyebrow">
+      <span class="exp-num">03</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">VALORES</span>
+    </div>
+
+    <div class="brand-values-heading col-12 col-sm-4">
+      <span>NUESTRA FORMA DE TRABAJAR</span>
+      <h2>LO QUE GUÍA<br>NUESTRO TRABAJO</h2>
+    </div>
+
+    <div class="brand-values-rail col-12 col-sm-7" id="brandValuesRail">
+      <div class="brand-values-track" id="brandValuesTrack"></div>
+    </div>
+
+    <div class="brand-values-counter" aria-hidden="true">
+      <span id="brandValueCurrent">01</span>
+      <i></i>
+      <span>07</span>
+    </div>
+  </div>
+</section>
+
+<!-- Sección 04: Premios y certificaciones -->
+<section class="recognitions-section" id="recognitions">
+  <div class="recognitions-inner container-fluid">
+    <div class="recognitions-eyebrow exp-eyebrow">
+      <span class="exp-num">04</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">CERTIFICACIONES</span>
+    </div>
+
+    <div class="recognitions-copy-row row">
+      <div class="recognitions-content exp-feature-text col-12 col-xl-7">
+        <span class="recognitions-kicker exp-card-tag">RESPALDO A NUESTRO TRABAJO</span>
+        <h2 class="exp-title">CERTIFICADOS QUE AVALAN <br> NUESTRA CALIDAD E INOCUIDAD.</h2>
+        <p class="recognitions-intro">Certificaciones y reconocimientos presentados como una colección institucional, clara y accesible.</p>
+      </div>
+    </div>
+
+    <div class="recognition-cards row" id="recognitionCards">
+      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <article class="recognition-card">
+        <span class="recognition-card-number">01</span>
+        <div class="recognition-card-logo"><img src="assets/images/recognitions/iso-9001.png" alt="Sello ISO 9001" loading="lazy" decoding="async" fetchpriority="low"></div>
+        <div class="recognition-card-copy exp-feature-text">
+          <span class="recognition-card-type exp-card-tag">CERTIFICACIÓN</span>
+          <h3>ISO 9001</h3>
+          <p>Sistema de gestión orientado a la calidad y a la mejora continua de nuestros procesos.</p>
+        </div>
+        <button class="recognition-document-button exp-pill" type="button" data-certificate="iso">VER CERTIFICADO</button>
+        <span class="recognition-document-preview iso" aria-hidden="true">&nbsp;</span>
+      </article>
+      </div>
+
+      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <article class="recognition-card recognition-card-featured">
+        <span class="recognition-card-number">02</span>
+        <div class="recognition-card-logo"><img src="assets/images/recognitions/global-quality.png" alt="Global Quality Foundation" loading="lazy" decoding="async" fetchpriority="low"></div>
+        <div class="recognition-card-copy exp-feature-text">
+          <span class="recognition-card-type exp-card-tag">RECONOCIMIENTO</span>
+          <h3>Global Quality</h3>
+          <p>Distinción que representa nuestro compromiso sostenido con la excelencia y la confianza.</p>
+        </div>
+        <span class="recognition-award-note exp-card-tag">RECONOCIMIENTO INTERNACIONAL</span>
+      </article>
+      </div>
+
+      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <article class="recognition-card recognition-card-fssc">
+        <span class="recognition-card-number">03</span>
+        <div class="recognition-card-logo"><img src="assets/images/recognitions/fssc-22000.png" alt="Sello FSSC 22000" loading="lazy" decoding="async" fetchpriority="low"></div>
+        <div class="recognition-card-copy exp-feature-text">
+          <span class="recognition-card-type exp-card-tag">CERTIFICACIÓN PRINCIPAL</span>
+          <h3>FSSC 22000</h3>
+          <p>Seguridad alimentaria reconocida por la GFSI: fabricamos nuestros envases bajo un sistema de gestión de inocuidad.</p>
+        </div>
+      </article>
+      </div>
+
+      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <article class="recognition-card">
+        <span class="recognition-card-number">04</span>
+        <div class="recognition-card-logo"><img src="assets/images/recognitions/haccp.png" alt="Sello HACCP" loading="lazy" decoding="async" fetchpriority="low"></div>
+        <div class="recognition-card-copy exp-feature-text">
+          <span class="recognition-card-type exp-card-tag">CERTIFICACIÓN</span>
+          <h3>HACCP</h3>
+          <p>Control preventivo para garantizar la inocuidad y seguridad en nuestros productos.</p>
+        </div>
+        <button class="recognition-document-button exp-pill" type="button" data-certificate="haccp">VER CERTIFICADO</button>
+        <span class="recognition-document-preview haccp" aria-hidden="true">&nbsp;</span>
+      </article>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<dialog class="recognition-modal" id="recognitionModal" aria-labelledby="recognitionModalTitle">
+  <div class="recognition-modal-shell">
+    <button class="recognition-modal-close" id="recognitionModalClose" type="button" aria-label="Cerrar certificado">×</button>
+    <div class="recognition-modal-copy">
+      <span>DOCUMENTO DE CERTIFICACIÓN</span>
+      <h2 id="recognitionModalTitle">Certificación ISO 9001</h2>
+      <p id="recognitionModalDescription">Consulta el documento emitido para Novaplástica.</p>
+    </div>
+    <div class="recognition-modal-document-wrap">
+      <div class="recognition-modal-document iso" id="recognitionModalDocument" role="img" aria-label="Documento de certificación ISO 9001"></div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Secciones 05 y 06: Cobertura nacional e internacional -->
+<section class="coverage-section" id="coverage">
+  <div class="coverage-sticky">
+    <div class="coverage-eyebrow exp-eyebrow">
+      <span class="exp-num" id="coverageNum">05</span>
+      <span class="exp-line"></span>
+      <span class="exp-label" id="coverageLabel">COBERTURA NACIONAL</span>
+    </div>
+
+    <div class="coverage-copy" aria-live="polite">
+      <div class="coverage-phase coverage-phase-national is-active">
+        <span class="coverage-kicker exp-card-tag">ALCANCE EN MÉXICO</span>
+        <h2 class="exp-title">PRESENCIA<br>NACIONAL</h2>
+        <p>Atendemos clientes y distribución en puntos estratégicos del país, con operación central y representación regional.</p>
+        <div class="coverage-location-lists" aria-label="Ubicaciones con cobertura nacional">
+          <div class="coverage-location-group is-direct">
+            <h3><i></i>Presencia directa <span>18 estados</span></h3>
+            <ul>
+              <li>Aguascalientes</li>
+              <li>Baja California</li>
+              <li>Campeche</li>
+              <li>Chihuahua</li>
+              <li>Coahuila</li>
+              <li>Durango</li>
+              <li>Guanajuato</li>
+              <li>Guerrero</li>
+              <li>Hidalgo</li>
+              <li>Jalisco</li>
+              <li>Nuevo León</li>
+              <li>Oaxaca</li>
+              <li>Puebla</li>
+              <li>Quintana Roo</li>
+              <li>San Luis Potosí</li>
+              <li>Tabasco</li>
+              <li>Tlaxcala</li>
+              <li>Veracruz</li>
+            </ul>
+          </div>
+          <div class="coverage-location-group is-office">
+            <h3><i></i>Oficinas <span>2 ubicaciones</span></h3>
+            <ul>
+              <li>Estado de México <small>Central y planta</small></li>
+              <li>Yucatán <small>Representación</small></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="coverage-phase coverage-phase-international" aria-hidden="true">
+        <span class="coverage-kicker exp-card-tag">EXPANSIÓN COMERCIAL</span>
+        <h2 class="exp-title">MÉXICO CONECTADO<br>CON AMÉRICA</h2>
+        <p>Un equipo especializado coordina exportaciones hacia Estados Unidos, el Caribe y nuevos mercados.</p>
+        <div class="coverage-location-lists" aria-label="Países y mercados con cobertura internacional">
+          <div class="coverage-location-group is-direct">
+            <h3><i></i>Países y mercados <span>8 ubicaciones</span></h3>
+            <ul class="coverage-market-list">
+              <li>Estados Unidos</li>
+              <li>México</li>
+              <li class="coverage-market-region">
+                Caribe
+                <ul class="coverage-market-sublist">
+                  <li>República Dominicana</li>
+                  <li>Jamaica</li>
+                  <li>Barbados</li>
+                  <li>Granada</li>
+                  <li>Guyana</li>
+                  <li>Trinidad y Tobago</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="coverage-map" id="coverageMap">
+      <canvas id="coverageCanvas" aria-label="Mapa interactivo de la cobertura nacional e internacional de Novaplastica"></canvas>
+      <div class="coverage-map-fallback" id="coverageMapFallback" hidden>La cobertura se extiende por México, Estados Unidos y el Caribe.</div>
+      <div class="coverage-tooltip" id="coverageTooltip" role="status" aria-hidden="true">
+        <span class="coverage-tooltip-symbol"></span>
+        <div>
+          <strong id="coverageTooltipName"></strong>
+          <small id="coverageTooltipStatus"></small>
+        </div>
+      </div>
+      <span class="coverage-map-hint">Pasa el cursor para explorar</span>
+    </div>
+
+    <div class="coverage-legend" aria-label="Simbología del mapa">
+      <span class="coverage-legend-title">SIMBOLOGÍA</span>
+      <span><i class="is-direct"></i>Presencia directa</span>
+      <span><i class="is-office"></i>Oficinas</span>
+      <span><i class="is-inactive"></i>Sin presencia directa</span>
+    </div>
+
+    <div class="coverage-progress" aria-hidden="true"><span></span></div>
+    <p class="coverage-attribution">Cartografía: geoBoundaries (CC BY 4.0) y Natural Earth.</p>
+  </div>
+</section>
+
+<!-- Sección 07: Catálogo técnico -->
+<section class="catalog-section" id="catalogo">
+  <div class="catalog-sticky">
+    <div class="catalog-eyebrow exp-eyebrow">
+      <span class="exp-num">07</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">PRODUCTOS</span>
+    </div>
+
+    <div class="catalog-shell">
+      <header class="catalog-heading">
+        <div>
+          <span class="catalog-kicker exp-card-tag" id="catalogKicker">PRODUCTOS GRADO ALIMENTICIO</span>
+          <h2 class="exp-title">PRODUCTOS</h2>
+        </div>
+        <p id="catalogIntro">Formatos para contacto con alimentos, disponibles en distintas capacidades y configuraciones.</p>
+      </header>
+
+      <div class="catalog-tabs" id="catalogTabs" role="tablist" aria-label="Categorías del catálogo">
+        <button class="catalog-tab active" type="button" role="tab" aria-selected="true" data-catalog-index="0">Grado alimenticio</button>
+        <button class="catalog-tab" type="button" role="tab" aria-selected="false" data-catalog-index="1">Grado industrial</button>
+        <button class="catalog-tab" type="button" role="tab" aria-selected="false" data-catalog-index="2">Otros productos y servicios</button>
+      </div>
+
+      <div class="catalog-content" aria-live="polite">
+        <div class="catalog-specification" id="catalogSpecification"></div>
+        <div class="catalog-gallery" id="catalogGallery"></div>
+      </div>
+
+      <p class="catalog-legal" id="catalogLegal"></p>
+    </div>
+  </div>
+</section>
+
+<!-- Sección 08: Materia prima -->
+<section class="materials-section" id="materiaPrima">
+  <div class="materials-sticky">
+    <div class="materials-eyebrow exp-eyebrow">
+      <span class="exp-num">08</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">MATERIA PRIMA</span>
+    </div>
+
+    <div class="materials-shell">
+      <header class="materials-heading">
+        <span class="materials-kicker">COMPOSICIÓN Y DESEMPEÑO</span>
+        <h2>MATERIALES QUE<br>DEFINEN EL DESEMPEÑO</h2>
+        <p>Seleccionamos materias primas de acuerdo con la resistencia, flexibilidad y acabado que requiere cada solución.</p>
+      </header>
+
+      <div class="materials-grid" aria-label="Materias primas utilizadas por Novaplastica">
+        <article class="material-item" tabindex="0">
+          <div class="material-symbol" aria-hidden="true"><canvas class="material-icon-canvas" data-material-icon="02"></canvas><strong>02</strong></div>
+          <h3>PE-HD</h3>
+          <p>Polietileno de alta densidad</p>
+          <div class="material-properties">
+            <span>Rigidez</span><span>Resistencia</span><span>Durabilidad</span>
+          </div>
+        </article>
+
+        <article class="material-item" tabindex="0">
+          <div class="material-symbol" aria-hidden="true"><canvas class="material-icon-canvas" data-material-icon="04"></canvas><strong>04</strong></div>
+          <h3>PE-LD</h3>
+          <p>Polietileno de baja densidad</p>
+          <div class="material-properties">
+            <span>Flexibilidad</span><span>Elasticidad</span><span>Ligereza</span>
+          </div>
+        </article>
+
+        <article class="material-item" tabindex="0">
+          <div class="material-symbol" aria-hidden="true"><canvas class="material-icon-canvas" data-material-icon="05"></canvas><strong>05</strong></div>
+          <h3>PP</h3>
+          <p>Polipropileno</p>
+          <div class="material-properties">
+            <span>Estabilidad</span><span>Ligereza</span><span>Resistencia térmica</span>
+          </div>
+        </article>
+
+        <article class="material-item" tabindex="0">
+          <div class="material-symbol" aria-hidden="true"><canvas class="material-icon-canvas" data-material-icon="04"></canvas><strong>04</strong></div>
+          <h3>PE-LD</h3>
+          <p>Master Batch</p>
+          <div class="material-properties">
+            <span>Color</span><span>Consistencia</span><span>Personalización</span>
+          </div>
+        </article>
+      </div>
+
+      <aside class="materials-regulation">
+        <span>USO EN CONTACTO CON ALIMENTOS</span>
+        <p>Estos materiales cumplen con la regulación <strong>FDA Título 21 CFR 177.1520</strong> y con las directivas europeas <strong>2002/72/EC, 85/572/EC y 97/48/EC</strong>, que permiten su uso en artículos y componentes destinados al contacto con alimentos.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- Sección 09: Clientes -->
+<section class="clients-section" id="clientes">
+  <div class="clients-sticky">
+    <div class="clients-eyebrow exp-eyebrow">
+      <span class="exp-num">09</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">CLIENTES</span>
+    </div>
+
+    <div class="clients-shell">
+      <header class="clients-cloud-copy">
+        <span class="clients-kicker exp-card-tag">RELACIONES QUE PERDURAN</span>
+        <h2>CLIENTES</h2>
+        <p>Marcas de alimentos, ingredientes, recubrimientos y consumo que confían en nuestra calidad y capacidad de respuesta.</p>
+      </header>
+
+      <div class="clients-cloud" id="clientsCloud">
+        <div class="clients-cloud-fallback" aria-label="Clientes de Novaplástica">
+          <figure><img src="assets/images/clients/santa-clara.png" alt="Santa Clara" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/yoplait.png" alt="Yoplait" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/chilchota.png" alt="Quesos Chilchota" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/lyncott.png" alt="Lyncott" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/acuario.png" alt="Pinturas Acuario" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/ingredion.png" alt="Ingredion" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/al-dia.png" alt="Leche Al Día" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/pintex.png" alt="Pintex" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/barry-callebaut.png" alt="Barry Callebaut" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/gertrude-hawk.png" alt="Gertrude Hawk" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/sicao.png" alt="Sicao" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/bensdorp.png" alt="Bensdorp" loading="lazy" decoding="async"></figure>
+          <figure><img src="assets/images/clients/asm.png" alt="ASM" loading="lazy" decoding="async"></figure>
+        </div>
+        <canvas class="clients-cloud-canvas" id="clientsCloudCanvas" aria-hidden="true"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Sección 10: Contacto -->
+<section class="contact-section" id="contacto">
+  <div class="contact-sticky">
+    <div class="contact-eyebrow exp-eyebrow">
+      <span class="exp-num">10</span>
+      <span class="exp-line"></span>
+      <span class="exp-label">CONTACTO</span>
+    </div>
+
+    <div class="contact-shell">
+      <div class="contact-copy">
+        <span class="contact-kicker">COTIZA CON NOSOTROS</span>
+        <h2>HABLEMOS DE TU<br>PRÓXIMO PROYECTO</h2>
+        <p>Compártenos tus necesidades de envase, capacidad o desarrollo. Nuestro equipo podrá ayudarte a encontrar la solución adecuada.</p>
+
+        <dl class="contact-details">
+          <div>
+            <dt>Teléfono</dt>
+            <dd><a href="tel:+525558846242">(55) 5-884-6242</a></dd>
+          </div>
+          <div>
+            <dt>Fax</dt>
+            <dd>(55) 5-884-9232</dd>
+          </div>
+          <div class="contact-email">
+            <dt>Correo</dt>
+            <dd><a href="mailto:aviesca@novaplasticasa.com">aviesca@novaplasticasa.com</a></dd>
+          </div>
+        </dl>
+      </div>
+
+      <form class="contact-form" method="post" action="contact.php" id="contactForm">
+        <div class="contact-form-heading">
+          <span>SOLICITA TU COTIZACIÓN</span>
+          <b aria-hidden="true">10</b>
+        </div>
+
+        <div class="contact-field-row">
+          <label class="contact-field">
+            <span>Nombre</span>
+            <input type="text" name="nombre" autocomplete="name" placeholder="Tu nombre" required>
+          </label>
+          <label class="contact-field">
+            <span>Empresa</span>
+            <input type="text" name="empresa" autocomplete="organization" placeholder="Nombre de la empresa">
+          </label>
+        </div>
+
+        <div class="contact-field-row">
+          <label class="contact-field">
+            <span>Correo electrónico</span>
+            <input type="email" name="correo" autocomplete="email" placeholder="correo@empresa.com" required>
+          </label>
+          <label class="contact-field">
+            <span>Teléfono</span>
+            <input type="tel" name="telefono" autocomplete="tel" placeholder="(55) 0000 0000">
+          </label>
+        </div>
+
+        <label class="contact-field contact-message">
+          <span>Mensaje</span>
+          <textarea name="mensaje" rows="5" placeholder="Producto, capacidad y cantidad aproximada que necesitas cotizar" required></textarea>
+        </label>
+
+        <input type="text" name="website" class="contact-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="contact-status" id="contactStatus" role="status" aria-live="polite"></p>
+
+        <button class="contact-submit" type="submit">
+          <span>Solicitar cotización</span>
+          <b aria-hidden="true">↗</b>
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- WhatsApp flotante (visible en todo el scroll) -->
+<a class="wa-float" href="https://wa.me/525558846242?text=Hola%2C%20quiero%20cotizar%20envases%20de%20pl%C3%A1stico." target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+  <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
+</a>
+
+<script src="assets/js/hero-background.js"></script>
+
+<script type="module" src="assets/js/deferred-sections.js"></script>
+<script src="assets/js/experience.js" defer></script>
+<script src="assets/js/contact-form.js" defer></script>
+<script src="assets/js/site-ui.js" defer></script>
+</body>
+</html>
