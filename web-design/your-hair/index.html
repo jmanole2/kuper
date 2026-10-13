@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>your hair — Shampoo y acondicionador sólido</title>
+<style>
+@font-face{font-family:"Instrument Serif";src:url(fonts/instrument-serif-latin-400-normal.woff2) format("woff2");font-weight:400;font-style:normal}
+@font-face{font-family:"Instrument Serif";src:url(fonts/instrument-serif-latin-400-italic.woff2) format("woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-latin-400-normal.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-latin-500-normal.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"Hanken Grotesk";src:url(fonts/hanken-grotesk-latin-600-normal.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Fraunces";src:url(fonts/fraunces-latin-600-normal.woff2) format("woff2");font-weight:600}
+
+:root{
+  --green:#1F2914; --green-2:#2B3720; --cream:#F7F0E7; --paper:#FCF8F3; --sand:#EFD9C6; --terra:#E3A47E;
+  --ink:#1F2914; --ink-2:#465039; --muted:#857F72; --line:rgba(31,41,20,.12);
+  --c01:#F6C54C; --c02:#BEC58B; --c03:#B9AFD2; --c04:#F7864C; --c05:#F6DEC2; --c06:#F6B537; --c07:#9DDBB7; --coral:#FB7A64;
+  --serif:"Instrument Serif",Georgia,serif; --sans:"Hanken Grotesk","Helvetica Neue",sans-serif; --mark:"Fraunces",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{display:block}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1440px;margin:0 auto;padding:0 56px}
+.kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+.title{font-family:var(--serif);font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98}
+.title em{font-style:italic;text-transform:none}
+.link{display:inline-flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;border-bottom:1px solid currentColor;padding-bottom:4px}
+.link svg,.btn svg{width:12px;height:12px}
+.btn{display:inline-flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:17px 26px;background:var(--green);color:var(--cream)}
+.btn.light{background:var(--cream);color:var(--green)}
+.btn.ghost{background:transparent;color:var(--cream);box-shadow:inset 0 0 0 1px rgba(247,240,231,.45)}
+
+.prod{position:relative;display:flex;align-items:flex-end;justify-content:center}
+.prod img{position:relative;z-index:1;filter:drop-shadow(8px 16px 12px rgba(40,24,10,.18))}
+.prod::after{content:"";position:absolute;bottom:-6px;left:50%;width:84%;height:16px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(40,24,10,.32),rgba(40,24,10,0));z-index:0}
+
+/* logo */
+.logo{width:64px;height:64px;border-radius:50%;background:var(--green);color:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mark);font-weight:600;font-size:17px;line-height:.82;letter-spacing:-.03em;text-align:center}
+.logo span{display:block}
+.logo.inv{background:var(--cream);color:var(--green)}
+
+/* announce + header */
+.announce{background:var(--green);color:rgba(247,240,231,.85);text-align:center;font-size:12px;letter-spacing:.08em;padding:9px 0;border-bottom:1px solid rgba(247,240,231,.12)}
+header{position:absolute;left:0;right:0;z-index:5;color:var(--cream)}
+header .wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-top:16px;padding-bottom:16px}
+header ul{display:flex;gap:28px;list-style:none;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+header .right{display:flex;justify-content:flex-end;gap:24px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;align-items:center;font-weight:500}
+header .right svg{width:18px;height:18px}
+.menu-m{display:none}
+
+/* hero */
+.hero{position:relative;height:960px;background:var(--green);overflow:hidden}
+.hero .sun{position:absolute;left:50%;top:52%;width:1100px;height:560px;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(246,197,76,.20),rgba(246,197,76,0));pointer-events:none}
+.hero .leaf{position:absolute;right:-80px;top:20px;width:620px;opacity:.28;filter:blur(5px);pointer-events:none}
+.hero .leaf.l{right:auto;left:-140px;top:auto;bottom:220px;width:460px;transform:scaleX(-1);opacity:.2}
+.hero .floor{position:absolute;left:0;right:0;bottom:0;height:210px;background:linear-gradient(180deg,#DDB394,#EAC7AA 35%,#F0D5BE)}
+.hero .floor::before{content:"";position:absolute;inset:0;opacity:.35;background-image:radial-gradient(rgba(120,70,40,.35) 1px,transparent 1.3px);background-size:7px 7px}
+.hero .copy{position:absolute;top:118px;left:0;right:0;text-align:center;color:var(--cream);z-index:2}
+.hero .copy .kicker{opacity:.75}
+.hero h1{font-size:84px;margin:14px 0 18px}
+.hero h1 em{color:var(--c01)}
+.hero .copy p{max-width:520px;margin:0 auto 28px;color:rgba(247,240,231,.75);font-size:16px}
+.hero .ctas{display:flex;gap:12px;justify-content:center}
+.swatches{display:flex;gap:8px;justify-content:center;margin-top:24px}
+.swatches i{width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px rgba(247,240,231,.15)}
+.hero .line{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:40px;z-index:3}
+.hero .front{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:300px;z-index:4}
+.hero .front .prod::after{bottom:-4px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}
+.stats div{padding:34px 20px;text-align:center;border-right:1px solid var(--line)}
+.stats div:last-child{border-right:0}
+.stats b{display:block;font-family:var(--serif);font-weight:400;font-size:46px;line-height:1}
+.stats span{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+
+/* finder */
+.finder{padding:110px 0 100px}
+.sec-top{display:flex;justify-content:space-between;align-items:end;margin-bottom:36px;gap:40px}
+.sec-top .title{font-size:54px;margin-top:12px}
+.sec-top p{max-width:380px;color:var(--muted)}
+.types{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.type{position:relative;border-radius:14px;padding:16px 14px 16px;display:flex;flex-direction:column;min-height:420px;overflow:hidden}
+.type .n{font-family:var(--serif);font-size:34px;line-height:1;opacity:.85}
+.type h3{font-size:21px;font-weight:600;line-height:1.1;letter-spacing:-.01em;margin-top:14px}
+.type .need{font-size:12.5px;line-height:1.4;margin-top:6px;opacity:.8}
+.type .bar{flex:1;display:flex;align-items:center;justify-content:center;padding:10px 0}
+.type .bar img{width:84%;filter:drop-shadow(0 14px 12px rgba(40,24,10,.22))}
+.type .meta{border-top:1px solid rgba(31,41,20,.18);padding-top:10px;font-size:12px;line-height:1.45}
+.type .meta b{display:block;font-weight:600;font-size:12.5px}
+.type .pair{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;font-weight:600;letter-spacing:.04em;background:rgba(255,255,255,.55);padding:5px 9px;border-radius:999px}
+.type .pair i{width:12px;height:12px;border-radius:3px;display:block}
+.type.dark{color:var(--cream)}
+.type.dark .meta{border-color:rgba(247,240,231,.25)}
+.type.dark .pair{background:rgba(247,240,231,.14)}
+.finder .note{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding:18px 22px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.finder .note span{font-size:14px;color:var(--ink-2)}
+
+/* treatments */
+.treat{padding:20px 0 110px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.card .ph{position:relative;aspect-ratio:3/4;display:flex;align-items:flex-end;justify-content:center;padding-bottom:52px;overflow:hidden;border-radius:12px}
+.card .ph::before{content:"";position:absolute;left:0;right:0;bottom:0;height:30%;background:rgba(255,255,255,.28)}
+.card .badge{position:absolute;top:12px;left:12px;z-index:2;background:var(--paper);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:6px 10px;border-radius:999px}
+.card .add{position:absolute;right:12px;top:12px;z-index:2;width:34px;height:34px;border-radius:50%;background:var(--paper);display:grid;place-items:center}
+.card .add svg{width:12px;height:12px}
+.card .nm{display:flex;justify-content:space-between;margin-top:14px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.card .sub{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* about */
+.about{display:grid;grid-template-columns:1.05fr .95fr;background:var(--paper)}
+.about .img{position:relative;min-height:760px;background:url(assets/photo/familia.jpg) 50% 40%/cover}
+.about .img .tag{position:absolute;left:24px;bottom:24px;background:var(--cream);padding:14px 18px;border-radius:12px;display:flex;align-items:center;gap:14px;font-size:13px}
+.about .img .tag .logo{width:44px;height:44px;font-size:12px}
+.about .txt{padding:96px 88px;display:flex;flex-direction:column;justify-content:center}
+.about .txt .title{font-size:58px;margin:16px 0 26px}
+.about .txt p{color:var(--ink-2);font-size:16px;max-width:500px;margin-bottom:16px}
+.about .quote{font-family:var(--serif);font-size:28px;line-height:1.2;margin:18px 0 6px;max-width:480px}
+.about .sign{font-size:13px;color:var(--muted);margin-bottom:34px}
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-top:28px;border-top:1px solid var(--line)}
+.pillars svg{width:28px;height:28px;stroke:var(--ink);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;margin-bottom:10px}
+.pillars b{display:block;font-size:13px;font-weight:600;line-height:1.3}
+.pillars span{font-size:13px;color:var(--muted);line-height:1.45}
+
+/* compare */
+.compare{padding:110px 0}
+.cmp{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:center}
+.cmp .vis{position:relative;border-radius:16px;background:var(--sand);aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cmp .vis .stack{position:relative;width:70%;height:70%}
+.cmp .vis .stack img{position:absolute;filter:drop-shadow(0 18px 16px rgba(40,24,10,.25))}
+table{width:100%;border-collapse:collapse;margin-top:28px}
+th{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;text-align:left;padding:12px 14px;color:var(--muted)}
+th.us{color:var(--ink)}
+td{padding:16px 14px;border-top:1px solid var(--line);font-size:14px;vertical-align:top}
+td:first-child{font-weight:600;width:24%}
+td.us{background:rgba(190,197,139,.22)}
+td.us::before{content:"✓";display:inline-block;width:18px;font-weight:700;color:var(--green)}
+td.them{color:var(--muted)}
+td.them::before{content:"×";display:inline-block;width:18px;color:var(--muted)}
+
+/* routine banner */
+.routine{display:grid;grid-template-columns:1fr 1fr;min-height:520px}
+.routine .txt{background:var(--green);color:var(--cream);padding:88px;display:flex;flex-direction:column;justify-content:center}
+.routine .txt .title{font-size:56px;margin:16px 0 20px}
+.routine .txt p{color:rgba(247,240,231,.75);max-width:420px;margin-bottom:30px;font-size:16px}
+.routine .steps{display:flex;gap:28px;margin-bottom:36px}
+.routine .steps div{font-size:13px;color:rgba(247,240,231,.7)}
+.routine .steps b{display:block;font-family:var(--serif);font-weight:400;font-size:34px;color:var(--cream);line-height:1}
+.routine .pic{background:#F6B9C4;display:flex;align-items:flex-end;justify-content:center;gap:24px;padding-bottom:110px;position:relative}
+.routine .pic::before{content:"";position:absolute;left:0;right:0;bottom:0;height:32%;background:#EFA7B4}
+
+/* reviews */
+.reviews{padding:110px 0 100px;text-align:center}
+.reviews .title{font-size:50px;margin:12px 0 14px}
+.reviews .score{font-size:14px;color:var(--muted);margin-bottom:46px}
+.rv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;text-align:left}
+.rv{background:var(--paper);padding:32px;border-radius:12px;border:1px solid var(--line)}
+.rv .st{display:flex;gap:3px;margin-bottom:16px}
+.rv .st svg{width:13px;height:13px;fill:var(--ink)}
+.rv q{font-family:var(--serif);font-size:25px;line-height:1.2;display:block;quotes:none}
+.rv .who{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.rv .who b{color:var(--ink);font-weight:600}
+.rv .pr{display:flex;align-items:center;gap:8px}
+.rv .pr i{width:36px;height:36px;border-radius:8px;display:grid;place-items:center}
+.rv .pr img{width:28px}
+
+/* newsletter + footer */
+.news{background:var(--sand);padding:84px 0;text-align:center}
+.news .title{font-size:48px;margin:12px 0 12px}
+.news p{color:var(--ink-2);margin-bottom:26px}
+.news form{display:flex;max-width:480px;margin:0 auto;border:1px solid rgba(31,41,20,.35)}
+.news form span{flex:1;text-align:left;padding:16px 18px;color:var(--muted);font-size:14px}
+.news form b{background:var(--green);color:var(--cream);font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:16px 24px}
+footer{background:var(--green);color:var(--cream);padding:72px 0 30px}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:40px}
+footer .kicker{color:rgba(247,240,231,.55);margin-bottom:18px}
+footer ul{list-style:none;display:grid;gap:9px;font-size:14px;color:rgba(247,240,231,.85)}
+.f-bot{display:flex;justify-content:space-between;margin-top:64px;padding-top:24px;border-top:1px solid rgba(247,240,231,.15);font-size:12px;color:rgba(247,240,231,.55)}
+.wa{position:fixed;right:24px;bottom:24px;z-index:20;width:58px;height:58px;border-radius:50%;background:#25D366;display:grid;place-items:center;box-shadow:0 14px 30px -10px rgba(18,140,70,.7)}
+.wa svg{width:28px;height:28px;fill:#fff}
+
+/* ---------------- mobile ---------------- */
+@media (max-width:760px){
+  .wrap{padding:0 18px}
+  .announce{font-size:11px;padding:8px 12px}
+  header .wrap{grid-template-columns:auto 1fr auto;padding-top:12px;padding-bottom:12px}
+  header ul,header .right .t{display:none}
+  .menu-m{display:block}
+  header .logo{justify-self:center;width:54px;height:54px;font-size:14px}
+  header .right{gap:16px}
+  .hero{height:700px}
+  .hero .copy{top:100px;padding:0 18px}
+  .hero h1{font-size:48px;margin:10px 0 14px}
+  .hero .copy p{font-size:14px;margin-bottom:22px}
+  .hero .ctas{flex-direction:column;align-items:center;gap:8px}
+  .hero .ctas .btn{width:250px;justify-content:center}
+  .hero .floor{height:150px}
+  .hero .line{bottom:104px;gap:12px}
+  .hero .line .prod img{height:150px!important;width:auto}
+  .hero .line .hide-m{display:none}
+  .hero .front{bottom:30px;gap:150px}
+  .hero .front .prod img{height:64px!important;width:auto}
+  .hero .leaf{width:340px;right:-140px}
+  .hero .leaf.l{display:none}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stats div{padding:20px 10px;border-bottom:1px solid var(--line)}
+  .stats div:nth-child(2n){border-right:0}
+  .stats div:last-child{grid-column:span 2}
+  .stats b{font-size:34px}
+  .finder{padding:64px 0}
+  .sec-top{flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:22px}
+  .sec-top .title{font-size:38px}
+  .types{grid-template-columns:repeat(2,1fr);gap:8px}
+  .type{min-height:300px;padding:14px 12px}
+  .type:last-child{grid-column:span 2;min-height:220px}
+  .type:last-child .bar img{width:44%}
+  .type h3{font-size:18px;margin-top:8px}
+  .type .n{font-size:26px}
+  .type .bar img{width:76%}
+  .finder .note{flex-direction:column;align-items:flex-start;gap:12px}
+  .treat{padding:10px 0 64px}
+  .cards{grid-template-columns:repeat(2,1fr);gap:10px}
+  .cards .card:nth-child(5){display:none}
+  .card .ph{padding-bottom:36px}
+  .card .ph img{height:150px!important;width:auto}
+  .card .nm{font-size:11px}
+  .about{grid-template-columns:minmax(0,1fr)}
+  .about .img{min-height:340px}
+  .about .txt{padding:48px 18px 56px}
+  .about .txt .title{font-size:38px}
+  .about .quote{font-size:23px}
+  .pillars{grid-template-columns:1fr;gap:16px}
+  .compare{padding:64px 0}
+  .cmp{grid-template-columns:minmax(0,1fr);gap:28px}
+  .cmp .title{font-size:36px!important}
+  td,th{padding:12px 8px;font-size:13px}
+  .routine{grid-template-columns:minmax(0,1fr)}
+  .routine .steps{gap:16px}
+  .routine .steps b{font-size:28px}
+  .routine .txt{padding:48px 18px}
+  .routine .txt .title{font-size:38px}
+  .routine .pic{min-height:320px;padding-bottom:70px}
+  .routine .pic{gap:8px}
+  .routine .pic img{height:auto!important;max-height:96px;max-width:100px;width:auto}
+  .reviews{padding:64px 0}
+  .reviews .title{font-size:36px}
+  .rv-grid{grid-template-columns:1fr}
+  .rv:nth-child(3){display:none}
+  .news .title{font-size:34px}
+  .f-grid{grid-template-columns:1fr 1fr;gap:30px}
+  .f-grid > div:first-child{grid-column:span 2}
+  .f-bot{flex-direction:column;gap:6px}
+  .wa{width:52px;height:52px;right:16px;bottom:16px}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="arr" viewBox="0 0 16 16"><path d="M2 8h12M10 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="plus" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="search" viewBox="0 0 20 20"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="bag" viewBox="0 0 20 20"><path d="M3.5 6.5h13l-1 11h-11z M7 6.5V5a3 3 0 016 0v1.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="menu" viewBox="0 0 20 20"><path d="M2 6h16M2 14h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="star" viewBox="0 0 16 16"><path d="M8 1.5l1.9 4.1 4.5.5-3.3 3.1.9 4.4L8 11.4l-4 2.2.9-4.4L1.6 6.1l4.5-.5z"/></symbol>
+  <symbol id="leaf" viewBox="0 0 600 520"><path d="M600 20 C520 60 430 120 360 210 C300 290 250 360 170 430 L178 440 C260 372 312 302 372 222 C440 132 528 74 600 40Z"/><ellipse cx="520" cy="70" rx="70" ry="24" transform="rotate(-30 520 70)"/><ellipse cx="470" cy="150" rx="78" ry="26" transform="rotate(20 470 150)"/><ellipse cx="430" cy="120" rx="70" ry="22" transform="rotate(-50 430 120)"/><ellipse cx="380" cy="230" rx="80" ry="26" transform="rotate(28 380 230)"/><ellipse cx="330" cy="215" rx="72" ry="22" transform="rotate(-48 330 215)"/><ellipse cx="290" cy="320" rx="78" ry="24" transform="rotate(30 290 320)"/><ellipse cx="240" cy="310" rx="70" ry="22" transform="rotate(-44 240 310)"/><ellipse cx="200" cy="405" rx="70" ry="22" transform="rotate(26 200 405)"/></symbol>
+</svg>
+
+<div class="announce">Envío gratis desde $899 &nbsp;·&nbsp; Barras de 100 g para cada tipo de cabello</div>
+
+<header>
+  <div class="wrap">
+    <ul><li>Tienda</li><li>Encuentra tu barra</li><li>Tratamientos</li><li>Nosotros</li></ul>
+    <svg class="menu-m" width="20" height="20"><use href="#menu"/></svg>
+    <a class="logo inv"><span>your</span><span>hair</span></a>
+    <div class="right">
+      <span class="t">Cuenta</span>
+      <svg><use href="#search"/></svg>
+      <svg><use href="#bag"/></svg>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="sun"></div>
+  <svg class="leaf" viewBox="0 0 600 520" fill="#0E1409"><use href="#leaf"/></svg>
+  <svg class="leaf l" viewBox="0 0 600 520" fill="#0E1409"><use href="#leaf"/></svg>
+  <div class="copy">
+    <div class="kicker">Shampoo y acondicionador sólido</div>
+    <h1 class="title">Tu cabello tiene<br>su <em>fórmula</em></h1>
+    <p>Siete barras, cada una hecha para un tipo de cabello. Elige la tuya en un minuto.</p>
+    <div class="ctas">
+      <a class="btn light">Encuentra tu barra <svg><use href="#arr"/></svg></a>
+      <a class="btn ghost">Ver tienda</a>
+    </div>
+    <div class="swatches"><i style="background:var(--c01)"></i><i style="background:var(--c02)"></i><i style="background:var(--c03)"></i><i style="background:var(--c04)"></i><i style="background:var(--c05)"></i><i style="background:var(--c06)"></i><i style="background:var(--c07)"></i></div>
+  </div>
+  <div class="floor"></div>
+  <div class="line">
+    <div class="prod hide-m"><img src="assets/p/leavein.png" style="height:250px" alt="Leave in"></div>
+    <div class="prod"><img src="assets/p/aceite.png" style="height:214px" alt="Aceite capilar"></div>
+    <div class="prod"><img src="assets/p/suero.png" style="height:236px" alt="Suero reparador"></div>
+    <div class="prod"><img src="assets/p/perfume.png" style="height:210px" alt="Perfume de cabello"></div>
+    <div class="prod hide-m"><img src="assets/p/ducha.png" style="height:212px" alt="Aceite de ducha"></div>
+  </div>
+  <div class="front">
+    <div class="prod"><img src="assets/p/sh-02.png" style="height:106px" alt=""></div>
+    <div class="prod"><img src="assets/p/sh-04.png" style="height:106px" alt=""></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="stats">
+    <div><b>7</b><span>shampoos sólidos</span></div>
+    <div><b>5</b><span>acondicionadores</span></div>
+    <div><b>100 g</b><span>por barra</span></div>
+    <div><b>pH</b><span>balanceado</span></div>
+    <div><b>0</b><span>botellas de plástico</span></div>
+  </div>
+
+  <section class="finder" id="barra">
+    <div class="sec-top">
+      <div><div class="kicker" style="color:var(--muted)">Encuentra tu barra</div><h2 class="title">¿Cómo es <em>tu</em> cabello?</h2></div>
+      <p>Busca tu tipo de cabello y esa es tu barra. Todas son color safe y con pH balanceado.</p>
+    </div>
+    <div class="types">
+      <div class="type" style="background:var(--c01)"><span class="n">01</span><h3>Seco</h3><span class="need">Nutre y humecta</span>
+        <div class="bar"><img src="assets/p/sh-01.png" alt="Shampoo 01"></div>
+        <div class="meta"><b>Shampoo 01 · Miel</b><span class="pair"><i style="background:var(--c01)"></i>+ Acondicionador 01</span></div></div>
+      <div class="type" style="background:var(--c02)"><span class="n">02</span><h3>Con caída</h3><span class="need">Fortalece y estimula el crecimiento</span>
+        <div class="bar"><img src="assets/p/sh-02.png" alt="Shampoo 02"></div>
+        <div class="meta"><b>Shampoo 02 · Romero, matcha y cafeína</b><span class="pair"><i style="background:var(--c02)"></i>+ Acondicionador 02</span></div></div>
+      <div class="type" style="background:var(--c03)"><span class="n">03</span><h3>Graso</h3><span class="need">Limpia el exceso de grasa</span>
+        <div class="bar"><img src="assets/p/sh-03.png" alt="Shampoo 03"></div>
+        <div class="meta"><b>Shampoo 03 · Carbón activado</b><span class="pair">Solo shampoo</span></div></div>
+      <div class="type" style="background:var(--c04)"><span class="n">04</span><h3>Dañado y con frizz</h3><span class="need">Repara y controla el frizz</span>
+        <div class="bar"><img src="assets/p/sh-04.png" alt="Shampoo 04"></div>
+        <div class="meta"><b>Shampoo 04 · Calabaza y mango</b><span class="pair"><i style="background:var(--c04)"></i>+ Acondicionador 04</span></div></div>
+      <div class="type" style="background:var(--c05)"><span class="n">05</span><h3>Fino, sin volumen</h3><span class="need">Da cuerpo y volumen</span>
+        <div class="bar"><img src="assets/p/sh-05.png" alt="Shampoo 05"></div>
+        <div class="meta"><b>Shampoo 05 · Proteína de arroz y avena</b><span class="pair"><i style="background:var(--c05);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)"></i>+ Acondicionador 05</span></div></div>
+      <div class="type" style="background:var(--c06)"><span class="n">06</span><h3>Rizado</h3><span class="need">Define y suaviza los rizos</span>
+        <div class="bar"><img src="assets/p/sh-06.png" alt="Shampoo 06"></div>
+        <div class="meta"><b>Shampoo 06 · Papaya y argán</b><span class="pair"><i style="background:var(--coral)"></i>+ Acondicionador 06</span></div></div>
+      <div class="type" style="background:var(--c07)"><span class="n">07</span><h3>Con caspa</h3><span class="need">Calma y limpia el cuero cabelludo</span>
+        <div class="bar"><img src="assets/p/sh-07.png" alt="Shampoo 07"></div>
+        <div class="meta"><b>Shampoo 07 · Árbol de té y menta</b><span class="pair">Solo shampoo</span></div></div>
+    </div>
+    <div class="note"><span>¿Tienes dos tipos a la vez, como raíz grasa y puntas secas? Usa el shampoo de tu raíz y el acondicionador de tus puntas.</span><a class="link">Ver todas las barras <svg><use href="#arr"/></svg></a></div>
+  </section>
+
+  <section class="treat">
+    <div class="sec-top">
+      <div><div class="kicker" style="color:var(--muted)">Tratamientos</div><h2 class="title">Completa tu rutina</h2></div>
+      <a class="link">Ver tratamientos <svg><use href="#arr"/></svg></a>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="ph" style="background:#F8D58A"><span class="badge">Más vendido</span><span class="add"><svg><use href="#plus"/></svg></span><div class="prod"><img src="assets/p/leavein.png" style="height:232px" alt="Leave in"></div></div>
+        <div class="nm"><span>Leave in</span><span>$329</span></div><div class="sub">Root &amp; scalp serum · 120 ml</div></div>
+      <div class="card"><div class="ph" style="background:#E9DDF0"><span class="add"><svg><use href="#plus"/></svg></span><div class="prod"><img src="assets/p/aceite.png" style="height:200px" alt="Aceite capilar"></div></div>
+        <div class="nm"><span>Aceite capilar</span><span>$299</span></div><div class="sub">Repara puntas · 100 ml</div></div>
+      <div class="card"><div class="ph" style="background:#CFE6CF"><span class="badge">Nuevo</span><span class="add"><svg><use href="#plus"/></svg></span><div class="prod"><img src="assets/p/suero.png" style="height:220px" alt="Suero reparador"></div></div>
+        <div class="nm"><span>Suero reparador</span><span>$349</span></div><div class="sub">Cuero cabelludo · 100 ml</div></div>
+      <div class="card"><div class="ph" style="background:#F9D3CF"><span class="add"><svg><use href="#plus"/></svg></span><div class="prod"><img src="assets/p/perfume.png" style="height:196px" alt="Perfume de cabello"></div></div>
+        <div class="nm"><span>Perfume de cabello</span><span>$279</span></div><div class="sub">Proteína de arroz · 50 ml</div></div>
+      <div class="card"><div class="ph" style="background:#F4E2C8"><span class="add"><svg><use href="#plus"/></svg></span><div class="prod"><img src="assets/p/ducha.png" style="height:200px" alt="Aceite de ducha"></div></div>
+        <div class="nm"><span>Aceite de ducha</span><span>$289</span></div><div class="sub">Coco y miel · 120 ml</div></div>
+    </div>
+  </section>
+</div>
+
+<section class="about" id="nosotros">
+  <div class="img"><div class="tag"><span class="logo"><span>your</span><span>hair</span></span><div><b>Nuestra colección completa</b><br><span style="color:var(--muted)">7 shampoos, 5 acondicionadores y tratamientos</span></div></div></div>
+  <div class="txt">
+    <div class="kicker" style="color:var(--muted)">Nosotros · Nuestra historia</div>
+    <h2 class="title">Nacimos para que dejes de <em>adivinar</em></h2>
+    <p>your hair empezó con una pregunta simple: ¿por qué todos usamos el mismo shampoo si nadie tiene el mismo cabello? Probamos de todo y casi nada estaba pensado para un problema concreto.</p>
+    <p>Así que hicimos lo contrario. Una barra para cada tipo de cabello, con ingredientes que reconoces y sin botellas de plástico. Cada fórmula se prueba hasta que hace bien una sola cosa.</p>
+    <div class="quote">“Si sabes cómo es tu cabello, ya sabes cuál es tu barra.”</div>
+    <div class="sign">Fundadora de your hair</div>
+    <div class="pillars">
+      <div><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="1.5"/></svg><b>Una fórmula por tipo de cabello</b><span>Siete problemas, siete barras.</span></div>
+      <div><svg viewBox="0 0 32 32"><path d="M6 26C6 14 14 6 26 6c0 12-8 20-20 20zM6 26l11-11"/></svg><b>Ingredientes que reconoces</b><span>Miel, romero, avena, argán.</span></div>
+      <div><svg viewBox="0 0 32 32"><path d="M11 5h10v4l3 4v14H8V13l3-4z"/><path d="M5 27L27 5"/></svg><b>Cero botellas</b><span>Barras sólidas de 100 g.</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="compare">
+    <div class="cmp">
+      <div class="vis">
+        <div class="stack">
+          <img src="assets/p/sh-07.png" style="width:52%;left:2%;top:4%" alt="">
+          <img src="assets/p/co-02.png" style="width:44%;right:4%;top:20%" alt="">
+          <img src="assets/p/sh-04.png" style="width:56%;left:20%;bottom:0" alt="">
+        </div>
+      </div>
+      <div>
+        <div class="kicker" style="color:var(--muted)">Barra vs. botella</div>
+        <h2 class="title" style="font-size:52px;margin-top:12px">Lo que cambia cuando tu shampoo <em>no viene en botella</em></h2>
+        <table>
+          <tr><th></th><th class="us">your hair</th><th>Shampoo en botella</th></tr>
+          <tr><td>Fórmula</td><td class="us">Concentrada, sin agua añadida</td><td class="them">Diluida en agua</td></tr>
+          <tr><td>Envase</td><td class="us">Caja de cartón</td><td class="them">Botella de plástico</td></tr>
+          <tr><td>Viaje</td><td class="us">Sin derrames en la maleta</td><td class="them">Se derrama</td></tr>
+          <tr><td>Para quién</td><td class="us">Elegida por tipo de cabello</td><td class="them">Genérica para todos</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="routine">
+  <div class="txt">
+    <div class="kicker" style="opacity:.7">Arma tu rutina</div>
+    <h2 class="title">Shampoo, acondicionador y masaje</h2>
+    <div class="steps"><div><b>01</b>Shampoo en la raíz</div><div><b>02</b>Acondicionador en puntas</div><div><b>03</b>Masaje 2 minutos</div></div>
+    <p>Llévate tu shampoo, tu acondicionador y el masajeador de cuero cabelludo con 15% de descuento.</p>
+    <a class="btn light" style="align-self:flex-start">Armar mi rutina <svg><use href="#arr"/></svg></a>
+  </div>
+  <div class="pic">
+    <div class="prod"><img src="assets/p/sh-06.png" style="height:120px" alt=""></div>
+    <div class="prod"><img src="assets/p/masajeador.png" style="height:180px" alt="Masajeador de cuero cabelludo"></div>
+    <div class="prod"><img src="assets/p/co-06.png" style="height:118px" alt=""></div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="reviews">
+    <div class="kicker" style="color:var(--muted)">Reseñas</div>
+    <h2 class="title">Después de la primera lavada</h2>
+    <div class="score">4.9 de 5 en reseñas verificadas</div>
+    <div class="rv-grid">
+      <div class="rv"><div class="st"><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg></div>
+        <q>Tengo el cabello rizado y por fin algo que no me lo deja esponjado. La 06 es mi favorita.</q>
+        <div class="who"><span><b>Fernanda G.</b><br>Cabello rizado</span><span class="pr"><i style="background:var(--c06)"><img src="assets/p/sh-06.png" alt=""></i>06</span></div></div>
+      <div class="rv"><div class="st"><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg></div>
+        <q>Se me caía mucho al peinarme. Llevo dos meses con la 02 y el masajeador y ya noto la diferencia.</q>
+        <div class="who"><span><b>Carla M.</b><br>Caída</span><span class="pr"><i style="background:var(--c02)"><img src="assets/p/sh-02.png" alt=""></i>02</span></div></div>
+      <div class="rv"><div class="st"><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg><svg><use href="#star"/></svg></div>
+        <q>Mi raíz se engrasaba en un día. Con la de carbón aguanto dos o tres sin lavar.</q>
+        <div class="who"><span><b>Diego R.</b><br>Cabello graso</span><span class="pr"><i style="background:var(--c03)"><img src="assets/p/sh-03.png" alt=""></i>03</span></div></div>
+    </div>
+  </section>
+</div>
+
+<section class="news">
+  <div class="kicker" style="color:var(--muted)">Comunidad your hair</div>
+  <h2 class="title">10% en tu primera barra</h2>
+  <p>Recibe rutinas por tipo de cabello y lanzamientos antes que nadie.</p>
+  <form><span>Tu correo electrónico</span><b>Suscribirme</b></form>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div><span class="logo inv" style="width:72px;height:72px;font-size:19px"><span>your</span><span>hair</span></span><p style="margin-top:20px;font-size:13px;color:rgba(247,240,231,.6);max-width:240px">Shampoo y acondicionador sólido para cada tipo de cabello.</p></div>
+      <div><div class="kicker">Tienda</div><ul><li>Shampoo sólido</li><li>Acondicionador sólido</li><li>Tratamientos</li><li>Accesorios</li></ul></div>
+      <div><div class="kicker">your hair</div><ul><li>Nuestra historia</li><li>Encuentra tu barra</li><li>Mayoreo</li><li>Puntos de venta</li></ul></div>
+      <div><div class="kicker">Ayuda</div><ul><li>Envíos</li><li>Devoluciones</li><li>Preguntas</li><li>Contacto</li></ul></div>
+      <div><div class="kicker">Síguenos</div><ul><li>Instagram</li><li>TikTok</li><li>Facebook</li></ul></div>
+    </div>
+    <div class="f-bot"><span>© 2026 your hair</span><span>Aviso de privacidad · Términos</span></div>
+  </div>
+</footer>
+
+<a class="wa" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.2-.3.2-.6.1a8.2 8.2 0 01-2.4-1.5 9 9 0 01-1.7-2.1c-.2-.3 0-.5.1-.6l.4-.5.3-.5a.5.5 0 000-.5c-.1-.1-.7-1.6-.9-2.2s-.5-.5-.7-.5h-.6a1.1 1.1 0 00-.8.4 3.4 3.4 0 00-1 2.5 5.9 5.9 0 001.2 3.1 13.4 13.4 0 005.2 4.6c.7.3 1.3.5 1.7.6a4.2 4.2 0 001.9.1 3.1 3.1 0 002-1.4 2.5 2.5 0 00.2-1.4c-.1-.2-.3-.3-.6-.4zM12 21.8a9.9 9.9 0 01-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.9 9.9 0 1118.2-5.3A9.9 9.9 0 0112 21.8zm8.4-18.3A11.8 11.8 0 001.8 17.7L.1 24l6.4-1.7a11.8 11.8 0 005.6 1.4A11.8 11.8 0 0020.4 3.5z"/></svg></a>
+
+</body>
+</html>
