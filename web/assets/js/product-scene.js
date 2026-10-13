@@ -40,7 +40,7 @@ onResize();
 // NO aquí.
 // ==========================================================
 const BUCKET_HEIGHT = 1.34;          // alto en unidades de escena (tapa incluida, sin asa)
-const HANDLE_ANGLE_DEG = -15;         // inclinación del asa hacia la cámara: 0 = parada, mayor = más caída (prueba 25–50)
+const HANDLE_ANGLE_DEG = -42;         // inclinación del asa (negativo = hacia atrás); -42 es la pose del diseño del home
 const HANDLE_BASE_OPACITY = 0.9;     // opacidad normal del asa (igual que en el modelo)
 
 const bucket = new THREE.Group();
@@ -55,16 +55,19 @@ const { model: bucketModel, parts: bucketParts, dims: bucketDims } = novaBucket.
 const bodyGroup = new THREE.Group();
 bodyGroup.add(novaBucket);
 
+const BUCKET_PIVOT_Y = 0.7;           // centro de la cubeta: eje de giro del arrastre y del tambaleo
 const tumble = new THREE.Group();
-tumble.position.y = 0.7;
-bodyGroup.position.y = -0.7;
+bodyGroup.position.y = -BUCKET_PIVOT_Y;
 tumble.add(bodyGroup);
 
-// Rotación LIBRE del usuario (mouse/dedo): esta capa intermedia acumula el
-// quaternion del arrastre, así el giro no pelea con el scroll ni el tambaleo
-// y la cubeta puede quedar en CUALQUIER orientación, incluso de cabeza.
+// Rotación del usuario (mouse/dedo), igual que la cámara orbital del editor
+// bucket-preview.html: orden 'XYZ' = primero gira sobre su propio eje (yaw) y
+// después se inclina respecto a la pantalla (pitch). Así arrastrar hacia
+// arriba/abajo siempre muestra la tapa o la base, sin importar el giro previo.
+// El pivote está en el centro de la cubeta para que no "barra" desde la base.
 const dragGroup = new THREE.Group();
-dragGroup.rotation.order = 'YXZ';   // yaw primero, pitch después (mismo feel que el editor)
+dragGroup.rotation.order = 'XYZ';
+dragGroup.position.y = BUCKET_PIVOT_Y;
 dragGroup.add(tumble);
 bucket.add(dragGroup);
 
@@ -86,6 +89,9 @@ const DEBUG_ASA = new URLSearchParams(location.search).has('asa');
 scene.add(bucket);
 const BUCKET_BASE_SCALE = 0.58;
 const BUCKET_HOVER_SCALE = 0.63;
+// En pantallas angostas la cubeta se reduce para caber en el hueco que deja el
+// diseño móvil entre el título y el "+30" (ver fitHeroBucketScale).
+let heroBaseScale = BUCKET_BASE_SCALE;
 const BUCKET_VALUES_SCALE = 0.50;
 bucket.scale.setScalar(BUCKET_BASE_SCALE);
 bucket.position.y = -0.13;
@@ -322,10 +328,19 @@ function handleNear(clientX, clientY) {
   return hit;
 }
 
+// Zona táctil sobre la cubeta: en el teléfono sólo ahí el dedo gira la cubeta
+// (touch-action: none); en el resto del hero el dedo sigue haciendo scroll.
+const bucketTouchEl = document.createElement('div');
+bucketTouchEl.className = 'np-bucket-touch';
+bucketTouchEl.setAttribute('aria-hidden', 'true');
+Object.assign(bucketTouchEl.style, {
+  position: 'absolute', zIndex: '4', touchAction: 'none', pointerEvents: 'auto'
+});
+heroEl?.appendChild(bucketTouchEl);
+
 const bucketDrag = initBucketDrag({
   area: heroEl || document.body,
-  hint: false,
-  hintEl: document.getElementById('bucketHint'),
+  touchArea: bucketTouchEl,
   filter: (e) => {
     if (e.pointerType === 'touch' && !handleNear(e.clientX, e.clientY)) return true;
     if (!handleNear(e.clientX, e.clientY)) return true;
@@ -342,6 +357,10 @@ window.addEventListener('pointermove', (e) => {
   } else if (heroEl && !bucketDrag.dragging && e.pointerType === 'mouse') {
     heroEl.style.cursor = handleNear(e.clientX, e.clientY) ? 'ns-resize' : '';
   }
+});
+// Flechas de la tarjeta "Gira la cubeta": giran 45° con una animación corta.
+document.querySelectorAll('[data-bucket-rotate]').forEach((button) => {
+  button.addEventListener('click', () => bucketDrag.rotateBy(Number(button.dataset.bucketRotate) * Math.PI / 4));
 });
 const releaseHandle = () => { if (handleGrabbed) { handleGrabbed = false; handleIdle = 0; if (heroEl) heroEl.style.cursor = ''; } };
 window.addEventListener('pointerup', releaseHandle);
@@ -379,8 +398,20 @@ function objectPositionRatio(value) {
   return 0.5;
 }
 
+const heroFloorEl = document.querySelector('[data-bucket-floor]');
+
+// En el diseño móvil la cubeta se apoya en el hueco reservado en el HTML
+// (.np-hero-floor), entre el título y el "+30".
+function heroFloorRect() {
+  if (!heroFloorEl) return null;
+  const rect = heroFloorEl.getBoundingClientRect();
+  return rect.height > 0 ? rect : null;
+}
+
 function heroSupportScreenY() {
   if (!heroEl) return null;
+  const floorRect = heroFloorRect();
+  if (floorRect) return floorRect.bottom + window.scrollY;
 
   const heroRect = heroEl.getBoundingClientRect();
   const sourceWidth = heroVideoEl?.videoWidth || HERO_VIDEO_FALLBACK_WIDTH;
@@ -396,54 +427,84 @@ function heroSupportScreenY() {
   return heroDocumentTop + cropOffsetY + renderedHeight * HERO_SUPPORT_SOURCE_Y;
 }
 
-function projectedBucketBottomY() {
-  let bottomY = -Infinity;
+function projectedBucketBounds() {
+  const bounds = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
   bucket.updateWorldMatrix(true, true);
 
   bucket.traverse(part => {
     const positions = part.geometry?.attributes?.position;
-    if (!part.isMesh || !positions) return;
+    if (!part.isMesh || !positions || part === logoMesh || part === logoBackMesh) return;
 
     for (let index = 0; index < positions.count; index += 1) {
       bucketProjectionPoint
         .fromBufferAttribute(positions, index)
         .applyMatrix4(part.matrixWorld)
         .project(camera);
+      const screenX = (bucketProjectionPoint.x + 1) * 0.5 * window.innerWidth;
       const screenY = (1 - bucketProjectionPoint.y) * 0.5 * window.innerHeight;
-      bottomY = Math.max(bottomY, screenY);
+      if (screenX < bounds.left) bounds.left = screenX;
+      if (screenX > bounds.right) bounds.right = screenX;
+      if (screenY < bounds.top) bounds.top = screenY;
+      if (screenY > bounds.bottom) bounds.bottom = screenY;
     }
   });
 
-  return bottomY;
+  return bounds;
 }
 
-function bucketYForScreenSupport(supportY) {
+function projectedBucketBottomY() {
+  return projectedBucketBounds().bottom;
+}
+
+// Pone la cubeta en su pose estable del hero (sin giro del usuario), ejecuta
+// fn y restaura todo. Sirve para medir la silueta sin que el arrastre afecte.
+function withNeutralPose(fn) {
   const savedPosition = bucket.position.clone();
   const savedScale = bucket.scale.x;
   const savedRotationX = tumble.rotation.x;
   const savedRotationZ = tumble.rotation.z;
   const savedDragRot = { x: dragGroup.rotation.x, y: dragGroup.rotation.y };
-
-  // Mide la silueta inferior (con la rotación libre del usuario neutralizada) en la pose estable del hero. Una segunda
-  // medición a +1 unidad obtiene la conversión exacta entre mundo y píxeles.
   bucket.position.set(0, 0, 0);
-  bucket.scale.setScalar(BUCKET_BASE_SCALE);
   tumble.rotation.x = -0.15;
   tumble.rotation.z = 0;
   dragGroup.rotation.set(0, 0, 0);
-  const bottomAtZero = projectedBucketBottomY();
+  try {
+    return fn();
+  } finally {
+    bucket.position.copy(savedPosition);
+    bucket.scale.setScalar(savedScale);
+    tumble.rotation.x = savedRotationX;
+    tumble.rotation.z = savedRotationZ;
+    dragGroup.rotation.x = savedDragRot.x;
+    dragGroup.rotation.y = savedDragRot.y;
+    bucket.updateWorldMatrix(true, true);
+  }
+}
 
-  bucket.position.y = 1;
-  const bottomAtOne = projectedBucketBottomY();
-  const pixelsPerWorldUnit = bottomAtOne - bottomAtZero;
+// En el diseño móvil la cubeta debe caber en .np-hero-floor (alto) y no pasar
+// del 62 % del ancho de la pantalla; en escritorio conserva su escala original.
+function fitHeroBucketScale() {
+  const floorRect = heroFloorRect();
+  if (!floorRect) return BUCKET_BASE_SCALE;
+  const size = withNeutralPose(() => {
+    bucket.scale.setScalar(BUCKET_BASE_SCALE);
+    const b = projectedBucketBounds();
+    return { width: b.right - b.left, height: b.bottom - b.top };
+  });
+  if (!(size.width > 0 && size.height > 0)) return BUCKET_BASE_SCALE;
+  const fit = Math.min(1, (floorRect.height * 0.94) / size.height, (window.innerWidth * 0.62) / size.width);
+  return BUCKET_BASE_SCALE * fit;
+}
 
-  bucket.position.copy(savedPosition);
-  bucket.scale.setScalar(savedScale);
-  tumble.rotation.x = savedRotationX;
-  tumble.rotation.z = savedRotationZ;
-  dragGroup.rotation.x = savedDragRot.x;
-  dragGroup.rotation.y = savedDragRot.y;
-  bucket.updateWorldMatrix(true, true);
+function bucketYForScreenSupport(supportY) {
+  // Mide la silueta inferior (con la rotación libre del usuario neutralizada) en la pose estable del hero. Una segunda
+  // medición a +1 unidad obtiene la conversión exacta entre mundo y píxeles.
+  const { bottomAtZero, pixelsPerWorldUnit } = withNeutralPose(() => {
+    bucket.scale.setScalar(heroBaseScale);
+    const atZero = projectedBucketBottomY();
+    bucket.position.y = 1;
+    return { bottomAtZero: atZero, pixelsPerWorldUnit: projectedBucketBottomY() - atZero };
+  });
 
   if (!Number.isFinite(bottomAtZero) || Math.abs(pixelsPerWorldUnit) < 0.001) {
     return heroBucketY;
@@ -452,7 +513,31 @@ function bucketYForScreenSupport(supportY) {
   return (supportY - bottomAtZero) / pixelsPerWorldUnit;
 }
 
+// Coloca la zona táctil sobre la silueta de la cubeta (relativa al hero, así
+// se desplaza con él al hacer scroll).
+function updateBucketTouchArea() {
+  if (!heroEl) return;
+  const bounds = withNeutralPose(() => {
+    bucket.scale.setScalar(heroBaseScale);
+    bucket.position.y = heroBucketY;
+    return projectedBucketBounds();
+  });
+  if (!Number.isFinite(bounds.top)) return;
+  const heroRect = heroEl.getBoundingClientRect();
+  const heroTop = heroRect.top + window.scrollY;      // posición del hero con scroll en 0
+  const pad = 12;
+  Object.assign(bucketTouchEl.style, {
+    left: `${Math.round(bounds.left - heroRect.left - pad)}px`,
+    top: `${Math.round(bounds.top - heroTop - pad)}px`,
+    width: `${Math.round(bounds.right - bounds.left + pad * 2)}px`,
+    height: `${Math.round(bounds.bottom - bounds.top + pad * 2)}px`
+  });
+}
+
 function updateHeroBucketAnchor() {
+  heroBaseScale = fitHeroBucketScale();
+  if (!heroAnchorInitialized) bucket.scale.setScalar(heroBaseScale);
+
   const supportY = heroSupportScreenY();
   if (!Number.isFinite(supportY)) return;
 
@@ -465,6 +550,7 @@ function updateHeroBucketAnchor() {
     contactShadow.position.y = 0.001 + heroBucketY;
     heroAnchorInitialized = true;
   }
+  updateBucketTouchArea();
 }
 
 window.addEventListener('resize', updateHeroBucketAnchor, { passive: true });
@@ -523,10 +609,17 @@ connectorDots.forEach((dot) => {
   });
 });
 
+// La cubeta del hero ya no se desvanece al bajar: sube junto con el hero
+// (el canvas se desplaza con el scroll) y el panel de Experiencia la cubre.
+function heroPresence() {
+  if (!heroEl) return 0;
+  return heroEl.getBoundingClientRect().bottom > 0 ? 1 : 0;
+}
+
 function updateBucketVisibility() {
   const valoresV = window.sectionPanelState?.valores ?? valoresProgress(valoresEl);
   const brandValuesV = window.brandValuesState?.focus ?? sectionFocus(brandValuesEl);
-  const visibility = Math.max(sectionFocus(heroEl), brandValuesV);
+  const visibility = Math.max(heroPresence(), brandValuesV);
   canvas.style.opacity = visibility.toFixed(3);
 
   // Las secciones institucionales comparten el fondo claro detrás de la cubeta.
@@ -583,7 +676,7 @@ renderer.setAnimationLoop(() => {
   const valuesScale = compactValuesLayout ? 0.42 : BUCKET_VALUES_SCALE;
   const targetBucketScale = inBrandValues
     ? valuesScale
-    : (hoverStrength ? BUCKET_HOVER_SCALE : BUCKET_BASE_SCALE);
+    : heroBaseScale * (hoverStrength ? BUCKET_HOVER_SCALE / BUCKET_BASE_SCALE : 1);
   const nextBucketScale = bucket.scale.x + (targetBucketScale - bucket.scale.x) * 0.08;
   bucket.scale.setScalar(nextBucketScale);
 
@@ -603,7 +696,7 @@ renderer.setAnimationLoop(() => {
 
   // El asa conserva siempre su tamaño real y aparece en el hero y Valores.
   // El fundido evita que la geometría atraviese la cubeta entre secciones.
-  const heroFocus = DEBUG_ASA ? 1 : sectionFocus(heroEl);
+  const heroFocus = DEBUG_ASA ? 1 : heroPresence();
   const targetHandleOpacity = Math.max(heroFocus, brandValuesFocus);
   handleOpacity += (targetHandleOpacity - handleOpacity) * 0.08;
   handleMaterials.forEach((material) => { material.opacity = HANDLE_BASE_OPACITY * handleOpacity; });

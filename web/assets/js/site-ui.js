@@ -1,9 +1,8 @@
-/* site-ui.js — menú que funciona (clic + sticky + móvil) y línea izquierda del hero. */
+/* site-ui.js — menú flotante: clic a secciones, estado activo, submenú de Nosotros y menú móvil. */
 (function () {
-  const header = document.querySelector('.site-nav');
-  const hero = document.querySelector('.hero');
+  const header = document.getElementById('siteNav');
   const toggle = document.getElementById('navToggle');
-  const links = Array.from(document.querySelectorAll('.nav-links a'));
+  const desktopLinks = Array.from(document.querySelectorAll('.np-nav-links > li'));
 
   /* ---- navegación por clic (no depende de los anclas nativos, que fallan con paneles sticky) ---- */
   function goTo(hash) {
@@ -19,9 +18,9 @@
     return true;
   }
   document.addEventListener('click', (e) => {
-    const a = e.target.closest && e.target.closest('.site-nav a[href^="#"], .mobile-nav a[href^="#"]');
+    const a = e.target.closest && e.target.closest('.np-nav a[href^="#"], .np-mobile-nav a[href^="#"], .np-hero a[href^="#"]');
     if (!a) return;
-    if (goTo(a.getAttribute('href'))) { e.preventDefault(); closeMenu(); }
+    if (goTo(a.getAttribute('href'))) { e.preventDefault(); closeMenu(); a.blur(); }
   });
 
   // Si se abre la página con un #ancla (o se usa atrás/adelante), también se entra dentro del panel
@@ -29,23 +28,27 @@
   window.addEventListener('load', () => setTimeout(jumpToHash, 60));
   window.addEventListener('hashchange', jumpToHash);
 
-  /* ---- menú sticky: se fija arriba y toma fondo al bajar ---- */
-  function onScroll() {
-    if (header) header.classList.toggle('is-stuck', window.scrollY > 40);
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-
-  /* ---- menú móvil ---- */
+  /* ---- menú móvil (mismo contenido que el de escritorio, con el submenú desplegado) ---- */
   const mobile = document.createElement('nav');
-  mobile.className = 'mobile-nav';
+  mobile.className = 'np-mobile-nav';
   mobile.id = 'mobileNav';
   mobile.setAttribute('aria-label', 'Navegación principal');
-  mobile.innerHTML = links.map(a => `<a href="${a.getAttribute('href')}">${a.textContent}</a>`).join('');
+  const linkHtml = (a) => `<a href="${a.getAttribute('href')}" data-nav-section="${a.dataset.navSection || ''}">${a.firstChild.textContent.trim()}</a>`;
+  mobile.innerHTML = desktopLinks.map((li) => {
+    const sub = li.querySelectorAll('.np-nav-sub a');
+    const main = li.querySelector(':scope > a');
+    if (!sub.length) return linkHtml(main);
+    return `${linkHtml(main)}<div class="np-mobile-sub">${Array.from(sub).map(linkHtml).join('')}</div>`;
+  }).join('') + '<a class="np-mobile-cta" href="#contacto" data-nav-section="contacto">Contacto <span aria-hidden="true">↗</span></a>';
   document.body.appendChild(mobile);
+
   function closeMenu() {
     mobile.classList.remove('is-open');
-    if (toggle) { toggle.setAttribute('aria-expanded', 'false'); toggle.classList.remove('is-open'); }
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Abrir menú');
+      toggle.classList.remove('is-open');
+    }
   }
   if (toggle) {
     toggle.addEventListener('click', () => {
@@ -53,23 +56,62 @@
       mobile.classList.toggle('is-open', open);
       toggle.classList.toggle('is-open', open);
       toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
     });
   }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
   window.addEventListener('resize', () => { if (window.innerWidth >= 992) closeMenu(); });
 
-  /* ---- hero: una sola línea blanca a la izquierda, del inicio del texto al punto ---- */
-  const certLabel = document.querySelector('.callout-certs .label');
-  const leftLine = document.querySelector('.connectors line');
-  function fitHeroLine() {
-    if (!hero || !certLabel || !leftLine) return;
-    const h = hero.getBoundingClientRect();
-    const l = certLabel.getBoundingClientRect();
-    if (!h.width || !l.width) return;
-    leftLine.setAttribute('x1', (((l.left - h.left) / h.width) * 100).toFixed(2));
+  /* ---- submenú en pantallas táctiles: el primer toque abre, el segundo navega ---- */
+  document.querySelectorAll('.np-nav-has-sub > a').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const li = a.parentElement;
+      if (window.matchMedia('(hover: none)').matches && !li.classList.contains('is-open')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        li.classList.add('is-open');
+      }
+    }, true);
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.np-nav-has-sub')) {
+      document.querySelectorAll('.np-nav-has-sub.is-open').forEach((li) => li.classList.remove('is-open'));
+    }
+  });
+
+  /* ---- estado activo: recuadro blanco en la sección visible ---- */
+  const navItems = Array.from(document.querySelectorAll('[data-nav-section]'));
+  const sectionIds = ['experiencia', 'valores', 'brandValues', 'recognitions', 'coverage', 'catalogo', 'materiaPrima', 'clientes', 'contacto'];
+  const sections = sectionIds.map((id) => document.getElementById(id)).filter(Boolean);
+  let current = null;
+
+  function activeSection() {
+    // La sección activa es la que ocupa la línea a 40 % del alto de la ventana.
+    const probe = window.innerHeight * 0.4;
+    let found = null;
+    for (const section of sections) {
+      const r = section.getBoundingClientRect();
+      if (r.top <= probe && r.bottom > probe) found = section.id;
+    }
+    return found;
   }
-  window.addEventListener('resize', fitHeroLine, { passive: true });
-  window.addEventListener('load', fitHeroLine);
-  window.addEventListener('novaplastica:hero-first-frame', fitHeroLine);
-  if ('ResizeObserver' in window && hero) new ResizeObserver(fitHeroLine).observe(hero);
-  fitHeroLine();
+
+  function onScroll() {
+    if (header) header.classList.toggle('is-stuck', window.scrollY > 40);
+    const id = activeSection();
+    if (id === current) return;
+    current = id;
+    navItems.forEach((el) => {
+      const ids = (el.dataset.navSection || '').split(/\s+/);
+      el.classList.toggle('is-active', !!id && ids.includes(id));
+      if (el.classList.contains('is-active')) el.setAttribute('aria-current', 'true');
+      else el.removeAttribute('aria-current');
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  onScroll();
+
+  const year = document.getElementById('footerYear');
+  if (year) year.textContent = String(new Date().getFullYear());
 })();

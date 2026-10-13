@@ -135,6 +135,8 @@ if (section && mapWrap && canvas) {
     let currentCenterY = 23.5;
     let scrollQueued = false;
 
+    const INTERNATIONAL_VIEW = { height: 58, x: -89, y: 26.5 };
+
     function normalizeLongitude(longitude) {
       return longitude > 20 ? longitude - 360 : longitude;
     }
@@ -426,9 +428,11 @@ if (section && mapWrap && canvas) {
         ? (mapProgress >= 0.5 ? 1 : 0)
         : smoothstep(0.46, 0.72, mapProgress);
 
-      currentViewHeight = THREE.MathUtils.lerp(36, 147, zoomProgress);
-      currentCenterX = THREE.MathUtils.lerp(-102, -94, zoomProgress);
-      currentCenterY = THREE.MathUtils.lerp(23.5, 16, zoomProgress);
+      // La vista internacional encuadra sólo los mercados reales (EE. UU., México,
+      // el Caribe y Guyana) para que las islas se lean y los puntos caigan sobre tierra.
+      currentViewHeight = THREE.MathUtils.lerp(36, INTERNATIONAL_VIEW.height, zoomProgress);
+      currentCenterX = THREE.MathUtils.lerp(-102, INTERNATIONAL_VIEW.x, zoomProgress);
+      currentCenterY = THREE.MathUtils.lerp(23.5, INTERNATIONAL_VIEW.y, zoomProgress);
 
       const countryOpacity = smoothstep(0.22, 0.54, mapProgress);
       const stateOpacity = 1 - smoothstep(0.5, 0.74, mapProgress);
@@ -547,12 +551,13 @@ if (section && mapWrap && canvas) {
       });
 
       [
-        { longitude: -70.5, latitude: 18.9, name: 'República Dominicana' },
-        { longitude: -77.3, latitude: 18.1, name: 'Jamaica' },
-        { longitude: -59.55, latitude: 13.2, name: 'Barbados' },
-        { longitude: -61.67, latitude: 12.1, name: 'Granada' },
-        { longitude: -58.9, latitude: 4.8, name: 'Guyana' },
-        { longitude: -61.2, latitude: 10.5, name: 'Trinidad y Tobago' }
+        // Coordenadas sobre tierra firme de cada país (centro de la isla principal).
+        { longitude: -70.45, latitude: 18.85, name: 'República Dominicana' },
+        { longitude: -77.32, latitude: 18.14, name: 'Jamaica' },
+        { longitude: -59.56, latitude: 13.17, name: 'Barbados' },
+        { longitude: -61.68, latitude: 12.12, name: 'Granada' },
+        { longitude: -58.95, latitude: 5.2, name: 'Guyana' },
+        { longitude: -61.27, latitude: 10.44, name: 'Trinidad y Tobago' }
       ].forEach(marker => createMarker({
         ...marker,
         status: 'Presencia directa con clientes y distribución',

@@ -1,0 +1,28 @@
+/* Páginas legales: Aviso de privacidad y Términos y condiciones */
+:root { --ink: #1c2b45; --soft: #5d6b80; --crimson: #8d1c33; --line: rgba(28,43,69,0.12); }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #f2f1ef; color: var(--ink); font-family: "Inter", "Montserrat", system-ui, sans-serif; }
+body { padding: 18px; }
+.legal-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 920px; margin: 0 auto; padding: 14px 18px;
+  border: 1px solid rgba(255,255,255,0.8); border-radius: 14px; background: rgba(255,255,255,0.7);
+}
+.legal-top img { display: block; width: 92px; height: auto; }
+.legal-top a.back {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 16px; border-radius: 10px;
+  color: #fff; background: #16233b; font-size: 11.5px; font-weight: 600; letter-spacing: 0.18em;
+  text-decoration: none; text-transform: uppercase;
+}
+main { max-width: 920px; margin: 0 auto; padding: 56px 18px 80px; }
+.legal-index { display: inline-flex; align-items: center; gap: 14px; color: #6c7789; font: 12px "JetBrains Mono", ui-monospace, monospace; }
+.legal-index::after { content: ""; width: 28px; height: 1px; background: currentColor; }
+h1 { margin: 18px 0 8px; font-size: clamp(32px, 5vw, 52px); font-weight: 450; line-height: 1.06; letter-spacing: -0.035em; }
+h1 em { color: var(--crimson); font-style: normal; }
+.legal-updated { margin: 0 0 40px; color: var(--soft); font-size: 13px; }
+h2 { margin: 40px 0 12px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+p, li { color: #3d475a; font-size: 15px; line-height: 1.75; }
+ul { padding-left: 20px; }
+a { color: var(--crimson); }
+.fill { padding: 0 4px; border-radius: 4px; background: #fff1c2; color: #6b4a00; font-weight: 600; }
+.legal-note { margin-top: 48px; padding: 16px 18px; border-radius: 12px; background: #fff; color: var(--soft); font-size: 13px; }

@@ -67,5 +67,23 @@
     timer = setInterval(() => show(index + 1), 4500);
   };
   dots.forEach((dot) => dot.addEventListener('click', () => { show(Number(dot.dataset.i)); restart(); }));
+
+  // Flechas y deslizamiento con el dedo sobre la imagen.
+  const prev = document.getElementById('expPrev');
+  const next = document.getElementById('expNext');
+  if (prev) prev.addEventListener('click', () => { show(index - 1); restart(); });
+  if (next) next.addEventListener('click', () => { show(index + 1); restart(); });
+  const frame = img.closest('.exp-card-image');
+  if (frame) {
+    let startX = null;
+    frame.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') startX = e.clientX; });
+    frame.addEventListener('pointerup', (e) => {
+      if (startX === null) return;
+      const dx = e.clientX - startX;
+      startX = null;
+      if (Math.abs(dx) > 40) { show(index + (dx < 0 ? 1 : -1)); restart(); }
+    });
+    frame.addEventListener('pointercancel', () => { startX = null; });
+  }
   restart();
 })();
