@@ -1,0 +1,458 @@
+<title>Carrusel de Productos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: panel de la sección 07 a pantalla completa. Escenario 3D al centro con
+     las cubetas vecinas asomándose en cápsulas laterales; abajo nombre del
+     producto, paginación y ficha con pestañas. Mismo lenguaje que el resto del sitio. */
+  :root {
+    --paper: #f2f1ef;
+    --capsule: #e3e2df;
+    --ink: #101216;
+    --ink-soft: #5c5e64;
+    --line: rgba(16,18,22,0.14);
+    --maroon: #6f2339;
+    --gold: #b58b47;
+    --card: rgba(255,255,255,0.82);
+    --display: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--display); }
+
+  .proto-note {
+    display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+    padding: 10px 16px; background: var(--ink); color: #eef1f6;
+    font-size: 12px; line-height: 1.45;
+  }
+  .proto-note b { color: #fff; font-weight: 600; }
+
+  .catalog {
+    position: relative;
+    min-height: max(720px, calc(100vh - 40px));
+    padding: 32px clamp(16px, 3vw, 56px) 28px;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 18px;
+    overflow: hidden;
+  }
+
+  /* encabezado de sección, igual al resto del sitio */
+  .eyebrow { display: flex; align-items: center; gap: 18px; }
+  .eyebrow-num {
+    width: 40px; height: 40px; flex: none; display: grid; place-items: center;
+    border: 1px solid rgba(16,18,22,0.35); border-radius: 50%;
+    font-size: 13px; font-weight: 600;
+  }
+  .eyebrow-line { flex: 1; height: 1px; background: var(--line); }
+  .eyebrow-label { color: #6b6f76; font-size: 13px; font-weight: 600; letter-spacing: 2px; }
+
+  .heading {
+    display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px;
+  }
+  .kicker { display: block; margin-bottom: 8px; color: var(--maroon); font-size: 11px; font-weight: 700; letter-spacing: 1.6px; }
+  .heading h2 { margin: 0; font-size: clamp(28px, 3vw, 42px); font-weight: 300; letter-spacing: -0.5px; line-height: 1; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tab {
+    padding: 10px 18px; border: 1px solid rgba(16,18,22,0.2); border-radius: 999px;
+    background: rgba(255,255,255,0.4); color: #45474c;
+    font: 600 11px/1 var(--display); letter-spacing: 0.4px; cursor: pointer;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .tab:hover, .tab:focus-visible { border-color: var(--maroon); outline: none; }
+  .tab[aria-selected="true"] { background: var(--maroon); border-color: var(--maroon); color: #fff; }
+
+  /* escenario */
+  .stage { position: relative; min-height: 380px; }
+  .capsule {
+    position: absolute; top: 18%; bottom: 18%; width: 27%;
+    display: flex; align-items: center; gap: 18px;
+    background: var(--capsule); border: 0; padding: 0 26px; cursor: pointer;
+    color: var(--ink); font: 500 13px var(--display);
+    transition: background .25s;
+  }
+  .capsule:hover, .capsule:focus-visible { background: #dad8d4; outline: none; }
+  .capsule-prev { left: calc(-1 * clamp(16px, 3vw, 56px)); border-radius: 0 999px 999px 0; padding-left: clamp(24px, 4vw, 64px); }
+  .capsule-next { right: calc(-1 * clamp(16px, 3vw, 56px)); border-radius: 999px 0 0 999px; justify-content: flex-end; padding-right: clamp(24px, 4vw, 64px); }
+  .capsule svg { width: 12px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .capsule-label { display: flex; flex-direction: column; gap: 4px; }
+  .capsule-label small { color: var(--ink-soft); font: 400 10.5px var(--mono); letter-spacing: 1px; text-transform: uppercase; }
+  .capsule-next .capsule-label { text-align: right; }
+  .stage-guide {
+    position: absolute; inset: 0 30%; pointer-events: none;
+    border-left: 1px solid rgba(16,18,22,0.07); border-right: 1px solid rgba(16,18,22,0.07);
+  }
+  #stageCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+  /* sólo el centro gira la cubeta; las cápsulas laterales siguen siendo botones */
+  .drag-zone { position: absolute; inset: 0 29%; touch-action: none; cursor: grab; }
+  .drag-zone.is-dragging { cursor: grabbing; }
+  @media (max-width: 900px) { .drag-zone { inset: 0 23%; } }
+  .drag-hint {
+    position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+    color: var(--ink-soft); font: 400 10.5px var(--mono); letter-spacing: 1.4px; text-transform: uppercase;
+    pointer-events: none; white-space: nowrap;
+  }
+
+  /* pie: nombre, paginación y ficha */
+  .footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.05fr);
+    align-items: end; gap: 24px 40px;
+  }
+  .name { margin: 0; font-size: clamp(34px, 4.2vw, 64px); line-height: 0.98; letter-spacing: -1px; text-transform: uppercase; text-wrap: balance; }
+  .name span { display: block; font-weight: 300; }
+  .name strong { display: block; font-weight: 700; }
+  .name-meta { margin: 12px 0 0; color: var(--ink-soft); font-size: 12px; }
+
+  .pager { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; font: 500 12px var(--mono); }
+  .pager button {
+    display: flex; align-items: center; gap: 10px; padding: 6px 2px; border: 0; background: none;
+    color: #9a9ca1; font: inherit; cursor: pointer;
+  }
+  .pager button:hover, .pager button:focus-visible { color: var(--ink); outline: none; }
+  .pager button[aria-current="true"] { color: var(--ink); }
+  .pager button[aria-current="true"]::after {
+    content: ""; width: 96px; height: 1.5px; background: var(--ink);
+    transform-origin: left; animation: grow .5s ease;
+  }
+  @keyframes grow { from { transform: scaleX(0); } }
+
+  .sheet {
+    background: var(--card); border: 1px solid rgba(16,18,22,0.08); border-radius: 18px;
+    box-shadow: 0 15px 42px rgba(31,25,27,0.06); padding: 16px 18px 18px; min-width: 0;
+  }
+  .sheet-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  .sheet-tab {
+    padding: 8px 10px 10px; border: 0; background: none; color: #85878b; cursor: pointer;
+    font: 700 10.5px var(--display); letter-spacing: .7px; text-transform: uppercase;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .sheet-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--maroon); }
+  .sheet-tab:focus-visible { outline: 2px solid var(--maroon); outline-offset: 2px; }
+  .sheet dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; margin: 0; }
+  .sheet dl div { padding-top: 8px; border-top: 2px solid rgba(111,35,57,0.7); min-width: 0; }
+  .sheet dt { margin: 0 0 4px; color: #292b30; font-size: 10px; font-weight: 700; letter-spacing: .45px; text-transform: uppercase; }
+  .sheet dd { margin: 0; color: #55585f; font-size: 12.5px; line-height: 1.45; }
+  .sheet p { margin: 0; color: #55585f; font-size: 12.5px; line-height: 1.6; }
+  .sheet .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .sheet .chips span { padding: 6px 10px; border-radius: 999px; background: rgba(111,35,57,0.075); color: var(--maroon); font-size: 10.5px; font-weight: 700; }
+  .sheet-flag { display: inline-block; margin-top: 12px; color: var(--gold); font: 500 10px var(--mono); letter-spacing: .8px; text-transform: uppercase; }
+
+  .empty { display: grid; place-items: center; text-align: center; color: var(--ink-soft); font-size: 13px; line-height: 1.6; }
+
+  @media (max-width: 900px) {
+    .footer { grid-template-columns: 1fr; gap: 18px; }
+    .pager { order: -1; padding-bottom: 0; }
+    .pager button[aria-current="true"]::after { width: 40px; }
+    .capsule { width: 22%; top: 30%; bottom: 30%; padding: 0 12px; }
+    .capsule-label { display: none; }
+    .capsule-prev { padding-left: 24px; }
+    .capsule-next { padding-right: 24px; }
+    .stage-guide { display: none; }
+  }
+  @media (max-width: 520px) {
+    .stage { min-height: 320px; }
+    .sheet dl { grid-template-columns: 1fr; }
+    .tab { padding: 9px 12px; font-size: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pager button[aria-current="true"]::after { animation: none; }
+  }
+</style>
+
+<div class="proto-note">
+  <b>Prototipo de la sección 07 · Productos</b>
+  <span>Arrastra la cubeta para girarla · usa ‹ › o los números · cambia de pestaña. Todas usan la misma cubeta 3D por ahora; los envases van sin asa. Las fichas marcadas como ejemplo se llenan con los datos reales.</span>
+</div>
+
+<section class="catalog" aria-labelledby="catalogTitle">
+  <div class="eyebrow">
+    <span class="eyebrow-num">07</span>
+    <span class="eyebrow-line"></span>
+    <span class="eyebrow-label">PRODUCTOS</span>
+  </div>
+
+  <header class="heading">
+    <div>
+      <span class="kicker" id="catalogKicker">PRODUCTOS GRADO ALIMENTICIO</span>
+      <h2 id="catalogTitle">PRODUCTOS</h2>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Categorías">
+      <button class="tab" id="tab-0" role="tab" aria-selected="true" data-cat="0">Grado alimenticio</button>
+      <button class="tab" id="tab-1" role="tab" aria-selected="false" data-cat="1">Grado industrial</button>
+      <button class="tab" id="tab-2" role="tab" aria-selected="false" data-cat="2">Otros productos y servicios</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <span class="stage-guide" aria-hidden="true"></span>
+    <button class="capsule capsule-prev" id="prevBtn" type="button" aria-label="Producto anterior">
+      <svg viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8"/></svg>
+      <span class="capsule-label"><small>Anterior</small><span id="prevName"></span></span>
+    </button>
+    <button class="capsule capsule-next" id="nextBtn" type="button" aria-label="Producto siguiente">
+      <span class="capsule-label"><small>Siguiente</small><span id="nextName"></span></span>
+      <svg viewBox="0 0 12 20" aria-hidden="true"><path d="M2 2l8 8-8 8"/></svg>
+    </button>
+    <canvas id="stageCanvas" aria-hidden="true"></canvas>
+    <div class="drag-zone" id="dragZone" role="img" aria-label="Modelo 3D del producto seleccionado. Arrastra para girarlo."></div>
+    <span class="drag-hint">Arrastra para girar</span>
+  </div>
+
+  <div class="footer">
+    <div>
+      <h3 class="name" id="productName"><span>Cubeta de</span><strong>19 lts.</strong></h3>
+      <p class="name-meta" id="productMeta">Con asa y tapa con banda de seguridad</p>
+    </div>
+    <nav class="pager" id="pager" aria-label="Productos"></nav>
+    <div class="sheet" id="sheet">
+      <div class="sheet-tabs" role="tablist" aria-label="Información del producto">
+        <button class="sheet-tab" role="tab" aria-selected="true" data-sheet="specs">Especificaciones</button>
+        <button class="sheet-tab" role="tab" aria-selected="false" data-sheet="uses">Aplicaciones</button>
+        <button class="sheet-tab" role="tab" aria-selected="false" data-sheet="material">Material</button>
+      </div>
+      <div id="sheetBody" role="tabpanel"></div>
+    </div>
+  </div>
+</section>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createBucket } from './bucket-model.js';
+
+/* ---------- contenido ----------
+   Capacidades tomadas del catálogo impreso (07. Productos grado alimenticio).
+   Los campos marcados con example:true son de ejemplo y se reemplazan con la ficha técnica. */
+const FOOD = 'Cumplen FDA 21 CFR 177.1520 y las directivas europeas 2002/72/EC, 85/572/EC y 97/48/EC para contacto con alimentos.';
+const CATEGORIES = [
+  {
+    kicker: 'PRODUCTOS GRADO ALIMENTICIO',
+    items: [
+      { kind: 'Cubeta de', size: '19 lts.', handle: true, scale: 1.0 },
+      { kind: 'Cubeta de', size: '5 lts.', handle: true, scale: 0.92 },
+      { kind: 'Cubeta de', size: '4 lts.', handle: true, scale: 0.88 },
+      { kind: 'Envase de', size: '1 lt.', handle: false, scale: 0.82 },
+      { kind: 'Envase de', size: '500 ml.', handle: false, scale: 0.76 },
+      { kind: 'Envase de', size: '380 grs.', handle: false, scale: 0.72 },
+      { kind: 'Envase de', size: '250 ml.', handle: false, scale: 0.68 }
+    ]
+  },
+  { kicker: 'PRODUCTOS GRADO INDUSTRIAL', items: [] },
+  { kicker: 'OTROS PRODUCTOS Y SERVICIOS', items: [] }
+];
+
+function sheetFor(item, tab) {
+  if (tab === 'specs') {
+    return `<dl>
+      <div><dt>Capacidad</dt><dd>${item.size.replace(/\.$/, '')}</dd></div>
+      <div><dt>Tapa</dt><dd>${item.handle ? 'Con banda de seguridad' : 'A presión'}</dd></div>
+      <div><dt>Asa</dt><dd>${item.handle ? 'Plástica, abatible' : 'Sin asa'}</dd></div>
+      <div><dt>Colores</dt><dd>Natural, blanco o a color con master batch</dd></div>
+    </dl><span class="sheet-flag">Ficha de ejemplo · se reemplaza con la técnica</span>`;
+  }
+  if (tab === 'uses') {
+    return `<p>Envasado, almacenamiento y transporte de alimentos. Lo usan marcas de lácteos, chocolates e ingredientes.</p>
+      <div class="chips"><span>Lácteos</span><span>Chocolates</span><span>Ingredientes</span><span>Impresión de marca</span></div>`;
+  }
+  return `<p>${FOOD}</p><div class="chips"><span>PE-HD</span><span>PP</span><span>FSSC 22000</span><span>ISO 9001</span></div>`;
+}
+
+/* ---------- interfaz ---------- */
+const $ = (id) => document.getElementById(id);
+let cat = 0, index = 0, sheetTab = 'specs';
+
+function label(item) { return item ? `${item.kind} ${item.size}` : ''; }
+
+function renderUI() {
+  const items = CATEGORIES[cat].items;
+  $('catalogKicker').textContent = CATEGORIES[cat].kicker;
+  document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(Number(t.dataset.cat) === cat)));
+  const has = items.length > 0;
+  $('prevBtn').hidden = $('nextBtn').hidden = !has || items.length < 2;
+  $('sheet').hidden = !has;
+  if (!has) {
+    $('productName').innerHTML = '<span>Contenido</span><strong>por definir</strong>';
+    $('productMeta').textContent = 'Esta pestaña usará el mismo carrusel con los productos de la categoría.';
+    $('pager').innerHTML = '';
+    return;
+  }
+  const item = items[index];
+  $('productName').innerHTML = `<span>${item.kind}</span><strong>${item.size}</strong>`;
+  $('productMeta').textContent = item.handle ? 'Con asa y tapa con banda de seguridad' : 'Envase con tapa';
+  $('prevName').textContent = label(items[(index - 1 + items.length) % items.length]);
+  $('nextName').textContent = label(items[(index + 1) % items.length]);
+  $('pager').innerHTML = items.map((it, i) =>
+    `<button type="button" data-i="${i}" aria-label="${label(it)}"${i === index ? ' aria-current="true"' : ''}>${String(i + 1).padStart(2, '0')}</button>`
+  ).join('');
+  document.querySelectorAll('.sheet-tab').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.sheet === sheetTab)));
+  $('sheetBody').innerHTML = sheetFor(item, sheetTab);
+}
+
+function go(delta) {
+  const n = CATEGORIES[cat].items.length;
+  if (!n) return;
+  index = (index + delta + n) % n;
+  direction = Math.sign(delta) || 1;
+  renderUI();
+  layoutBuckets(false);
+}
+
+$('prevBtn').addEventListener('click', () => go(-1));
+$('nextBtn').addEventListener('click', () => go(1));
+$('pager').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const i = Number(b.dataset.i); go(i - index);
+});
+document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+  cat = Number(t.dataset.cat); index = 0; renderUI(); buildBuckets();
+}));
+document.querySelectorAll('.sheet-tab').forEach((t) => t.addEventListener('click', () => { sheetTab = t.dataset.sheet; renderUI(); }));
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea')) return;
+  if (e.key === 'ArrowRight') go(1);
+  if (e.key === 'ArrowLeft') go(-1);
+});
+
+/* ---------- escena 3D ---------- */
+const stage = $('stage');
+const canvas = $('stageCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.VSMShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+camera.position.set(0, 1.1, 6.2);
+camera.lookAt(0, 0.62, 0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
+key.position.set(2.5, 4, 3); key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024); key.shadow.radius = 18; key.shadow.blurSamples = 10;
+Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 });
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-3, 1.5, 2); scene.add(fill);
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), new THREE.ShadowMaterial({ opacity: 0.12 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+let buckets = [];
+let direction = 1;
+const BUCKET_H = 1.35;
+
+function buildBuckets() {
+  buckets.forEach((b) => { scene.remove(b.root); b.root.traverse((o) => { o.geometry?.dispose(); }); });
+  buckets = CATEGORIES[cat].items.map((item) => {
+    const model = createBucket({ height: BUCKET_H, origin: 'bottom', withHandle: item.handle, handleAngle: -0.55 });
+    const spin = new THREE.Group(); spin.add(model);
+    const root = new THREE.Group(); root.add(spin);
+    root.visible = false;
+    scene.add(root);
+    return { root, spin, item, pos: new THREE.Vector3(), scale: 0, yaw: 0, pitch: 0 };
+  });
+  layoutBuckets(true);
+}
+
+// Posición en el mundo para un punto horizontal del escenario (0 = izquierda, 1 = derecha)
+function worldX(fraction) {
+  const h = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
+  return (fraction - 0.5) * h * camera.aspect;
+}
+
+let targets = [];
+function layoutBuckets(instant) {
+  const n = buckets.length;
+  const narrow = stage.clientWidth < 900;
+  targets = buckets.map((b, i) => {
+    let k = i - index;
+    if (k > n / 2) k -= n;
+    if (k < -n / 2) k += n;
+    const visible = Math.abs(k) <= 1;
+    const x = k === 0 ? worldX(0.5) : worldX(k < 0 ? (narrow ? 0.02 : 0.12) : (narrow ? 0.98 : 0.88)) ;
+    const offX = worldX(k < 0 ? -0.3 : 1.3);
+    const s = (k === 0 ? (narrow ? 0.95 : 1.3) : (narrow ? 0.38 : 0.46)) * b.item.scale;
+    return { x: visible ? x : offX, s: visible ? s : 0, k };
+  });
+  buckets.forEach((b, i) => {
+    if (instant) { b.pos.x = targets[i].x; b.scale = targets[i].s; }
+    if (targets[i].k !== 0) { b.yawTarget = 0.5; }
+  });
+  const cur = buckets[index];
+  if (cur) { cur.yaw = -direction * 1.1; cur.pitch = 0; }
+}
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  layoutBuckets(true);
+}
+new ResizeObserver(resize).observe(stage);
+
+/* arrastre estilo editor: horizontal gira, vertical inclina (tapa/base) */
+let drag = null;
+const dragZone = $('dragZone');
+dragZone.addEventListener('pointerdown', (e) => {
+  drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  dragZone.setPointerCapture(e.pointerId);
+  dragZone.classList.add('is-dragging');
+  e.preventDefault();
+});
+dragZone.addEventListener('pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const b = buckets[index]; if (!b) return;
+  b.yaw += (e.clientX - drag.x) * 0.008;
+  b.pitch = THREE.MathUtils.clamp(b.pitch + (e.clientY - drag.y) * 0.008, -1.4, 1.4);
+  drag.x = e.clientX; drag.y = e.clientY; b.touched = performance.now();
+});
+const end = () => { drag = null; dragZone.classList.remove('is-dragging'); };
+dragZone.addEventListener('pointerup', end);
+dragZone.addEventListener('pointercancel', end);
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  buckets.forEach((b, i) => {
+    const t = targets[i]; if (!t) return;
+    const ease = reduce ? 1 : 1 - Math.pow(0.0008, dt);
+    b.pos.x += (t.x - b.pos.x) * ease;
+    b.scale += (t.s - b.scale) * ease;
+    b.root.visible = b.scale > 0.01;
+    b.root.position.set(b.pos.x, 0, t.k === 0 ? 0 : -0.6);
+    b.root.scale.setScalar(Math.max(b.scale, 0.0001));
+    if (t.k === 0) {
+      // el producto activo entra girando y luego gira lento si nadie lo toca
+      const idle = !drag && (!b.touched || performance.now() - b.touched > 2500);
+      if (idle && !reduce) b.yaw += dt * 0.35;
+      if (idle) b.pitch += (0 - b.pitch) * (1 - Math.pow(0.05, dt));
+    } else {
+      b.yaw += (0.6 - b.yaw) * (1 - Math.pow(0.05, dt));
+      b.pitch += (0 - b.pitch) * (1 - Math.pow(0.05, dt));
+    }
+    b.spin.position.y = BUCKET_H / 2;
+    b.spin.children[0].position.y = -BUCKET_H / 2;
+    b.spin.rotation.order = 'XYZ';
+    b.spin.rotation.set(b.pitch, b.yaw, 0);
+  });
+  renderer.render(scene, camera);
+});
+
+renderUI();
+buildBuckets();
+resize();
+</script>
