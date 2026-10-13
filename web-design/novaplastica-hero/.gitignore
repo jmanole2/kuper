@@ -1,4 +1,2 @@
-out/desktop.png
-out/mobile.png
-out/dark-desktop.png
-out/dark-mobile.png
+out/*desktop.png
+out/*mobile.png

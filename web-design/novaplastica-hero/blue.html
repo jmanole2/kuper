@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Novaplastica — Inyección de plástico</title>
+<style>
+@font-face{font-family:"Geist";src:url(fonts/geist-sans-latin-200-normal.woff2) format("woff2");font-weight:200}
+@font-face{font-family:"Geist";src:url(fonts/geist-sans-latin-400-normal.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Geist";src:url(fonts/geist-sans-latin-500-normal.woff2) format("woff2");font-weight:500}
+@font-face{font-family:"Geist";src:url(fonts/geist-sans-latin-600-normal.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin-400-normal.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono-latin-500-normal.woff2) format("woff2");font-weight:500}
+
+:root{
+  --wall-1:#B7CCE1; --wall-2:#CFDDEC; --floor:#DCE6F0;
+  --navy:#16263D; --navy-2:#2B3F5C; --muted:#4F6684; --wine:#8C2236;
+  --sans:"Geist","Helvetica Neue",sans-serif; --mono:"Geist Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--wall-2);color:var(--navy);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+
+.hero{position:relative;height:100vh;min-height:820px;overflow:hidden;
+  background:linear-gradient(170deg,var(--wall-1) 0%,var(--wall-2) 55%,#D6E2EE 74%)}
+/* floor */
+.floor{position:absolute;left:0;right:0;bottom:0;height:24%;background:linear-gradient(180deg,#C9D8E7 0,var(--floor) 30%,#E4ECF4 100%)}
+.floor::before{content:"";position:absolute;left:0;right:0;top:-30px;height:60px;background:linear-gradient(180deg,rgba(183,204,225,0),rgba(170,193,217,.55),rgba(220,230,240,0));filter:blur(8px)}
+
+/* sunlight through a window: light panes + mullion shadows */
+.sun{position:absolute;inset:-20%;pointer-events:none;transform:rotate(-24deg);filter:blur(22px)}
+.sun i{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.55) 30%,rgba(255,255,255,.4) 70%,rgba(255,255,255,0))}
+.sun .p1{left:46%;width:9%}
+.sun .p2{left:57%;width:9%}
+.sun .p3{left:68%;width:5%;opacity:.7}
+.sun b{position:absolute;left:30%;right:20%;height:14px;background:rgba(22,38,61,.08)}
+/* leaf shadow */
+.leaves{position:absolute;left:-120px;top:-60px;width:760px;opacity:.16;filter:blur(4px);pointer-events:none}
+.leaves.r{left:auto;right:-160px;top:auto;bottom:120px;width:520px;opacity:.12;transform:scaleX(-1) rotate(20deg)}
+.grain{position:absolute;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+
+/* nav */
+nav{position:absolute;top:22px;left:32px;right:32px;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 10px 10px 22px;border-radius:18px;background:rgba(255,255,255,.55);backdrop-filter:blur(18px) saturate(1.3);
+  border:1px solid rgba(255,255,255,.75);box-shadow:0 20px 40px -26px rgba(22,38,61,.45)}
+nav img{height:38px;display:block}
+nav ul{display:flex;gap:2px;list-style:none}
+nav li{font-size:11.5px;letter-spacing:.13em;font-weight:500;padding:10px 14px;border-radius:10px;color:var(--navy-2)}
+nav li.on{background:rgba(255,255,255,.75);box-shadow:0 1px 0 rgba(22,38,61,.06)}
+nav .cta{display:inline-flex;align-items:center;gap:10px;background:var(--navy);color:#fff;font-size:12px;letter-spacing:.14em;font-weight:600;padding:14px 20px;border-radius:12px}
+nav .cta svg{width:14px;height:14px}
+nav .burger{display:none}
+
+/* headline */
+.head{position:absolute;left:72px;top:50%;transform:translateY(-52%);z-index:4;width:440px}
+.head .idx{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:26px;letter-spacing:.1em}
+.head .idx i{width:28px;height:1px;background:var(--muted)}
+.head h1{font-size:52px;line-height:1.04;font-weight:500;letter-spacing:-.035em;color:var(--navy)}
+.head h1 span{color:var(--wine)}
+.head .rule{margin-top:40px;display:flex;align-items:center;width:260px}
+.head .rule b{flex:1;height:1px;background:linear-gradient(90deg,rgba(22,38,61,.0),rgba(22,38,61,.7))}
+.head .rule i{width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35),0 0 14px rgba(255,255,255,.9)}
+
+/* bucket */
+.stage{position:absolute;left:50%;bottom:13%;width:420px;height:640px;transform:translateX(-50%);z-index:3}
+.cast{position:absolute;left:50%;bottom:0;width:400px;transform-origin:50% 100%;
+  transform:translateX(-50%) translateX(-10px) skewX(58deg) scaleY(.42);filter:brightness(0) blur(12px);opacity:.30}
+.contact{position:absolute;left:50%;bottom:-14px;width:430px;height:40px;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(closest-side,rgba(22,38,61,.45),rgba(22,38,61,0))}
+.bucket{position:absolute;left:50%;bottom:0;width:400px;transform:translateX(-50%)}
+.bucket .body{display:block;width:100%;position:relative;z-index:2}
+.bucket .shade{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:0 0 30px 30px;
+  background:linear-gradient(90deg,rgba(22,38,61,.18),rgba(22,38,61,0) 35%,rgba(255,255,255,0) 60%,rgba(255,255,255,.18) 78%,rgba(22,38,61,.08));
+  -webkit-mask-image:url(assets/cubeta.png);mask-image:url(assets/cubeta.png);-webkit-mask-size:100% 100%;mask-size:100% 100%}
+.bucket .handle,.bucket .ears{position:absolute;left:0;top:-200px;width:400px;height:260px;overflow:visible}
+.bucket .handle{z-index:1}.bucket .ears{z-index:4}
+
+/* stat + hint (right column) */
+.right-col{position:absolute;right:72px;top:50%;transform:translateY(-46%);z-index:4;width:372px}
+.right-col .rule{display:flex;align-items:center;margin-bottom:34px}
+.right-col .rule i{width:9px;height:9px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.35),0 0 14px rgba(255,255,255,.9)}
+.right-col .rule b{flex:1;height:1px;background:linear-gradient(90deg,rgba(22,38,61,.7),rgba(22,38,61,0))}
+.num{display:flex;align-items:flex-start;font-weight:200;font-size:190px;line-height:.8;letter-spacing:-.065em;color:var(--navy)}
+.num sup{font-size:46px;font-weight:400;color:var(--wine);margin:10px 10px 0 0;letter-spacing:0}
+.lbl{margin-top:24px;font-family:var(--mono);font-size:13px;letter-spacing:.24em;font-weight:500;color:var(--navy-2)}
+.hint{margin-top:48px;display:flex;align-items:center;gap:16px;padding:14px 22px 14px 14px;border-radius:18px;
+  background:rgba(255,255,255,.62);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.85);box-shadow:0 24px 40px -26px rgba(22,38,61,.5)}
+.hint .ic{width:52px;height:52px;border-radius:14px;background:var(--navy);display:grid;place-items:center;flex:none}
+.hint .ic svg{width:30px;height:30px}
+.hint b{display:block;font-size:18px;font-weight:500}
+.hint span{font-size:13px;color:var(--muted)}
+.hint .drag{margin-left:auto;display:flex;gap:4px;color:var(--navy-2)}
+.hint .drag svg{width:14px;height:14px}
+
+/* whatsapp */
+.wa{position:absolute;right:32px;bottom:30px;z-index:9;width:60px;height:60px;border-radius:50%;background:#25D366;display:grid;place-items:center;
+  box-shadow:0 14px 30px -10px rgba(18,140,70,.7),inset 0 -3px 0 rgba(0,0,0,.08)}
+.wa svg{width:30px;height:30px;fill:#fff}
+.scroll{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);z-index:5;width:22px;height:34px;border:1.5px solid rgba(22,38,61,.35);border-radius:12px}
+.scroll::after{content:"";position:absolute;left:50%;top:7px;width:2px;height:7px;border-radius:2px;background:rgba(22,38,61,.5);transform:translateX(-50%)}
+
+/* ---------- mobile ---------- */
+@media (max-width:760px){
+  .hero{height:auto;min-height:0;padding:100px 18px 100px;display:flex;flex-direction:column}
+  nav{left:12px;right:12px;top:12px;padding:10px 10px 10px 16px}
+  nav img{height:32px}
+  nav ul,nav .cta span{display:none}
+  nav .cta{padding:12px}
+  nav .burger{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.6);margin-right:8px}
+  nav .right{display:flex;align-items:center}
+  .head{position:relative;left:auto;top:auto;transform:none;width:auto;padding-top:12px}
+  .head h1{font-size:34px}
+  .head .rule{display:none}
+  .stage{position:relative;left:auto;bottom:auto;transform:none;width:236px;height:400px;margin:20px auto 0}
+  .cast,.bucket{width:236px}
+  .contact{width:260px;height:26px;bottom:-8px}
+  .bucket .handle,.bucket .ears{width:236px;height:153px;top:-118px}
+  .floor{height:auto;bottom:0;top:690px}
+  .right-col{position:relative;right:auto;top:auto;transform:none;width:auto;margin-top:40px}
+  .right-col .rule{display:none}
+  .stat{display:flex;align-items:center;gap:16px}
+  .num{font-size:100px}
+  .num sup{font-size:30px;margin:4px 6px 0 0}
+  .lbl{margin-top:0;font-size:12px;line-height:1.6;max-width:130px}
+  .hint{margin-top:24px}
+  .hint .drag{display:none}
+  .scroll{display:none}
+  .wa{width:54px;height:54px;right:16px;bottom:24px}
+  .leaves{width:460px}
+}
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="floor"></div>
+  <div class="sun"><i class="p1"></i><i class="p2"></i><i class="p3"></i></div>
+  <svg class="leaves" viewBox="0 0 600 520" fill="#16263D">
+    <path d="M0 40 C90 70 170 130 240 210 C300 280 350 350 430 420 L422 430 C340 362 290 292 228 222 C160 142 80 84 0 56Z"/>
+    <ellipse cx="80" cy="80" rx="78" ry="22" transform="rotate(30 80 80)"/><ellipse cx="130" cy="150" rx="84" ry="24" transform="rotate(-20 130 150)"/>
+    <ellipse cx="170" cy="120" rx="74" ry="20" transform="rotate(52 170 120)"/><ellipse cx="220" cy="232" rx="86" ry="24" transform="rotate(-28 220 232)"/>
+    <ellipse cx="270" cy="215" rx="76" ry="20" transform="rotate(48 270 215)"/><ellipse cx="310" cy="320" rx="82" ry="22" transform="rotate(-30 310 320)"/>
+    <ellipse cx="360" cy="306" rx="72" ry="20" transform="rotate(44 360 306)"/><ellipse cx="400" cy="405" rx="72" ry="20" transform="rotate(-26 400 405)"/>
+  </svg>
+  <svg class="leaves r" viewBox="0 0 600 520" fill="#16263D">
+    <path d="M0 40 C90 70 170 130 240 210 C300 280 350 350 430 420 L422 430 C340 362 290 292 228 222 C160 142 80 84 0 56Z"/>
+    <ellipse cx="80" cy="80" rx="78" ry="22" transform="rotate(30 80 80)"/><ellipse cx="130" cy="150" rx="84" ry="24" transform="rotate(-20 130 150)"/>
+    <ellipse cx="220" cy="232" rx="86" ry="24" transform="rotate(-28 220 232)"/><ellipse cx="310" cy="320" rx="82" ry="22" transform="rotate(-30 310 320)"/>
+  </svg>
+  <div class="grain"></div>
+
+  <nav>
+    <a><img src="assets/logo.png" alt="Novaplastica"></a>
+    <ul><li class="on">EXPERIENCIA</li><li>NOSOTROS</li><li>COBERTURA</li><li>PRODUCTOS</li><li>MATERIA PRIMA</li><li>CLIENTES</li></ul>
+    <div class="right">
+      <span class="burger"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M2 6h14M2 12h14" stroke="#16263D" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+      <a class="cta"><span>CONTACTO</span><svg viewBox="0 0 14 14"><path d="M3 11L11 3M5 3h6v6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </nav>
+
+  <div class="head">
+    <div class="idx">01 <i></i></div>
+    <h1>Somos una empresa mexicana especializada en <span>inyección de plástico.</span></h1>
+    <div class="rule"><b></b><i></i></div>
+  </div>
+
+  <div class="stage">
+    <img class="cast" src="assets/cubeta.png" alt="">
+    <div class="contact"></div>
+    <div class="bucket">
+      <svg class="handle" viewBox="0 0 400 260">
+        <defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B9C6D6"/><stop offset=".55" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C4CFDC"/></linearGradient></defs>
+        <path d="M14 236 C 10 30, 390 30, 386 236" fill="none" stroke="#9EAEC2" stroke-width="11" stroke-linecap="round"/>
+        <path d="M14 236 C 10 30, 390 30, 386 236" fill="none" stroke="url(#hg)" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+      <img class="body" src="assets/cubeta.png" alt="Cubeta Novaplastica">
+      <div class="shade"></div>
+      <svg class="ears" viewBox="0 0 400 260">
+        <circle cx="14" cy="236" r="7" fill="#E2E9F1" stroke="#A9B8CA"/>
+        <circle cx="386" cy="236" r="7" fill="#F2F5F9" stroke="#A9B8CA"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="rule"><i></i><b></b></div>
+    <div class="stat">
+      <div class="num"><sup>+</sup>30</div>
+      <div class="lbl">AÑOS DE EXPERIENCIA</div>
+    </div>
+    <div class="hint">
+      <span class="ic"><svg viewBox="0 0 34 34" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M29 17a12 5 0 0 1-17.5 4.4"/><path d="M5 17a12 5 0 0 1 17.5-4.4"/><path d="M12 18.5l-1 3 3 1"/><path d="M22 15.5l1-3-3-1"/><path d="M17 9v16" stroke-opacity=".55"/></svg></span>
+      <div><b>Gira la cubeta</b><span>Arrastra con el mouse o tu dedo</span></div>
+      <span class="drag"><svg viewBox="0 0 14 14"><path d="M9 3L5 7l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><svg viewBox="0 0 14 14"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </div>
+  </div>
+
+  <div class="scroll"></div>
+  <a class="wa" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.2-.3.2-.6.1a8.2 8.2 0 01-2.4-1.5 9 9 0 01-1.7-2.1c-.2-.3 0-.5.1-.6l.4-.5.3-.5a.5.5 0 000-.5c-.1-.1-.7-1.6-.9-2.2s-.5-.5-.7-.5h-.6a1.1 1.1 0 00-.8.4 3.4 3.4 0 00-1 2.5 5.9 5.9 0 001.2 3.1 13.4 13.4 0 005.2 4.6c.7.3 1.3.5 1.7.6a4.2 4.2 0 001.9.1 3.1 3.1 0 002-1.4 2.5 2.5 0 00.2-1.4c-.1-.2-.3-.3-.6-.4zM12 21.8a9.9 9.9 0 01-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.9 9.9 0 1118.2-5.3A9.9 9.9 0 0112 21.8zm8.4-18.3A11.8 11.8 0 001.8 17.7L.1 24l6.4-1.7a11.8 11.8 0 005.6 1.4A11.8 11.8 0 0020.4 3.5z"/></svg></a>
+</section>
+</body>
+</html>
