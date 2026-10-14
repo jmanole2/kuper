@@ -27,6 +27,11 @@ camera.lookAt(0, 0.42, 0);
 
 function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  // El canvas mide exactamente lo visible. Con 100vh (client-adjustments.css),
+  // en iPhone el canvas es más alto que la pantalla cuando se ve la barra de
+  // Safari y la cubeta se dibuja más abajo de donde debe ir.
+  canvas.style.setProperty('width', `${window.innerWidth}px`, 'important');
+  canvas.style.setProperty('height', `${window.innerHeight}px`, 'important');
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 }
