@@ -28,7 +28,7 @@ const ITEMS = [
     title: 'Política de inocuidad',
     text: 'Garantizar <mark>productos inocuos</mark> y el cumplimiento normativo mediante el desarrollo del personal, la comunicación efectiva y la mejora continua de nuestros procesos.',
     pillars: ['FSSC 22000', 'HACCP', 'Cumplimiento normativo'],
-    photo: 0, caption: 'Inocuidad en cada paso'
+    photo: 3, caption: 'Inocuidad en cada paso'
   }
 ];
 
