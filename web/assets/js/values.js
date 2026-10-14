@@ -102,9 +102,12 @@ if (section && list && statement) {
     list.children[next].focus();
   });
 
-  paint(scrollIndex(), false);
+  // En escritorio el scroll avanza entre declaraciones; en teléfono la sección
+  // es de flujo normal y se cambia tocando el índice.
+  const compact = window.matchMedia('(max-width: 820px)');
+  paint(compact.matches ? 0 : scrollIndex(), false);
   window.addEventListener('scroll', () => {
-    if (performance.now() < manualUntil) return;
+    if (compact.matches || performance.now() < manualUntil) return;
     paint(scrollIndex(), true);
   }, { passive: true });
 }

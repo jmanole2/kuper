@@ -12,7 +12,7 @@
   --np-glass: rgba(246, 249, 253, 0.72);
   --np-glass-strong: rgba(250, 252, 255, 0.86);
   --np-glass-border: rgba(255, 255, 255, 0.75);
-  --np-sans: "Inter", "Montserrat", system-ui, sans-serif;
+  --np-sans: "Montserrat", system-ui, sans-serif;
   --np-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --np-nav-top: 40px;          /* 18px del marco + 22px del diseño */
   --np-nav-side: 51px;         /* 18px del marco + 33px del diseño */
@@ -1273,4 +1273,175 @@ html.is-bucket-dragging * {
   .mv-quote { font-size: clamp(20px, 5.6vw, 26px); }
   .mv-pillars { margin-top: 16px; }
   .mv-media { min-height: 180px; }
+}
+
+/* ==========================================================
+   TIPOGRAFÍA UNIFICADA
+   Una sola familia (Montserrat) y una sola escala para todo el
+   sitio. JetBrains Mono sólo en números y etiquetas técnicas.
+   Gana sobre los tamaños sueltos de styles.css y
+   client-adjustments.css.
+   ========================================================== */
+:root {
+  --np-p: clamp(14px, 1.05vw, 16px);       /* texto de párrafo */
+  --np-p-lh: 1.65;
+  --np-p-color: #55585f;
+  --np-kicker: 11px;                         /* etiqueta sobre el título */
+  --np-h2: clamp(30px, 3.4vw, 46px);         /* título de sección */
+}
+
+/* Párrafos de todas las secciones */
+:is(
+  .exp-feature-text p,
+  .exp-card > p,
+  .recognitions-intro,
+  .recognition-card p,
+  .coverage-copy > .coverage-phase > p,
+  .materials-heading p,
+  .material-item p,
+  .materials-regulation p,
+  .clients-cloud-copy p,
+  .contact-copy > p,
+  .np-cat-meta,
+  .np-cat-sheet p,
+  .np-cat-sheet dd,
+  .np-cat-sheet li,
+  .brand-value-card p
+) {
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--np-p);
+  line-height: var(--np-p-lh);
+}
+:is(
+  .exp-feature-text p,
+  .recognitions-intro,
+  .recognition-card p,
+  .coverage-copy > .coverage-phase > p,
+  .materials-heading p,
+  .material-item p,
+  .materials-regulation p,
+  .clients-cloud-copy p,
+  .contact-copy > p,
+  .np-cat-meta,
+  .np-cat-sheet p,
+  .np-cat-sheet dd,
+  .np-cat-sheet li
+) { color: var(--np-p-color); }
+.exp-feature-sub { color: #101216 !important; }
+
+/* Etiquetas sobre los títulos ("RESPALDO A NUESTRO TRABAJO", etc.) */
+:is(
+  .exp-card-tag,
+  .clients-kicker,
+  .contact-kicker,
+  .materials-kicker,
+  .brand-values-heading > span,
+  .experience-kicker
+) {
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--np-kicker);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+/* Títulos de sección: todos con la misma escala */
+:is(
+  .exp-title,
+  .brand-values-heading h2,
+  .materials-heading h2,
+  .clients-cloud-copy h2,
+  .contact-copy h2
+) {
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--np-h2);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.5px;
+}
+.np-cat-heading .exp-title { font-size: var(--np-h2); }
+
+/* Menú: Contacto con la misma letra que los demás enlaces */
+.np-nav-cta {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.19em;
+}
+@media (max-width: 1199.98px) {
+  .np-nav-cta { font-size: 11px; letter-spacing: 0.12em; }
+}
+
+@media (max-width: 820px) {
+  :root {
+    --np-p: 14px;
+    --np-h2: clamp(28px, 8vw, 36px);
+  }
+}
+
+/* ==========================================================
+   TELÉFONO (≤ 820 px)
+   ========================================================== */
+@media (max-width: 820px) {
+  /* client-adjustments.css dejaba 104 px para el menú anterior y
+     los encabezados se encimaban con los títulos. */
+  :root { --section-eyebrow-top: 24px; }
+  .clients-eyebrow,
+  .contact-eyebrow { padding-top: 28px; }
+
+  /* Misión, visión y políticas: sección de flujo normal (sin panel
+     fijo ni huecos blancos al hacer scroll). */
+  .values-section { height: auto; background: #f2f1ef; }
+  .values-sticky {
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    border-top: 0;
+    opacity: 1 !important;
+    pointer-events: auto;
+    padding: 24px var(--section-gutter) 56px;
+  }
+  .values-eyebrow { position: relative; top: auto; left: auto; right: auto; }
+  .mv-grid {
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 34px;
+  }
+  .mv-title { margin-bottom: 16px; }
+  .mv-statement { justify-content: flex-start; }
+  .mv-statement-label { margin-bottom: 14px; }
+  .mv-media { min-height: 0; aspect-ratio: 4 / 3; }
+
+  /* Cobertura: texto arriba, mapa abajo; las listas se ocultan
+     porque el mapa ya muestra los estados y países. */
+  .coverage-copy {
+    top: calc(var(--section-eyebrow-top) + 60px);
+    bottom: auto;
+    right: var(--section-gutter);
+    left: var(--section-gutter);
+  }
+  .coverage-location-lists { display: none; }
+  .coverage-map {
+    top: auto;
+    bottom: 96px;
+    height: 46%;
+    right: -6%;
+    left: -6%;
+  }
+
+  /* Productos: el título no se encima con el encabezado */
+  .np-cat { padding-top: 84px; }
+  .np-cat-tab { font-size: 11px; }
+}
+@media (max-width: 820px) {
+  /* Valores es un panel fijo también en teléfono: baja su contenido
+     para que el menú no tape "03 —— VALORES". */
+  .brand-values-sticky { border-top: 64px solid transparent; }
+  .coverage-attribution { font-size: 9px !important; bottom: 10px; }
+  .coverage-legend { bottom: 34px; }
 }

@@ -616,10 +616,13 @@ function heroPresence() {
   return heroEl.getBoundingClientRect().bottom > 0 ? 1 : 0;
 }
 
+// En teléfono la cubeta sólo vive en el hero: en Valores se encimaba con el título.
+const compactBucketLayout = window.matchMedia('(max-width: 820px)');
+
 function updateBucketVisibility() {
   const valoresV = window.sectionPanelState?.valores ?? valoresProgress(valoresEl);
   const brandValuesV = window.brandValuesState?.focus ?? sectionFocus(brandValuesEl);
-  const visibility = Math.max(heroPresence(), brandValuesV);
+  const visibility = Math.max(heroPresence(), compactBucketLayout.matches ? 0 : brandValuesV);
   canvas.style.opacity = visibility.toFixed(3);
 
   // Las secciones institucionales comparten el fondo claro detrás de la cubeta.
@@ -666,7 +669,7 @@ renderer.setAnimationLoop(() => {
   const valoresFocus = DEBUG_ASA
     ? 1
     : (window.sectionPanelState?.valores ?? valoresProgress(valoresEl));
-  const brandValuesFocus = DEBUG_ASA ? 0 : (window.brandValuesState?.focus ?? 0);
+  const brandValuesFocus = DEBUG_ASA || compactBucketLayout.matches ? 0 : (window.brandValuesState?.focus ?? 0);
   const brandValueIndex = window.brandValuesState?.activeIndex ?? 0;
   const inBrandValues = brandValuesFocus > 0.15;
   const inValores = DEBUG_ASA ? true : valoresFocus > 0.15 && !inBrandValues;
