@@ -326,7 +326,7 @@
   color: var(--np-ink);
   font-family: var(--np-sans);
   font-size: clamp(32px, min(3.55cqw, 6.1cqh), 64px);
-  font-weight: 450;
+  font-weight: 250;
   line-height: 1.07;
   letter-spacing: -0.035em;
   text-wrap: pretty;
@@ -1093,7 +1093,7 @@ html.is-bucket-dragging * {
    al menú, para dejar aire entre la línea y el contenido.
    ========================================================== */
 @media (min-width: 821px) {
-  :root { --section-eyebrow-top: 40px; }
+  :root { --section-eyebrow-top: 60px; }
 }
 
 /* Clientes y Contacto usan la misma escala de título que el resto
@@ -1148,6 +1148,8 @@ html.is-bucket-dragging * {
   text-align: left;
   cursor: pointer;
   transition: color 0.25s ease;
+  font-size: 16px;
+  font-weight: 300;
 }
 .mv-item span { font: 500 11px "JetBrains Mono", ui-monospace, monospace; letter-spacing: 1px; }
 .mv-item:hover,
