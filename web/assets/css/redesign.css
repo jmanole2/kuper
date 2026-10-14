@@ -1463,8 +1463,8 @@ html.is-bucket-dragging * {
   .brand-values-section { background: #f2f1ef; }
   .brand-values-sticky {
     position: sticky;
-    top: 0;
     inset: auto;
+    top: 0;           /* va después de inset: inset reinicia top */
     height: 100vh;
     height: 100svh;
     opacity: 1 !important;
@@ -1472,3 +1472,15 @@ html.is-bucket-dragging * {
     background: #f2f1ef;
   }
 }
+
+/* Teléfono: títulos más compactos y mapa de Cobertura debajo del texto */
+@media (max-width: 820px) {
+  :root { --np-h2: clamp(24px, 6.6vw, 30px); }
+  .coverage-copy .exp-title { font-size: var(--np-h2); margin-bottom: 10px; }
+  .coverage-kicker { margin-bottom: 8px; }
+  .coverage-map { bottom: 88px; height: 38%; }
+  .coverage-map-hint { display: none; }
+  .np-hero-title { font-size: clamp(26px, 7.4vw, 36px); }
+}
+/* La tarjeta activa de Valores muestra su texto completo con la nueva escala */
+.brand-value-card.active p { max-height: 180px; }
