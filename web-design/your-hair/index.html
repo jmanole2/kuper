@@ -109,6 +109,16 @@ header .right svg{width:18px;height:18px}
 .card .nm{display:flex;justify-content:space-between;margin-top:14px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
 .card .sub{font-size:13px;color:var(--muted);margin-top:2px}
 
+/* accessories */
+.acc{padding:0 0 110px}
+.acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.acc-card{border-radius:14px;min-height:380px;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;position:relative;overflow:hidden}
+.acc-card .prod{flex:1;align-items:center;padding-top:20px}
+.acc-info{display:flex;justify-content:space-between;align-items:end;background:rgba(252,248,243,.85);border-radius:10px;padding:14px 16px;margin-top:18px}
+.acc-info b{display:block;font-size:14px;font-weight:600}
+.acc-info span{font-size:13px;color:var(--muted)}
+.acc-info .pr{font-family:var(--serif);font-size:24px;color:var(--ink)}
+
 /* about */
 .about{display:grid;grid-template-columns:1.05fr .95fr;background:var(--paper)}
 .about .img{position:relative;min-height:760px;background:url(assets/photo/familia.jpg) 50% 40%/cover}
@@ -226,6 +236,10 @@ footer ul{list-style:none;display:grid;gap:9px;font-size:14px;color:rgba(247,240
   .card .ph{padding-bottom:36px}
   .card .ph img{height:150px!important;width:auto}
   .card .nm{font-size:11px}
+  .acc{padding-bottom:64px}
+  .acc-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+  .acc-card{min-height:300px}
+  .acc-card .prod img{max-height:160px;height:auto!important;width:auto}
   .about{grid-template-columns:minmax(0,1fr)}
   .about .img{min-height:340px}
   .about .txt{padding:48px 18px 56px}
@@ -367,6 +381,21 @@ footer ul{list-style:none;display:grid;gap:9px;font-size:14px;color:rgba(247,240
         <div class="nm"><span>Perfume de cabello</span><span>$279</span></div><div class="sub">Proteína de arroz · 50 ml</div></div>
       <div class="card"><div class="ph" style="background:#F4E2C8"><span class="add"><svg><use href="#plus"/></svg></span><div class="prod"><img src="assets/p/ducha.png" style="height:200px" alt="Aceite de ducha"></div></div>
         <div class="nm"><span>Aceite de ducha</span><span>$289</span></div><div class="sub">Coco y miel · 120 ml</div></div>
+    </div>
+  </section>
+
+  <section class="acc">
+    <div class="sec-top">
+      <div><div class="kicker" style="color:var(--muted)">Accesorios</div><h2 class="title">Para que tu barra dure más</h2></div>
+      <a class="link">Ver accesorios <svg><use href="#arr"/></svg></a>
+    </div>
+    <div class="acc-grid">
+      <div class="acc-card" style="background:#F9C9D2"><div class="prod"><img src="assets/p/masajeador.png" style="height:190px" alt="Masajeador de cuero cabelludo"></div>
+        <div class="acc-info"><div><b>Masajeador de cuero cabelludo</b><span>Silicón suave</span></div><span class="pr">$189</span></div></div>
+      <div class="acc-card" style="background:#EBD3BF"><div class="prod"><img src="assets/p/jabonera.png" style="height:160px" alt="Jabonera de madera"></div>
+        <div class="acc-info"><div><b>Jabonera de madera</b><span>Mantiene tus barras secas</span></div><span class="pr">$249</span></div></div>
+      <div class="acc-card" style="background:#DCE3C4"><div class="prod"><img src="assets/p/bolsa.png" style="height:230px" alt="Bolsa de manta con cepillo"></div>
+        <div class="acc-info"><div><b>Bolsa de manta</b><span>Para llevar tus barras de viaje</span></div><span class="pr">$149</span></div></div>
     </div>
   </section>
 </div>
