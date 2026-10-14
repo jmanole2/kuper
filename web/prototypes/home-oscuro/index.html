@@ -1,0 +1,364 @@
+<title>Home Oscuro Novaplástica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: hero a pantalla completa sobre gris Oxford. +30 a la izquierda, cubeta 3D
+     al centro dentro de anillos con una línea verde que gira, titular a la derecha y
+     tarjeta "Gira la cubeta" con control deslizante abajo. Un solo tema (oscuro). */
+  :root {
+    --oxford: #2b3036;
+    --oxford-deep: #1f2328;
+    --glass: rgba(255,255,255,0.05);
+    --glass-line: rgba(255,255,255,0.12);
+    --text: #f2f4f6;
+    --text-soft: #a7afb8;
+    --teal: #4fe3c1;
+    --coral: #ef5a6f;
+    --nav-bg: rgba(236,239,242,0.92);
+    --navy: #16233b;
+    --sans: "Inter", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { background: var(--oxford-deep); color: var(--text); font-family: var(--sans); padding: 14px; }
+
+  .hero {
+    position: relative;
+    min-height: max(640px, calc(100vh - 28px));
+    border-radius: 22px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 60% 55% at 50% 48%, #3a4048 0%, var(--oxford) 55%, #23272c 100%);
+    isolation: isolate;
+  }
+  /* haz de luz desde arriba */
+  .beam {
+    position: absolute; top: -10%; left: 50%; width: 34%; height: 75%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 50% 100% at 50% 0%, rgba(220,235,245,0.22), transparent 70%);
+    filter: blur(6px); pointer-events: none; z-index: 0;
+    animation: beam 6s ease-in-out infinite alternate;
+  }
+  @keyframes beam { from { opacity: .7; } to { opacity: 1; } }
+  .grain {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 30%, transparent 75%);
+  }
+
+  /* ---------- menú ---------- */
+  .nav {
+    position: absolute; z-index: 10; top: 16px; left: 22px; right: 22px; height: 58px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    padding: 0 8px 0 18px; border-radius: 12px; background: var(--nav-bg);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25); backdrop-filter: blur(14px);
+  }
+  .nav img { width: 82px; height: auto; display: block; }
+  .nav ul { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .nav a {
+    display: block; padding: 9px 13px; border-radius: 8px; color: var(--navy); text-decoration: none;
+    font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+  }
+  .nav a:hover, .nav a:focus-visible, .nav a.is-active { background: #fff; outline: none; box-shadow: 0 3px 10px rgba(22,35,59,0.08); }
+  .nav-actions { justify-self: end; display: flex; gap: 8px; }
+  .nav .cta {
+    display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border-radius: 9px;
+    color: #fff; background: var(--navy); text-decoration: none; font-size: 11.5px; font-weight: 600; letter-spacing: .2em;
+  }
+  .cta svg, .burger svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  .burger { display: none; width: 34px; height: 34px; border: 0; border-radius: 8px; background: #fff; color: var(--navy); place-items: center; }
+
+  /* ---------- escenario ---------- */
+  .stage { position: absolute; z-index: 1; left: 50%; top: 53%; width: min(68vh, 44vw); aspect-ratio: 1; transform: translate(-50%, -50%); }
+  .rings { position: absolute; inset: -16%; width: 132%; height: 132%; overflow: visible; pointer-events: none; }
+  .rings .ticks { stroke: rgba(255,255,255,0.16); stroke-width: 1; fill: none; }
+  .rings .ticks-major { stroke: rgba(255,255,255,0.32); }
+  .rings .ring { stroke: rgba(255,255,255,0.10); fill: none; }
+  .rings .ring-inner { stroke: rgba(79,227,193,0.12); }
+  .spin { transform-origin: 300px 300px; animation: spin 14s linear infinite; }
+  .spin-slow { transform-origin: 300px 300px; animation: spin 40s linear infinite reverse; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .arc { fill: none; stroke: var(--teal); stroke-width: 1.6; stroke-linecap: round; filter: url(#glow); }
+  .orbit-dot { fill: var(--oxford); stroke: var(--teal); stroke-width: 2; filter: url(#glow); }
+  #bucketCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  #bucketCanvas.is-dragging { cursor: grabbing; }
+
+  .plus { position: absolute; z-index: 2; width: 16px; height: 16px; color: var(--teal); pointer-events: none; filter: drop-shadow(0 0 6px rgba(79,227,193,.8)); animation: pulse 3.2s ease-in-out infinite; }
+  .plus::before, .plus::after { content: ""; position: absolute; left: 50%; top: 50%; background: currentColor; border-radius: 1px; transform: translate(-50%, -50%); }
+  .plus::before { width: 100%; height: 1.6px; }
+  .plus::after { width: 1.6px; height: 100%; }
+  @keyframes pulse { 0%,100% { opacity: .55; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.1); } }
+
+  /* ---------- textos ---------- */
+  .stat { position: absolute; z-index: 3; left: 5.5%; top: 47%; transform: translateY(-50%); }
+  .stat strong { position: relative; display: block; padding-left: .32em; font-size: clamp(64px, 7.5vw, 112px); font-weight: 200; line-height: .9; letter-spacing: -0.04em; }
+  .stat sup { position: absolute; left: 0; top: .14em; font-size: .4em; font-weight: 300; color: var(--teal); text-shadow: 0 0 12px rgba(79,227,193,.7); }
+  .stat span { display: block; margin-top: 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.22); color: var(--text); font: 500 11px var(--mono); letter-spacing: .32em; text-transform: uppercase; width: max-content; padding-right: 50px; }
+
+  .copy { position: absolute; z-index: 3; left: 67%; top: 33%; width: min(27%, 360px); }
+  .kicker { display: flex; align-items: center; gap: 8px; color: var(--text-soft); font: 500 10.5px var(--mono); letter-spacing: .24em; }
+  .kicker::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px var(--teal); }
+  .copy h1 { margin: 16px 0 0; font-size: clamp(26px, 2.5vw, 38px); font-weight: 450; line-height: 1.12; letter-spacing: -0.03em; text-wrap: balance; }
+  .copy h1 em { font-style: normal; color: var(--coral); }
+
+  .social { position: absolute; z-index: 3; right: 3.2%; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .social::before, .social::after { content: ""; width: 1px; height: 46px; background: rgba(255,255,255,0.16); }
+  .social a { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid rgba(255,255,255,0.18); border-radius: 50%; color: var(--text); transition: border-color .2s, box-shadow .2s; }
+  .social a:hover, .social a:focus-visible { border-color: var(--teal); box-shadow: 0 0 10px rgba(79,227,193,.4); outline: none; }
+  .social svg { width: 12px; height: 12px; fill: currentColor; }
+
+  .card {
+    position: absolute; z-index: 4; left: 67%; bottom: 6%; width: min(27%, 360px); min-width: 300px;
+    padding: 14px 16px 12px; border: 1px solid var(--glass-line); border-radius: 14px; background: rgba(20,23,27,0.55); backdrop-filter: blur(10px);
+  }
+  .card-top { display: flex; align-items: center; gap: 12px; }
+  .card-icon { flex: none; width: 36px; height: 36px; border-radius: 9px; background: #fff; color: var(--navy); display: grid; place-items: center; }
+  .card-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .card-text { flex: 1; min-width: 0; }
+  .card-text strong { display: block; font-size: 13.5px; font-weight: 500; }
+  .card-text small { color: var(--text-soft); font-size: 10.5px; }
+  .deg { color: var(--teal); font: 500 11px var(--mono); text-shadow: 0 0 8px rgba(79,227,193,.6); font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
+  .slider { position: relative; margin-top: 12px; height: 22px; cursor: pointer; touch-action: none; }
+  .slider::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dotted rgba(255,255,255,0.28); }
+  .knob { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,0.08), 0 0 14px rgba(255,255,255,0.5); transform: translate(-50%, -50%); }
+  .slider:focus-visible { outline: 1px solid var(--teal); outline-offset: 4px; border-radius: 6px; }
+
+  .scroll { position: absolute; z-index: 3; left: 5.5%; bottom: 6%; width: 20px; height: 32px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 11px; }
+  .scroll::after { content: ""; position: absolute; left: 50%; top: 6px; width: 2px; height: 6px; margin-left: -1px; border-radius: 2px; background: #fff; animation: wheel 1.8s ease-in-out infinite; }
+  @keyframes wheel { 0% { opacity: 0; transform: translateY(-2px); } 30% { opacity: 1; } 80%, 100% { opacity: 0; transform: translateY(7px); } }
+
+  /* ---------- móvil ---------- */
+  @media (max-width: 900px) {
+    body { padding: 8px; }
+    .hero { min-height: max(760px, calc(100svh - 16px)); display: flex; flex-direction: column; padding: 92px 18px 20px; }
+    .nav { left: 10px; right: 10px; top: 10px; height: 52px; grid-template-columns: 1fr auto; padding: 0 9px 0 12px; }
+    .nav nav, .nav .cta span, .social, .scroll { display: none; }
+    .nav img { width: 64px; }
+    .burger { display: grid; }
+    .nav .cta { width: 34px; height: 34px; padding: 0; justify-content: center; }
+    .copy, .stat, .card, .stage { position: relative; left: auto; top: auto; bottom: auto; transform: none; width: auto; min-width: 0; }
+    .copy { order: 1; }
+    .copy h1 { font-size: clamp(24px, 7vw, 32px); }
+    .stage { order: 2; width: min(78vw, 360px); margin: 30px auto 24px; }
+    .stat { order: 3; display: flex; align-items: center; gap: 14px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 18px; }
+    .stat strong { font-size: clamp(56px, 17vw, 78px); }
+    .stat span { margin: 0; padding: 0; border: 0; line-height: 1.8; width: auto; }
+    .card { order: 4; margin-top: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spin, .spin-slow, .plus, .beam, .scroll::after { animation: none; }
+  }
+</style>
+
+<section class="hero" aria-label="Inicio">
+  <div class="beam" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="nav">
+    <a href="#" aria-label="Novaplástica, inicio"><img src="logo.png" alt="Novaplástica" width="927" height="390"></a>
+    <nav aria-label="Navegación principal">
+      <ul>
+        <li><a href="#" class="is-active">Experiencia</a></li>
+        <li><a href="#">Nosotros</a></li>
+        <li><a href="#">Cobertura</a></li>
+        <li><a href="#">Productos</a></li>
+        <li><a href="#">Materia prima</a></li>
+        <li><a href="#">Clientes</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <button class="burger" type="button" aria-label="Abrir menú"><svg viewBox="0 0 12 12"><path d="M2 4h8M2 8h8"/></svg></button>
+      <a class="cta" href="#" aria-label="Contacto"><span>CONTACTO</span><svg viewBox="0 0 12 12"><path d="M2.5 9.5l7-7M4 2.5h5.5V8"/></svg></a>
+    </div>
+  </header>
+
+  <div class="stat">
+    <strong><sup>+</sup>30</strong>
+    <span>Años de experiencia</span>
+  </div>
+
+  <div class="stage" id="stage">
+    <svg class="rings" viewBox="0 0 600 600" aria-hidden="true">
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g class="spin-slow">
+        <circle class="ticks" cx="300" cy="300" r="286" stroke-dasharray="1 9"/>
+        <circle class="ticks ticks-major" cx="300" cy="300" r="286" stroke-dasharray="1 89.8" stroke-width="10"/>
+      </g>
+      <circle class="ring" cx="300" cy="300" r="232"/>
+      <circle class="ring ring-inner" cx="300" cy="300" r="178"/>
+      <g class="spin">
+        <path class="arc" d="M 300 68 A 232 232 0 0 1 497 178"/>
+        <circle class="orbit-dot" cx="497" cy="178" r="6"/>
+      </g>
+    </svg>
+    <canvas id="bucketCanvas" aria-label="Cubeta Novaplástica en 3D. Arrastra para girarla."></canvas>
+    <span class="plus" style="left:8%; top:72%"></span>
+    <span class="plus" style="left:90%; top:85%"></span>
+  </div>
+  <span class="plus" style="left:30%; top:58%"></span>
+
+  <div class="copy">
+    <span class="kicker">NOVAPLASTICA</span>
+    <h1>Empresa mexicana especializada en <em>inyección de plástico.</em></h1>
+  </div>
+
+  <div class="social" aria-label="Redes sociales">
+    <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 8h3V4h-3c-2.8 0-4 1.7-4 4.2V10H7v4h3v8h4v-8h3l1-4h-4V8.6c0-.4.2-.6.6-.6z"/></svg></a>
+    <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M17.8 3h3.2l-7 8 8.2 10h-6.4l-5-6.1L5 21H1.8l7.5-8.6L1.5 3h6.6l4.5 5.6zm-1.1 16.2h1.8L7.4 4.7H5.5z"/></svg></a>
+    <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 7.3A4.7 4.7 0 1 0 12 16.7 4.7 4.7 0 0 0 12 7.3zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5-8.9a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zM21 8c-.1-1.6-.4-3-1.6-4.2S16.8 2.1 15.2 2c-1.7-.1-6.7-.1-8.4 0C5.2 2.1 3.8 2.4 2.6 3.6S.9 6.4.8 8c-.1 1.7-.1 6.7 0 8.4.1 1.6.4 3 1.6 4.2s2.6 1.5 4.2 1.6c1.7.1 6.7.1 8.4 0 1.6-.1 3-.4 4.2-1.6s1.5-2.6 1.6-4.2c.1-1.7.1-6.7 0-8.4z"/></svg></a>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12.5c0-2.2 3.6-4 8-4s8 1.8 8 4-3.6 4-8 4"/><path d="M9.5 14.2L12 16.5l-2.5 2.3"/></svg></span>
+      <span class="card-text"><strong>Gira la cubeta</strong><small>Arrastra con el mouse o tu dedo</small></span>
+      <span class="deg" id="deg">0°</span>
+    </div>
+    <div class="slider" id="slider" role="slider" tabindex="0" aria-label="Giro de la cubeta" aria-valuemin="-180" aria-valuemax="180" aria-valuenow="0">
+      <span class="knob" id="knob"></span>
+    </div>
+  </div>
+
+  <span class="scroll" aria-hidden="true"></span>
+</section>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createBucket } from './bucket-model.js';
+
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('bucketCanvas');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+camera.position.set(0, 0.2, 6.4);
+camera.lookAt(0, 0, 0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const top = new THREE.SpotLight(0xe8f2ff, 40, 12, 0.5, 0.6);
+top.position.set(0, 5, 1.5);
+scene.add(top);
+const rim = new THREE.DirectionalLight(0x9ff5e0, 0.7);
+rim.position.set(-3, 1, -2);
+scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+fill.position.set(2.5, 0.5, 3);
+scene.add(fill);
+
+// Cubeta aprobada + logo curvo en el cuerpo (mismo método que el sitio)
+const H = 1.5;
+const bucket = createBucket({ height: H, origin: 'center', handleAngle: -0.35 });
+const { model, dims } = bucket.userData;
+const tex = new THREE.TextureLoader().load('logo.png');
+tex.colorSpace = THREE.SRGBColorSpace;
+const bodyTopY = dims.E - dims.H - dims.neckH - dims.bevelH - dims.collarH;
+const rAt = (y) => dims.C / 2 + (dims.bodyTopR - dims.C / 2) * (y / bodyTopY);
+const LOGO_Y = 50, LOGO_H = 32, ARC = 0.82;
+const logo = new THREE.Mesh(
+  new THREE.CylinderGeometry(rAt(LOGO_Y + LOGO_H / 2) + 0.4, rAt(LOGO_Y - LOGO_H / 2) + 0.4, LOGO_H, 48, 1, true, Math.PI / 7 - ARC / 2, ARC),
+  new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide })
+);
+logo.position.y = LOGO_Y;
+model.add(logo);
+
+const pose = new THREE.Group();     // inclinación de la pose del diseño
+pose.rotation.set(0.32, -0.45, -0.28);
+const drag = new THREE.Group();     // giro del usuario
+drag.rotation.order = 'XYZ';
+drag.add(bucket);
+pose.add(drag);
+scene.add(pose);
+
+function resize() {
+  const s = stage.clientWidth;
+  renderer.setSize(s, s, false);
+  camera.aspect = 1;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+
+/* ----- arrastre + control deslizante, con regreso a la pose tras 5 s ----- */
+const st = { yaw: 0, pitch: 0, active: false, last: 0, x: 0, y: 0 };
+const deg = document.getElementById('deg');
+const slider = document.getElementById('slider');
+const knob = document.getElementById('knob');
+const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
+canvas.addEventListener('pointerdown', (e) => {
+  st.active = true; st.x = e.clientX; st.y = e.clientY;
+  canvas.setPointerCapture(e.pointerId); canvas.classList.add('is-dragging'); e.preventDefault();
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!st.active) return;
+  st.yaw += (e.clientX - st.x) * 0.008;
+  st.pitch = THREE.MathUtils.clamp(st.pitch + (e.clientY - st.y) * 0.008, -1.4, 1.4);
+  st.x = e.clientX; st.y = e.clientY; st.last = performance.now();
+});
+const end = () => { st.active = false; st.last = performance.now(); canvas.classList.remove('is-dragging'); };
+canvas.addEventListener('pointerup', end);
+canvas.addEventListener('pointercancel', end);
+
+let sliding = false;
+function fromSlider(e) {
+  const r = slider.getBoundingClientRect();
+  const t = THREE.MathUtils.clamp((e.clientX - r.left) / r.width, 0, 1);
+  st.yaw = (t - 0.5) * Math.PI * 2; st.last = performance.now();
+}
+slider.addEventListener('pointerdown', (e) => { sliding = true; slider.setPointerCapture(e.pointerId); fromSlider(e); });
+slider.addEventListener('pointermove', (e) => { if (sliding) fromSlider(e); });
+slider.addEventListener('pointerup', () => { sliding = false; });
+slider.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  st.yaw = wrap(st.yaw) + (e.key === 'ArrowRight' ? 1 : -1) * Math.PI / 12; st.last = performance.now();
+});
+
+const clock = new THREE.Clock();
+let t = 0;
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  t += reduce ? 0 : dt;
+  const busy = st.active || sliding;
+  if (!busy && st.last && performance.now() - st.last > 5000) {
+    const home = Math.round(st.yaw / (Math.PI * 2)) * Math.PI * 2;
+    st.yaw += (home - st.yaw) * 0.05;
+    st.pitch += (0 - st.pitch) * 0.05;
+    if (Math.abs(home - st.yaw) < 0.002 && Math.abs(st.pitch) < 0.002) { st.yaw = 0; st.pitch = 0; st.last = 0; }
+  }
+  drag.rotation.set(st.pitch, st.yaw, 0);
+  // flota suavemente
+  pose.position.y = Math.sin(t * 1.1) * 0.05;
+  pose.rotation.z = -0.28 + Math.sin(t * 0.7) * 0.025;
+
+  const d = Math.round(THREE.MathUtils.radToDeg(wrap(st.yaw)));
+  deg.textContent = `${d}°`;
+  knob.style.left = `${50 + (d / 360) * 100}%`;
+  slider.setAttribute('aria-valuenow', String(d));
+  renderer.render(scene, camera);
+});
+</script>
