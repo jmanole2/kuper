@@ -23,6 +23,7 @@ export function initBucketDrag(opts = {}) {
     minPitch: -1.52,                    // ver la base de la cubeta
     maxPitch: 1.52,                     // ver la tapa de la cubeta
     filter: null,                       // (evento) => false para NO iniciar el giro (p. ej. si se agarró el asa)
+    returnDelay: 5000,                  // ms sin tocarla para que regrese sola a su posición original
     ...opts,
   };
 
@@ -31,6 +32,7 @@ export function initBucketDrag(opts = {}) {
     yawTarget: null,                    // giro animado de las flechas
     active: false, used: false,
     lastX: 0, lastY: 0, id: null,
+    lastTouch: 0,
   };
   const root = document.documentElement;
 
@@ -58,10 +60,12 @@ export function initBucketDrag(opts = {}) {
     st.yaw += (e.clientX - st.lastX) * o.sensitivity;
     st.pitch = Math.min(o.maxPitch, Math.max(o.minPitch, st.pitch + (e.clientY - st.lastY) * o.sensitivity));
     st.lastX = e.clientX; st.lastY = e.clientY;
+    st.lastTouch = performance.now();
   };
   const up = e => {
     if (!st.active || (e && e.pointerId !== st.id)) return;
     st.active = false;
+    st.lastTouch = performance.now();
     root.classList.remove('is-bucket-dragging');
     o.area.classList.remove('is-dragging');
   };
@@ -78,6 +82,17 @@ export function initBucketDrag(opts = {}) {
 
   /* ---- por frame: sólo anima el giro de las flechas; el arrastre es directo ---- */
   function update() {
+    // Tras unos segundos sin tocarla, la cubeta regresa sola a su pose original
+    // (por el camino más corto, sin dar vueltas completas).
+    if (!st.active && st.yawTarget === null && st.lastTouch &&
+        performance.now() - st.lastTouch > o.returnDelay) {
+      const home = Math.round(st.yaw / (Math.PI * 2)) * Math.PI * 2;
+      st.yaw += (home - st.yaw) * 0.05;
+      st.pitch += (0 - st.pitch) * 0.05;
+      if (Math.abs(home - st.yaw) < 0.001 && Math.abs(st.pitch) < 0.001) {
+        st.yaw = home; st.pitch = 0; st.lastTouch = 0;
+      }
+    }
     if (st.yawTarget !== null) {
       st.yaw += (st.yawTarget - st.yaw) * 0.12;
       if (Math.abs(st.yawTarget - st.yaw) < 0.001) { st.yaw = st.yawTarget; st.yawTarget = null; }
@@ -93,6 +108,7 @@ export function initBucketDrag(opts = {}) {
     get used() { return st.used; },
     rotateBy(delta) {                    // giro suave (flechas de la tarjeta "Gira la cubeta")
       st.used = true;
+      st.lastTouch = performance.now();
       st.yawTarget = (st.yawTarget ?? st.yaw) + delta;
     },
     reset() { st.yaw = 0; st.pitch = 0; st.yawTarget = null; },

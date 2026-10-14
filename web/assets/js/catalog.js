@@ -284,7 +284,7 @@ function layoutBuckets(instant) {
     if (k < -n / 2) k += n;
     const visible = Math.abs(k) <= 1 && n > 1 || k === 0;
     const x = k === 0 ? worldX(0.5) : worldX(k < 0 ? (narrow ? 0.02 : 0.165) : (narrow ? 0.98 : 0.835));
-    const scale = (k === 0 ? (narrow ? 0.95 : 1.05) : (narrow ? 0.38 : 0.42)) * bucket.item.scale;
+    const scale = (k === 0 ? (narrow ? 1.02 : 1.16) : (narrow ? 0.38 : 0.42)) * bucket.item.scale;
     return { x: visible ? x : worldX(k < 0 ? -0.3 : 1.3), scale: visible ? scale : 0, k };
   });
   buckets.forEach((bucket, i) => {

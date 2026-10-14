@@ -1,0 +1,185 @@
+<title>Misión y Visión Novaplástica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: panel de la sección 02. Índice numerado a la izquierda, la declaración
+     activa en grande al centro y el video del proceso en una columna alta a la
+     derecha. En el sitio, el scroll avanza de una declaración a la siguiente. */
+  :root {
+    --paper: #f2f1ef;
+    --ink: #101216;
+    --ink-soft: #5c5e64;
+    --line: rgba(16,18,22,0.14);
+    --maroon: #6f2339;
+    --navy: #294160;
+    --display: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--display); }
+
+  .proto-note { padding: 10px 16px; background: var(--ink); color: #eef1f6; font-size: 12px; line-height: 1.45; }
+  .proto-note b { color: #fff; font-weight: 600; }
+
+  .mv {
+    min-height: max(700px, calc(100vh - 40px));
+    padding: 32px clamp(16px, 3vw, 56px) 36px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: clamp(24px, 4vh, 48px);
+  }
+  .eyebrow { display: flex; align-items: center; gap: 18px; }
+  .eyebrow-num { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 1px solid rgba(16,18,22,0.35); border-radius: 50%; font-size: 13px; font-weight: 600; }
+  .eyebrow-line { flex: 1; height: 1px; background: var(--line); }
+  .eyebrow-label { color: #6b6f76; font-size: 13px; font-weight: 600; letter-spacing: 2px; }
+
+  .mv-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.7fr) minmax(220px, 0.85fr);
+    gap: clamp(24px, 4vw, 72px);
+    align-items: stretch;
+    max-width: 1320px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* índice */
+  .mv-index { display: flex; flex-direction: column; }
+  .mv-kicker { margin: 0 0 10px; color: var(--maroon); font-size: 11px; font-weight: 700; letter-spacing: 1.6px; }
+  .mv-title { margin: 0 0 clamp(24px, 4vh, 44px); font-size: clamp(28px, 2.8vw, 40px); font-weight: 300; line-height: 1.08; letter-spacing: -0.5px; text-wrap: balance; }
+  .mv-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .mv-item {
+    position: relative; width: 100%; display: grid; grid-template-columns: 34px 1fr; align-items: baseline;
+    padding: 16px 0; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left;
+    color: #8a8c91; font: 500 14px var(--display); cursor: pointer; transition: color .25s;
+  }
+  .mv-item span { font: 500 11px var(--mono); letter-spacing: 1px; }
+  .mv-item:hover, .mv-item:focus-visible { color: var(--ink); outline: none; }
+  .mv-item[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+  .mv-item[aria-selected="true"] span { color: var(--maroon); }
+  .mv-item::after {
+    content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; background: var(--maroon);
+  }
+  .mv-item[aria-selected="true"]::after { animation: fill var(--dur, 7s) linear forwards; }
+  .mv-item.is-paused::after { animation-play-state: paused; }
+  @keyframes fill { to { width: 100%; } }
+
+  /* declaración */
+  .mv-statement { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .mv-statement-label { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; color: var(--maroon); font: 500 12px var(--mono); letter-spacing: 2px; text-transform: uppercase; }
+  .mv-statement-label::after { content: ""; width: 48px; height: 1px; background: currentColor; }
+  .mv-quote {
+    margin: 0; color: var(--navy); font-size: clamp(24px, 2.7vw, 42px); font-weight: 300;
+    line-height: 1.22; letter-spacing: -0.6px; text-wrap: pretty;
+  }
+  .mv-quote mark { background: none; color: var(--maroon); font-weight: 500; }
+  .mv-statement.is-changing .mv-quote,
+  .mv-statement.is-changing .mv-statement-label { opacity: 0; transform: translateY(10px); }
+  .mv-quote, .mv-statement-label { transition: opacity .35s ease, transform .35s ease; }
+  .mv-pillars { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+  .mv-pillars span { padding: 7px 12px; border: 1px solid rgba(111,35,57,0.25); border-radius: 999px; color: var(--maroon); font-size: 11px; font-weight: 600; }
+
+  /* video */
+  .mv-media {
+    position: relative; margin: 0; min-height: 360px; border-radius: 20px; overflow: hidden;
+    background: linear-gradient(160deg, #dcdad6, #c9c6c1 60%, #b9b5af);
+  }
+  .mv-media::before {
+    content: ""; position: absolute; inset: -40%;
+    background: repeating-linear-gradient(72deg, transparent 0 9%, rgba(255,255,255,0.35) 12%, transparent 16%);
+    animation: drift 14s linear infinite;
+  }
+  @keyframes drift { to { transform: translateX(22%); } }
+  .mv-media figcaption {
+    position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; gap: 10px;
+    color: #fff; font: 500 10.5px var(--mono); letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0,0,0,0.25);
+  }
+
+  @media (max-width: 980px) {
+    .mv-grid { grid-template-columns: 1fr 1fr; }
+    .mv-statement { grid-column: 1 / -1; order: -1; }
+  }
+  @media (max-width: 620px) {
+    .mv-grid { grid-template-columns: 1fr; }
+    .mv-media { min-height: 260px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mv-media::before, .mv-item[aria-selected="true"]::after { animation: none; }
+    .mv-item[aria-selected="true"]::after { width: 100%; }
+  }
+</style>
+
+<div class="proto-note"><b>Propuesta · Sección 02 Misión, visión y políticas.</b> En el sitio, cada declaración aparece al hacer scroll (como un capítulo). Aquí avanza sola cada 7 s; también puedes dar clic en el índice. El recuadro gris de la derecha es donde va el video del proceso que ya tienen.</div>
+
+<section class="mv" aria-labelledby="mvTitle">
+  <div class="eyebrow">
+    <span class="eyebrow-num">02</span>
+    <span class="eyebrow-line"></span>
+    <span class="eyebrow-label">NOSOTROS</span>
+  </div>
+
+  <div class="mv-grid">
+    <div class="mv-index">
+      <p class="mv-kicker">LO QUE NOS MUEVE</p>
+      <h2 class="mv-title" id="mvTitle">Misión, visión y políticas</h2>
+      <div class="mv-list" role="tablist" aria-label="Declaraciones" id="mvList"></div>
+    </div>
+
+    <div class="mv-statement" id="mvStatement" role="tabpanel" aria-live="polite">
+      <div class="mv-statement-label" id="mvLabel"></div>
+      <p class="mv-quote" id="mvQuote"></p>
+      <div class="mv-pillars" id="mvPillars"></div>
+    </div>
+
+    <figure class="mv-media" aria-label="Video del proceso de impresión de Novaplástica">
+      <figcaption><span>Video del proceso de impresión</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<script>
+  // Textos oficiales del sitio (values.js). Las palabras en <mark> se resaltan en guinda.
+  const ITEMS = [
+    { title: 'Misión', text: 'Fabricar y distribuir productos plásticos de <mark>alta calidad e innovación</mark>, con personal calificado y tecnología, superando expectativas en México y el extranjero.', pillars: ['Calidad', 'Innovación', 'Personal calificado'] },
+    { title: 'Visión', text: 'Ser <mark>líderes en inyección de plástico</mark> a nivel nacional e internacional mediante la mejora continua y el crecimiento de la familia Novaplastica.', pillars: ['Liderazgo', 'Mejora continua', 'Familia Novaplastica'] },
+    { title: 'Política de calidad', text: 'Satisfacer los requerimientos de nuestros clientes mediante <mark>productos de alta calidad</mark>, procesos confiables y personal orientado a la mejora continua.', pillars: ['ISO 9001', 'Procesos confiables'] },
+    { title: 'Política de inocuidad', text: 'Garantizar <mark>productos inocuos</mark> y el cumplimiento normativo mediante el desarrollo del personal, la comunicación efectiva y la mejora continua de nuestros procesos.', pillars: ['FSSC 22000', 'HACCP', 'Cumplimiento normativo'] }
+  ];
+  const DURATION = 7000;
+  const list = document.getElementById('mvList');
+  const statement = document.getElementById('mvStatement');
+  let active = 0, timer = null;
+
+  list.innerHTML = ITEMS.map((item, i) =>
+    `<button class="mv-item" role="tab" type="button" data-i="${i}" style="--dur:${DURATION}ms"><span>${String(i + 1).padStart(2, '0')}</span>${item.title}</button>`
+  ).join('');
+  const buttons = Array.from(list.children);
+
+  function show(i, animate = true) {
+    active = (i + ITEMS.length) % ITEMS.length;
+    buttons.forEach((b, n) => {
+      b.setAttribute('aria-selected', String(n === active));
+    });
+    const paint = () => {
+      const item = ITEMS[active];
+      document.getElementById('mvLabel').textContent = `${String(active + 1).padStart(2, '0')} · ${item.title}`;
+      document.getElementById('mvQuote').innerHTML = item.text;
+      document.getElementById('mvPillars').innerHTML = item.pillars.map(p => `<span>${p}</span>`).join('');
+      statement.classList.remove('is-changing');
+    };
+    if (animate) { statement.classList.add('is-changing'); setTimeout(paint, 300); } else paint();
+    clearTimeout(timer);
+    timer = setTimeout(() => show(active + 1), DURATION);
+  }
+
+  buttons.forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.i))));
+  list.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    show(active + (e.key === 'ArrowDown' ? 1 : -1));
+    buttons[active].focus();
+  });
+  show(0, false);
+</script>
