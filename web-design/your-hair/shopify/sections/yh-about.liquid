@@ -1,0 +1,58 @@
+{% render 'yh-head' %}
+{%- liquid
+  if section.settings.image != blank
+    assign bg = section.settings.image | image_url: width: 1600
+  else
+    assign bg = 'yh-familia.jpg' | asset_url
+  endif
+-%}
+<section class="yh yh-about" id="{{ section.settings.anchor | default: section.id }}">
+  <div class="yh-about__img" style="background-image:url('{{ bg }}')">
+    {%- if section.settings.tag_title != blank -%}
+      <div class="yh-about__tag"><b>{{ section.settings.tag_title }}</b><br><span>{{ section.settings.tag_text }}</span></div>
+    {%- endif -%}
+  </div>
+  <div class="yh-about__txt">
+    {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
+    <h2 class="yh-title">{{ section.settings.heading }}</h2>
+    <div class="rte">{{ section.settings.text }}</div>
+    {%- if section.settings.quote != blank -%}<div class="yh-about__quote">“{{ section.settings.quote }}”</div>{%- endif -%}
+    {%- if section.settings.sign != blank -%}<div class="yh-about__sign">{{ section.settings.sign }}</div>{%- endif -%}
+    {%- if section.blocks.size > 0 -%}
+      <div class="yh-pillars">
+        {%- for block in section.blocks -%}
+          <div {{ block.shopify_attributes }}>{% render 'yh-icon', icon: block.settings.icon %}<b>{{ block.settings.title }}</b><span>{{ block.settings.text }}</span></div>
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "YH · Nosotros",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "anchor", "label": "ID para enlazar (ancla)", "default": "nosotros" },
+    { "type": "image_picker", "id": "image", "label": "Foto" },
+    { "type": "text", "id": "tag_title", "label": "Etiqueta sobre la foto", "default": "Nuestra colección completa" },
+    { "type": "text", "id": "tag_text", "label": "Texto de la etiqueta", "default": "7 shampoos, 5 acondicionadores y tratamientos" },
+    { "type": "text", "id": "kicker", "label": "Texto pequeño", "default": "Nosotros · Nuestra historia" },
+    { "type": "text", "id": "heading", "label": "Título", "default": "Nacimos para que dejes de <em>adivinar</em>" },
+    { "type": "richtext", "id": "text", "label": "Historia", "default": "<p>your hair empezó con una pregunta simple: ¿por qué todos usamos el mismo shampoo si nadie tiene el mismo cabello? Probamos de todo y casi nada estaba pensado para un problema concreto.</p><p>Así que hicimos lo contrario. Una barra para cada tipo de cabello, con ingredientes que reconoces y sin botellas de plástico. Cada fórmula se prueba hasta que hace bien una sola cosa.</p>" },
+    { "type": "text", "id": "quote", "label": "Frase", "default": "Si sabes cómo es tu cabello, ya sabes cuál es tu barra." },
+    { "type": "text", "id": "sign", "label": "Firma", "default": "Fundadora de your hair" }
+  ],
+  "blocks": [
+    { "type": "pillar", "name": "Pilar", "settings": [
+      { "type": "select", "id": "icon", "label": "Ícono", "default": "target", "options": [
+        { "value": "target", "label": "Diana" }, { "value": "leaf", "label": "Hoja" }, { "value": "no-bottle", "label": "Sin botella" }, { "value": "drop", "label": "Gota" }, { "value": "heart", "label": "Corazón" }
+      ]},
+      { "type": "text", "id": "title", "label": "Título", "default": "Una fórmula por tipo de cabello" },
+      { "type": "text", "id": "text", "label": "Texto", "default": "Siete problemas, siete barras." }
+    ]}
+  ],
+  "max_blocks": 3,
+  "presets": [{ "name": "YH · Nosotros" }]
+}
+{% endschema %}

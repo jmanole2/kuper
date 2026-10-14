@@ -1,0 +1,49 @@
+{% render 'yh-head' %}
+<section class="yh yh-reviews" id="yh-{{ section.id }}" style="background:{{ section.settings.bg }}">
+  <div class="yh-wrap">
+    {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
+    <h2 class="yh-title">{{ section.settings.heading }}</h2>
+    {%- if section.settings.score != blank -%}<div class="yh-reviews__score">{{ section.settings.score }}</div>{%- endif -%}
+    <div class="yh-rv-grid">
+      {%- for block in section.blocks -%}
+        <div class="yh-rv" {{ block.shopify_attributes }}>
+          <div class="st">{%- for s in (1..block.settings.stars) -%}{% render 'yh-icon', icon: 'star' %}{%- endfor -%}</div>
+          <q>{{ block.settings.quote }}</q>
+          <div class="who">
+            <span><b>{{ block.settings.name }}</b><br>{{ block.settings.detail }}</span>
+            {%- if block.settings.code != blank -%}
+              <span class="pr"><i style="background:{{ block.settings.color }}">{% render 'yh-img', image: block.settings.image, fallback: block.settings.fallback, height: 'auto', alt: '' %}</i>{{ block.settings.code }}</span>
+            {%- endif -%}
+          </div>
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "YH · Reseñas",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Texto pequeño", "default": "Reseñas" },
+    { "type": "text", "id": "heading", "label": "Título", "default": "Después de la primera lavada" },
+    { "type": "text", "id": "score", "label": "Calificación", "default": "4.9 de 5 en reseñas verificadas" },
+    { "type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7" }
+  ],
+  "blocks": [
+    { "type": "review", "name": "Reseña", "settings": [
+      { "type": "range", "id": "stars", "label": "Estrellas", "min": 1, "max": 5, "step": 1, "default": 5 },
+      { "type": "textarea", "id": "quote", "label": "Reseña", "default": "Tengo el cabello rizado y por fin algo que no me lo deja esponjado." },
+      { "type": "text", "id": "name", "label": "Nombre", "default": "Fernanda G." },
+      { "type": "text", "id": "detail", "label": "Detalle", "default": "Cabello rizado" },
+      { "type": "text", "id": "code", "label": "Número de barra", "default": "06" },
+      { "type": "color", "id": "color", "label": "Color de la barra", "default": "#F6B537" },
+      { "type": "image_picker", "id": "image", "label": "Miniatura" },
+      { "type": "text", "id": "fallback", "label": "Miniatura del tema", "default": "yh-sh-06.png" }
+    ]}
+  ],
+  "max_blocks": 6,
+  "presets": [{ "name": "YH · Reseñas" }]
+}
+{% endschema %}

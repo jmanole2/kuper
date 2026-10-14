@@ -1,0 +1,78 @@
+{% render 'yh-head' %}
+<section class="yh yh-finder" id="{{ section.settings.anchor | default: section.id }}" style="background:{{ section.settings.bg }}">
+  <div class="yh-wrap">
+    <div class="yh-sec-top">
+      <div>
+        {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
+        <h2 class="yh-title">{{ section.settings.heading }}</h2>
+      </div>
+      {%- if section.settings.text != blank -%}<p>{{ section.settings.text }}</p>{%- endif -%}
+    </div>
+
+    <div class="yh-types" style="--yh-cols:{{ section.blocks.size }}">
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign url = block.settings.link
+          if url == blank and block.settings.product != blank
+            assign url = block.settings.product.url
+          endif
+        -%}
+        <a class="yh-type{% if block.settings.dark %} yh-type--dark{% endif %}" href="{{ url | default: '#' }}" style="background:{{ block.settings.color }}" {{ block.shopify_attributes }}>
+          <span class="n">{{ block.settings.number }}</span>
+          <h3>{{ block.settings.title }}</h3>
+          <span class="need">{{ block.settings.need }}</span>
+          <div class="bar">{% render 'yh-img', image: block.settings.image, fallback: block.settings.fallback, height: 150, alt: block.settings.title %}</div>
+          <div class="meta">
+            <b>{{ block.settings.shampoo }}</b>
+            {%- if block.settings.pair != blank -%}
+              <span class="pair">{% if block.settings.pair_color != blank and block.settings.pair_color != 'rgba(0,0,0,0)' %}<i style="background:{{ block.settings.pair_color }}"></i>{% endif %}{{ block.settings.pair }}</span>
+            {%- endif -%}
+          </div>
+        </a>
+      {%- endfor -%}
+    </div>
+
+    {%- if section.settings.note != blank -%}
+      <div class="yh-note">
+        <span>{{ section.settings.note }}</span>
+        {%- if section.settings.link_label != blank -%}<a class="yh-link" href="{{ section.settings.link | default: '#' }}">{{ section.settings.link_label }} {% render 'yh-icon', icon: 'arrow' %}</a>{%- endif -%}
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+<style>#{{ section.settings.anchor | default: section.id }} .yh-type .bar img{height:auto!important}</style>
+
+{% schema %}
+{
+  "name": "YH · Encuentra tu barra",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "anchor", "label": "ID para enlazar (ancla)", "default": "encuentra-tu-barra", "info": "Enlaza a esta sección con #encuentra-tu-barra" },
+    { "type": "text", "id": "kicker", "label": "Texto pequeño", "default": "Encuentra tu barra" },
+    { "type": "text", "id": "heading", "label": "Título", "default": "¿Cómo es <em>tu</em> cabello?" },
+    { "type": "textarea", "id": "text", "label": "Texto", "default": "Busca tu tipo de cabello y esa es tu barra. Todas son color safe y con pH balanceado." },
+    { "type": "textarea", "id": "note", "label": "Nota inferior", "default": "¿Tienes dos tipos a la vez, como raíz grasa y puntas secas? Usa el shampoo de tu raíz y el acondicionador de tus puntas." },
+    { "type": "text", "id": "link_label", "label": "Texto del enlace", "default": "Ver todas las barras" },
+    { "type": "url", "id": "link", "label": "Enlace" },
+    { "type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7" }
+  ],
+  "blocks": [
+    { "type": "type", "name": "Tipo de cabello", "settings": [
+      { "type": "text", "id": "number", "label": "Número", "default": "01" },
+      { "type": "text", "id": "title", "label": "Tipo de cabello", "default": "Seco" },
+      { "type": "text", "id": "need", "label": "Qué necesita", "default": "Nutre y humecta" },
+      { "type": "color", "id": "color", "label": "Color de la tarjeta", "default": "#F6C54C" },
+      { "type": "checkbox", "id": "dark", "label": "Texto claro (para fondos oscuros)", "default": false },
+      { "type": "image_picker", "id": "image", "label": "Imagen de la barra (PNG sin fondo)" },
+      { "type": "text", "id": "fallback", "label": "Imagen del tema (si no subes una)" },
+      { "type": "text", "id": "shampoo", "label": "Nombre del shampoo", "default": "Shampoo 01 · Miel" },
+      { "type": "text", "id": "pair", "label": "Acondicionador que le toca", "default": "+ Acondicionador 01" },
+      { "type": "color", "id": "pair_color", "label": "Color del acondicionador" },
+      { "type": "product", "id": "product", "label": "Producto (enlace)" },
+      { "type": "url", "id": "link", "label": "O un enlace manual" }
+    ]}
+  ],
+  "max_blocks": 8,
+  "presets": [{ "name": "YH · Encuentra tu barra" }]
+}
+{% endschema %}

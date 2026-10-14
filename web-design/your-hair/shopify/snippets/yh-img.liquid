@@ -1,0 +1,17 @@
+{%- comment -%}
+  Product cut-out image. Uses the image picked in the editor; falls back to a theme asset.
+  Params: image, fallback (asset file name), height (px), alt, width (image_url width, default 600)
+{%- endcomment -%}
+{%- liquid
+  assign w = width | default: 600
+  assign h = height | default: 200
+  assign st = 'height:' | append: h | append: 'px'
+  if h == 'auto'
+    assign st = ''
+  endif
+-%}
+{%- if image != blank -%}
+  {{- image | image_url: width: w | image_tag: loading: 'lazy', alt: alt, style: st -}}
+{%- elsif fallback != blank -%}
+  <img src="{{ fallback | asset_url }}" alt="{{ alt | escape }}" loading="lazy" width="400" height="400" style="{{ st }}">
+{%- endif -%}

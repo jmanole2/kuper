@@ -1,0 +1,31 @@
+{% render 'yh-head' %}
+<section class="yh yh-news" id="yh-{{ section.id }}" style="background:{{ section.settings.bg }}">
+  {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
+  <h2 class="yh-title">{{ section.settings.heading }}</h2>
+  {%- if section.settings.text != blank -%}<p>{{ section.settings.text }}</p>{%- endif -%}
+  {%- form 'customer', id: 'yh-news-form' -%}
+    <input type="hidden" name="contact[tags]" value="newsletter">
+    <input type="email" name="contact[email]" placeholder="{{ section.settings.placeholder }}" required aria-label="{{ section.settings.placeholder }}">
+    <button type="submit" class="yh-btn">{{ section.settings.button }}</button>
+    {%- if form.posted_successfully? -%}<div class="yh-news__msg">{{ section.settings.success }}</div>{%- endif -%}
+    {%- if form.errors -%}<div class="yh-news__msg">{{ form.errors | default_errors }}</div>{%- endif -%}
+  {%- endform -%}
+</section>
+<style>#yh-{{ section.id }} form{flex-wrap:wrap}#yh-{{ section.id }} .yh-news__msg{flex-basis:100%;padding:10px}</style>
+
+{% schema %}
+{
+  "name": "YH · Newsletter",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Texto pequeño", "default": "Comunidad your hair" },
+    { "type": "text", "id": "heading", "label": "Título", "default": "10% en tu primera barra" },
+    { "type": "text", "id": "text", "label": "Texto", "default": "Recibe rutinas por tipo de cabello y lanzamientos antes que nadie." },
+    { "type": "text", "id": "placeholder", "label": "Placeholder", "default": "Tu correo electrónico" },
+    { "type": "text", "id": "button", "label": "Botón", "default": "Suscribirme" },
+    { "type": "text", "id": "success", "label": "Mensaje de éxito", "default": "¡Listo! Revisa tu correo." },
+    { "type": "color", "id": "bg", "label": "Fondo", "default": "#EFD9C6" }
+  ],
+  "presets": [{ "name": "YH · Newsletter" }]
+}
+{% endschema %}

@@ -1,0 +1,541 @@
+{
+  "sections": {
+    "yh_hero": {
+      "type": "yh-hero",
+      "settings": {
+        "btn1_link": "#encuentra-tu-barra",
+        "btn2_link": "/collections/all"
+      },
+      "blocks": {
+        "yh_hero-0": {
+          "type": "product",
+          "settings": {
+            "fallback": "yh-leavein.png",
+            "height": 250,
+            "alt": "Leave in"
+          }
+        },
+        "yh_hero-1": {
+          "type": "product",
+          "settings": {
+            "fallback": "yh-aceite.png",
+            "height": 215,
+            "alt": "Aceite capilar"
+          }
+        },
+        "yh_hero-2": {
+          "type": "product",
+          "settings": {
+            "fallback": "yh-suero.png",
+            "height": 235,
+            "alt": "Suero reparador"
+          }
+        },
+        "yh_hero-3": {
+          "type": "product",
+          "settings": {
+            "fallback": "yh-perfume.png",
+            "height": 210,
+            "alt": "Perfume de cabello"
+          }
+        },
+        "yh_hero-4": {
+          "type": "product",
+          "settings": {
+            "fallback": "yh-ducha.png",
+            "height": 210,
+            "alt": "Aceite de ducha"
+          }
+        },
+        "yh_hero-5": {
+          "type": "front",
+          "settings": {
+            "fallback": "yh-sh-02.png",
+            "height": 106
+          }
+        },
+        "yh_hero-6": {
+          "type": "front",
+          "settings": {
+            "fallback": "yh-sh-04.png",
+            "height": 106
+          }
+        }
+      },
+      "block_order": [
+        "yh_hero-0",
+        "yh_hero-1",
+        "yh_hero-2",
+        "yh_hero-3",
+        "yh_hero-4",
+        "yh_hero-5",
+        "yh_hero-6"
+      ]
+    },
+    "yh_stats": {
+      "type": "yh-stats",
+      "settings": {},
+      "blocks": {
+        "yh_stats-0": {
+          "type": "stat",
+          "settings": {
+            "value": "7",
+            "label": "shampoos sólidos"
+          }
+        },
+        "yh_stats-1": {
+          "type": "stat",
+          "settings": {
+            "value": "5",
+            "label": "acondicionadores"
+          }
+        },
+        "yh_stats-2": {
+          "type": "stat",
+          "settings": {
+            "value": "100 g",
+            "label": "por barra"
+          }
+        },
+        "yh_stats-3": {
+          "type": "stat",
+          "settings": {
+            "value": "pH",
+            "label": "balanceado"
+          }
+        },
+        "yh_stats-4": {
+          "type": "stat",
+          "settings": {
+            "value": "0",
+            "label": "botellas de plástico"
+          }
+        }
+      },
+      "block_order": [
+        "yh_stats-0",
+        "yh_stats-1",
+        "yh_stats-2",
+        "yh_stats-3",
+        "yh_stats-4"
+      ]
+    },
+    "yh_finder": {
+      "type": "yh-hair-finder",
+      "settings": {},
+      "blocks": {
+        "yh_finder-0": {
+          "type": "type",
+          "settings": {
+            "number": "01",
+            "title": "Seco",
+            "need": "Nutre y humecta",
+            "color": "#F6C54C",
+            "fallback": "yh-sh-01.png",
+            "shampoo": "Shampoo 01 · Miel",
+            "pair": "+ Acondicionador 01",
+            "pair_color": "#F6C54C"
+          }
+        },
+        "yh_finder-1": {
+          "type": "type",
+          "settings": {
+            "number": "02",
+            "title": "Con caída",
+            "need": "Fortalece y estimula el crecimiento",
+            "color": "#BEC58B",
+            "fallback": "yh-sh-02.png",
+            "shampoo": "Shampoo 02 · Romero, matcha y cafeína",
+            "pair": "+ Acondicionador 02",
+            "pair_color": "#BEC58B"
+          }
+        },
+        "yh_finder-2": {
+          "type": "type",
+          "settings": {
+            "number": "03",
+            "title": "Graso",
+            "need": "Limpia el exceso de grasa",
+            "color": "#B9AFD2",
+            "fallback": "yh-sh-03.png",
+            "shampoo": "Shampoo 03 · Carbón activado",
+            "pair": "Solo shampoo",
+            "pair_color": ""
+          }
+        },
+        "yh_finder-3": {
+          "type": "type",
+          "settings": {
+            "number": "04",
+            "title": "Dañado y con frizz",
+            "need": "Repara y controla el frizz",
+            "color": "#F7864C",
+            "fallback": "yh-sh-04.png",
+            "shampoo": "Shampoo 04 · Calabaza y mango",
+            "pair": "+ Acondicionador 04",
+            "pair_color": "#F7864C"
+          }
+        },
+        "yh_finder-4": {
+          "type": "type",
+          "settings": {
+            "number": "05",
+            "title": "Fino, sin volumen",
+            "need": "Da cuerpo y volumen",
+            "color": "#F6DEC2",
+            "fallback": "yh-sh-05.png",
+            "shampoo": "Shampoo 05 · Proteína de arroz y avena",
+            "pair": "+ Acondicionador 05",
+            "pair_color": "#F6DEC2"
+          }
+        },
+        "yh_finder-5": {
+          "type": "type",
+          "settings": {
+            "number": "06",
+            "title": "Rizado",
+            "need": "Define y suaviza los rizos",
+            "color": "#F6B537",
+            "fallback": "yh-sh-06.png",
+            "shampoo": "Shampoo 06 · Papaya y argán",
+            "pair": "+ Acondicionador 06",
+            "pair_color": "#FB7A64"
+          }
+        },
+        "yh_finder-6": {
+          "type": "type",
+          "settings": {
+            "number": "07",
+            "title": "Con caspa",
+            "need": "Calma y limpia el cuero cabelludo",
+            "color": "#9DDBB7",
+            "fallback": "yh-sh-07.png",
+            "shampoo": "Shampoo 07 · Árbol de té y menta",
+            "pair": "Solo shampoo",
+            "pair_color": ""
+          }
+        }
+      },
+      "block_order": [
+        "yh_finder-0",
+        "yh_finder-1",
+        "yh_finder-2",
+        "yh_finder-3",
+        "yh_finder-4",
+        "yh_finder-5",
+        "yh_finder-6"
+      ]
+    },
+    "yh_treat": {
+      "type": "yh-product-tiles",
+      "settings": {
+        "kicker": "Tratamientos",
+        "heading": "Completa tu rutina",
+        "link_label": "Ver tratamientos",
+        "ratio": "3/4"
+      },
+      "blocks": {
+        "yh_treat-0": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-leavein.png",
+            "height": 230,
+            "color": "#F8D58A",
+            "title": "Leave in",
+            "subtitle": "Root & scalp serum · 120 ml",
+            "price": "$329",
+            "badge": "Más vendido"
+          }
+        },
+        "yh_treat-1": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-aceite.png",
+            "height": 200,
+            "color": "#E9DDF0",
+            "title": "Aceite capilar",
+            "subtitle": "Repara puntas · 100 ml",
+            "price": "$299",
+            "badge": ""
+          }
+        },
+        "yh_treat-2": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-suero.png",
+            "height": 220,
+            "color": "#CFE6CF",
+            "title": "Suero reparador",
+            "subtitle": "Cuero cabelludo · 100 ml",
+            "price": "$349",
+            "badge": "Nuevo"
+          }
+        },
+        "yh_treat-3": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-perfume.png",
+            "height": 195,
+            "color": "#F9D3CF",
+            "title": "Perfume de cabello",
+            "subtitle": "Proteína de arroz · 50 ml",
+            "price": "$279",
+            "badge": ""
+          }
+        },
+        "yh_treat-4": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-ducha.png",
+            "height": 200,
+            "color": "#F4E2C8",
+            "title": "Aceite de ducha",
+            "subtitle": "Coco y miel · 120 ml",
+            "price": "$289",
+            "badge": ""
+          }
+        }
+      },
+      "block_order": [
+        "yh_treat-0",
+        "yh_treat-1",
+        "yh_treat-2",
+        "yh_treat-3",
+        "yh_treat-4"
+      ]
+    },
+    "yh_acc": {
+      "type": "yh-product-tiles",
+      "settings": {
+        "kicker": "Accesorios",
+        "heading": "Para que tu barra dure más",
+        "link_label": "Ver accesorios",
+        "ratio": "4/3"
+      },
+      "blocks": {
+        "yh_acc-0": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-masajeador.png",
+            "height": 190,
+            "color": "#F9C9D2",
+            "title": "Masajeador de cuero cabelludo",
+            "subtitle": "Silicón suave",
+            "price": "$189",
+            "badge": ""
+          }
+        },
+        "yh_acc-1": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-jabonera.png",
+            "height": 160,
+            "color": "#EBD3BF",
+            "title": "Jabonera de madera",
+            "subtitle": "Mantiene tus barras secas",
+            "price": "$249",
+            "badge": ""
+          }
+        },
+        "yh_acc-2": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-bolsa.png",
+            "height": 230,
+            "color": "#DCE3C4",
+            "title": "Bolsa de manta",
+            "subtitle": "Para llevar tus barras de viaje",
+            "price": "$149",
+            "badge": ""
+          }
+        }
+      },
+      "block_order": [
+        "yh_acc-0",
+        "yh_acc-1",
+        "yh_acc-2"
+      ]
+    },
+    "yh_about": {
+      "type": "yh-about",
+      "settings": {},
+      "blocks": {
+        "yh_about-0": {
+          "type": "pillar",
+          "settings": {
+            "icon": "target",
+            "title": "Una fórmula por tipo de cabello",
+            "text": "Siete problemas, siete barras."
+          }
+        },
+        "yh_about-1": {
+          "type": "pillar",
+          "settings": {
+            "icon": "leaf",
+            "title": "Ingredientes que reconoces",
+            "text": "Miel, romero, avena, argán."
+          }
+        },
+        "yh_about-2": {
+          "type": "pillar",
+          "settings": {
+            "icon": "no-bottle",
+            "title": "Cero botellas",
+            "text": "Barras sólidas de 100 g."
+          }
+        }
+      },
+      "block_order": [
+        "yh_about-0",
+        "yh_about-1",
+        "yh_about-2"
+      ]
+    },
+    "yh_compare": {
+      "type": "yh-compare",
+      "settings": {},
+      "blocks": {
+        "yh_compare-0": {
+          "type": "row",
+          "settings": {
+            "label": "Fórmula",
+            "us": "Concentrada, sin agua añadida",
+            "them": "Diluida en agua"
+          }
+        },
+        "yh_compare-1": {
+          "type": "row",
+          "settings": {
+            "label": "Envase",
+            "us": "Caja de cartón",
+            "them": "Botella de plástico"
+          }
+        },
+        "yh_compare-2": {
+          "type": "row",
+          "settings": {
+            "label": "Viaje",
+            "us": "Sin derrames en la maleta",
+            "them": "Se derrama"
+          }
+        },
+        "yh_compare-3": {
+          "type": "row",
+          "settings": {
+            "label": "Para quién",
+            "us": "Elegida por tipo de cabello",
+            "them": "Genérica para todos"
+          }
+        }
+      },
+      "block_order": [
+        "yh_compare-0",
+        "yh_compare-1",
+        "yh_compare-2",
+        "yh_compare-3"
+      ]
+    },
+    "yh_routine": {
+      "type": "yh-routine",
+      "settings": {},
+      "blocks": {
+        "yh_routine-0": {
+          "type": "image",
+          "settings": {
+            "fallback": "yh-sh-06.png",
+            "height": 120
+          }
+        },
+        "yh_routine-1": {
+          "type": "image",
+          "settings": {
+            "fallback": "yh-masajeador.png",
+            "height": 180
+          }
+        },
+        "yh_routine-2": {
+          "type": "image",
+          "settings": {
+            "fallback": "yh-co-06.png",
+            "height": 116
+          }
+        }
+      },
+      "block_order": [
+        "yh_routine-0",
+        "yh_routine-1",
+        "yh_routine-2"
+      ]
+    },
+    "yh_reviews": {
+      "type": "yh-reviews",
+      "settings": {},
+      "blocks": {
+        "yh_reviews-0": {
+          "type": "review",
+          "settings": {
+            "stars": 5,
+            "quote": "Tengo el cabello rizado y por fin algo que no me lo deja esponjado. La 06 es mi favorita.",
+            "name": "Fernanda G.",
+            "detail": "Cabello rizado",
+            "code": "06",
+            "color": "#F6B537",
+            "fallback": "yh-sh-06.png"
+          }
+        },
+        "yh_reviews-1": {
+          "type": "review",
+          "settings": {
+            "stars": 5,
+            "quote": "Se me caía mucho al peinarme. Llevo dos meses con la 02 y el masajeador y ya noto la diferencia.",
+            "name": "Carla M.",
+            "detail": "Caída",
+            "code": "02",
+            "color": "#BEC58B",
+            "fallback": "yh-sh-02.png"
+          }
+        },
+        "yh_reviews-2": {
+          "type": "review",
+          "settings": {
+            "stars": 5,
+            "quote": "Mi raíz se engrasaba en un día. Con la de carbón aguanto dos o tres sin lavar.",
+            "name": "Diego R.",
+            "detail": "Cabello graso",
+            "code": "03",
+            "color": "#B9AFD2",
+            "fallback": "yh-sh-03.png"
+          }
+        }
+      },
+      "block_order": [
+        "yh_reviews-0",
+        "yh_reviews-1",
+        "yh_reviews-2"
+      ]
+    },
+    "yh_news": {
+      "type": "yh-newsletter",
+      "settings": {}
+    },
+    "yh_wa": {
+      "type": "yh-whatsapp",
+      "settings": {
+        "phone": ""
+      }
+    }
+  },
+  "order": [
+    "yh_hero",
+    "yh_stats",
+    "yh_finder",
+    "yh_treat",
+    "yh_acc",
+    "yh_about",
+    "yh_compare",
+    "yh_routine",
+    "yh_reviews",
+    "yh_news",
+    "yh_wa"
+  ]
+}

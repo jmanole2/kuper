@@ -1,0 +1,26 @@
+{% render 'yh-head' %}
+<section class="yh" id="yh-{{ section.id }}" style="background:{{ section.settings.bg }}">
+  <div class="yh-wrap">
+    <div class="yh-stats" style="--yh-cols:{{ section.blocks.size }}">
+      {%- for block in section.blocks -%}
+        <div {{ block.shopify_attributes }}><b>{{ block.settings.value }}</b><span>{{ block.settings.label }}</span></div>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "YH · Datos",
+  "tag": "div",
+  "settings": [{ "type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7" }],
+  "blocks": [
+    { "type": "stat", "name": "Dato", "settings": [
+      { "type": "text", "id": "value", "label": "Valor", "default": "7" },
+      { "type": "text", "id": "label", "label": "Etiqueta", "default": "shampoos sólidos" }
+    ]}
+  ],
+  "max_blocks": 6,
+  "presets": [{ "name": "YH · Datos" }]
+}
+{% endschema %}

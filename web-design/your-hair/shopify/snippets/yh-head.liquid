@@ -1,0 +1,10 @@
+{%- comment -%} Fonts + stylesheet for the your hair sections. Safe to render more than once. {%- endcomment -%}
+{%- style -%}
+  @font-face{font-family:"YH Instrument Serif";src:url({{ 'yh-instrument-serif-latin-400-normal.woff2' | asset_url }}) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"YH Instrument Serif";src:url({{ 'yh-instrument-serif-latin-400-italic.woff2' | asset_url }}) format("woff2");font-weight:400;font-style:italic;font-display:swap}
+  @font-face{font-family:"YH Hanken Grotesk";src:url({{ 'yh-hanken-grotesk-latin-400-normal.woff2' | asset_url }}) format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"YH Hanken Grotesk";src:url({{ 'yh-hanken-grotesk-latin-500-normal.woff2' | asset_url }}) format("woff2");font-weight:500;font-display:swap}
+  @font-face{font-family:"YH Hanken Grotesk";src:url({{ 'yh-hanken-grotesk-latin-600-normal.woff2' | asset_url }}) format("woff2");font-weight:600;font-display:swap}
+  @font-face{font-family:"YH Fraunces";src:url({{ 'yh-fraunces-latin-600-normal.woff2' | asset_url }}) format("woff2");font-weight:600;font-display:swap}
+{%- endstyle -%}
+{{ 'yh.css' | asset_url | stylesheet_tag }}
