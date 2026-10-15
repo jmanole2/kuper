@@ -1,6 +1,6 @@
 {% render 'yh-head' %}
 <section class="yh yh-hero" id="yh-{{ section.id }}"
-  style="--yh-wall:{{ section.settings.wall_color }};--yh-floor:{{ section.settings.floor_color }};--yh-accent:{{ section.settings.accent_color }};--yh-hero-h:{{ section.settings.height }}px">
+  style="--yh-wall:{{ section.settings.wall_color }};--yh-floor:{{ section.settings.floor_color }};--yh-accent:{{ section.settings.accent_color }};--yh-hero-h:{{ section.settings.height }}px;--yh-text:{{ section.settings.text_color }};--yh-b1bg:{{ section.settings.btn1_bg }};--yh-b1tx:{{ section.settings.btn1_text }}">
   <div class="yh-hero__sun"></div>
   <span class="yh-hero__leaf" style="fill:#0E1409">{% render 'yh-icon', icon: 'leaves' %}</span>
   <span class="yh-hero__leaf yh-hero__leaf--l" style="fill:#0E1409">{% render 'yh-icon', icon: 'leaves' %}</span>
@@ -58,7 +58,10 @@
     { "type": "text", "id": "swatches", "label": "Colores de los puntos (separados por coma)", "default": "#F6C54C,#BEC58B,#B9AFD2,#F7864C,#F6DEC2,#F6B537,#9DDBB7" },
     { "type": "color", "id": "wall_color", "label": "Color de pared", "default": "#1F2914" },
     { "type": "color", "id": "floor_color", "label": "Color de piso", "default": "#EAC7AA" },
-    { "type": "color", "id": "accent_color", "label": "Color de acento", "default": "#F6C54C" },
+    { "type": "color", "id": "accent_color", "label": "Color de acento (palabra en itálica)", "default": "#F6C54C" },
+    { "type": "color", "id": "text_color", "label": "Color de los textos", "default": "#F7F0E7" },
+    { "type": "color", "id": "btn1_bg", "label": "Botón 1 · fondo", "default": "#F7F0E7" },
+    { "type": "color", "id": "btn1_text", "label": "Botón 1 · texto", "default": "#1F2914" },
     { "type": "range", "id": "height", "label": "Alto (px)", "min": 600, "max": 1000, "step": 20, "default": 860 }
   ],
   "blocks": [

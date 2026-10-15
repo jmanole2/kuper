@@ -1,0 +1,62 @@
+{% render 'yh-head' %}
+<div class="yh" style="--yh-ann-bg:{{ section.settings.ann_bg }};--yh-ann-tx:{{ section.settings.ann_text }};--yh-hd-bg:{{ section.settings.bg }};--yh-hd-tx:{{ section.settings.text }};--yh-logo-bg:{{ section.settings.logo_bg }};--yh-logo-tx:{{ section.settings.logo_text }};--yh-logo:{{ section.settings.logo_size }}px">
+  {%- if section.settings.announcement != blank -%}
+    <div class="yh-ann">{{ section.settings.announcement }}</div>
+  {%- endif -%}
+  <header class="yh-head">
+    <div class="yh-wrap yh-head__in">
+      <nav class="yh-head__nav" aria-label="Principal">
+        <ul>
+          {%- for link in section.settings.menu.links -%}<li><a href="{{ link.url }}">{{ link.title }}</a></li>{%- endfor -%}
+        </ul>
+      </nav>
+      <details class="yh-burger">
+        <summary aria-label="Menú"><svg width="22" height="22" viewBox="0 0 20 20"><path d="M2 6h16M2 14h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></summary>
+        <div class="yh-drawer"><ul>
+          {%- for link in section.settings.menu.links -%}<li><a href="{{ link.url }}">{{ link.title }}</a></li>{%- endfor -%}
+          <li><a href="{{ routes.account_url }}">Cuenta</a></li>
+        </ul></div>
+      </details>
+
+      <a class="yh-logo" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+        {%- if section.settings.logo != blank -%}
+          {{ section.settings.logo | image_url: width: 300 | image_tag: alt: shop.name }}
+        {%- else -%}
+          {%- assign words = section.settings.logo_words | split: ' ' -%}
+          {%- for w in words -%}<span>{{ w }}</span>{%- endfor -%}
+        {%- endif -%}
+      </a>
+
+      <div class="yh-head__right">
+        <a class="t" href="{{ routes.account_url }}">Cuenta</a>
+        <a href="{{ routes.search_url }}" aria-label="Buscar"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a>
+        <a class="yh-cart" href="{{ routes.cart_url }}" aria-label="Carrito"><svg viewBox="0 0 20 20"><path d="M3.5 6.5h13l-1 11h-11z M7 6.5V5a3 3 0 016 0v1.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>{% if cart.item_count > 0 %}<b>{{ cart.item_count }}</b>{% endif %}</a>
+      </div>
+    </div>
+  </header>
+</div>
+{%- if section.settings.sticky -%}<style>#shopify-section-{{ section.id }}{position:sticky;top:0;z-index:40}</style>{%- endif -%}
+
+{% schema %}
+{
+  "name": "YH · Header",
+  "class": "yh-header-section",
+  "enabled_on": { "groups": ["header"] },
+  "settings": [
+    { "type": "text", "id": "announcement", "label": "Barra de anuncio", "default": "Envío gratis desde $899 · Barras de 100 g para cada tipo de cabello" },
+    { "type": "color", "id": "ann_bg", "label": "Anuncio · fondo", "default": "#1F2914" },
+    { "type": "color", "id": "ann_text", "label": "Anuncio · texto", "default": "#F7F0E7" },
+    { "type": "link_list", "id": "menu", "label": "Menú", "default": "main-menu" },
+    { "type": "color", "id": "bg", "label": "Header · fondo", "default": "#1F2914" },
+    { "type": "color", "id": "text", "label": "Header · texto", "default": "#F7F0E7" },
+    { "type": "header", "content": "Logo" },
+    { "type": "image_picker", "id": "logo", "label": "Logo (opcional)", "info": "Si no subes uno, se dibuja el círculo con texto." },
+    { "type": "text", "id": "logo_words", "label": "Texto del logo", "default": "your hair" },
+    { "type": "color", "id": "logo_bg", "label": "Círculo · fondo", "default": "#F7F0E7" },
+    { "type": "color", "id": "logo_text", "label": "Círculo · texto", "default": "#1F2914" },
+    { "type": "range", "id": "logo_size", "label": "Tamaño del logo", "min": 40, "max": 100, "step": 2, "default": 64, "unit": "px" },
+    { "type": "checkbox", "id": "sticky", "label": "Fijo al hacer scroll", "default": true }
+  ],
+  "presets": [{ "name": "YH · Header" }]
+}
+{% endschema %}
