@@ -1484,3 +1484,8 @@ html.is-bucket-dragging * {
 }
 /* La tarjeta activa de Valores muestra su texto completo con la nueva escala */
 .brand-value-card.active p { max-height: 180px; }
+
+/* Misión y visión (escritorio): más recorrido de scroll por declaración */
+@media (min-width: 821px) {
+  .values-section { height: 560vh; }
+}

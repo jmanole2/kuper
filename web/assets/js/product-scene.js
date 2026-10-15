@@ -55,7 +55,8 @@ const novaBucket = createBucket({
   origin: 'bottom',
   handleAngle: (HANDLE_ANGLE_DEG * Math.PI) / 180
 });
-const { model: bucketModel, parts: bucketParts, dims: bucketDims } = novaBucket.userData;
+const { model: bucketModel, parts: bucketParts, dims: bucketDims, mmToUnits: bucketMmToUnits } = novaBucket.userData;
+const BODY_RADIUS_UNITS = (bucketDims.A / 2 + 5) * bucketMmToUnits;   // radio exterior (tapa incluida) en unidades
 
 const bodyGroup = new THREE.Group();
 bodyGroup.add(novaBucket);
@@ -97,6 +98,7 @@ const BUCKET_HOVER_SCALE = 0.63;
 // En pantallas angostas la cubeta se reduce para caber en el hueco que deja el
 // diseño móvil entre el título y el "+30" (ver fitHeroBucketScale).
 let heroBaseScale = BUCKET_BASE_SCALE;
+let floorY = -0.13;                 // altura del piso (la sombra se queda ahí aunque la cubeta se levante)
 const BUCKET_VALUES_SCALE = 0.50;
 bucket.scale.setScalar(BUCKET_BASE_SCALE);
 bucket.position.y = -0.13;
@@ -697,10 +699,20 @@ renderer.setAnimationLoop(() => {
   const targetBucketY = inBrandValues && !compactValuesLayout
     ? -0.46
     : (inValores ? 0 : heroBucketY);
+  // Al inclinar la cubeta gira sobre su centro y la base bajaría del piso:
+  // se levanta justo lo necesario y la sombra de contacto se desvanece, así
+  // no aparece la franja gris del "piso" encima de la cubeta.
+  const pitch = inHeroState ? bucketDrag.pitch : 0;
+  const sinkMm = BUCKET_PIVOT_Y * Math.cos(pitch) + BODY_RADIUS_UNITS * Math.abs(Math.sin(pitch)) - BUCKET_PIVOT_Y;
+  const tiltLift = Math.max(0, sinkMm) * bucket.scale.x;
+  const shadowFade = 1 - Math.min(1, Math.abs(Math.sin(pitch)) * 4);
+  contactShadow.material.opacity += (shadowFade - contactShadow.material.opacity) * 0.25;
+  contactShadow.visible = contactShadow.material.opacity > 0.01;
   bucket.position.x += (targetBucketX - bucket.position.x) * 0.07;
-  bucket.position.y += (targetBucketY - bucket.position.y) * (inHeroState ? 0.5 : 0.07);
+  floorY += (targetBucketY - floorY) * (inHeroState ? 0.5 : 0.07);
+  bucket.position.y += (targetBucketY + tiltLift - bucket.position.y) * (inHeroState ? 0.5 : 0.07);
   contactShadow.position.x = -0.4 + bucket.position.x;
-  contactShadow.position.y = 0.001 + bucket.position.y;
+  contactShadow.position.y = 0.001 + floorY;
 
   // El asa conserva siempre su tamaño real y aparece en el hero y Valores.
   // El fundido evita que la geometría atraviese la cubeta entre secciones.
