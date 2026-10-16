@@ -1,4 +1,32 @@
 {% render 'yh-head' %}
+{%- liquid
+  assign st = section.settings
+  case st.title_font_mode
+    when 'sans'
+      assign tf = 'var(--yh-sans)'
+    when 'custom'
+      assign tf = st.title_font.family | append: ', ' | append: st.title_font.fallback_families
+    else
+      assign tf = 'var(--yh-serif)'
+  endcase
+  if st.body_font_mode == 'custom'
+    assign bf = st.body_font.family | append: ', ' | append: st.body_font.fallback_families
+  else
+    assign bf = 'var(--yh-sans)'
+  endif
+-%}
+{%- style -%}
+  {%- if st.title_font_mode == 'custom' -%}{{ st.title_font | font_face: font_display: 'swap' }}{%- endif -%}
+  {%- if st.body_font_mode == 'custom' -%}{{ st.body_font | font_face: font_display: 'swap' }}{%- endif -%}
+  #yh-{{ section.id }} .yh-routine__txt{background:{{ st.txt_bg }};color:{{ st.txt_color }};font-family:{{ bf }}}
+  #yh-{{ section.id }} .yh-routine__txt .yh-kicker,#yh-{{ section.id }} .yh-steps b{color:{{ st.txt_color }}}
+  #yh-{{ section.id }} .yh-routine__txt p,#yh-{{ section.id }} .yh-steps div{color:{{ st.txt_color }};opacity:.8}
+  #yh-{{ section.id }} .yh-steps b{opacity:1}
+  #yh-{{ section.id }} .yh-routine__txt .yh-title{font-family:{{ tf }};font-size:{{ st.title_size }}px;{% unless st.title_upper %}text-transform:none;{% endunless %}{% if st.title_font_mode == 'custom' %}font-weight:{{ st.title_font.weight }};{% endif %}}
+  #yh-{{ section.id }} .yh-steps b{font-family:{{ tf }}}
+  #yh-{{ section.id }} .yh-btn{background:{{ st.btn_bg }};color:{{ st.btn_text }}!important;font-family:{{ bf }}}
+  @media (max-width:760px){#yh-{{ section.id }} .yh-routine__txt .yh-title{font-size:{{ st.title_size | times: 0.68 | round }}px}}
+{%- endstyle -%}
 <section class="yh yh-routine" id="yh-{{ section.id }}">
   <div class="yh-routine__txt">
     {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
@@ -34,7 +62,23 @@
     { "type": "textarea", "id": "text", "label": "Texto", "default": "Llévate tu shampoo, tu acondicionador y el masajeador de cuero cabelludo con 15% de descuento." },
     { "type": "text", "id": "btn_label", "label": "Botón", "default": "Armar mi rutina" },
     { "type": "url", "id": "btn_link", "label": "Enlace del botón" },
-    { "type": "color", "id": "pic_bg", "label": "Fondo de la imagen", "default": "#F6B9C4" }
+    { "type": "color", "id": "pic_bg", "label": "Fondo de la imagen", "default": "#F6B9C4" },
+    { "type": "header", "content": "Colores del texto" },
+    { "type": "color", "id": "txt_bg", "label": "Fondo del lado del texto", "default": "#1F2914" },
+    { "type": "color", "id": "txt_color", "label": "Color de los textos", "default": "#F7F0E7" },
+    { "type": "color", "id": "btn_bg", "label": "Botón · fondo", "default": "#F7F0E7" },
+    { "type": "color", "id": "btn_text", "label": "Botón · texto", "default": "#1F2914" },
+    { "type": "header", "content": "Tipografía" },
+    { "type": "select", "id": "title_font_mode", "label": "Fuente del título", "default": "serif", "options": [
+      { "value": "serif", "label": "Serif de your hair" }, { "value": "sans", "label": "Sans de your hair" }, { "value": "custom", "label": "Elegir otra" }
+    ]},
+    { "type": "font_picker", "id": "title_font", "label": "Otra fuente para el título", "default": "playfair_display_n4", "info": "Se usa si eliges \"Elegir otra\"." },
+    { "type": "range", "id": "title_size", "label": "Tamaño del título", "min": 28, "max": 88, "step": 2, "default": 56, "unit": "px" },
+    { "type": "checkbox", "id": "title_upper", "label": "Título en mayúsculas", "default": true },
+    { "type": "select", "id": "body_font_mode", "label": "Fuente de los textos", "default": "sans", "options": [
+      { "value": "sans", "label": "Sans de your hair" }, { "value": "custom", "label": "Elegir otra" }
+    ]},
+    { "type": "font_picker", "id": "body_font", "label": "Otra fuente para los textos", "default": "assistant_n4", "info": "Se usa si eliges \"Elegir otra\"." }
   ],
   "blocks": [
     { "type": "image", "name": "Producto", "settings": [
