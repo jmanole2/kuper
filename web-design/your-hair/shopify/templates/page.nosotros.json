@@ -1,0 +1,145 @@
+{
+  "sections": {
+    "hero": {
+      "type": "yh-page-hero",
+      "settings": {
+        "kicker": "Nosotros",
+        "heading": "Una barra para <em>cada cabello</em>",
+        "text": "<p>Somos una marca mexicana de cuidado capilar sólido. Hacemos fórmulas cortas, pensadas para un problema concreto, y sin botellas de plástico.</p>",
+        "title_size": 72
+      }
+    },
+    "about": {
+      "type": "yh-about",
+      "settings": {
+        "kicker": "Nuestra historia"
+      },
+      "blocks": {
+        "about-0": {
+          "type": "pillar",
+          "settings": {
+            "icon": "target",
+            "title": "Una fórmula por tipo de cabello",
+            "text": "Siete problemas, siete barras."
+          }
+        },
+        "about-1": {
+          "type": "pillar",
+          "settings": {
+            "icon": "leaf",
+            "title": "Ingredientes que reconoces",
+            "text": "Miel, romero, avena, argán."
+          }
+        },
+        "about-2": {
+          "type": "pillar",
+          "settings": {
+            "icon": "no-bottle",
+            "title": "Cero botellas",
+            "text": "Barras sólidas de 100 g."
+          }
+        }
+      },
+      "block_order": [
+        "about-0",
+        "about-1",
+        "about-2"
+      ]
+    },
+    "stats": {
+      "type": "yh-stats",
+      "settings": {},
+      "blocks": {
+        "stats-0": {
+          "type": "stat",
+          "settings": {
+            "value": "7",
+            "label": "shampoos sólidos"
+          }
+        },
+        "stats-1": {
+          "type": "stat",
+          "settings": {
+            "value": "5",
+            "label": "acondicionadores"
+          }
+        },
+        "stats-2": {
+          "type": "stat",
+          "settings": {
+            "value": "100 g",
+            "label": "por barra"
+          }
+        },
+        "stats-3": {
+          "type": "stat",
+          "settings": {
+            "value": "0",
+            "label": "botellas de plástico"
+          }
+        }
+      },
+      "block_order": [
+        "stats-0",
+        "stats-1",
+        "stats-2",
+        "stats-3"
+      ]
+    },
+    "compare": {
+      "type": "yh-compare",
+      "settings": {},
+      "blocks": {
+        "compare-0": {
+          "type": "row",
+          "settings": {
+            "label": "Fórmula",
+            "us": "Concentrada, sin agua añadida",
+            "them": "Diluida en agua"
+          }
+        },
+        "compare-1": {
+          "type": "row",
+          "settings": {
+            "label": "Envase",
+            "us": "Caja de cartón",
+            "them": "Botella de plástico"
+          }
+        },
+        "compare-2": {
+          "type": "row",
+          "settings": {
+            "label": "Viaje",
+            "us": "Sin derrames en la maleta",
+            "them": "Se derrama"
+          }
+        },
+        "compare-3": {
+          "type": "row",
+          "settings": {
+            "label": "Para quién",
+            "us": "Elegida por tipo de cabello",
+            "them": "Genérica para todos"
+          }
+        }
+      },
+      "block_order": [
+        "compare-0",
+        "compare-1",
+        "compare-2",
+        "compare-3"
+      ]
+    },
+    "news": {
+      "type": "yh-newsletter",
+      "settings": {}
+    }
+  },
+  "order": [
+    "hero",
+    "about",
+    "stats",
+    "compare",
+    "news"
+  ]
+}

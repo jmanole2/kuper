@@ -1,0 +1,98 @@
+{
+  "sections": {
+    "contact": {
+      "type": "yh-contact",
+      "settings": {},
+      "blocks": {
+        "contact-0": {
+          "type": "way",
+          "settings": {
+            "icon": "chat",
+            "title": "WhatsApp",
+            "text": "Escríbenos por WhatsApp",
+            "link": "https://wa.me/"
+          }
+        },
+        "contact-1": {
+          "type": "way",
+          "settings": {
+            "icon": "mail",
+            "title": "Correo",
+            "text": "hola@tudominio.com",
+            "link": "mailto:hola@tudominio.com"
+          }
+        },
+        "contact-2": {
+          "type": "way",
+          "settings": {
+            "icon": "clock",
+            "title": "Horario",
+            "text": "Lunes a viernes, 9:00 a 18:00",
+            "link": ""
+          }
+        },
+        "contact-3": {
+          "type": "way",
+          "settings": {
+            "icon": "pin",
+            "title": "Envíos",
+            "text": "A todo México",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "contact-0",
+        "contact-1",
+        "contact-2",
+        "contact-3"
+      ]
+    },
+    "faq": {
+      "type": "yh-faq",
+      "settings": {
+        "title_size": 44
+      },
+      "blocks": {
+        "faq-0": {
+          "type": "qa",
+          "settings": {
+            "q": "¿Cuál barra es para mí?",
+            "a": "<p>Busca tu tipo de cabello en <a href=\"/#encuentra-tu-barra\">Encuentra tu barra</a>. Si tienes raíz grasa y puntas secas, usa el shampoo de tu raíz y el acondicionador de tus puntas.</p>"
+          }
+        },
+        "faq-1": {
+          "type": "qa",
+          "settings": {
+            "q": "¿Cuánto dura una barra?",
+            "a": "<p>Con uso regular, una barra de 100 g dura aproximadamente lo que dos o tres botellas de shampoo. Guárdala seca entre usos.</p>"
+          }
+        },
+        "faq-2": {
+          "type": "qa",
+          "settings": {
+            "q": "¿Sirven para cabello teñido?",
+            "a": "<p>Sí. Todas nuestras barras son color safe y tienen pH balanceado.</p>"
+          }
+        },
+        "faq-3": {
+          "type": "qa",
+          "settings": {
+            "q": "¿Cómo se usa una barra?",
+            "a": "<p>Moja tu cabello, activa la barra con agua, pásala de la raíz a las puntas, masajea y enjuaga.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "faq-0",
+        "faq-1",
+        "faq-2",
+        "faq-3"
+      ]
+    }
+  },
+  "order": [
+    "contact",
+    "faq"
+  ]
+}

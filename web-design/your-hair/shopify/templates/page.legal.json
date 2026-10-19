@@ -1,0 +1,13 @@
+{
+  "sections": {
+    "doc": {
+      "type": "yh-page-content",
+      "settings": {
+        "title_size": 48
+      }
+    }
+  },
+  "order": [
+    "doc"
+  ]
+}

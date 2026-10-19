@@ -1,0 +1,215 @@
+{
+  "sections": {
+    "main": {
+      "type": "yh-main-product",
+      "settings": {
+        "title_size": 48
+      },
+      "blocks": {
+        "main-0": {
+          "type": "attribute",
+          "settings": {
+            "label": "Para",
+            "value": "Elige según tu tipo de cabello",
+            "metafield": "custom.hair_type"
+          }
+        },
+        "main-1": {
+          "type": "attribute",
+          "settings": {
+            "label": "Ingredientes",
+            "value": "Ver abajo",
+            "metafield": "custom.key_ingredients"
+          }
+        },
+        "main-2": {
+          "type": "attribute",
+          "settings": {
+            "label": "Contenido",
+            "value": "100 g",
+            "metafield": "custom.net_content"
+          }
+        },
+        "main-3": {
+          "type": "attribute",
+          "settings": {
+            "label": "Rinde",
+            "value": "Hasta 2 meses de uso regular",
+            "metafield": "custom.duration"
+          }
+        },
+        "main-4": {
+          "type": "accordion",
+          "settings": {
+            "title": "Descripción",
+            "source": "description",
+            "content": "",
+            "metafield": "",
+            "open": true
+          }
+        },
+        "main-5": {
+          "type": "accordion",
+          "settings": {
+            "title": "Modo de uso",
+            "source": "metafield",
+            "content": "<p>Moja tu cabello, frota la barra entre tus manos o directo en la raíz, masajea y enjuaga.</p>",
+            "metafield": "custom.how_to_use",
+            "open": false
+          }
+        },
+        "main-6": {
+          "type": "accordion",
+          "settings": {
+            "title": "Ingredientes",
+            "source": "metafield",
+            "content": "<p>Lista completa de ingredientes (INCI) en el empaque.</p>",
+            "metafield": "custom.ingredients",
+            "open": false
+          }
+        },
+        "main-7": {
+          "type": "accordion",
+          "settings": {
+            "title": "Envíos y devoluciones",
+            "source": "custom",
+            "content": "<p>Envío gratis desde $899 a todo México. Entrega de 2 a 5 días hábiles. Tienes 30 días para cambios si el producto está sin usar.</p>",
+            "metafield": "",
+            "open": false
+          }
+        }
+      },
+      "block_order": [
+        "main-0",
+        "main-1",
+        "main-2",
+        "main-3",
+        "main-4",
+        "main-5",
+        "main-6",
+        "main-7"
+      ]
+    },
+    "howto": {
+      "type": "yh-how-to",
+      "settings": {
+        "title_upper": false,
+        "title_font_mode": "sans",
+        "title_size": 56
+      },
+      "blocks": {
+        "howto-0": {
+          "type": "step",
+          "settings": {
+            "icon": "drop",
+            "title": "Con el cabello mojado",
+            "text": "Moja bien tu cabello y tu barra."
+          }
+        },
+        "howto-1": {
+          "type": "step",
+          "settings": {
+            "icon": "faucet",
+            "title": "Activa la barra",
+            "text": "Unos segundos bajo el agua, hasta que haga espuma."
+          }
+        },
+        "howto-2": {
+          "type": "step",
+          "settings": {
+            "icon": "waves",
+            "title": "De la raíz a las puntas, 30 segundos o más",
+            "text": "Pásala varias veces hasta sentir que actúa, sobre todo si tu cabello es largo, abundante o seco."
+          }
+        },
+        "howto-3": {
+          "type": "step",
+          "settings": {
+            "icon": "clock",
+            "title": "Deja actuar y enjuaga",
+            "text": "Masajea el cuero cabelludo un minuto y enjuaga con agua tibia."
+          }
+        },
+        "howto-4": {
+          "type": "step",
+          "settings": {
+            "icon": "dry",
+            "title": "Guárdala seca",
+            "text": "Ponla en su jabonera, lejos del chorro de agua, para que dure más."
+          }
+        }
+      },
+      "block_order": [
+        "howto-0",
+        "howto-1",
+        "howto-2",
+        "howto-3",
+        "howto-4"
+      ]
+    },
+    "related": {
+      "type": "yh-related",
+      "settings": {}
+    },
+    "reviews": {
+      "type": "yh-reviews",
+      "settings": {
+        "heading": "Lo que dicen de esta barra"
+      },
+      "blocks": {
+        "reviews-0": {
+          "type": "review",
+          "settings": {
+            "stars": 5,
+            "quote": "Tengo el cabello rizado y por fin algo que no me lo deja esponjado.",
+            "name": "Fernanda G.",
+            "detail": "Cabello rizado",
+            "code": "06",
+            "color": "#F6B537",
+            "fallback": "yh-sh-06.png"
+          }
+        },
+        "reviews-1": {
+          "type": "review",
+          "settings": {
+            "stars": 5,
+            "quote": "Se me caía mucho al peinarme y con la 02 ya noto la diferencia.",
+            "name": "Carla M.",
+            "detail": "Caída",
+            "code": "02",
+            "color": "#BEC58B",
+            "fallback": "yh-sh-02.png"
+          }
+        },
+        "reviews-2": {
+          "type": "review",
+          "settings": {
+            "stars": 5,
+            "quote": "Mi raíz se engrasaba en un día. Con la de carbón aguanto dos o tres.",
+            "name": "Diego R.",
+            "detail": "Cabello graso",
+            "code": "03",
+            "color": "#B9AFD2",
+            "fallback": "yh-sh-03.png"
+          }
+        }
+      },
+      "block_order": [
+        "reviews-0",
+        "reviews-1",
+        "reviews-2"
+      ]
+    },
+    "wa": {
+      "type": "yh-whatsapp",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main",
+    "howto",
+    "related",
+    "reviews",
+    "wa"
+  ]
+}

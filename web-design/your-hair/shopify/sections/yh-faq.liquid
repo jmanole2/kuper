@@ -1,0 +1,50 @@
+{% render 'yh-head' %}
+{% render 'yh-section-style', section: section %}
+<section class="yh yh-faq" id="yh-{{ section.id }}">
+  <div class="yh-wrap yh-faq__grid">
+    <div>
+      {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
+      <h2 class="yh-title">{{ section.settings.heading }}</h2>
+      {%- if section.settings.text != blank -%}<div class="rte">{{ section.settings.text }}</div>{%- endif -%}
+    </div>
+    <div class="yh-faq__list">
+      {%- for block in section.blocks -%}
+        <details {{ block.shopify_attributes }} {% if forloop.first %}open{% endif %}>
+          <summary>{{ block.settings.q }}<i aria-hidden="true"></i></summary>
+          <div class="rte">{{ block.settings.a }}</div>
+        </details>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "YH · Preguntas frecuentes",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Texto pequeño", "default": "Preguntas" },
+    { "type": "text", "id": "heading", "label": "Título", "default": "Antes de tu <em>primera barra</em>" },
+    { "type": "richtext", "id": "text", "label": "Texto", "default": "<p>¿No encuentras tu respuesta? Escríbenos por WhatsApp.</p>" },
+    {"type": "header", "content": "Diseño"},
+    {"type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7"},
+    {"type": "color", "id": "text_color", "label": "Color de los textos", "default": "#1F2914"},
+    {"type": "color", "id": "accent", "label": "Color de acento", "default": "#E3A47E"},
+    {"type": "color", "id": "btn_bg", "label": "Botón · fondo", "default": "#1F2914"},
+    {"type": "color", "id": "btn_text", "label": "Botón · texto", "default": "#F7F0E7"},
+    {"type": "select", "id": "title_font_mode", "label": "Fuente de títulos", "default": "serif", "options": [{"value": "serif", "label": "Serif de your hair"}, {"value": "sans", "label": "Sans de your hair"}, {"value": "custom", "label": "Elegir otra"}]},
+    {"type": "font_picker", "id": "title_font", "label": "Otra fuente para títulos", "default": "playfair_display_n4"},
+    {"type": "range", "id": "title_size", "label": "Tamaño de títulos", "min": 24, "max": 96, "step": 2, "default": 52, "unit": "px"},
+    {"type": "checkbox", "id": "title_upper", "label": "Títulos en mayúsculas", "default": true},
+    {"type": "select", "id": "body_font_mode", "label": "Fuente de textos", "default": "sans", "options": [{"value": "sans", "label": "Sans de your hair"}, {"value": "custom", "label": "Elegir otra"}]},
+    {"type": "font_picker", "id": "body_font", "label": "Otra fuente para textos", "default": "assistant_n4"}
+  ],
+  "blocks": [
+    { "type": "qa", "name": "Pregunta", "settings": [
+      { "type": "text", "id": "q", "label": "Pregunta", "default": "¿Cuánto dura una barra?" },
+      { "type": "richtext", "id": "a", "label": "Respuesta", "default": "<p>Depende de tu cabello y de cada cuánto lo laves.</p>" }
+    ]}
+  ],
+  "presets": [{ "name": "YH · Preguntas frecuentes" }]
+}
+{% endschema %}

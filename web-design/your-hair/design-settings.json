@@ -1,0 +1,18 @@
+[
+  { "type": "header", "content": "Diseño" },
+  { "type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7" },
+  { "type": "color", "id": "text_color", "label": "Color de los textos", "default": "#1F2914" },
+  { "type": "color", "id": "accent", "label": "Color de acento", "default": "#E3A47E" },
+  { "type": "color", "id": "btn_bg", "label": "Botón · fondo", "default": "#1F2914" },
+  { "type": "color", "id": "btn_text", "label": "Botón · texto", "default": "#F7F0E7" },
+  { "type": "select", "id": "title_font_mode", "label": "Fuente de títulos", "default": "serif", "options": [
+    { "value": "serif", "label": "Serif de your hair" }, { "value": "sans", "label": "Sans de your hair" }, { "value": "custom", "label": "Elegir otra" }
+  ]},
+  { "type": "font_picker", "id": "title_font", "label": "Otra fuente para títulos", "default": "playfair_display_n4" },
+  { "type": "range", "id": "title_size", "label": "Tamaño de títulos", "min": 24, "max": 96, "step": 2, "default": 52, "unit": "px" },
+  { "type": "checkbox", "id": "title_upper", "label": "Títulos en mayúsculas", "default": true },
+  { "type": "select", "id": "body_font_mode", "label": "Fuente de textos", "default": "sans", "options": [
+    { "value": "sans", "label": "Sans de your hair" }, { "value": "custom", "label": "Elegir otra" }
+  ]},
+  { "type": "font_picker", "id": "body_font", "label": "Otra fuente para textos", "default": "assistant_n4" }
+]

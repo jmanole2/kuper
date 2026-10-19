@@ -1,0 +1,30 @@
+{%- comment -%}
+  Per-section design controls (background, colors, fonts). Expects the section schema to include the
+  shared "design" settings: bg, text_color, btn_bg, btn_text, accent, title_font_mode, title_font, title_size, body_font_mode, body_font.
+{%- endcomment -%}
+{%- liquid
+  assign st = section.settings
+  assign tf = 'var(--yh-serif-base)'
+  if st.title_font_mode == 'sans'
+    assign tf = 'var(--yh-sans-base)'
+  elsif st.title_font_mode == 'custom'
+    assign tf = st.title_font.family | append: ', ' | append: st.title_font.fallback_families
+  endif
+  assign bf = 'var(--yh-sans-base)'
+  if st.body_font_mode == 'custom'
+    assign bf = st.body_font.family | append: ', ' | append: st.body_font.fallback_families
+  endif
+-%}
+{%- style -%}
+  {%- if st.title_font_mode == 'custom' -%}{{ st.title_font | font_face: font_display: 'swap' }}{%- endif -%}
+  {%- if st.body_font_mode == 'custom' -%}{{ st.body_font | font_face: font_display: 'swap' }}{%- endif -%}
+  #yh-{{ section.id }}{
+    background:{{ st.bg }};
+    --yh-ink:{{ st.text_color }};--yh-ink-2:{{ st.text_color | color_modify: 'alpha', 0.85 }};--yh-muted:{{ st.text_color | color_modify: 'alpha', 0.6 }};
+    --yh-line:{{ st.text_color | color_modify: 'alpha', 0.13 }};
+    --yh-green:{{ st.btn_bg }};--yh-cream:{{ st.btn_text }};--yh-accent:{{ st.accent }};
+    --yh-serif:{{ tf }};--yh-sans:{{ bf }};color:{{ st.text_color }};
+  }
+  #yh-{{ section.id }} .yh-title{font-size:{{ st.title_size }}px;{% unless st.title_upper %}text-transform:none;{% endunless %}{% if st.title_font_mode == 'custom' %}font-weight:{{ st.title_font.weight }};{% endif %}}
+  @media (max-width:760px){#yh-{{ section.id }} .yh-title{font-size:{{ st.title_size | times: 0.68 | round }}px}}
+{%- endstyle -%}
