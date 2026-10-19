@@ -309,6 +309,8 @@ export function generationCandidates(now = new Date()) {
 
 let generating = false;
 const kwPause = new Map();
+/** Al guardar credenciales nuevas, la palabra clave vuelve a intentar de inmediato. */
+export const resetKeywordPause = (clientId) => kwPause.delete(clientId);
 export async function tick(now = new Date()) {
   await publishDue(now);
   for (const client of db.listClients().filter((c) => c.activo)) {

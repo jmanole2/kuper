@@ -129,6 +129,7 @@ export function createApp() {
     try {
       const data = parseClientForm(req.body, db.clientCredentials(req.client));
       db.updateClient(req.client.id, { ...data, activo: req.body.activo === '1' });
+      pipe.resetKeywordPause(req.client.id);
       res.redirect(`/admin/clientes/${req.client.id}`);
     } catch (e) {
       res.status(400).send(clientView(req.client, e.message));
