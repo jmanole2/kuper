@@ -6,7 +6,8 @@ import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 
-const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn' };
+const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
+const reusa = (c, p) => p === 'tiktok' || !!c.config[p]?.reusar_instagram;
 const FORMATO = { imagen_estatica: 'Imagen', video_animado: 'Animación', carrusel: 'Carrusel', solo_texto: 'Solo texto' };
 const fmtDate = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)) : '—');
 const mediaSrc = (p) => (p ? `/media/${encodeURIComponent(path.basename(p))}` : null);
@@ -119,7 +120,7 @@ export function clientFormPage(client, { error, notice, competitors = [], report
     <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
     <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p></div>
   <h2>Generar ahora</h2>
-  <div class="row">${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => html`<form method="post" action="/admin/clientes/${client.id}/generar" class="inline"><input type="hidden" name="plataforma" value="${p}"><button class="btn-accent">Post para ${PLAT[p]}</button></form>`)}</div>
+  <div class="row">${PLATFORMS.filter((p) => client.config[p]?.activo && !reusa(client, p)).map((p) => html`<form method="post" action="/admin/clientes/${client.id}/generar" class="inline"><input type="hidden" name="plataforma" value="${p}"><button class="btn-accent">Post para ${PLAT[p]}</button></form>`)}</div>
   <h2>Posts</h2>
   ${posts.length ? html`<div class="grid">${posts.map((p) => postCard(p, { base: `/admin/posts/${p.id}`, admin: true }))}</div>` : html`<p class="muted">Sin posts todavía.</p>`}
   ${client.config.respuesta_palabra_clave?.activo ? html`<h2>Palabra clave ${client.config.respuesta_palabra_clave.palabra}</h2>
@@ -163,6 +164,8 @@ export function clientFormPage(client, { error, notice, competitors = [], report
       <strong>LinkedIn (Página de empresa)</strong>
       <label>ID de la organización</label><input name="li_org_id" value="${li.org_id || ''}" placeholder="12345678">
       <label>Access token (w_organization_social)</label><input name="li_access_token" type="text" placeholder="${set(li.access_token)}" autocomplete="off" spellcheck="false" data-lpignore="true">
+      ${!isNew ? html`<p style="margin-top:16px"><strong>TikTok</strong><br><span class="muted small">${creds.tiktok?.access_token ? `Conectado (renovación automática hasta ${fmtDate(creds.tiktok.refresh_expires_at)})` : 'Sin conectar'}</span><br>
+        <a class="small" href="/admin/clientes/${client.id}/tiktok/conectar">${creds.tiktok?.access_token ? 'Volver a conectar TikTok' : 'Conectar TikTok'}</a></p>` : ''}
       <label style="font-weight:400"><input type="checkbox" name="dry_run" value="1" style="width:auto" ${raw(creds.dry_run ? 'checked' : '')}> Modo simulación (no publica de verdad)</label>
     </div></div>
     ${!isNew ? html`<label style="font-weight:400"><input type="checkbox" name="activo" value="1" style="width:auto" ${raw(client.activo ? 'checked' : '')}> Cliente activo (el agente genera y publica)</label>` : ''}
@@ -214,6 +217,8 @@ export const DEFAULT_CONFIG = {
   instagram: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '10:00', formatos: ['video_animado', 'carrusel', 'imagen_estatica'] },
   facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '11:00' },
   linkedin: { activo: false, frecuencia: 'quincenal', modo_publicacion: 'aprobacion', hora: '09:00' },
+  // TikTok publica los mismos Reels de Instagram con su propio texto. Conéctalo con el botón "Conectar TikTok".
+  tiktok: { activo: false, modo_publicacion: 'aprobacion', privacidad: 'PUBLIC_TO_EVERYONE' },
   // Aviso de posts por revisar: un correo al día con el link al portal. WhatsApp solo si el cliente lo pide.
   notificaciones: { email: '', whatsapp: false },
 };

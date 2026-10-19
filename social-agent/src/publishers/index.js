@@ -1,8 +1,9 @@
 // Despacha un post aprobado a la plataforma correspondiente.
 import { config, mediaUrl } from '../config.js';
-import { clientCredentials } from '../db.js';
+import { clientCredentials, updateClient } from '../db.js';
 import { publishInstagram, publishFacebook } from './meta.js';
 import { publishLinkedIn } from './linkedin.js';
+import { publishTikTok, freshTikTokCreds } from './tiktok.js';
 
 export function captionFor(post) {
   const tags = post.hashtags?.length ? `\n\n${post.hashtags.join(' ')}` : '';
@@ -32,6 +33,10 @@ export async function publishPost(post, client) {
         copy: post.copy_final, hashtags: post.hashtags, imageFile: post.video_path ? null : post.image_path, imageFiles: carousel,
         videoFile: post.video_path, altText: post.alt_text, title: post.tema,
       });
+    case 'tiktok': {
+      const tk = await freshTikTokCreds(creds.tiktok, (nuevo) => updateClient(client.id, { credentials: { ...clientCredentials(client), tiktok: nuevo } }));
+      return publishTikTok(tk, { caption: captionFor(post), videoFile: post.video_path, privacy: client.config.tiktok?.privacidad || 'PUBLIC_TO_EVERYONE' });
+    }
     default:
       throw new Error(`Plataforma no soportada: ${post.plataforma}`);
   }

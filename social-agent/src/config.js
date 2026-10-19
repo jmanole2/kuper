@@ -29,6 +29,9 @@ export const config = {
   geminiApiKey: env('GEMINI_API_KEY', ''),
   geminiImageModel: env('GEMINI_IMAGE_MODEL', 'gemini-2.5-flash-image'),
 
+  // App de TikTok de la agencia (Content Posting API). Cada cliente la autoriza desde el panel.
+  tiktok: { clientKey: env('TIKTOK_CLIENT_KEY', ''), clientSecret: env('TIKTOK_CLIENT_SECRET', '') },
+
   metaGraphVersion: env('META_GRAPH_VERSION', 'v24.0'),
   linkedinApiVersion: env('LINKEDIN_API_VERSION', '202609'),
 

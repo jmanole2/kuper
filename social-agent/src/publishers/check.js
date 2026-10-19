@@ -1,6 +1,7 @@
 // "Probar conexión" del panel: confirma que los tokens guardados sirven, sin publicar nada.
 import { graphCall } from './meta.js';
 import { li } from './linkedin.js';
+import { tiktokCreatorInfo } from './tiktok.js';
 
 export async function checkConnections(creds = {}) {
   const out = [];
@@ -33,6 +34,12 @@ export async function checkConnections(creds = {}) {
         else out.push({ ok: false, texto: e.message });
       }
     }
+  }
+  if (creds.tiktok?.access_token) {
+    try {
+      const info = await tiktokCreatorInfo(creds.tiktok.access_token);
+      out.push({ ok: true, texto: `TikTok: conectado a @${info.creator_username}` });
+    } catch (e) { out.push({ ok: false, texto: `${e.message}${/401|expired|invalid/i.test(e.message) ? ' (vuelve a dar "Conectar TikTok")' : ''}` }); }
   }
   return out;
 }

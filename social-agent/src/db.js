@@ -23,7 +23,7 @@ export const STATUS = {
   error_generacion: 'Error al generar',
 };
 export const OPEN_STATUSES = ['generando', 'necesita_asset', 'pendiente', 'cambios_solicitados', 'aprobado', 'publicando'];
-export const PLATFORMS = ['instagram', 'facebook', 'linkedin'];
+export const PLATFORMS = ['instagram', 'facebook', 'linkedin', 'tiktok'];
 
 let db;
 
@@ -114,6 +114,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('posts', 'images_json', "TEXT NOT NULL DEFAULT '[]'");
   ensure('posts', 'estructura', 'TEXT');
   ensure('posts', 'tipo_post', 'TEXT');
+  ensure('posts', 'origen_id', 'INTEGER'); // post de Instagram del que se reutilizó el video/carrusel
   return db;
 }
 
@@ -211,13 +212,16 @@ export function listPosts({ clientId, statuses, limit = 200 } = {}) {
 }
 
 export function createPost(fields) {
-  const r = getDb().prepare('INSERT INTO posts (client_id, plataforma, status, scheduled_at) VALUES (?, ?, ?, ?)')
-    .run(fields.client_id, fields.plataforma, fields.status ?? 'generando', fields.scheduled_at ?? null);
+  const r = getDb().prepare('INSERT INTO posts (client_id, plataforma, status, scheduled_at, origen_id) VALUES (?, ?, ?, ?, ?)')
+    .run(fields.client_id, fields.plataforma, fields.status ?? 'generando', fields.scheduled_at ?? null, fields.origen_id ?? null);
   return getPost(Number(r.lastInsertRowid));
 }
 
 const POST_FIELDS = ['status', 'pilar', 'tema', 'formato', 'estructura', 'tipo_post', 'images_json', 'salida_json', 'variante', 'copy_final', 'hashtags_json',
   'image_path', 'video_path', 'alt_text', 'scheduled_at', 'published_at', 'external_id', 'external_url', 'error', 'feedback'];
+
+export const sharedCopy = (origenId, plataforma) =>
+  hydratePost(getDb().prepare('SELECT * FROM posts WHERE origen_id = ? AND plataforma = ? LIMIT 1').get(origenId, plataforma));
 
 export function updatePost(id, patch) {
   const p = { ...patch };

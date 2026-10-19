@@ -31,7 +31,7 @@ const anthropic = () => (client ??= new Anthropic());
 
 class RefusalError extends Error {}
 
-async function callClaude({ system, messages, schema, maxTokens = 32000 }) {
+export async function callClaude({ system, messages, schema, maxTokens = 32000 }) {
   const stream = anthropic().beta.messages.stream({
     model: config.anthropicModel,
     max_tokens: maxTokens,

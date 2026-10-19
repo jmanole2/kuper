@@ -14,6 +14,7 @@ import { fetchCompetitors } from './competitors/instagram.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
 import { notifyClient } from './notify.js';
+import { adaptCaption } from './llm/adapt.js';
 
 // Cola de trabajos en serie: las generaciones abren Chromium y llaman a APIs, mejor de una en una.
 let chain = Promise.resolve();
@@ -29,6 +30,9 @@ export const idle = () => chain;
 const platformCfg = (client, plataforma) => client.config[plataforma] || {};
 const modoDe = (client, plataforma) => platformCfg(client, plataforma).modo_publicacion || 'aprobacion';
 const horaDe = (client, plataforma) => platformCfg(client, plataforma).hora || '10:00';
+/** Redes que no generan su propio contenido: publican el mismo video/carrusel de Instagram con el texto adaptado. */
+export const reusesInstagram = (client, plataforma) =>
+  plataforma !== 'instagram' && !!platformCfg(client, plataforma).activo && (plataforma === 'tiktok' || !!platformCfg(client, plataforma).reusar_instagram);
 
 export function slotFor(client, plataforma, now = new Date()) {
   return nextSlot({
@@ -161,12 +165,14 @@ async function fillPost(postId, { feedback } = {}) {
     ...(out.requiere_asset_real ? {} : media),
   });
   db.logEvent({ postId, clientId: client.id, tipo: feedback ? 'regenerado' : 'generado', detalle: `${out.tema} → ${db.STATUS[status]}` });
+  if (status === 'aprobado') shareApproved(postId);
   return post;
 }
 
 export async function generateForPlatform(clientId, plataforma, { force = false } = {}) {
   const client = db.getClient(clientId);
   if (!client) throw new Error('Cliente no existe');
+  if (plataforma === 'tiktok') throw new Error('TikTok publica los videos de Instagram: se crea solo cuando apruebas un Reel.');
   if (!PLATFORM_RULES[plataforma]) throw new Error(`Plataforma no soportada: ${plataforma}`);
   if (!force && db.openPostFor(clientId, plataforma)) return null;
   const post = db.createPost({ client_id: clientId, plataforma, status: 'generando' });
@@ -175,6 +181,46 @@ export async function generateForPlatform(clientId, plataforma, { force = false 
   } catch (e) {
     db.updatePost(post.id, { status: 'error_generacion', error: e.message });
     db.logEvent({ postId: post.id, clientId, tipo: 'error_generacion', detalle: e.message });
+    throw e;
+  }
+}
+
+// ------------------------------------------------------------ mismo contenido en otras redes
+/** Cuando un post de Instagram queda aprobado, prepara su versión para Facebook/TikTok (si reusan Instagram). */
+export function shareApproved(postId) {
+  const ig = db.getPost(postId);
+  if (!ig || ig.plataforma !== 'instagram' || ig.status !== 'aprobado') return [];
+  const client = db.getClient(ig.client_id);
+  const targets = db.PLATFORMS.filter((p) => reusesInstagram(client, p) && !db.sharedCopy(ig.id, p));
+  for (const plataforma of targets) enqueue(`share-${ig.id}-${plataforma}`, () => shareTo(client, ig, plataforma).catch(() => {}));
+  return targets;
+}
+
+async function shareTo(client, ig, plataforma) {
+  if (db.sharedCopy(ig.id, plataforma)) return null;
+  if (plataforma === 'tiktok' && !ig.video_path) {
+    db.logEvent({ postId: ig.id, clientId: client.id, tipo: 'tiktok_omitido', detalle: 'TikTok solo lleva videos; este post no es Reel.' });
+    return null;
+  }
+  const fecha = localDate(ig.scheduled_at || new Date().toISOString(), config.timezone);
+  let scheduledAt = zonedToUtc(fecha, platformCfg(client, plataforma).hora || localTime(ig.scheduled_at, config.timezone), config.timezone);
+  if (ig.scheduled_at && new Date(scheduledAt) < new Date()) scheduledAt = ig.scheduled_at; // esa hora ya pasó hoy: sale junto con Instagram
+  const post = db.createPost({ client_id: client.id, plataforma, status: 'generando', scheduled_at: scheduledAt, origen_id: ig.id });
+  db.logEvent({ postId: post.id, clientId: client.id, tipo: 'generando', detalle: `Adaptando el texto del Reel de Instagram para ${plataforma}` });
+  try {
+    const a = await adaptCaption({ plataforma, post: ig, client });
+    const status = needsApproval(modoDe(client, plataforma)) || a.advertencias.length ? 'pendiente' : 'aprobado';
+    db.updatePost(post.id, {
+      status, pilar: ig.pilar, tema: ig.tema, formato: ig.formato, estructura: ig.estructura, tipo_post: ig.tipo_post,
+      salida: { ...ig.salida, plataforma, variantes_copy: [{ copy: a.copy, hashtags: a.hashtags }], advertencias: a.advertencias, origen: `Instagram #${ig.id}` },
+      variante: 0, copy_final: a.copy, hashtags: a.hashtags, alt_text: ig.alt_text,
+      image_path: ig.image_path, video_path: ig.video_path, images: ig.images, error: null,
+    });
+    db.logEvent({ postId: post.id, clientId: client.id, tipo: 'generado', detalle: `Mismo contenido que Instagram #${ig.id} → ${db.STATUS[status]}` });
+    return db.getPost(post.id);
+  } catch (e) {
+    db.updatePost(post.id, { status: 'error_generacion', error: e.message });
+    db.logEvent({ postId: post.id, clientId: client.id, tipo: 'error_generacion', detalle: e.message });
     throw e;
   }
 }
@@ -193,6 +239,7 @@ export function approvePost(postId, { variante, copy, hashtags, fecha, hora } = 
   db.updatePost(postId, patch);
   if (!db.transitionPost(postId, 'pendiente', 'aprobado')) throw new Error('El post cambió de estado; recarga la página.');
   db.logEvent({ postId, clientId: post.client_id, tipo: 'aprobado', detalle: patch.scheduled_at || post.scheduled_at });
+  shareApproved(postId);
   return db.getPost(postId);
 }
 
@@ -201,6 +248,13 @@ export function rejectPost(postId, motivo = '') {
   if (!db.transitionPost(postId, ['pendiente', 'necesita_asset', 'aprobado'], 'rechazado')) throw new Error('No se puede rechazar en este estado');
   db.updatePost(postId, { feedback: motivo });
   db.logEvent({ postId, clientId: post.client_id, tipo: 'rechazado', detalle: motivo });
+  // Si se rechaza el de Instagram, sus copias en Facebook/TikTok tampoco salen.
+  for (const p of db.PLATFORMS) {
+    const copia = db.sharedCopy(postId, p);
+    if (copia && db.transitionPost(copia.id, ['pendiente', 'aprobado', 'error_generacion'], 'rechazado')) {
+      db.logEvent({ postId: copia.id, clientId: post.client_id, tipo: 'rechazado', detalle: `Se rechazó el original de Instagram #${postId}` });
+    }
+  }
 }
 
 export function requestChanges(postId, comentarios) {
@@ -230,6 +284,7 @@ export function attachAsset(postId, filePath, mimetype) {
   if (post.status === 'necesita_asset') {
     const next = needsApproval(modoDe(client, post.plataforma)) ? 'pendiente' : 'aprobado';
     db.transitionPost(postId, 'necesita_asset', next);
+    if (next === 'aprobado') shareApproved(postId);
   }
   db.logEvent({ postId, clientId: post.client_id, tipo: 'asset_subido', detalle: path.basename(filePath) });
 }
@@ -295,7 +350,7 @@ export function generationCandidates(now = new Date()) {
   const out = [];
   for (const client of db.listClients().filter((c) => c.activo)) {
     for (const plataforma of db.PLATFORMS) {
-      if (!platformCfg(client, plataforma).activo) continue;
+      if (!platformCfg(client, plataforma).activo || reusesInstagram(client, plataforma)) continue;
       if (db.openPostFor(client.id, plataforma)) continue;
       const lastErr = db.lastGenerationErrorAt(client.id, plataforma);
       if (lastErr && (now - new Date(lastErr.replace(' ', 'T') + 'Z')) < 6 * 3600_000) continue; // no reintentar en bucle
@@ -322,6 +377,8 @@ export async function tick(now = new Date()) {
         db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: `${e.message} (reintenta en 30 min)` });
       }));
     }
+    // Reels aprobados que todavía no tienen su copia en Facebook/TikTok (p. ej. aprobados antes de activar la opción).
+    for (const p of db.listPosts({ clientId: client.id, statuses: ['aprobado'], limit: 50 })) shareApproved(p.id);
     // Aviso al cliente de lo que tiene por revisar (un correo al día como máximo).
     enqueue(`aviso-${client.id}`, () => notifyClient(client, new Date()).catch((e) =>
       db.logEvent({ clientId: client.id, tipo: 'aviso_error', detalle: e.message })));

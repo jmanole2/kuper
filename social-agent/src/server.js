@@ -11,6 +11,7 @@ import { sign, unsign, safeEqual, randomToken } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
+import { tiktokAuthUrl, exchangeTikTokCode, tiktokConfigured } from './publishers/tiktok.js';
 
 export function createApp() {
   db.getDb();
@@ -100,6 +101,7 @@ export function createApp() {
         org_id: keep(body.li_org_id, existingCreds.linkedin?.org_id),
         access_token: tok(body.li_access_token, existingCreds.linkedin?.access_token),
       },
+      tiktok: existingCreds.tiktok, // se conecta con el botón "Conectar TikTok", no desde el formulario
       dry_run: body.dry_run === '1',
     };
     return { nombre: body.nombre.trim(), perfil, config: cfg, credentials };
@@ -140,6 +142,26 @@ export function createApp() {
     const ok = r.filter((x) => x.ok).map((x) => x.texto).join(' · ');
     const bad = r.filter((x) => !x.ok).map((x) => x.texto).join(' · ');
     res.send(clientView(req.client, bad || undefined, ok || undefined));
+  });
+  // TikTok: el cliente (o la agencia con su sesión) autoriza la app de la agencia.
+  admin.get('/clientes/:cid/tiktok/conectar', (req, res) => {
+    if (!tiktokConfigured()) return res.status(400).send(clientView(req.client, 'Falta TIKTOK_CLIENT_KEY y TIKTOK_CLIENT_SECRET en el .env del servidor.'));
+    res.redirect(tiktokAuthUrl(sign(`tiktok:${req.client.id}:${Date.now() + 15 * 60_000}`)));
+  });
+  admin.get('/tiktok/callback', async (req, res) => {
+    const st = unsign(String(req.query.state || ''));
+    const [, cid, exp] = st ? st.split(':') : [];
+    const client = cid && Number(exp) > Date.now() ? db.getClient(Number(cid)) : null;
+    if (!client) return res.status(400).send('El enlace de TikTok venció o no es válido. Vuelve a dar "Conectar TikTok".');
+    if (req.query.error) return res.status(400).send(clientView(client, `TikTok: ${req.query.error_description || req.query.error}`));
+    try {
+      const tk = await exchangeTikTokCode(String(req.query.code || ''));
+      db.updateClient(client.id, { credentials: { ...db.clientCredentials(client), tiktok: tk } });
+      db.logEvent({ clientId: client.id, tipo: 'tiktok_conectado', detalle: `open_id ${tk.open_id}` });
+      res.redirect(`/admin/clientes/${client.id}`);
+    } catch (e) {
+      res.status(400).send(clientView(client, e.message));
+    }
   });
   admin.post('/clientes/:cid/rotar-token', (req, res) => { db.rotatePortalToken(req.client.id); res.redirect(`/admin/clientes/${req.client.id}`); });
   admin.post('/clientes/:cid/logo', upload.single('archivo'), (req, res) => {

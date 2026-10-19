@@ -59,6 +59,17 @@ guion del post -> Claude escribe setup()/draw() -> el motor prueba el código ->
 - **Aviso por correo.** Con `"notificaciones": { "email": "..." }` en la configuración del cliente, a partir de `HORA_AVISO` (09:00) le llega un solo correo al día con lo que tiene por revisar o por subir, y el link a su portal. Si no hay nada nuevo, no se manda. Necesita `SMTP_*` en el `.env`.
 - **WhatsApp opcional.** `"whatsapp": true` deja anotado que el cliente lo quiere, pero apagado por defecto y todavía sin conectar.
 
+## Mismo Reel en Facebook y TikTok
+
+Para no gastar la pieza del día en otra animación, Facebook y TikTok pueden publicar **el mismo video o carrusel de Instagram** con su propio texto:
+
+- Facebook: `"facebook": { "activo": true, "reusar_instagram": true, "modo_publicacion": "aprobacion", "hora": "12:00" }`. El texto se adapta con un link directo (p. ej. al WhatsApp del agente de prueba) en vez de "comenta AGENTE".
+- TikTok: `"tiktok": { "activo": true, "modo_publicacion": "aprobacion", "privacidad": "PUBLIC_TO_EVERYONE" }`. Solo videos; el texto es corto, sin links y con 3 a 5 hashtags. El video se marca como contenido hecho con IA.
+
+Cuando apruebas un Reel de Instagram, el agente prepara sus copias (solo texto, sin volver a animar) para el mismo día. Si rechazas el de Instagram, sus copias también se rechazan.
+
+**Conectar TikTok:** una app de la agencia en developers.tiktok.com con el producto *Content Posting API* (Direct Post) y los permisos `user.info.basic` y `video.publish`; redirect URI `https://redes.kuper.media/admin/tiktok/callback`. Pon `TIKTOK_CLIENT_KEY` y `TIKTOK_CLIENT_SECRET` en el `.env` y en el panel del cliente da "Conectar TikTok". El token se renueva solo (dura un año). Hasta que TikTok audite la app, lo publicado queda en privado.
+
 ## Configurar un cliente
 
 Desde **/admin → Nuevo cliente**:
@@ -127,5 +138,4 @@ Con `respuesta_palabra_clave` en la configuración de redes del cliente, el agen
 - Reportes de métricas (sección 10 del prompt v2) y alimentar `ejemplos_de_posts_que_funcionaron` con los posts que mejor funcionaron.
 - Botones "Conectar con Facebook/LinkedIn" (OAuth) en lugar de pegar tokens; renovación de tokens de LinkedIn.
 - Conectar el aviso por WhatsApp para los clientes que lo pidan.
-- TikTok.
 - Despliegue (servidor con https, p. ej. Railway/Render/VPS) con el disco de `data/` persistente.
