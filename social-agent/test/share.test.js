@@ -101,3 +101,11 @@ test('TikTok: renueva el token cuando está por vencer', async () => {
     assert.equal(new URLSearchParams(m.calls[0].body).get('grant_type'), 'refresh_token');
   } finally { m.restore(); }
 });
+
+test('un post con error puede regresar a aprobación', () => {
+  const p = db.createPost({ client_id: client.id, plataforma: 'tiktok', status: 'error' });
+  db.updatePost(p.id, { error: 'TikTok 403' });
+  pipe.backToReview(p.id);
+  assert.equal(db.getPost(p.id).status, 'pendiente');
+  assert.equal(db.getPost(p.id).error, null);
+});

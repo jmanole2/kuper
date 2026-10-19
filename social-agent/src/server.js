@@ -266,6 +266,7 @@ export function createApp() {
       res.redirect(back(req));
     });
     router.post('/posts/:pid/cambios', (req, res) => { pipe.requestChanges(req.post.id, req.body.comentarios); res.redirect(back(req)); });
+    router.post('/posts/:pid/revisar', (req, res) => { pipe.backToReview(req.post.id); res.redirect(back(req)); });
     router.post('/posts/:pid/rechazar', (req, res) => { pipe.rejectPost(req.post.id, req.body.motivo || ''); res.redirect(back(req)); });
     router.post('/posts/:pid/asset', upload.single('archivo'), (req, res) => {
       if (!req.file) throw new Error('Sube una imagen JPG/PNG o un video MP4');

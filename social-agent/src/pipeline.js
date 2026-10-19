@@ -251,6 +251,14 @@ export function approvePost(postId, { variante, copy, hashtags, fecha, hora, tik
   return db.getPost(postId);
 }
 
+/** Un post que falló al publicar vuelve a aprobación (p. ej. para elegir otra privacidad en TikTok). */
+export function backToReview(postId) {
+  const post = db.getPost(postId);
+  if (!db.transitionPost(postId, 'error', 'pendiente')) throw new Error('Solo se puede regresar a aprobación un post con error');
+  db.updatePost(postId, { error: null });
+  db.logEvent({ postId, clientId: post.client_id, tipo: 'regresado_a_aprobacion', detalle: post.error || '' });
+}
+
 export function rejectPost(postId, motivo = '') {
   const post = db.getPost(postId);
   if (!db.transitionPost(postId, ['pendiente', 'necesita_asset', 'aprobado'], 'rechazado')) throw new Error('No se puede rechazar en este estado');

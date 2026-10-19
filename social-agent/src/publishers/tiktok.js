@@ -66,7 +66,7 @@ async function tt(path, token, body) {
   const code = j.error?.code;
   if (!res.ok || (code && code !== 'ok')) {
     const hint = /unaudited/i.test(`${code} ${j.error?.message}`)
-      ? ' (la app de TikTok aún no está auditada: mientras tanto la cuenta debe ser privada o el post sale como "solo yo")'
+      ? ' (TikTok aún no audita la app: mientras tanto solo deja publicar en una cuenta PRIVADA y con "Solo yo". Pon la cuenta en privado, da "Regresar a aprobación" y elige "Solo yo")'
       : '';
     throw new Error(`TikTok ${res.status}: ${j.error?.message || code || 'error desconocido'}${hint}`);
   }
