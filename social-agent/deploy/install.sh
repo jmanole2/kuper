@@ -21,6 +21,17 @@ EMAIL="${EMAIL:-}"
 [ "$(id -u)" = 0 ] || { echo "Córrelo con sudo."; exit 1; }
 [ -n "$DOMINIO" ] || { echo "Falta DOMINIO (p. ej. DOMINIO=agente.kuper.media). Debe apuntar ya a la IP de este servidor."; exit 1; }
 
+# Servidores con menos de 2 GB: un render de Reel usa ~750 MB en el pico (Chromium + ffmpeg),
+# así que se agrega swap como colchón para que nunca se caiga por memoria.
+RAM_MB=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)
+if [ "$RAM_MB" -lt 1900 ] && ! swapon --show | grep -q .; then
+  echo "==> ${RAM_MB} MB de RAM: creando 2 GB de swap"
+  fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+  chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  sysctl -w vm.swappiness=10 >/dev/null && echo 'vm.swappiness=10' > /etc/sysctl.d/99-agente-swap.conf
+fi
+
 echo "==> Paquetes base"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y

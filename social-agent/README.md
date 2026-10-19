@@ -67,7 +67,7 @@ Después manda al cliente el enlace de su portal.
 
 ## Instalar en el servidor (DigitalOcean)
 
-En un droplet Ubuntu 22.04/24.04 (2 GB de RAM recomendado) con un subdominio que ya apunte a su IP:
+En un droplet Ubuntu 22.04/24.04 con un subdominio que ya apunte a su IP. Un render de Reel usa ~750 MB en el pico; con 1 GB de RAM funciona porque el instalador agrega 2 GB de swap, y con 2 GB va holgado.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jmanole2/novaplastica/agente-publicador-redes-sociales/social-agent/deploy/install.sh \

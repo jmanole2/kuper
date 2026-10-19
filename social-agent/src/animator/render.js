@@ -65,7 +65,8 @@ export function buildSpec(job) {
 
 export class Stage {
   static async open() {
-    const opts = { args: ['--force-color-profile=srgb'] };
+    // Banderas para servidores chicos: sin GPU, sin /dev/shm (en droplets es de 64 MB) y heap de JS acotado.
+    const opts = { args: ['--force-color-profile=srgb', '--disable-gpu', '--disable-dev-shm-usage', '--disable-extensions', '--js-flags=--max-old-space-size=512'] };
     if (process.env.CHROMIUM_PATH) opts.executablePath = process.env.CHROMIUM_PATH;
     const s = new Stage();
     s.browser = await chromium.launch(opts);
@@ -121,13 +122,17 @@ export class Stage {
   async renderVideo(outFile) {
     const { duration, fps } = this.spec;
     const total = Math.round(duration * fps);
+    // Paso 1: solo video. El audio silencioso se agrega aparte (paso 2): si se genera junto, ffmpeg
+    // lo produce más rápido que los cuadros y lo acumula en memoria esperando al video.
+    const tmp = outFile.replace(/\.mp4$/, '') + '.solo-video.mp4';
     const ff = spawn(FFMPEG, [
       '-y', '-loglevel', 'error',
-      '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-      '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000',
-      '-shortest', '-map', '0:v', '-map', '1:a',
-      '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-r', String(fps),
-      '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', outFile,
+      '-threads', '1', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
+      // Hilos acotados y ventana de análisis corta (rc-lookahead): x264 guarda esos cuadros en memoria.
+      // Así cabe en un servidor de 1 GB.
+      '-c:v', 'libx264', '-preset', process.env.FFMPEG_PRESET || 'medium', '-threads', process.env.FFMPEG_THREADS || '2',
+      '-x264-params', `rc-lookahead=${process.env.FFMPEG_LOOKAHEAD || 10}`,
+      '-crf', '19', '-pix_fmt', 'yuv420p', '-r', String(fps), tmp,
     ], { stdio: ['pipe', 'inherit', 'inherit'] });
     const done = new Promise((res, rej) => ff.on('exit', (c) => (c === 0 ? res() : rej(new Error(`ffmpeg terminó con código ${c}`)))));
     for (let i = 0; i < total; i++) {
@@ -136,6 +141,14 @@ export class Stage {
     }
     ff.stdin.end();
     await done;
+    // Paso 2: pista de audio silenciosa (Reels y LinkedIn la prefieren) sin recodificar el video.
+    await new Promise((res, rej) => spawn(FFMPEG, [
+      '-y', '-loglevel', 'error', '-i', tmp,
+      '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000',
+      '-shortest', '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k',
+      '-movflags', '+faststart', outFile,
+    ], { stdio: ['ignore', 'inherit', 'inherit'] }).on('exit', (c) => (c === 0 ? res() : rej(new Error(`ffmpeg (audio) terminó con código ${c}`)))));
+    fs.rmSync(tmp, { force: true });
     return outFile;
   }
 
