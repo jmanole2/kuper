@@ -12,7 +12,8 @@
     "dev": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env --watch src/server.js",
     "seed": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/seed-kuper.js",
     "render:demo": "node --env-file-if-exists=.env scripts/render-demo.js",
-    "test": "node --no-warnings=ExperimentalWarning --test"
+    "test": "node --no-warnings=ExperimentalWarning --test",
+    "token-meta": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/token-meta.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

@@ -87,7 +87,7 @@ export function createApp() {
     const keep = (nv, old) => (nv?.trim() ? nv.trim() : old);
     // Tokens pegados con espacios, saltos de línea, comillas o el nombre de la variable del .env.
     const tok = (nv, old) => {
-      const v = String(nv ?? '').replace(/^\s*[A-Z_]+\s*=/, '').replace(/["'\s]/g, '');
+      const v = String(nv ?? '').replace(/^\s*[A-Z_]+\s*=/, '').replace(/["'\s$]/g, '');
       return v ? v : old;
     };
     const credentials = {

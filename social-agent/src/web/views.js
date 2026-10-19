@@ -110,7 +110,7 @@ export function clientFormPage(client, { error, notice, competitors = [], report
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
   const meta = creds.meta || {}, li = creds.linkedin || {};
-  const set = (v) => (v ? '•••••• (guardado)' : '');
+  const set = (v) => (v ? `guardado: ${String(v).slice(0, 3)}…${String(v).slice(-4)} (${String(v).length} caracteres)` : '');
   const body = html`
   <h1>${isNew ? 'Nuevo cliente' : client.nombre}</h1>
   ${error ? html`<div class="err">${error}</div>` : ''}
@@ -158,11 +158,11 @@ export function clientFormPage(client, { error, notice, competitors = [], report
       <strong>Meta (Instagram + Facebook)</strong>
       <label>ID de la Página de Facebook</label><input name="meta_page_id" value="${meta.page_id || ''}">
       <label>ID de la cuenta de Instagram Business</label><input name="meta_ig_user_id" value="${meta.ig_user_id || ''}">
-      <label>Token de acceso de la Página</label><input name="meta_page_token" type="password" placeholder="${set(meta.page_token)}" autocomplete="off">
+      <label>Token de acceso de la Página</label><input name="meta_page_token" type="text" placeholder="${set(meta.page_token)}" autocomplete="off" spellcheck="false" data-lpignore="true">
     </div><div>
       <strong>LinkedIn (Página de empresa)</strong>
       <label>ID de la organización</label><input name="li_org_id" value="${li.org_id || ''}" placeholder="12345678">
-      <label>Access token (w_organization_social)</label><input name="li_access_token" type="password" placeholder="${set(li.access_token)}" autocomplete="off">
+      <label>Access token (w_organization_social)</label><input name="li_access_token" type="text" placeholder="${set(li.access_token)}" autocomplete="off" spellcheck="false" data-lpignore="true">
       <label style="font-weight:400"><input type="checkbox" name="dry_run" value="1" style="width:auto" ${raw(creds.dry_run ? 'checked' : '')}> Modo simulación (no publica de verdad)</label>
     </div></div>
     ${!isNew ? html`<label style="font-weight:400"><input type="checkbox" name="activo" value="1" style="width:auto" ${raw(client.activo ? 'checked' : '')}> Cliente activo (el agente genera y publica)</label>` : ''}
