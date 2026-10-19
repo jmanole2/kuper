@@ -44,18 +44,39 @@ function draw(ctx, t, K) {     // obligatoria, corre en cada cuadro.
 **Texto**
 - `K.font(weight, size, family = K.brand.fontHead)` → string para `ctx.font`.
 - `K.fit(texto, { maxW, maxH, max, min, weight, lineHeight, family, upper })` → bloque `{ font, size, lines, lineH, width, height }` que cabe en el recuadro (reduce el tamaño si hace falta). Si devuelve `overflow: true`, el texto no cupo: dale más espacio o recórtalo.
-- `K.drawText(ctx, bloque, x, y, { color, align, p, style, by, spread, shadow, highlight })` — dibuja el bloque con animación de entrada. `p` = progreso 0..1; `style`: `'rise' | 'fade' | 'mask' | 'type' | 'none'`; `by`: `'words' | 'lines' | 'chars'`; `highlight: { words: ['ia'], color }` colorea palabras clave. `x,y` es la esquina superior (con `align:'center'`, x es el centro).
+- `K.fit(...)` acepta además `tracking` (espaciado entre letras como fracción del tamaño; por defecto se aprieta un poco en titulares grandes y se abre en mayúsculas).
+- `K.drawText(ctx, bloque, x, y, { color, align, p, style, by, spread, shadow, highlight, glow })` — dibuja el bloque con animación de entrada. `p` = progreso 0..1; `style`: `'blur'` (entra desenfocado y se enfoca: el más elegante) `| 'rise' | 'fade' | 'mask' | 'type' | 'none'`; `by`: `'words' | 'lines' | 'chars'`; `highlight: { words: ['ia'], color }` colorea palabras clave; `glow`: color de un brillo suave. `x,y` es la esquina superior (con `align:'center'`, x es el centro).
 - `K.wrap(texto, maxW, font)` → líneas.
 
 **Formas y acabados**
 - `K.glass(ctx, x, y, w, h, { r, blur, tint, border, glow })` — tarjeta de vidrio esmerilado (desenfoca lo que ya está pintado detrás).
-- `K.pill(ctx, texto, x, y, { size, color, fill, border, p })` → `{w, h}` — etiqueta tipo píldora.
+- `K.fluted(ctx, x, y, w, h, { ribs, amp, blur, r, phase, shade })` — vidrio acanalado: refracta en tiras verticales lo que ya está pintado. Pon luz detrás (`K.aurora`) y queda espectacular. Nunca encima de texto (lo vuelve ilegible): dibuja el texto después.
+- `K.pill(ctx, texto, x, y, { size, color, fill, border, p, weight, upper })` → `{w, h}` — etiqueta tipo píldora de borde fino.
+- `K.corners(ctx, { tl, tr, bl, br }, { size, alpha, p })` — etiquetas pequeñas en las esquinas de la zona segura (marca, categoría, "02 / 06", "Desliza").
+- `K.hairline(ctx, x1, y1, x2, y2, { alpha, width, p })` — línea fina (p la dibuja). `K.sparkle(ctx, x, y, r, { alpha, rot })` — destello de 4 puntas. `K.asterisk(ctx, x, y, r, { arms, w, rot, p })` — asterisco de trazos (marca gráfica).
 - `K.roundRect(ctx, x, y, w, h, r)` (deja el path listo para fill/stroke), `K.glowCircle(ctx, x, y, r, color, alpha)`.
 - `K.logo(ctx, x, y, alto, { align, alpha })` — logo del cliente (o su nombre si no hay logo). Devuelve el ancho.
 - `K.grain(ctx, amount)`, `K.vignette(ctx, strength)`.
 - Color: `K.rgba(hex, a)`, `K.mix(hex1, hex2, k)`, `K.readableOn(hex)`, `K.contrast(a, b)`.
 
-**Fondos listos** (úsalos o pinta el tuyo): `K.bg.solid(ctx, color)`, `K.bg.iridescent(ctx, t, { colors, speed, lines, darkness })`, `K.bg.orbs(ctx, t, { colors, count, seed })`, `K.bg.grid(ctx, t, { color, gap, speed })`.
+**Luz**
+- `K.bg.luminous(ctx, t, { base, spots: [{ x, y, r, color, a }] })` — fondo casi negro con manchas de luz muy suaves que derivan (x, y, r en fracciones del lienzo). Mueve los spots con `t` o con `K.slide` para que la luz "viaje".
+- `K.aurora(ctx, t, { x, y, w, h, color, intensity, ribbons })` — cintas de luz que fluyen (mezcla aditiva).
+- `K.lightCone(ctx, x, y, { h, color, spread, intensity })` — filo de luz blanco que sube desde (x, y) con una cuña oscura hacia abajo. Ideal para cierres.
+- `K.beam(ctx, x, y, { angle, spread, length, color, intensity })` — haz de luz en cualquier dirección. `K.flare(ctx, x, y, r, { color })` — punto de luz con halo.
+
+**Otros fondos**: `K.bg.solid`, `K.bg.iridescent(ctx, t, { colors, speed, lines, darkness })`, `K.bg.orbs`, `K.bg.grid`.
+
+## Dirección de arte
+
+Si `K.brand.style` describe un estilo, mándalo él. Si no, o para todo lo que no especifique, este es el nivel y el lenguaje esperado (editorial, premium, tecnológico):
+
+- **Oscuro y con luz.** Fondo casi negro de la marca; UNA fuente de luz principal (una mancha de luz, un haz, una aurora tras vidrio) que dirige la mirada al texto. Negros profundos: no laves todo el lienzo de color.
+- **Tipografía como protagonista.** Titulares grandes en peso regular o ligero (400/300), en minúsculas y mayúsculas normales, interlineado apretado (~1.0), tracking ligeramente negativo. Nada de titulares en negrita gruesa ni todo en mayúsculas (las mayúsculas solo en etiquetas pequeñas con tracking abierto). Texto de apoyo pequeño y más tenue.
+- **Aire.** Grandes áreas vacías. Pocos elementos por cuadro: un titular, un apoyo, uno o dos detalles finos (línea, destello, asterisco, etiquetas de esquina, píldora). Nunca cajas o tarjetas en cada escena.
+- **Detalles finos.** Líneas de 1–2 px con baja opacidad, destellos pequeños, etiquetas de esquina discretas, grano sutil (`K.grain`). Son lo que da el acabado premium.
+- **Movimiento cinematográfico.** Lento y suave: la luz deriva, el texto entra desenfocado y se enfoca (`style: 'blur'`), las transiciones son fundidos y desplazamientos cortos. Nada de rebotes exagerados ni giros.
+- **Continuidad.** Un hilo visual recorre la pieza (una línea con un destello que avanza, la luz que se desplaza, el mismo encuadre). En carrusel, el mismo sistema en todas las slides con la luz avanzando de una a otra.
 
 ## Cómo trabajar
 
@@ -80,9 +101,9 @@ Responde solo con el JSON del esquema:
 - `aprobado`: en la primera entrega `false`; en revisiones, tu veredicto.
 - `problemas`: en revisiones, lo que viste y corregiste (vacío en la primera entrega).
 
-## Ejemplo de referencia (Reel 9:16, 10 s, marca con fondo oscuro iridiscente)
+## Ejemplo de referencia (Reel 9:16, 12 s, marca oscura con luz azul)
 
-`K.content` del ejemplo: `{ hook, items: [{ mal, bien }], cierre }`.
+`K.content` del ejemplo: `{ escenas: [{ titular, apoyo }], cierre, cta }`. Fíjate en: una sola luz que se mueve, titulares en peso regular que entran desenfocados, la línea con destello como hilo conductor, el vidrio acanalado con aurora debajo del texto (no encima) y el cierre con cono de luz.
 
 ```js
 {{EJEMPLO}}

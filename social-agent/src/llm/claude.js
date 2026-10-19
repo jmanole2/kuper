@@ -6,7 +6,16 @@ import { config, ROOT } from '../config.js';
 import { POST_SCHEMA, COMPETITOR_SCHEMA } from './schemas.js';
 import { mockPost, mockCompetitors } from './mock.js';
 
-const MAESTRO = fs.readFileSync(path.join(ROOT, 'prompts/maestro.md'), 'utf8');
+// Fórmulas de gancho de la skill ig-reel (copia viva en .claude/skills si existe, si no la empaquetada).
+const HOOKS_FILE = [path.join(ROOT, '..', '.claude/skills/ig-reel/hooks.json'), path.join(ROOT, 'prompts/ig/hooks.json')].find((f) => fs.existsSync(f));
+const HOOKS = JSON.parse(fs.readFileSync(HOOKS_FILE, 'utf8'));
+const FORMULAS = {
+  reglas: HOOKS.rules,
+  formulas: HOOKS.hooks.map(({ id, name, template, example, on_screen, best_for, trap }) => ({ id, name, template, example, on_screen, best_for, trap })),
+};
+// El prompt maestro + las fórmulas van en el system (fijo → se cachea).
+const MAESTRO = fs.readFileSync(path.join(ROOT, 'prompts/maestro.md'), 'utf8') +
+  `\n\n---\n\n## FORMULAS_DE_GANCHO\n\n\`\`\`json\n${JSON.stringify(FORMULAS, null, 1)}\n\`\`\`\n`;
 
 const COMPETENCIA_SYSTEM = `Eres analista de redes sociales de una agencia de marketing.
 Recibes datos públicos reales de cuentas de la competencia de un cliente (obtenidos de la API oficial de Instagram) y notas manuales de la agencia.

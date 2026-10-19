@@ -2,6 +2,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { config, mediaDir } from './config.js';
+import { cleanOutput } from './textcheck.js';
 import * as db from './db.js';
 import { generatePost, analyzeCompetitors } from './llm/claude.js';
 import { validatePost, needsApproval, PLATFORM_RULES } from './rules.js';
@@ -41,7 +42,7 @@ export function slotFor(client, plataforma, now = new Date()) {
 function buildInput(client, plataforma, { feedback, postId } = {}) {
   const slot = slotFor(client, plataforma);
   const historial = db.recentHistory(client.id, { excludeId: postId }).map((h) => ({
-    plataforma: h.plataforma, pilar: h.pilar, tema: h.tema, formato: h.formato, estructura: h.estructura, fecha: h.fecha?.slice(0, 10),
+    plataforma: h.plataforma, pilar: h.pilar, tipo_post: h.tipo_post, estructura: h.estructura, formato: h.formato, tema: h.tema, fecha: h.fecha?.slice(0, 10),
   }));
   const report = db.latestCompetitorReport(client.id);
   return {
@@ -127,7 +128,8 @@ async function fillPost(postId, { feedback } = {}) {
   // Al regenerar se respeta la fecha que ya tenía el post.
   if (feedback && post.scheduled_at) input.fechaCalculada = input.historial.fecha_calculada = localDate(post.scheduled_at, config.timezone);
   const modo = modoDe(client, post.plataforma);
-  const validate = (out) => validatePost(out, {
+  // Limpia huellas tipográficas (rayas, comillas curvas, invisibles) y luego valida.
+  const validate = (out) => validatePost(cleanOutput(out), {
     perfil: client.perfil, plataforma: post.plataforma, modo, historial: input.historial.ultimas_publicaciones,
     fechaCalculada: input.fechaCalculada, formatosPermitidos: platformCfg(client, post.plataforma).formatos,
   });
@@ -150,7 +152,7 @@ async function fillPost(postId, { feedback } = {}) {
   else status = 'aprobado';
 
   post = db.updatePost(postId, {
-    status, pilar: out.pilar_de_contenido, tema: out.tema, formato: out.formato_contenido, estructura: out.estructura, salida,
+    status, pilar: out.pilar_de_contenido, tema: out.tema, formato: out.formato_contenido, estructura: out.estructura, tipo_post: out.tipo_post, salida,
     variante: 0, copy_final: out.variantes_copy[0]?.copy ?? '', hashtags: out.variantes_copy[0]?.hashtags ?? [],
     alt_text: out.alt_text, scheduled_at: scheduledAt, error: null,
     ...(out.requiere_asset_real ? {} : media),

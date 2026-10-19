@@ -15,7 +15,7 @@ const video = { kind: 'video', formato: '9:16', duration: 3, brand, content: { e
 test('el ejemplo del prompt pasa la revisión técnica', { timeout: 60_000 }, async () => {
   const st = await Stage.open();
   try {
-    await st.load({ ...video, duration: 10, content: { hook: 'Hola', cierre: 'Fin', items: [{ mal: 'a', bien: 'b' }] } },
+    await st.load({ ...video, duration: 10, content: { escenas: [{ titular: 'Uno', apoyo: 'dos' }, { titular: 'Tres', apoyo: '' }, { titular: 'Cuatro', apoyo: 'cinco' }], cierre: 'Fin', cta: 'Fin' } },
       fs.readFileSync(path.join(ROOT, 'prompts/ejemplo-animacion.js'), 'utf8'));
     const p = await st.probe();
     assert.deepEqual(p.errors, []);

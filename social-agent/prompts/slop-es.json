@@ -1,0 +1,82 @@
+{
+  "nota": "Muletillas y estructuras que hacen que un texto en español suene a IA. Adaptado de .claude/skills/ig-human/slop.json para español. Edítalo libremente: si una marca usa una palabra a propósito, quítala de aquí.",
+  "frases": [
+    "en el mundo actual",
+    "en el mundo de hoy",
+    "en la era digital",
+    "en el mundo digital",
+    "hoy en día",
+    "hoy en dia",
+    "la clave del éxito",
+    "es fundamental",
+    "es crucial",
+    "cabe destacar",
+    "cabe mencionar",
+    "sin lugar a dudas",
+    "descubre cómo",
+    "descubre como",
+    "transforma tu negocio",
+    "lleva tu negocio al siguiente nivel",
+    "al siguiente nivel",
+    "revoluciona",
+    "revolucionario",
+    "disruptivo",
+    "sinergia",
+    "soluciones innovadoras",
+    "soluciones integrales",
+    "de vanguardia",
+    "un mundo de posibilidades",
+    "sumérgete",
+    "desbloquea",
+    "en definitiva",
+    "no te lo pierdas",
+    "potencia tu",
+    "impulsa tu",
+    "optimiza tu",
+    "eleva tu",
+    "maximiza tu",
+    "aprovecha al máximo",
+    "aquí te explico",
+    "te cuento",
+    "sin más preámbulos",
+    "en este video",
+    "en este post",
+    "en este artículo",
+    "sígueme para más",
+    "síguenos para más",
+    "etiqueta a alguien",
+    "dale like",
+    "doble tap",
+    "como nunca antes",
+    "a otro nivel",
+    "un antes y un después",
+    "juego cambia",
+    "cambia las reglas del juego",
+    "hola a todos",
+    "hola, comunidad",
+    "¿sabías que"
+  ],
+  "estructuras": [
+    {
+      "regex": "\\bno es (solo|sólo|solamente) [^.!?\\n]{1,60}?, es\\b",
+      "mensaje": "estructura \"No es solo X, es Y\""
+    },
+    {
+      "regex": "\\bno (solo|sólo|solamente) [^.!?\\n]{1,60}? sino (también|tambien)\\b",
+      "mensaje": "estructura \"no solo X sino también Y\""
+    },
+    {
+      "regex": "(^|\\n)\\s*¿[^?\\n]{1,22}\\?\\s*(\\n|$)",
+      "mensaje": "pregunta retórica corta en su propia línea (\"¿El resultado?\")"
+    },
+    {
+      "regex": "(^|\\n)\\s*\\p{Extended_Pictographic}",
+      "mensaje": "línea que empieza con emoji (viñetas con emoji)"
+    },
+    {
+      "regex": "\\b[A-ZÁÉÍÓÚÑ]{3,}\\s+[A-ZÁÉÍÓÚÑ]{3,}\\s+[A-ZÁÉÍÓÚÑ]{3,}\\b",
+      "mensaje": "tres o más palabras seguidas en MAYÚSCULAS",
+      "flags": "u"
+    }
+  ]
+}

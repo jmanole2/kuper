@@ -99,6 +99,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   const ensure = (t, col, def) => { if (!cols(t).includes(col)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${col} ${def}`); };
   ensure('posts', 'images_json', "TEXT NOT NULL DEFAULT '[]'");
   ensure('posts', 'estructura', 'TEXT');
+  ensure('posts', 'tipo_post', 'TEXT');
   return db;
 }
 
@@ -201,7 +202,7 @@ export function createPost(fields) {
   return getPost(Number(r.lastInsertRowid));
 }
 
-const POST_FIELDS = ['status', 'pilar', 'tema', 'formato', 'estructura', 'images_json', 'salida_json', 'variante', 'copy_final', 'hashtags_json',
+const POST_FIELDS = ['status', 'pilar', 'tema', 'formato', 'estructura', 'tipo_post', 'images_json', 'salida_json', 'variante', 'copy_final', 'hashtags_json',
   'image_path', 'video_path', 'alt_text', 'scheduled_at', 'published_at', 'external_id', 'external_url', 'error', 'feedback'];
 
 export function updatePost(id, patch) {
@@ -242,7 +243,7 @@ export function lastGenerationErrorAt(clientId, plataforma) {
 // Publicaciones recientes (publicadas o ya programadas) para rotación de pilares y fechas.
 export function recentHistory(clientId, { limit = 12, excludeId = 0 } = {}) {
   return getDb().prepare(
-    `SELECT plataforma, pilar, tema, formato, estructura, COALESCE(published_at, scheduled_at) AS fecha, status
+    `SELECT plataforma, pilar, tema, formato, estructura, tipo_post, COALESCE(published_at, scheduled_at) AS fecha, status
      FROM posts WHERE client_id = ? AND id != ? AND tema IS NOT NULL
        AND status IN ('publicado','aprobado','publicando','pendiente','necesita_asset')
      ORDER BY COALESCE(published_at, scheduled_at) DESC LIMIT ?`,

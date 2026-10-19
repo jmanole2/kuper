@@ -1,75 +1,82 @@
-// Ejemplo de referencia: Reel 9:16 de 10 s, "3 errores al usar IA en tu PyME".
-// Concepto: tarjetas de vidrio que entran una por una sobre el fondo iridiscente;
-// cada error se tacha y se reemplaza por la corrección. Cierre con logo.
+// Ejemplo de referencia: Reel 9:16 de 12 s para una marca de agentes de IA en WhatsApp.
+// Dirección: oscuro, editorial, mucha aire. Un solo elemento de luz guía la mirada.
+// Escena 1-2: la hora del mensaje contra la hora de la respuesta (el problema, con números).
+// Escena 3: un haz de luz sube y "enciende" la respuesta. Cierre: logo + palabra clave.
+// K.content: { escenas: [{ titular, apoyo }], cierre, cta }
 function setup(K) {
-  const c = K.content;
-  // Medir una sola vez los bloques de texto (fit es caro).
-  const cardW = K.safe.width;
+  const c = K.content, U = K.U, w = K.safe.width;
+  const big = (txt) => K.fit(txt, { maxW: w, maxH: K.H * 0.24, max: 112 * U, min: 64 * U, weight: 400, lineHeight: 1.02 });
+  const small = (txt) => (txt ? K.fit(txt, { maxW: w * 0.85, maxH: K.H * 0.12, max: 42 * U, min: 34 * U, weight: 400, family: K.brand.fontBody, lineHeight: 1.3, tracking: 0 }) : null);
   return {
-    cardW,
-    hook: K.fit(c.hook, { maxW: cardW, maxH: K.H * 0.2, max: 104 * K.U, weight: 800, upper: true }),
-    items: c.items.map((it) => ({
-      mal: K.fit(it.mal, { maxW: cardW - 120 * K.U, maxH: 190 * K.U, max: 64 * K.U, weight: 700 }),
-      bien: K.fit(it.bien, { maxW: cardW - 120 * K.U, maxH: 190 * K.U, max: 52 * K.U, weight: 400, family: K.brand.fontBody }),
-    })),
-    cierre: K.fit(c.cierre, { maxW: cardW, maxH: K.H * 0.16, max: 84 * K.U, weight: 800, upper: true }),
+    scenes: c.escenas.map((e) => ({ t: big(e.titular), a: small(e.apoyo) })),
+    cierre: K.fit(c.cierre, { maxW: w, maxH: K.H * 0.14, max: 96 * U, weight: 400 }),
   };
 }
 
 function draw(ctx, t, K) {
-  const S = K.state, U = K.U, { safe } = K;
-  K.bg.iridescent(ctx, t, { darkness: 0.55 });
+  const S = K.state, U = K.U, sf = K.safe, W = K.W, H = K.H;
+  const blue = K.brand.primary, ice = K.brand.light;
 
-  // --- 0.0–2.4 s: gancho
-  const hookIn = K.tween(t, 0.2, 1.0);
-  const hookOut = K.tween(t, 2.1, 2.6, K.ease.inCubic);
-  if (t < 2.7) {
-    ctx.save();
-    ctx.globalAlpha = 1 - hookOut;
-    ctx.translate(0, -hookOut * 80 * U);
-    K.pill(ctx, 'IA PARA PYMES', safe.left, safe.top + 40 * U, { p: K.tween(t, 0, 0.5) });
-    K.drawText(ctx, S.hook, safe.left, K.H * 0.38, { p: hookIn, style: 'mask', by: 'words', highlight: { words: ['ia'], color: K.brand.accent } });
+  // Fondo: casi negro con UNA zona de luz concentrada que baja lento a lo largo del video.
+  const k = K.tween(t, 0, 9, K.ease.inOutSine);
+  K.bg.luminous(ctx, t, { base: K.brand.bg, spots: [
+    { x: 0.95, y: K.lerp(0.02, 0.3, k), r: 0.6, color: blue, a: 0.75 },
+    { x: 0.0, y: 1.05, r: 0.45, color: K.brand.accent, a: 0.3 },
+  ] });
+  K.vignette(ctx, 0.55);
+
+  // Etiquetas de esquina (siempre presentes, muy discretas).
+  K.corners(ctx, { tl: K.brand.name, tr: 'Agentes de IA' }, { p: K.tween(t, 0.1, 0.8), alpha: 0.6 });
+
+  // Línea horizontal fina con destello que cruza toda la pieza (hilo conductor).
+  const lineY = sf.top + sf.height * 0.36;
+  const sx = K.lerp(sf.left, sf.right, K.tween(t, 0.2, 6.2, K.ease.inOutCubic));
+  K.hairline(ctx, 0, lineY, W, lineY, { p: K.tween(t, 0, 1.2, K.ease.outExpo), alpha: 0.22 * (1 - K.tween(t, 5.8, 6.4)) });
+  if (t < 6.4) K.sparkle(ctx, sx, lineY, 22 * U, { alpha: K.inOut(t, 0.3, 6.4, 0.6) });
+
+  // Escena 3: panel de vidrio acanalado con una aurora detrás (la "respuesta" se enciende).
+  // Va DEBAJO del texto de la escena y se dibuja ANTES, para que el vidrio no deforme las letras.
+  const textY = lineY + 60 * U;
+  const s3 = S.scenes[2];
+  const s3Y = sf.top + 130 * U; // la escena 3 sube para dejarle espacio al panel
+  const pk = K.tween(t, 6.3, 7.2, K.ease.outCubic) * (1 - K.tween(t, 9.3, 9.8, K.ease.inCubic));
+  if (pk > 0 && s3) {
+    const px = sf.left, pw = sf.width;
+    const py = s3Y + s3.t.height + (s3.a ? s3.a.height + 36 * U : 0) + 80 * U + (1 - pk) * 80 * U;
+    const ph = Math.max(200 * U, sf.bottom - py);
+    ctx.save(); ctx.globalAlpha = pk;
+    ctx.save(); K.roundRect(ctx, px, py, pw, ph, 36 * U); ctx.clip(); // la luz vive dentro del vidrio
+    ctx.fillStyle = K.rgba(K.brand.bg, 0.6); ctx.fillRect(px, py, pw, ph);
+    K.aurora(ctx, t, { x: px, y: py, w: pw, h: ph, color: blue, intensity: 2.2 * pk, ribbons: 4 });
+    ctx.restore();
+    K.fluted(ctx, px, py, pw, ph, { ribs: 16, amp: 34 * U, blur: 4 * U, r: 36 * U, phase: t * 0.5, shade: 0.28 });
+    K.roundRect(ctx, px, py, pw, ph, 36 * U); ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5 * U; ctx.stroke();
+    K.pill(ctx, 'Responde por ti', px + 40 * U, py + ph - 100 * U, { p: K.tween(t, 6.8, 7.4) });
+    K.asterisk(ctx, px + pw - 70 * U, py + 70 * U, 30 * U, { w: 6 * U, color: ice, p: K.tween(t, 6.9, 7.6), rot: t * 0.2 });
     ctx.restore();
   }
 
-  // --- 2.4–8.0 s: tres tarjetas, una a la vez (la anterior sale cuando entra la siguiente)
-  const start = 2.4, each = 1.85;
-  S.items.forEach((it, i) => {
-    const t0 = start + i * each, t1 = t0 + each;
-    if (t < t0 || t > t1 + 0.4) return;
-    const enter = K.tween(t, t0, t0 + 0.5, K.ease.outBack);
-    const exit = K.tween(t, t1 - 0.05, t1 + 0.35, K.ease.inCubic);
-    const cardH = 150 * U + it.mal.height + it.bien.height + 80 * U;
-    const y = (K.H - cardH) / 2 - 40 * U + (1 - enter) * K.H * 0.45 - exit * K.H * 0.25;
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, enter * 1.4) * (1 - exit);
-    ctx.translate(K.W / 2, y + cardH / 2); ctx.rotate((1 - enter) * 0.06 - exit * 0.04); ctx.translate(-K.W / 2, -(y + cardH / 2));
-    K.glass(ctx, safe.left, y, S.cardW, cardH, { glow: K.rgba(K.brand.primary, 0.5) });
-    // número grande
-    ctx.font = K.font(800, 64 * U); ctx.fillStyle = K.brand.accent2; ctx.textBaseline = 'top';
-    ctx.fillText(`0${i + 1}`, safe.left + 56 * U, y + 50 * U);
-    // el error, tachado cuando aparece la corrección
-    const strike = K.tween(t, t0 + 0.75, t0 + 1.1);
-    const tx = safe.left + 56 * U, ty = y + 140 * U;
-    K.drawText(ctx, it.mal, tx, ty, { p: K.tween(t, t0 + 0.2, t0 + 0.65), color: K.rgba('#ffffff', 1 - strike * 0.5) });
-    if (strike > 0) {
-      ctx.fillStyle = K.brand.accent2; ctx.font = it.mal.font;
-      it.mal.lines.forEach((l, li) => ctx.fillRect(tx, ty + li * it.mal.lineH + it.mal.size * 0.55, ctx.measureText(l).width * strike, 6 * U));
-    }
-    // la corrección
-    K.drawText(ctx, it.bien, tx, ty + it.mal.height + 40 * U, { p: K.tween(t, t0 + 0.95, t0 + 1.45), style: 'rise', color: '#ffffff' });
+  // Escenas: titular grande que entra desenfocado y se enfoca; apoyo pequeño debajo.
+  const slots = [[0.25, 3.0], [3.0, 6.3], [6.3, 9.5]];
+  S.scenes.forEach((sc, i) => {
+    const [a, b] = slots[i] || slots[slots.length - 1];
+    const vis = K.inOut(t, a, b, 0.5);
+    if (vis <= 0) return;
+    ctx.save(); ctx.globalAlpha = vis;
+    const y = i === 2 ? s3Y : textY;
+    K.drawText(ctx, sc.t, sf.left, y, { p: K.tween(t, a, a + 0.9), style: 'blur', by: 'words', spread: 0.5 });
+    if (sc.a) K.drawText(ctx, sc.a, sf.left, y + sc.t.height + 36 * U, { p: K.tween(t, a + 0.6, a + 1.3), style: 'blur', color: K.rgba(ice, 0.72) });
     ctx.restore();
   });
 
-  // --- 8.0–10 s: cierre
-  const cl = K.tween(t, 8.1, 8.8, K.ease.outBack);
-  if (t > 8.0) {
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, cl);
-    const y = K.H * 0.42;
-    K.drawText(ctx, S.cierre, K.W / 2, y, { align: 'center', p: K.tween(t, 8.1, 8.9), style: 'rise' });
-    K.logo(ctx, K.W / 2, y + S.cierre.height + 70 * U, 90 * U, { align: 'center', alpha: K.tween(t, 8.6, 9.2) });
+  // Cierre: cono de luz (filo blanco que sube, cuña oscura que baja), mensaje y logo quietos.
+  const o = K.tween(t, 9.6, 10.6);
+  if (o > 0) {
+    ctx.save(); ctx.globalAlpha = o;
+    K.lightCone(ctx, W / 2, H * 0.5, { h: H * 0.42 * K.tween(t, 9.6, 10.8, K.ease.outCubic), color: blue, intensity: o });
+    K.drawText(ctx, S.cierre, W / 2, H * 0.58, { align: 'center', p: K.tween(t, 10.0, 10.9), style: 'blur' });
+    K.logo(ctx, W / 2, sf.bottom - 70 * U, 56 * U, { align: 'center', alpha: K.tween(t, 10.4, 11.1) * 0.9 });
     ctx.restore();
   }
-  K.grain(ctx, 0.06);
+  K.grain(ctx, 0.05);
 }

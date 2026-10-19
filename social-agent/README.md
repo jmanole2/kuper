@@ -28,6 +28,17 @@ npm start                  # http://localhost:3000/admin
 
 Para probar sin gastar API ni publicar: `MOCK_LLM=1 DRY_RUN=1 npm start` (los visuales salen con el diseño de respaldo). Pruebas: `npm test`. Animación de ejemplo del animador: `npm run render:demo` (deja el MP4 y su hoja de contacto en `data/media/`).
 
+## Textos: skills de Instagram
+
+El redactor sigue las skills `.claude/skills/ig-*` del repo, adaptadas al español y a un flujo automático (`prompts/maestro.md` v4):
+
+- **Voz de la marca** (`perfil.voz`, mismo formato que `.claude/instagram/voice.md`): manda sobre tono, vocabulario, posturas y pruebas. Kuper se carga con su `voice.md`.
+- **Tipo de post** (prueba, enseñanza, opinión, historia, oferta) y **estructura** que rotan.
+- **3 ganchos** con 3 de las 26 fórmulas de `ig-reel/hooks.json`; el elegido abre la pieza.
+- **Reel**: gancho, lo que está en juego, cuerpo, remate y cierre con la acción. **Carrusel**: portada de 6 palabras, slide de lo que está en juego, una idea por slide, resumen y CTA.
+- **Caption** (ig-caption): primera línea de 125 caracteres o menos, una sola acción con palabra clave, términos de búsqueda en el texto, máximo 5 hashtags, sin links.
+- **Humanizar** (ig-human en español): `src/textcheck.js` limpia rayas, comillas curvas e invisibles, y rechaza muletillas y estructuras de IA (`prompts/slop-es.json`, editable). Todo lo que falla se le regresa a Claude para corregir.
+
 ## El animador (visuales con Claude)
 
 ```
@@ -38,7 +49,8 @@ guion del post -> Claude escribe setup()/draw() -> el motor prueba el código ->
 - `src/animator/stage.html` — escenario en Chromium sin red; vuelve el código determinista y mide cada texto para detectar cortes.
 - `src/animator/index.js` — el ciclo con Claude (hasta 6 rondas, 2 revisiones visuales). Si no logra una pieza válida, usa `fallback.js` y lo avisa.
 - `prompts/ejemplo-animacion.js` — pieza de referencia que ve Claude (también sirve de prueba).
-- Tipografías disponibles: Poppins y DM Sans (`FONTS` en `src/animator/render.js` para agregar más).
+- Tipografías disponibles: Inter Tight, Geist, DM Sans y Poppins (`FONTS` en `src/animator/render.js` para agregar más).
+- Recursos de luz y acabado: `K.bg.luminous`, `K.aurora`, `K.fluted` (vidrio acanalado), `K.lightCone`, `K.beam`, `K.hairline`, `K.sparkle`, `K.asterisk`, `K.corners`, texto que entra desenfocado (`style: 'blur'`).
 - `ANIMATOR_EFFORT=high` (o `xhigh` para piezas más cuidadas, más lento y caro).
 
 ## Configurar un cliente

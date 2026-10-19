@@ -75,8 +75,8 @@ window.makeKit = function makeKit(spec, assets) {
   // ------------------------------------------------------------ texto
   const font = (weight, size, family = brand.fontHead) => `${weight} ${Math.round(size)}px "${family}", sans-serif`;
   let ctxRef = null;
-  function wrap(text, maxW, f) {
-    const c = ctxRef; c.save(); c.font = f;
+  function wrap(text, maxW, f, ls = 0) {
+    const c = ctxRef; c.save(); c.font = f; c.letterSpacing = `${ls}px`;
     const lines = [];
     for (const para of String(text ?? '').split('\n')) {
       let line = '';
@@ -91,29 +91,33 @@ window.makeKit = function makeKit(spec, assets) {
   }
   /** Ajusta el texto al recuadro bajando el tamaño. Devuelve {font, size, lines, lineH, width, height}. */
   function fit(text, o = {}) {
-    const { maxW = W * 0.8, maxH = H * 0.3, weight = 800, max = 120 * U, min = 22 * U, lineHeight = 1.1, family = brand.fontHead, upper = false } = o;
+    const { maxW = W * 0.8, maxH = H * 0.3, weight = 500, max = 120 * U, min = 22 * U, lineHeight = 1.08, family = brand.fontHead, upper = false, tracking = null } = o;
     const str = upper ? String(text).toUpperCase() : String(text);
+    // tracking: espaciado entre letras como fracción del tamaño (p. ej. -0.03 = apretado, 0.12 = abierto)
+    const trk = (size) => (tracking === null ? (upper ? 0.06 : size > 60 * U ? -0.025 : 0) : tracking) * size;
     for (let size = max; size >= min; size -= 2 * U) {
       const f = font(weight, size, family);
-      const lines = wrap(str, maxW, f);
-      const c = ctxRef; c.save(); c.font = f;
+      const ls = trk(size);
+      const lines = wrap(str, maxW, f, ls);
+      const c = ctxRef; c.save(); c.font = f; c.letterSpacing = `${ls}px`;
       const width = Math.max(...lines.map((l) => c.measureText(l).width));
       c.restore();
-      if (lines.length * size * lineHeight <= maxH && width <= maxW) return { font: f, size, lines, lineH: size * lineHeight, width, height: lines.length * size * lineHeight };
+      if (lines.length * size * lineHeight <= maxH && width <= maxW) return { font: f, size, lines, lineH: size * lineHeight, width, height: lines.length * size * lineHeight, tracking: ls };
     }
     const f = font(weight, min, family);
-    const lines = wrap(str, maxW, f);
-    return { font: f, size: min, lines, lineH: min * lineHeight, width: maxW, height: lines.length * min * lineHeight, overflow: true };
+    const lines = wrap(str, maxW, f, trk(min));
+    return { font: f, size: min, lines, lineH: min * lineHeight, width: maxW, height: lines.length * min * lineHeight, tracking: trk(min), overflow: true };
   }
   /**
    * Dibuja un bloque de fit(). x,y = esquina superior (según align).
-   * p = progreso 0..1 de la animación de entrada; style: 'rise' | 'fade' | 'type' | 'mask' | 'none'
+   * p = progreso 0..1 de la animación de entrada; style: 'blur' | 'rise' | 'fade' | 'type' | 'mask' | 'none'
    * by: 'words' | 'lines' | 'chars'
    */
   function drawText(ctx, block, x, y, o = {}) {
-    const { color = brand.text, align = 'left', p = 1, style = 'rise', by = 'words', spread = 0.6, shadow = null, highlight = null } = o;
+    const { color = brand.text, align = 'left', p = 1, style = 'rise', by = 'words', spread = 0.6, shadow = null, highlight = null, glow = null } = o;
     ctx.save();
-    ctx.font = block.font; ctx.textBaseline = 'top'; ctx.fillStyle = color;
+    ctx.font = block.font; ctx.textBaseline = 'top'; ctx.fillStyle = color; ctx.letterSpacing = `${block.tracking || 0}px`;
+    if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = block.size * 0.6; }
     if (shadow) { ctx.shadowColor = shadow.color || 'rgba(0,0,0,0.4)'; ctx.shadowBlur = shadow.blur ?? 20 * U; ctx.shadowOffsetY = shadow.y ?? 6 * U; }
     const units = [];
     block.lines.forEach((line, li) => {
@@ -138,6 +142,7 @@ window.makeKit = function makeKit(spec, assets) {
       ctx.globalAlpha *= style === 'mask' ? 1 : e;
       if (style === 'mask') { ctx.beginPath(); ctx.rect(u.x - 4 * U, u.y - block.size * 0.15, ctx.measureText(u.s).width + 8 * U, block.lineH * 1.05); ctx.clip(); ctx.fillText(u.s, u.x, u.y + (1 - e) * block.lineH); }
       else if (style === 'rise') ctx.fillText(u.s, u.x, u.y + (1 - e) * block.size * 0.45);
+      else if (style === 'blur') { const bl = (1 - e) * block.size * 0.35; if (bl > 0.3) ctx.filter = `blur(${bl}px)`; ctx.fillText(u.s, u.x, u.y + (1 - e) * block.size * 0.15); ctx.filter = 'none'; }
       else ctx.fillText(u.s, u.x, u.y);
       ctx.restore();
     });
@@ -165,9 +170,10 @@ window.makeKit = function makeKit(spec, assets) {
     ctx.strokeStyle = border; ctx.lineWidth = 1.5 * U; ctx.stroke(); ctx.restore();
   }
   function pill(ctx, text, x, y, o = {}) {
-    const { size = 28 * U, color = brand.text, fill = 'rgba(255,255,255,0.08)', border = 'rgba(255,255,255,0.45)', p = 1 } = o;
+    const { size = 26 * U, color = brand.text, fill = 'rgba(255,255,255,0.04)', border = 'rgba(255,255,255,0.55)', p = 1, weight = 400, upper = true } = o;
+    if (upper) text = String(text).toUpperCase();
     ctx.save(); ctx.globalAlpha *= ease.outCubic(clamp(p));
-    ctx.font = font(700, size, brand.fontHead);
+    ctx.font = font(weight, size, brand.fontBody); ctx.letterSpacing = `${upper ? size * 0.08 : 0}px`;
     const tw = ctx.measureText(text).width, padX = size * 0.8, h = size * 2;
     roundRect(ctx, x, y, tw + padX * 2, h, h / 2); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = border; ctx.lineWidth = 1.5 * U; ctx.stroke();
     ctx.fillStyle = color; ctx.textBaseline = 'middle'; ctx.fillText(text, x + padX, y + h / 2 + 1);
@@ -178,6 +184,168 @@ window.makeKit = function makeKit(spec, assets) {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, rgba(color, alpha)); g.addColorStop(1, rgba(color, 0));
     ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+
+
+  // ------------------------------------------------------------ luz y detalles finos
+  /** Punto de luz caliente con halo (núcleo blanco, halo de color). */
+  function flare(ctx, x, y, r, o = {}) {
+    const { color = brand.primary, intensity = 1 } = o;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    glowCircle(ctx, x, y, r * 3, color, 0.35 * intensity);
+    glowCircle(ctx, x, y, r, '#ffffff', 0.9 * intensity);
+    ctx.restore();
+  }
+  /**
+   * Haz o cono de luz desde (x, y). angle en radianes (0 = derecha, -PI/2 = arriba),
+   * spread = apertura en radianes, length en px.
+   */
+  function beam(ctx, x, y, o = {}) {
+    const { angle = -Math.PI / 2, spread = 0.5, length = H, color = brand.primary, intensity = 1, core = true } = o;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.arc(x, y, length, angle - spread / 2, angle + spread / 2); ctx.closePath();
+    const g = ctx.createRadialGradient(x, y, 0, x, y, length);
+    g.addColorStop(0, rgba(mix(color, '#ffffff', 0.6), 0.75 * intensity));
+    g.addColorStop(0.25, rgba(color, 0.35 * intensity));
+    g.addColorStop(1, rgba(color, 0));
+    ctx.fillStyle = g; ctx.fill();
+    if (core) {
+      // filo central más brillante
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, length * 0.8, angle - spread * 0.06, angle + spread * 0.06); ctx.closePath();
+      const c = ctx.createRadialGradient(x, y, 0, x, y, length * 0.8);
+      c.addColorStop(0, `rgba(255,255,255,${0.9 * intensity})`); c.addColorStop(0.5, rgba(mix(color, '#ffffff', 0.5), 0.25 * intensity)); c.addColorStop(1, rgba(color, 0));
+      ctx.fillStyle = c; ctx.fill();
+    }
+    ctx.restore();
+  }
+  /** Línea fina (opcionalmente dibujándose: p de 0 a 1). */
+  function hairline(ctx, x1, y1, x2, y2, o = {}) {
+    const { color = '#ffffff', alpha = 0.35, width = 1.5 * U, p = 1 } = o;
+    if (p <= 0) return;
+    ctx.save(); ctx.strokeStyle = rgba(color, alpha); ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(lerp(x1, x2, p), lerp(y1, y2, p)); ctx.stroke(); ctx.restore();
+  }
+  /** Destello de 4 puntas (como el cruce de líneas de las referencias). */
+  function sparkle(ctx, x, y, r, o = {}) {
+    const { color = '#ffffff', alpha = 1, rot = 0, glow = true } = o;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha *= alpha;
+    if (glow) { ctx.shadowColor = rgba(color, 0.9); ctx.shadowBlur = r * 1.5; }
+    ctx.fillStyle = color; ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2;
+      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      ctx.lineTo(Math.cos(a + Math.PI / 4) * r * 0.16, Math.sin(a + Math.PI / 4) * r * 0.16);
+    }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  /** Asterisco de trazos (marca gráfica). arms = número de brazos, w = grosor. */
+  function asterisk(ctx, x, y, r, o = {}) {
+    const { color = '#ffffff', arms = 6, w = r * 0.22, rot = 0, alpha = 1, p = 1 } = o;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha *= alpha;
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round';
+    for (let i = 0; i < arms; i++) {
+      const a = (i / arms) * Math.PI * 2 - Math.PI / 2, k = clamp(p * arms - i * 0.6);
+      if (k <= 0) continue;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r * k, Math.sin(a) * r * k); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  /**
+   * Vidrio acanalado: refracta lo que ya está pintado en el rectángulo en tiras verticales.
+   * ribs = número de canales, amp = desplazamiento de la refracción en px, blur = desenfoque.
+   */
+  let flutedBuf = null;
+  function fluted(ctx, x, y, w, h, o = {}) {
+    const { ribs = 18, amp = 26 * U, blur = 6 * U, r = 0, shade = 0.22, phase = 0 } = o;
+    if (!flutedBuf) flutedBuf = document.createElement('canvas');
+    flutedBuf.width = W; flutedBuf.height = H;
+    const b = flutedBuf.getContext('2d'); b.clearRect(0, 0, W, H); b.drawImage(ctx.canvas, 0, 0);
+    ctx.save();
+    if (r) { roundRect(ctx, x, y, w, h, r); ctx.clip(); }
+    const m = ctx.getTransform(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const rw = w / ribs;
+    ctx.filter = blur > 0.3 ? `blur(${blur}px)` : 'none';
+    for (let i = 0; i < ribs; i++) {
+      const sx = x + i * rw;
+      // cada canal "lente" toma la imagen un poco desplazada y estirada
+      const off = Math.sin(i * 1.7 + phase) * amp;
+      ctx.save(); ctx.beginPath(); ctx.rect(sx, y, rw + 0.5, h); ctx.clip();
+      ctx.drawImage(flutedBuf, sx + off - rw * 0.4, y, rw * 1.8, h, sx, y, rw + 0.5, h);
+      ctx.restore();
+    }
+    ctx.filter = 'none';
+    for (let i = 0; i < ribs; i++) {
+      const sx = x + i * rw;
+      const g = ctx.createLinearGradient(sx, 0, sx + rw, 0);
+      g.addColorStop(0, `rgba(255,255,255,${shade * 0.55})`); g.addColorStop(0.18, 'rgba(255,255,255,0)');
+      g.addColorStop(0.75, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${shade})`);
+      ctx.fillStyle = g; ctx.fillRect(sx, y, rw + 0.5, h);
+    }
+    ctx.setTransform(m); ctx.restore();
+  }
+
+  /**
+   * Cinta de luz que fluye (aurora). Se dibuja con mezcla aditiva sobre lo que haya.
+   * x, y, w, h: caja donde vive; vertical: cintas verticales (default) u horizontales.
+   */
+  function aurora(ctx, t, o = {}) {
+    const { x = 0, y = 0, w = W, h = H, color = brand.primary, intensity = 1, ribbons = 3, speed = 0.35, seed = 5 } = o;
+    const r = rand(seed);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < ribbons; k++) {
+      const cx0 = x + w * (0.2 + r() * 0.6), ph = r() * 6, amp = w * (0.08 + r() * 0.12), thick = w * (0.05 + r() * 0.07);
+      const col = k % 2 ? mix(color, '#ffffff', 0.35) : color;
+      for (let i = 0; i <= 24; i++) {
+        const v = i / 24, yy = y + v * h;
+        const xx = cx0 + Math.sin(v * 3.2 + t * speed + ph) * amp;
+        const a = Math.sin(Math.PI * v) * 0.16 * intensity;
+        ctx.save(); ctx.translate(xx, yy); ctx.scale(1, 3.2);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, thick);
+        g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = g; ctx.fillRect(-thick, -thick, thick * 2, thick * 2);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+  /**
+   * Cono de luz: un filo blanco que sube desde el vértice (x, y) y una cuña oscura
+   * que baja con los bordes iluminados. h = alto del filo de luz hacia arriba.
+   */
+  function lightCone(ctx, x, y, o = {}) {
+    const { h = H * 0.5, color = brand.primary, spread = 0.5, intensity = 1, dark = brand.bg } = o;
+    // halo amplio
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(x, y, 0, x, y, h * 1.1);
+    halo.addColorStop(0, rgba(color, 0.55 * intensity)); halo.addColorStop(0.5, rgba(color, 0.18 * intensity)); halo.addColorStop(1, rgba(color, 0));
+    ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H);
+    // filo vertical caliente
+    const lw = 10 * U;
+    const g = ctx.createLinearGradient(0, y - h, 0, y);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.75, `rgba(255,255,255,${0.55 * intensity})`); g.addColorStop(1, `rgba(255,255,255,${0.95 * intensity})`);
+    ctx.filter = `blur(${8 * U}px)`; ctx.fillStyle = g; ctx.fillRect(x - lw, y - h, lw * 2, h); ctx.filter = 'none';
+    ctx.fillRect(x - lw * 0.15, y - h * 0.7, lw * 0.3, h * 0.7);
+    ctx.restore();
+    // cuña oscura hacia abajo
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.tan(spread / 2) * (H - y) * 1.05, H); ctx.lineTo(x - Math.tan(spread / 2) * (H - y) * 1.05, H); ctx.closePath();
+    const d = ctx.createLinearGradient(0, y, 0, H);
+    d.addColorStop(0, rgba(dark, 0.0)); d.addColorStop(0.15, rgba(dark, 0.85 * intensity)); d.addColorStop(1, rgba(dark, 0.95 * intensity));
+    ctx.fillStyle = d; ctx.filter = `blur(${14 * U}px)`; ctx.fill(); ctx.filter = 'none';
+    ctx.restore();
+  }
+  /** Etiquetas pequeñas en las esquinas de la zona segura: { tl, tr, bl, br }. */
+  function corners(ctx, labels, o = {}) {
+    const { size = 26 * U, color = brand.text, alpha = 0.75, p = 1, weight = 400 } = o;
+    ctx.save(); ctx.globalAlpha *= alpha * ease.outCubic(clamp(p)); ctx.fillStyle = color;
+    ctx.font = font(weight, size, brand.fontBody); ctx.letterSpacing = '0px';
+    const put = (txt, align, base, x, y) => { if (!txt) return; ctx.textAlign = align; ctx.textBaseline = base; ctx.fillText(txt, x, y); };
+    put(labels.tl, 'left', 'top', safe.left, safe.top);
+    put(labels.tr, 'right', 'top', safe.right, safe.top);
+    put(labels.bl, 'left', 'bottom', safe.left, safe.bottom);
+    put(labels.br, 'right', 'bottom', safe.right, safe.bottom);
+    ctx.restore();
   }
 
   // ------------------------------------------------------------ fondos listos
@@ -215,6 +383,28 @@ window.makeKit = function makeKit(spec, assets) {
         const bx = r() * W, by = r() * H, rad = (300 + r() * 420) * U, sp = 0.15 + r() * 0.2, ph = r() * 6;
         glowCircle(ctx, bx + Math.sin(t * sp + ph) * 140 * U, by + Math.cos(t * sp * 0.8 + ph) * 160 * U, rad, cs[i % cs.length], 0.55);
       }
+      ctx.restore();
+    },
+    /**
+     * Oscuro con luz difusa (estilo editorial): manchas de luz muy suaves que derivan lento.
+     * spots: [{ x, y, r, color, a }] en fracciones del lienzo; si no se pasa, usa una composición por defecto.
+     */
+    luminous(ctx, t, o = {}) {
+      const { base = brand.bg, spots = null, drift = 1 } = o;
+      ctx.fillStyle = base; ctx.fillRect(0, 0, W, H);
+      const sp = spots || [
+        { x: 0.85, y: 0.15, r: 0.9, color: brand.primary, a: 0.55 },
+        { x: 0.1, y: 0.95, r: 0.7, color: brand.accent, a: 0.35 },
+        { x: 0.6, y: 0.6, r: 0.5, color: brand.light, a: 0.08 },
+      ];
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      sp.forEach((s, i) => {
+        const dx = Math.sin(t * 0.22 * drift + i * 2.1) * 0.04 * W, dy = Math.cos(t * 0.18 * drift + i) * 0.03 * H;
+        const R = s.r * Math.max(W, H);
+        const g = ctx.createRadialGradient(s.x * W + dx, s.y * H + dy, 0, s.x * W + dx, s.y * H + dy, R);
+        g.addColorStop(0, rgba(s.color, s.a)); g.addColorStop(0.35, rgba(s.color, s.a * 0.45)); g.addColorStop(0.7, rgba(s.color, s.a * 0.1)); g.addColorStop(1, rgba(s.color, 0));
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      });
       ctx.restore();
     },
     /** malla de puntos/perspectiva tech */
@@ -279,6 +469,7 @@ window.makeKit = function makeKit(spec, assets) {
     clamp, lerp, seg, ease, tween, stagger, inOut, rand, noise,
     rgba, mix, lum, contrast, readableOn,
     font, wrap, fit, drawText, roundRect, glass, pill, glowCircle, bg: bgs, grain, vignette, logo, counter,
+    flare, beam, hairline, sparkle, asterisk, fluted, corners, aurora, lightCone,
     _bindCtx(c) { ctxRef = c; },
   };
   return K;

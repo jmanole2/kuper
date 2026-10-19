@@ -20,11 +20,14 @@ export const CANVAS = {
   '1.91:1': [1200, 628],
 };
 
-// Tipografías disponibles para las marcas (agrega aquí nuevas fuentes).
-const dmDir = () => path.dirname(require.resolve('@fontsource/dm-sans/package.json'));
+// Tipografías disponibles para las marcas (agrega aquí nuevas fuentes de @fontsource).
+const fs5 = (pkg, file, weights) => Object.fromEntries(weights.map((w) => [w, () =>
+  path.join(path.dirname(require.resolve(`@fontsource/${pkg}/package.json`)), `files/${file}-latin-${w}-normal.woff2`)]));
 export const FONTS = {
+  'Inter Tight': fs5('inter-tight', 'inter-tight', [300, 400, 500, 600]),
+  Geist: fs5('geist-sans', 'geist-sans', [300, 400, 500, 600]),
+  'DM Sans': fs5('dm-sans', 'dm-sans', [400, 500, 700, 800]),
   Poppins: { 400: () => path.join(ROOT, 'assets/fonts/Poppins-Regular.ttf'), 700: () => path.join(ROOT, 'assets/fonts/Poppins-Bold.ttf') },
-  'DM Sans': Object.fromEntries([400, 500, 700, 800].map((w) => [w, () => path.join(dmDir(), `files/dm-sans-latin-${w}-normal.woff2`)])),
 };
 
 function fontList(families) {

@@ -1,4 +1,4 @@
-// Crea el cliente Kuper Media con su perfil real (si no existe).
+// Crea el cliente Kuper Media (si no existe) con su voz de .claude/instagram/voice.md.
 import path from 'node:path';
 import fs from 'node:fs';
 import { openDb, listClients, createClient, updateClient } from '../src/db.js';
@@ -9,122 +9,40 @@ if (listClients().some((c) => c.slug === 'kuper-media')) {
   console.log('Kuper Media ya existe.');
   process.exit(0);
 }
+const voicePath = path.join(ROOT, '..', '.claude/instagram/voice.md');
+const voz = fs.existsSync(voicePath) ? fs.readFileSync(voicePath, 'utf8') : '';
+
 const perfil = {
-  "cliente": "Kuper Media",
-  "giro": "Agencia de marketing digital e IA (diseño web, branding, social media, marketing digital, automatización con IA)",
-  "idioma": "es-MX",
-  "tono_de_voz": "profesional, cercano, con autoridad técnica, sin tecnicismos innecesarios",
-  "buyer_persona": "dueños de PyMEs y gerentes de marketing en México que buscan una agencia confiable",
-  "pilares_de_contenido": [
-    {
-      "nombre": "casos de éxito / portafolio",
-      "requiere_imagen_real": true,
-      "activo": true
-    },
-    {
-      "nombre": "datos curiosos de IA",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "tips de IA aplicados a PyMEs/marketing",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "recomendaciones (herramientas, prácticas)",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "blog del sitio web",
-      "requiere_imagen_real": false,
-      "requiere_fuente_real": true,
-      "activo": false
-    },
-    {
-      "nombre": "tendencias tech 2026",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "noticias de IA y tecnología",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "mitos vs realidad del marketing digital",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "errores comunes de PyMEs",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "comparativas (herramientas, estrategias, plataformas)",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "antes y después (transformaciones)",
-      "requiere_imagen_real": true,
-      "activo": true
-    },
-    {
-      "nombre": "procesos / behind the scenes",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "datos y estadísticas del sector",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "predicciones y futuro del marketing",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "humor tech / memes de marketing",
-      "requiere_imagen_real": false,
-      "activo": true
-    },
-    {
-      "nombre": "preguntas frecuentes / FAQ",
-      "requiere_imagen_real": false,
-      "activo": true
-    }
+  cliente: 'Kuper Media',
+  giro: 'Agentes de IA a la medida que atienden a los clientes de un negocio por WhatsApp, a cualquier hora',
+  idioma: 'es-MX',
+  tono_de_voz: 'cercano, claro y práctico; explica como a un amigo que tiene un negocio, sin tecnicismos; tutea',
+  buyer_persona: 'dueños de negocios pequeños y medianos (consultorios, restaurantes, tiendas, servicios locales) que contestan WhatsApp a mano, pierden clientes por responder tarde y no tienen equipo técnico',
+  voz,
+  pilares_de_contenido: [
+    { nombre: 'el costo de contestar tarde', requiere_imagen_real: false },
+    { nombre: 'cómo funciona un agente de IA en WhatsApp', requiere_imagen_real: false },
+    { nombre: 'bot de menú vs. agente que entiende', requiere_imagen_real: false },
+    { nombre: 'atención al cliente por WhatsApp para negocios pequeños', requiere_imagen_real: false },
+    { nombre: 'mitos sobre la IA en negocios pequeños', requiere_imagen_real: false },
+    { nombre: 'oferta: precio y proceso en 4 pasos', requiere_imagen_real: false },
+    { nombre: 'casos reales de clientes', requiere_imagen_real: true },
+    { nombre: 'detrás de cámaras del equipo', requiere_imagen_real: true, activo: false },
+    { nombre: 'blog del sitio web', requiere_imagen_real: false, requiere_fuente_real: true, activo: false },
   ],
-  "colores_marca": [
-    "#0B0D1F",
-    "#3B7CF6",
-    "#8B5CF6",
-    "#EC4899",
-    "#FFFFFF"
-  ],
-  "estilo_visual": {
-    "tipografia": "Poppins (bold para headline, regular/medium para subtexto)",
-    "efecto": "glassmorphism (tarjeta de vidrio esmerilado, blur de fondo, borde sutil con glow)",
-    "fondo": "azul marino oscuro casi negro, con degradado iridiscente azul-morado-magenta y líneas verticales sutiles de luz",
-    "logo": "ícono pequeño y discreto en esquina inferior derecha"
-  },
-  "permite_emojis": false,
-  "temas_prohibidos": [
-    "política",
-    "religión",
-    "comparaciones directas con competencia"
-  ],
-  "cta_preferido": "Escríbenos / Agenda una llamada",
-  "ejemplos_de_posts_que_funcionaron": [],
-  "tipografia": {
-    "titulos": "Poppins",
-    "texto": "Poppins"
-  },
-  "imagenes_ia": false,
-  "blog_posts": []
+  colores_marca: ['#02040A', '#0B1E46', '#1F6BFF', '#6FA8FF', '#EAF2FF'],
+  tipografia: { titulos: 'Inter Tight', texto: 'Inter Tight' },
+  estilo_visual: 'Editorial, oscuro y luminoso. Fondo casi negro azulado con una sola fuente de luz azul eléctrico (mancha de luz difusa, aurora tras vidrio acanalado o cono de luz). Titulares grandes en peso regular, sin negritas ni mayúsculas, interlineado apretado. Mucho aire. Detalles finos: líneas de 1 px, destellos de 4 puntas, asterisco como marca, etiquetas pequeñas en las esquinas (Kuper Media / tema), píldoras de borde fino. Movimiento lento: la luz deriva y el texto entra desenfocado y se enfoca. Logo blanco al cierre.',
+  imagenes_ia: false,
+  permite_emojis: true,
+  max_emojis: 1,
+  palabras_prohibidas: ['revolucionario', 'disruptivo', 'sinergia', 'potencia tu marca', 'en el mundo actual', 'soluciones integrales', 'de vanguardia', 'LLM', 'API', 'prompt'],
+  temas_prohibidos: ['política', 'religión'],
+  cta_preferido: 'Comenta AGENTE y te mando una demo con precios',
+  palabra_clave_cta: 'AGENTE',
+  terminos_busqueda: ['agente de IA para WhatsApp', 'atención a clientes por WhatsApp', 'chatbot para negocios'],
+  blog_posts: [],
+  ejemplos_de_posts_que_funcionaron: [],
 };
 
 const c = createClient({
@@ -132,13 +50,12 @@ const c = createClient({
   nombre: 'Kuper Media',
   perfil,
   config: {
-    instagram: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '10:00', formatos: ['video_animado', 'carrusel', 'imagen_estatica'] },
-    facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '11:00' },
-    linkedin: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '09:00' },
+    instagram: { activo: true, frecuencia: '3_por_semana', modo_publicacion: 'aprobacion', hora: '19:00', formatos: ['video_animado', 'carrusel'] },
+    facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '12:00' },
+    linkedin: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '08:30' },
   },
   credentials: { dry_run: true },
 });
-// Logo blanco de Kuper (se copia a la carpeta de medios del agente).
 fs.mkdirSync(mediaDir(), { recursive: true });
 const logo = path.join(mediaDir(), 'logo-kuper-media.png');
 fs.copyFileSync(path.join(ROOT, 'assets/kuper/logo_kuper_blanco.png'), logo);
