@@ -14,7 +14,7 @@ const voz = fs.existsSync(voicePath) ? fs.readFileSync(voicePath, 'utf8') : '';
 
 const perfil = {
   cliente: 'Kuper Media',
-  giro: 'Agentes de IA a la medida que atienden a los clientes de un negocio por WhatsApp, a cualquier hora',
+  giro: 'Agentes de IA a la medida que atienden a los clientes de un negocio por WhatsApp, a cualquier hora; y agencia de marketing digital (diseño web, branding, redes sociales, marketing, fotografía y automatización con IA)',
   idioma: 'es-MX',
   tono_de_voz: 'cercano, claro y práctico; explica como a un amigo que tiene un negocio, sin tecnicismos; tutea',
   buyer_persona: 'dueños de negocios pequeños y medianos (consultorios, restaurantes, tiendas, servicios locales) que contestan WhatsApp a mano, pierden clientes por responder tarde y no tienen equipo técnico',
@@ -26,6 +26,12 @@ const perfil = {
     { nombre: 'atención al cliente por WhatsApp para negocios pequeños', requiere_imagen_real: false },
     { nombre: 'mitos sobre la IA en negocios pequeños', requiere_imagen_real: false },
     { nombre: 'oferta: precio y proceso en 4 pasos', requiere_imagen_real: false },
+    { nombre: 'diseño web que vende', requiere_imagen_real: false },
+    { nombre: 'marca e identidad visual', requiere_imagen_real: false },
+    { nombre: 'constancia y estrategia en redes', requiere_imagen_real: false },
+    { nombre: 'errores comunes de PyMEs en digital', requiere_imagen_real: false },
+    { nombre: 'tips de IA aplicados a PyMEs y marketing', requiere_imagen_real: false },
+    { nombre: 'antes y después de proyectos', requiere_imagen_real: true },
     { nombre: 'casos reales de clientes', requiere_imagen_real: true },
     { nombre: 'detrás de cámaras del equipo', requiere_imagen_real: true, activo: false },
     { nombre: 'blog del sitio web', requiere_imagen_real: false, requiere_fuente_real: true, activo: false },
@@ -40,7 +46,7 @@ const perfil = {
   temas_prohibidos: ['política', 'religión'],
   cta_preferido: 'Comenta AGENTE y te mando una demo con precios',
   palabra_clave_cta: 'AGENTE',
-  terminos_busqueda: ['agente de IA para WhatsApp', 'atención a clientes por WhatsApp', 'chatbot para negocios'],
+  terminos_busqueda: ['agente de IA para WhatsApp', 'atención a clientes por WhatsApp', 'chatbot para negocios', 'agencia de marketing digital', 'diseño de páginas web', 'branding para PyMEs'],
   blog_posts: [],
   ejemplos_de_posts_que_funcionaron: [],
 };

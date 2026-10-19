@@ -106,6 +106,7 @@ Forma:
 - **Hashtags**: 0 a 5, específicos, como etiquetas de tema (van en el arreglo `hashtags`, nunca dentro del `copy`). Nada de #viral, #fyp, #explorepage.
 - **Sin links** (no son clicables); "link en la bio" si hace falta.
 - Emojis: solo si la marca los permite y como máximo `max_emojis`; como puntuación, nunca como viñetas ni al inicio.
+- Al menos un dato concreto (una hora, un número, un precio o un nombre que esté en la voz). Concreto no es inventado: si no hay dato real, usa una escena ilustrativa (sección 1).
 - 40-140 palabras. Un caption que se gana el "más" y entrega 600 caracteres le gana a uno de 1,800.
 
 ### Facebook
@@ -179,7 +180,7 @@ Ejemplo de calidad (Instagram, Reel, marca de agentes de IA en WhatsApp):
   "trabajo_caption": "A",
   "variantes_copy": [
     {
-      "copy": "Comenta AGENTE y te mando una demo con precios para que veas cómo contestaría en tu negocio.\n\nLa mayoría de los clientes que escriben de noche no esperan a la mañana. Le escriben a dos o tres negocios y se quedan con el primero que contesta.\n\nUn agente de IA para WhatsApp responde por ti con la información de tu negocio: horarios, precios, servicios y preguntas frecuentes. Lo configuramos nosotros, tú no tienes que saber nada técnico.\n\nTú sigues atendiendo lo importante. Las preguntas repetidas ya no te quitan el día.",
+      "copy": "Comenta AGENTE y te mando la demo: cómo contestaría tu negocio a las 11:47 p. m.\n\nEse cliente no espera a las 9 de la mañana. Le escribe a 2 o 3 negocios y se queda con el primero que contesta.\n\nUn agente de IA para WhatsApp responde por ti en segundos con lo que ya sabes de tu negocio: horarios, precios, servicios y preguntas frecuentes. Lo configuramos nosotros en 4 pasos. Tú no tocas nada técnico.\n\nDesde $5,499 de configuración y $499 al mes. Tú sigues atendiendo lo importante.",
       "hashtags": ["#WhatsAppBusiness", "#AgenteDeIA", "#AtencionAlCliente"]
     },
     {
