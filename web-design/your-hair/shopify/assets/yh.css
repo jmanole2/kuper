@@ -480,6 +480,7 @@ details[open]>summary i::after{transform:rotate(0)}
 .yh-shop__grid .yh-card:hover .yh-shop__img{transform:scale(1.04)}
 .yh-shop__img2{position:absolute;opacity:0}
 .yh-shop__grid .yh-card:hover .yh-shop__img2{opacity:1}
+.yh-shop__grid .yh-card:hover .yh-prod--swap .yh-shop__img{opacity:0;transform:none}
 .yh-shop__grid .yh-prod::after{display:none}
 .yh-card{position:relative}
 .yh-card .yh-quick{position:absolute;right:12px;top:12px;z-index:3;margin:0}

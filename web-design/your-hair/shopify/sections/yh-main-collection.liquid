@@ -85,7 +85,7 @@
               <a class="ph" href="{{ p.url }}" style="background:{{ bg }}">
                 {%- if badge != '' -%}<span class="badge">{{ badge }}</span>{%- endif -%}
                 {%- unless p.available -%}<span class="badge badge--off">Agotado</span>{%- endunless -%}
-                <span class="yh-prod">
+                <span class="yh-prod{% if p.images.size > 1 and section.settings.hover_image %} yh-prod--swap{% endif %}">
                   {%- if p.featured_image -%}{{ p.featured_image | image_url: width: 700 | image_tag: loading: 'lazy', widths: '300, 500, 700', sizes: '(max-width: 760px) 45vw, 25vw', alt: p.title, class: 'yh-shop__img' }}{%- else -%}{{ 'product-1' | placeholder_svg_tag }}{%- endif -%}
                   {%- if p.images.size > 1 and section.settings.hover_image -%}{{ p.images[1] | image_url: width: 700 | image_tag: loading: 'lazy', alt: '', class: 'yh-shop__img2' }}{%- endif -%}
                 </span>
