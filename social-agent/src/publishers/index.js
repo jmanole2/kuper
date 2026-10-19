@@ -35,7 +35,7 @@ export async function publishPost(post, client) {
       });
     case 'tiktok': {
       const tk = await freshTikTokCreds(creds.tiktok, (nuevo) => updateClient(client.id, { credentials: { ...clientCredentials(client), tiktok: nuevo } }));
-      return publishTikTok(tk, { caption: captionFor(post), videoFile: post.video_path, privacy: client.config.tiktok?.privacidad || 'PUBLIC_TO_EVERYONE' });
+      return publishTikTok(tk, { caption: captionFor(post), videoFile: post.video_path, opciones: post.salida?.tiktok });
     }
     default:
       throw new Error(`Plataforma no soportada: ${post.plataforma}`);

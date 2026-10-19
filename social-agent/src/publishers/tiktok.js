@@ -75,13 +75,16 @@ async function tt(path, token, body) {
 
 export const tiktokCreatorInfo = (token) => tt('/post/publish/creator_info/query/', token);
 
-/** Publica un video. post: { caption, videoFile, privacy } */
+/** Publica un video. post: { caption, videoFile, opciones: { privacy, allow_comment, allow_duet, allow_stitch, disclose, brand_organic, brand_content } } */
 export async function publishTikTok(tk, post, { pollMs = 5000, timeoutMs = 10 * 60_000 } = {}) {
   if (!post.videoFile) throw new Error('TikTok solo publica los videos (los carruseles se quedan en Instagram y Facebook).');
   const token = tk.access_token;
   const info = await tiktokCreatorInfo(token);
-  const opciones = info.privacy_level_options || [];
-  const privacy = opciones.includes(post.privacy) ? post.privacy : opciones[0] || 'SELF_ONLY';
+  const o = post.opciones || {};
+  const privacy = o.privacy || post.privacy;
+  if (!(info.privacy_level_options || []).includes(privacy)) {
+    throw new Error(`TikTok: la privacidad "${privacy}" ya no está disponible en la cuenta; vuelve a aprobar el video eligiendo otra.`);
+  }
   const size = fs.statSync(post.videoFile).size;
   if (size > 64 * 1024 * 1024) throw new Error('El video pesa más de 64 MB; TikTok lo pediría en partes.');
 
@@ -89,9 +92,11 @@ export async function publishTikTok(tk, post, { pollMs = 5000, timeoutMs = 10 * 
     post_info: {
       title: post.caption.slice(0, 2200),
       privacy_level: privacy,
-      disable_comment: !!info.comment_disabled,
-      disable_duet: !!info.duet_disabled,
-      disable_stitch: !!info.stitch_disabled,
+      disable_comment: !!info.comment_disabled || !o.allow_comment,
+      disable_duet: !!info.duet_disabled || !o.allow_duet,
+      disable_stitch: !!info.stitch_disabled || !o.allow_stitch,
+      brand_organic_toggle: !!(o.disclose && o.brand_organic),
+      brand_content_toggle: !!(o.disclose && o.brand_content),
       video_cover_timestamp_ms: 1000,
       is_aigc: true, // la animación la hizo una IA: TikTok pide etiquetarlo
     },

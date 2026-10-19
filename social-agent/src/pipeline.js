@@ -209,7 +209,8 @@ async function shareTo(client, ig, plataforma) {
   db.logEvent({ postId: post.id, clientId: client.id, tipo: 'generando', detalle: `Adaptando el texto del Reel de Instagram para ${plataforma}` });
   try {
     const a = await adaptCaption({ plataforma, post: ig, client });
-    const status = needsApproval(modoDe(client, plataforma)) || a.advertencias.length ? 'pendiente' : 'aprobado';
+    // TikTok siempre pasa por aprobación: la persona elige privacidad e interacciones (lo exige TikTok).
+    const status = plataforma === 'tiktok' || needsApproval(modoDe(client, plataforma)) || a.advertencias.length ? 'pendiente' : 'aprobado';
     db.updatePost(post.id, {
       status, pilar: ig.pilar, tema: ig.tema, formato: ig.formato, estructura: ig.estructura, tipo_post: ig.tipo_post,
       salida: { ...ig.salida, plataforma, variantes_copy: [{ copy: a.copy, hashtags: a.hashtags }], advertencias: a.advertencias, origen: `Instagram #${ig.id}` },
@@ -226,9 +227,16 @@ async function shareTo(client, ig, plataforma) {
 }
 
 // ------------------------------------------------------------ acciones del cliente
-export function approvePost(postId, { variante, copy, hashtags, fecha, hora } = {}) {
+export function approvePost(postId, { variante, copy, hashtags, fecha, hora, tiktok } = {}) {
   const post = db.getPost(postId);
   if (!['pendiente'].includes(post.status)) throw new Error(`No se puede aprobar un post en estado "${db.STATUS[post.status]}"`);
+  if (post.plataforma === 'tiktok') {
+    const t = tiktok || {};
+    if (!t.privacy) throw new Error('TikTok: elige quién puede ver el video.');
+    if (t.disclose && !t.brand_organic && !t.brand_content) throw new Error('TikTok: indica si es tu marca o contenido de marca, o desmarca "Revelar contenido comercial".');
+    if (t.brand_content && t.privacy === 'SELF_ONLY') throw new Error('TikTok: el contenido de marca no puede ser "Solo yo".');
+    db.updatePost(postId, { salida: { ...post.salida, tiktok: t } });
+  }
   const v = post.salida?.variantes_copy?.[variante ?? post.variante];
   const patch = {
     variante: variante ?? post.variante,

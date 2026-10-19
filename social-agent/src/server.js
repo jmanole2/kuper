@@ -11,7 +11,21 @@ import { sign, unsign, safeEqual, randomToken } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
-import { tiktokAuthUrl, exchangeTikTokCode, tiktokConfigured } from './publishers/tiktok.js';
+import { tiktokAuthUrl, exchangeTikTokCode, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
+
+// Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
+async function withTikTokInfo(client, posts) {
+  const pend = posts.filter((p) => p.plataforma === 'tiktok' && p.status === 'pendiente');
+  if (!pend.length) return posts;
+  let info;
+  try {
+    const creds = db.clientCredentials(client);
+    const tk = await freshTikTokCreds(creds.tiktok, (nuevo) => db.updateClient(client.id, { credentials: { ...creds, tiktok: nuevo } }));
+    info = await tiktokCreatorInfo(tk.access_token);
+  } catch (e) { info = { error: e.message }; }
+  for (const p of pend) p.tiktokInfo = info;
+  return posts;
+}
 
 export function createApp() {
   db.getDb();
@@ -117,16 +131,16 @@ export function createApp() {
     }
   });
 
-  const clientView = (c, error, notice) => V.clientFormPage(c, {
+  const clientView = (c, error, notice, posts) => V.clientFormPage(c, {
     error, notice, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
-    posts: db.listPosts({ clientId: c.id, limit: 30 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
+    posts: posts || db.listPosts({ clientId: c.id, limit: 30 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
   });
 
   admin.param('cid', (req, res, next, id) => {
     req.client = db.getClient(Number(id));
     return req.client ? next() : res.status(404).send('Cliente no encontrado');
   });
-  admin.get('/clientes/:cid', (req, res) => res.send(clientView(req.client)));
+  admin.get('/clientes/:cid', async (req, res) => res.send(clientView(req.client, undefined, undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 30 })))));
   admin.post('/clientes/:cid', (req, res) => {
     try {
       const data = parseClientForm(req.body, db.clientCredentials(req.client));
@@ -195,7 +209,11 @@ export function createApp() {
     req.post = db.getPost(Number(id));
     return req.post ? next() : res.status(404).send('Post no encontrado');
   });
-  admin.get('/posts/:pid', (req, res) => res.send(V.postAdminPage(req.post, db.getClient(req.post.client_id), db.postEvents(req.post.id))));
+  admin.get('/posts/:pid', async (req, res) => {
+    const client = db.getClient(req.post.client_id);
+    await withTikTokInfo(client, [req.post]);
+    res.send(V.postAdminPage(req.post, client, db.postEvents(req.post.id)));
+  });
   admin.post('/posts/:pid/publicar', async (req, res) => {
     await pipe.publishOne(req.post.id);
     res.redirect(`/admin/posts/${req.post.id}`);
@@ -212,8 +230,8 @@ export function createApp() {
     res.setHeader('X-Robots-Tag', 'noindex');
     next();
   });
-  portal.get('/', (req, res) => {
-    const posts = db.listPosts({ clientId: req.client.id, limit: 100 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status));
+  portal.get('/', async (req, res) => {
+    const posts = await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 100 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status)));
     res.send(V.portalPage(req.client, posts, req.params.token));
   });
   portal.param('pid', (req, res, next, id) => {
@@ -239,6 +257,11 @@ export function createApp() {
         hashtags: req.body.hashtags !== undefined ? req.body.hashtags.split(/\s+/).filter(Boolean).map((h) => (h.startsWith('#') ? h : `#${h}`)) : undefined,
         fecha: req.body.fecha || undefined,
         hora: req.body.hora || undefined,
+        tiktok: req.post.plataforma === 'tiktok' ? {
+          privacy: req.body.tt_privacy || '',
+          allow_comment: req.body.tt_comment === '1', allow_duet: req.body.tt_duet === '1', allow_stitch: req.body.tt_stitch === '1',
+          disclose: req.body.tt_disclose === '1', brand_organic: req.body.tt_brand_organic === '1', brand_content: req.body.tt_brand_content === '1',
+        } : undefined,
       });
       res.redirect(back(req));
     });

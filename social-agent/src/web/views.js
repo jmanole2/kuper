@@ -23,6 +23,32 @@ function mediaBlock(p) {
   return '';
 }
 
+// Pantalla que exige TikTok para publicar directo (Content Sharing Guidelines): cuenta, privacidad sin valor
+// por defecto, interacciones sin marcar, aviso de contenido comercial y consentimiento.
+const TT_PRIV = { PUBLIC_TO_EVERYONE: 'Todos', MUTUAL_FOLLOW_FRIENDS: 'Amigos', FOLLOWER_OF_CREATOR: 'Seguidores', SELF_ONLY: 'Solo yo' };
+function tiktokFields(p) {
+  const i = p.tiktokInfo;
+  if (!i || i.error) return html`<div class="warn">TikTok: ${i?.error || 'conecta la cuenta de TikTok en el panel para poder aprobar este video'}.</div>`;
+  const dur = p.salida?.animacion?.duracion_seg;
+  const box = (name, label, off) => html`<label style="font-weight:400"><input type="checkbox" name="${name}" value="1" style="width:auto" ${raw(off ? 'disabled' : '')}> ${label}${off ? ' (desactivado en la cuenta)' : ''}</label>`;
+  return html`<div class="card" style="background:#fafafa;margin:10px 0">
+    <p class="row" style="gap:8px;align-items:center">${i.creator_avatar_url ? html`<img src="${i.creator_avatar_url}" alt="" style="width:32px;height:32px;border-radius:50%">` : ''}
+      <span>Se publicará en <strong>@${i.creator_username}</strong>${i.creator_nickname ? ` (${i.creator_nickname})` : ''}</span></p>
+    ${dur && i.max_video_post_duration_sec && dur > i.max_video_post_duration_sec ? html`<div class="err">El video dura ${dur} s y esta cuenta permite máximo ${i.max_video_post_duration_sec} s.</div>` : ''}
+    <label>¿Quién puede ver este video?</label>
+    <select name="tt_privacy" required><option value="" disabled selected>Elige una opción</option>
+      ${(i.privacy_level_options || []).map((o) => html`<option value="${o}">${TT_PRIV[o] || o}</option>`)}</select>
+    <label>Permitir a los usuarios</label>
+    ${box('tt_comment', 'Comentar', i.comment_disabled)} ${box('tt_duet', 'Duet', i.duet_disabled)} ${box('tt_stitch', 'Stitch', i.stitch_disabled)}
+    <label style="font-weight:400;margin-top:8px"><input type="checkbox" name="tt_disclose" value="1" style="width:auto" onchange="this.closest('.card').querySelector('.tt-brand').hidden=!this.checked"> Revelar contenido comercial (este video promociona una marca, producto o servicio)</label>
+    <div class="tt-brand" hidden style="padding-left:20px">
+      <label style="font-weight:400"><input type="checkbox" name="tt_brand_organic" value="1" style="width:auto"> Tu marca: promocionas tu propio negocio. Se etiquetará como "Contenido promocional".</label>
+      <label style="font-weight:400"><input type="checkbox" name="tt_brand_content" value="1" style="width:auto"> Contenido de marca: promocionas a un tercero. Se etiquetará como "Colaboración pagada" y no puede ser "Solo yo".</label>
+    </div>
+    <p class="muted small">Al publicar aceptas la <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener">Confirmación de uso de música</a> de TikTok y, si es contenido de marca, su <a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener">Política de contenido de marca</a>. El video se etiqueta como hecho con IA y puede tardar unos minutos en aparecer en el perfil.</p>
+  </div>`;
+}
+
 /** base: URL base para las acciones del post (portal: /p/:token/posts/:id, admin: /admin/posts/:id) */
 export function postCard(p, { base, admin = false }) {
   const s = p.salida;
@@ -41,6 +67,7 @@ export function postCard(p, { base, admin = false }) {
       ${s.variantes_copy.map((v, i) => html`<label class="variant" style="font-weight:400">
         <input type="radio" name="variante" value="${i}" ${raw(i === p.variante ? 'checked' : '')} onchange="this.form.copy.value=this.dataset.copy;this.form.hashtags.value=this.dataset.tags" data-copy="${v.copy}" data-tags="${v.hashtags.join(' ')}">
         <strong>Opción ${i + 1}</strong><br><span style="white-space:pre-wrap">${v.copy}</span><br><span class="tags">${v.hashtags.join(' ')}</span></label>`)}
+      ${p.plataforma === 'tiktok' ? tiktokFields(p) : ''}
       <details><summary>Editar texto, hashtags o fecha</summary>
         <label>Texto</label><textarea name="copy">${p.copy_final}</textarea>
         <label>Hashtags</label><input name="hashtags" value="${p.hashtags.join(' ')}">

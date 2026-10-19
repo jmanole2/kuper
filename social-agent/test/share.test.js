@@ -43,7 +43,9 @@ test('al aprobar un Reel se crean sus copias para Facebook y TikTok con texto ad
   assert.match(fb.copy_final, /wa\.me/);
   assert.ok(!/comenta/i.test(fb.copy_final));
   assert.equal(fb.scheduled_at, '2026-10-20T18:00:00.000Z', 'mismo día, a la hora de Facebook');
-  assert.equal(tk.status, 'aprobado', 'TikTok en automático');
+  assert.equal(tk.status, 'pendiente', 'TikTok siempre pide elegir privacidad');
+  assert.throws(() => pipe.approvePost(tk.id, {}), /privacidad|quién puede ver/);
+  assert.throws(() => pipe.approvePost(tk.id, { tiktok: { privacy: 'SELF_ONLY', disclose: true, brand_content: true } }), /Solo yo/);
   assert.ok(!/https?:/.test(tk.copy_final));
   pipe.shareApproved(ig.id); await pipe.idle();
   assert.equal(db.listPosts({ clientId: client.id }).length, 3, 'no duplica');
@@ -78,11 +80,13 @@ test('TikTok: consulta al creador, sube el video y espera a que se publique', as
     return [404, {}];
   });
   try {
-    const r = await publishTikTok({ access_token: 'T' }, { caption: 'hola #pymes', videoFile: video, privacy: 'PUBLIC_TO_EVERYONE' }, { pollMs: 1 });
+    const r = await publishTikTok({ access_token: 'T' }, { caption: 'hola #pymes', videoFile: video, opciones: { privacy: 'PUBLIC_TO_EVERYONE', allow_comment: true } }, { pollMs: 1 });
     assert.equal(r.url, 'https://www.tiktok.com/@kuper/video/777');
     const init = JSON.parse(m.calls[1].body);
     assert.equal(init.source_info.video_size, 1000);
     assert.equal(init.post_info.is_aigc, true);
+    assert.equal(init.post_info.disable_comment, false);
+    assert.equal(init.post_info.disable_duet, true, 'sin marcar = no permitido');
     assert.equal(m.calls[2].headers['Content-Range'], 'bytes 0-999/1000');
   } finally { m.restore(); }
 });
