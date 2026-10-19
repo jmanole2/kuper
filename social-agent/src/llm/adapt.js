@@ -61,7 +61,8 @@ function mockAdapt(plataforma, post, link) {
 
 /** Devuelve { copy, hashtags, advertencias } para `plataforma` a partir del post de Instagram. */
 export async function adaptCaption({ plataforma, post, client }) {
-  const link = destinationLink(client);
+  // El link del DM de Instagram dice "vengo de Instagram"; en Facebook se cambia para saber de dónde llegó.
+  const link = destinationLink(client)?.replace(/Instagram/g, plataforma === 'facebook' ? 'Facebook' : 'TikTok') || null;
   const clean = (r) => ({ copy: cleanText(r.copy).trim(), hashtags: (r.hashtags || []).map((h) => (h.startsWith('#') ? h : `#${h}`)) });
   if (config.mockLlm) return { ...clean(mockAdapt(plataforma, post, link)), advertencias: [] };
 
