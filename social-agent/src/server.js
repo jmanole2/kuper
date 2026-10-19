@@ -221,6 +221,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (!config.secretKey) { console.error('Falta SECRET_KEY en el .env'); process.exit(1); }
   fs.mkdirSync(mediaDir(), { recursive: true });
   const app = createApp();
+  db.recoverInterrupted();
   // HOST=127.0.0.1 en el servidor: solo nginx/Caddy llega al agente; desde fuera, únicamente por https.
   app.listen(config.port, process.env.HOST || '0.0.0.0', () => {
     console.log(`Agente social en ${config.publicBaseUrl} (puerto ${config.port})${config.dryRun ? ' — DRY_RUN activo' : ''}${config.mockLlm ? ' — MOCK_LLM activo' : ''}`);

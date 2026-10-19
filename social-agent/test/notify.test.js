@@ -78,3 +78,9 @@ test('el correo escapa el HTML', () => {
   const m = digestMessage({ ...client, portal_token: 'x' }, [{ plataforma: 'instagram', status: 'pendiente', tema: '<b>hola</b>', scheduled_at: new Date().toISOString() }]);
   assert.ok(!m.html.includes('<b>hola</b>'));
 });
+
+test('al arrancar, lo que quedó a medias por un reinicio se libera', () => {
+  const p = db.createPost({ client_id: client.id, plataforma: 'facebook', status: 'generando' });
+  assert.equal(db.recoverInterrupted(), 1);
+  assert.equal(db.getPost(p.id).status, 'error_generacion');
+});

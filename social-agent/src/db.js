@@ -275,6 +275,24 @@ export function lastDateFor(clientId, plataforma) {
 export function logEvent({ postId = null, clientId = null, tipo, detalle = '' }) {
   getDb().prepare('INSERT INTO events (post_id, client_id, tipo, detalle) VALUES (?, ?, ?, ?)')
     .run(postId, clientId, tipo, typeof detalle === 'string' ? detalle : JSON.stringify(detalle));
+  // También al log del servicio (journalctl), para seguir el avance en vivo.
+  if (process.env.LOG_EVENTOS !== '0') console.log(`[${tipo}]${postId ? ` post ${postId}` : ''} ${typeof detalle === 'string' ? detalle : JSON.stringify(detalle)}`.slice(0, 300));
+}
+
+/** Al arrancar: lo que quedó a medias por un reinicio no se va a terminar solo. */
+export function recoverInterrupted() {
+  const d = getDb();
+  const stuck = d.prepare("SELECT id, client_id, status FROM posts WHERE status IN ('generando','cambios_solicitados','publicando')").all();
+  for (const p of stuck) {
+    const [to, msg] = {
+      generando: ['error_generacion', 'Se interrumpió la generación (reinicio del servicio). Se reintenta sola o con "Generar ahora".'],
+      cambios_solicitados: ['pendiente', 'Se interrumpieron los cambios (reinicio del servicio). Vuelve a pedirlos.'],
+      publicando: ['error', 'Se interrumpió la publicación (reinicio). Revisa en la red si salió antes de reintentar.'],
+    }[p.status];
+    d.prepare("UPDATE posts SET status = ?, error = ?, updated_at = datetime('now') WHERE id = ?").run(to, msg, p.id);
+    logEvent({ postId: p.id, clientId: p.client_id, tipo: 'interrumpido', detalle: msg });
+  }
+  return stuck.length;
 }
 export const postEvents = (postId) =>
   getDb().prepare('SELECT * FROM events WHERE post_id = ? ORDER BY id DESC').all(postId);

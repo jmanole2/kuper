@@ -124,6 +124,7 @@ async function produceMedia(client, post, out, { feedback } = {}) {
 
 /** Genera (o regenera con feedback) el contenido de un post existente. */
 async function fillPost(postId, { feedback } = {}) {
+  db.logEvent({ postId, tipo: 'generando', detalle: feedback ? 'Aplicando cambios del cliente' : 'Claude está escribiendo el post' });
   let post = db.getPost(postId);
   const client = db.getClient(post.client_id);
   const input = buildInput(client, post.plataforma, { feedback, postId });
