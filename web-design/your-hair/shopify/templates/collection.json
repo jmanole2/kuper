@@ -1,0 +1,67 @@
+{
+  "sections": {
+    "main": {
+      "type": "yh-main-collection",
+      "settings": {
+        "title_size": 64
+      },
+      "blocks": {
+        "c0": {
+          "type": "chip",
+          "settings": {
+            "label": "Todo",
+            "link": "/collections/all",
+            "color": ""
+          }
+        },
+        "c1": {
+          "type": "chip",
+          "settings": {
+            "label": "Shampoo sólido",
+            "link": "/collections/shampoo",
+            "color": "#F6C54C"
+          }
+        },
+        "c2": {
+          "type": "chip",
+          "settings": {
+            "label": "Acondicionador",
+            "link": "/collections/acondicionador",
+            "color": "#BEC58B"
+          }
+        },
+        "c3": {
+          "type": "chip",
+          "settings": {
+            "label": "Tratamientos",
+            "link": "/collections/tratamientos",
+            "color": "#F7864C"
+          }
+        },
+        "c4": {
+          "type": "chip",
+          "settings": {
+            "label": "Accesorios",
+            "link": "/collections/accesorios",
+            "color": "#B9AFD2"
+          }
+        }
+      },
+      "block_order": [
+        "c0",
+        "c1",
+        "c2",
+        "c3",
+        "c4"
+      ]
+    },
+    "news": {
+      "type": "yh-newsletter",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main",
+    "news"
+  ]
+}

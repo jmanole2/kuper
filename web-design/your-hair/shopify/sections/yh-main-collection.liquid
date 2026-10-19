@@ -1,0 +1,189 @@
+{% render 'yh-head' %}
+{% render 'yh-section-style', section: section %}
+{%- liquid
+  assign palette = '#F6C54C,#BEC58B,#B9AFD2,#F7864C,#F6DEC2,#F6B537,#9DDBB7' | split: ','
+  assign sort_by = collection.sort_by | default: collection.default_sort_by
+-%}
+<section class="yh yh-shop" id="yh-{{ section.id }}">
+  <div class="yh-wrap">
+    <header class="yh-shop__head">
+      {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
+      <h1 class="yh-title">{{ collection.title }}</h1>
+      {%- if collection.description != blank and section.settings.show_desc -%}<div class="rte yh-shop__desc">{{ collection.description }}</div>{%- endif -%}
+    </header>
+
+    {%- if section.blocks.size > 0 -%}
+      <nav class="yh-shop__chips" aria-label="Categorías">
+        {%- for block in section.blocks -%}
+          {%- assign url = block.settings.link | default: '#' -%}
+          <a href="{{ url }}" class="{% if url == collection.url or request.path == url %}is-on{% endif %}" {{ block.shopify_attributes }}>
+            {%- if block.settings.color != blank -%}<i style="background:{{ block.settings.color }}"></i>{%- endif -%}{{ block.settings.label }}
+          </a>
+        {%- endfor -%}
+      </nav>
+    {%- endif -%}
+
+    {%- paginate collection.products by section.settings.per_page -%}
+      <form class="yh-shop__bar" action="{{ collection.url }}" method="get" data-yh-filters>
+        <span class="yh-shop__count">{{ collection.products_count }} {% if collection.products_count == 1 %}producto{% else %}productos{% endif %}</span>
+        <div class="yh-shop__tools">
+          {%- if section.settings.show_filters -%}
+            {%- for filter in collection.filters -%}
+              {%- if filter.type == 'list' and filter.values.size > 1 -%}
+                <details class="yh-drop">
+                  <summary>{{ filter.label }}{% if filter.active_values.size > 0 %} · {{ filter.active_values.size }}{% endif %}<i aria-hidden="true"></i></summary>
+                  <div class="yh-drop__panel">
+                    {%- for value in filter.values -%}
+                      <label class="{% if value.count == 0 and value.active == false %}is-off{% endif %}">
+                        <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}" {% if value.active %}checked{% endif %} {% if value.count == 0 and value.active == false %}disabled{% endif %}>
+                        <span>{{ value.label }}</span><em>{{ value.count }}</em>
+                      </label>
+                    {%- endfor -%}
+                  </div>
+                </details>
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endif -%}
+          <label class="yh-sort">
+            <span>Ordenar</span>
+            <select name="sort_by" aria-label="Ordenar">
+              {%- for option in collection.sort_options -%}
+                <option value="{{ option.value }}" {% if option.value == sort_by %}selected{% endif %}>{{ option.name }}</option>
+              {%- endfor -%}
+            </select>
+          </label>
+        </div>
+      </form>
+
+      {%- assign active = 0 -%}
+      {%- for filter in collection.filters -%}{%- assign active = active | plus: filter.active_values.size -%}{%- endfor -%}
+      {%- if active > 0 -%}
+        <div class="yh-shop__active">
+          {%- for filter in collection.filters -%}
+            {%- for value in filter.active_values -%}<a href="{{ value.url_to_remove }}">{{ value.label }} ×</a>{%- endfor -%}
+          {%- endfor -%}
+          <a class="clear" href="{{ collection.url }}?sort_by={{ sort_by }}">Quitar filtros</a>
+        </div>
+      {%- endif -%}
+
+      {%- if collection.products.size > 0 -%}
+        <div class="yh-cards yh-shop__grid" style="--yh-cols:{{ section.settings.columns }}">
+          {%- for p in collection.products -%}
+            {%- liquid
+              assign idx = forloop.index0 | modulo: palette.size
+              assign bg = p.metafields.custom.bg_color.value | default: palette[idx]
+              assign badge = ''
+              if p.compare_at_price > p.price
+                assign badge = 'Oferta'
+              elsif p.tags contains 'nuevo' or p.tags contains 'Nuevo'
+                assign badge = 'Nuevo'
+              elsif p.tags contains 'mas-vendido'
+                assign badge = 'Más vendido'
+              endif
+            -%}
+            <div class="yh-card">
+              <a class="ph" href="{{ p.url }}" style="background:{{ bg }}">
+                {%- if badge != '' -%}<span class="badge">{{ badge }}</span>{%- endif -%}
+                {%- unless p.available -%}<span class="badge badge--off">Agotado</span>{%- endunless -%}
+                <span class="yh-prod">
+                  {%- if p.featured_image -%}{{ p.featured_image | image_url: width: 700 | image_tag: loading: 'lazy', widths: '300, 500, 700', sizes: '(max-width: 760px) 45vw, 25vw', alt: p.title, class: 'yh-shop__img' }}{%- else -%}{{ 'product-1' | placeholder_svg_tag }}{%- endif -%}
+                  {%- if p.images.size > 1 and section.settings.hover_image -%}{{ p.images[1] | image_url: width: 700 | image_tag: loading: 'lazy', alt: '', class: 'yh-shop__img2' }}{%- endif -%}
+                </span>
+              </a>
+              {%- if p.available -%}
+                {%- if p.has_only_default_variant -%}
+                  {%- form 'product', p, class: 'yh-quick' -%}
+                    <input type="hidden" name="id" value="{{ p.selected_or_first_available_variant.id }}">
+                    <button type="submit" class="add" aria-label="Agregar {{ p.title | escape }}">{% render 'yh-icon', icon: 'plus' %}</button>
+                  {%- endform -%}
+                {%- else -%}
+                  <a class="add yh-quick" href="{{ p.url }}" aria-label="Elegir opciones de {{ p.title | escape }}">{% render 'yh-icon', icon: 'arrow' %}</a>
+                {%- endif -%}
+              {%- endif -%}
+              <div class="nm">
+                <a href="{{ p.url }}">{{ p.title }}</a>
+                <span>{% if p.price_varies %}desde {% endif %}{{ p.price_min | money_without_trailing_zeros }}{% if p.compare_at_price > p.price %} <s>{{ p.compare_at_price | money_without_trailing_zeros }}</s>{% endif %}</span>
+              </div>
+              {%- assign sub = p.metafields.custom.hair_type.value | default: p.type -%}
+              {%- if sub != blank -%}<div class="sub">{{ sub }}</div>{%- endif -%}
+            </div>
+          {%- endfor -%}
+        </div>
+      {%- else -%}
+        <div class="yh-shop__empty">
+          <p>No encontramos productos con esos filtros.</p>
+          <a class="yh-btn" href="{{ collection.url }}">Ver todo</a>
+        </div>
+      {%- endif -%}
+
+      {%- if paginate.pages > 1 -%}
+        <nav class="yh-pages" aria-label="Páginas">
+          {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}" aria-label="Anterior">←</a>{%- endif -%}
+          {%- for part in paginate.parts -%}
+            {%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>{%- elsif part.title == paginate.current_page -%}<span class="is-on">{{ part.title }}</span>{%- else -%}<span>{{ part.title }}</span>{%- endif -%}
+          {%- endfor -%}
+          {%- if paginate.next -%}<a href="{{ paginate.next.url }}" aria-label="Siguiente">→</a>{%- endif -%}
+        </nav>
+      {%- endif -%}
+    {%- endpaginate -%}
+  </div>
+</section>
+
+<script>
+(() => {
+  const root = document.getElementById('yh-{{ section.id }}');
+  if (!root || root.dataset.yhReady) return;
+  root.dataset.yhReady = '1';
+  // filters and sort apply as soon as they change
+  const f = root.querySelector('[data-yh-filters]');
+  f?.addEventListener('change', () => f.submit());
+  // quick add without leaving the page
+  root.querySelectorAll('form.yh-quick').forEach(form => form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    try {
+      const r = await fetch({{ routes.cart_add_url | append: '.js' | json }}, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ id: +form.querySelector('[name=id]').value, quantity: 1 }) });
+      if (!r.ok) throw 0;
+      const cart = await (await fetch({{ routes.cart_url | append: '.js' | json }})).json();
+      document.querySelectorAll('.yh-cart').forEach(c => { let b = c.querySelector('b'); if (!b) { b = document.createElement('b'); c.appendChild(b); } b.textContent = cart.item_count; });
+      document.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }));
+      btn.classList.add('is-done'); setTimeout(() => btn.classList.remove('is-done'), 1600);
+    } catch (_) { form.submit(); } finally { btn.disabled = false; }
+  }));
+})();
+</script>
+
+{% schema %}
+{
+  "name": "YH · Tienda",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Texto pequeño", "default": "Tienda" },
+    { "type": "checkbox", "id": "show_desc", "label": "Mostrar descripción de la colección", "default": true },
+    { "type": "range", "id": "per_page", "label": "Productos por página", "min": 8, "max": 48, "step": 4, "default": 16 },
+    { "type": "range", "id": "columns", "label": "Columnas", "min": 3, "max": 5, "step": 1, "default": 4 },
+    { "type": "checkbox", "id": "show_filters", "label": "Mostrar filtros", "info": "Se configuran en la app Search & Discovery de Shopify.", "default": true },
+    { "type": "checkbox", "id": "hover_image", "label": "Mostrar segunda foto al pasar el mouse", "default": true },
+    {"type": "header", "content": "Diseño"},
+    {"type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7"},
+    {"type": "color", "id": "text_color", "label": "Color de los textos", "default": "#1F2914"},
+    {"type": "color", "id": "accent", "label": "Color de acento", "default": "#E3A47E"},
+    {"type": "color", "id": "btn_bg", "label": "Botón · fondo", "default": "#1F2914"},
+    {"type": "color", "id": "btn_text", "label": "Botón · texto", "default": "#F7F0E7"},
+    {"type": "select", "id": "title_font_mode", "label": "Fuente de títulos", "default": "serif", "options": [{"value": "serif", "label": "Serif de your hair"}, {"value": "sans", "label": "Sans de your hair"}, {"value": "custom", "label": "Elegir otra"}]},
+    {"type": "font_picker", "id": "title_font", "label": "Otra fuente para títulos", "default": "playfair_display_n4"},
+    {"type": "range", "id": "title_size", "label": "Tamaño de títulos", "min": 24, "max": 96, "step": 2, "default": 44, "unit": "px"},
+    {"type": "checkbox", "id": "title_upper", "label": "Títulos en mayúsculas", "default": true},
+    {"type": "select", "id": "body_font_mode", "label": "Fuente de textos", "default": "sans", "options": [{"value": "sans", "label": "Sans de your hair"}, {"value": "custom", "label": "Elegir otra"}]},
+    {"type": "font_picker", "id": "body_font", "label": "Otra fuente para textos", "default": "assistant_n4"}
+  ],
+  "blocks": [
+    { "type": "chip", "name": "Categoría", "settings": [
+      { "type": "text", "id": "label", "label": "Texto", "default": "Shampoo sólido" },
+      { "type": "url", "id": "link", "label": "Enlace", "info": "Por ejemplo la colección Shampoo." },
+      { "type": "color", "id": "color", "label": "Punto de color" }
+    ]}
+  ]
+}
+{% endschema %}
