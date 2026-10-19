@@ -21,8 +21,9 @@ inventan nada.
   buscan una agencia confiable.
 - **Qué vendo:** un agente de IA en WhatsApp, configurado con la información
   del negocio (horarios, servicios, precios, preguntas frecuentes).
-  - Configuración inicial: $5,499 {{moneda: MXN?}}
-  - Mantenimiento y soporte: $499 al mes
+  - Precio: varía según lo que haga cada agente; se cotiza por negocio. En
+    posts no se publica un precio fijo. {{precio "desde", si algún día se
+    quiere publicar}}
   - Proceso en 4 pasos: 01. Cuentas, 02. Infraestructura, 03. Info del
     negocio, 04. Pago.
   - Alianza: "KUPER y AGENCIA BE" en algunas campañas.
@@ -103,7 +104,7 @@ ajústalas si alguna no es tuya):
 
 ## Pruebas que puedo usar
 
-- Precio público: configuración $5,499 y $499/mes de mantenimiento.
+- Proceso de 4 pasos (cuentas, infraestructura, info del negocio, pago).
 - {{número de negocios con agente activo}}
 - {{caso real: tipo de negocio + resultado, p. ej. "respondía en 3 h, ahora en
   segundos"}}
@@ -115,6 +116,9 @@ ajústalas si alguna no es tuya):
 - **Palabra clave del CTA:** AGENTE (agentes de WhatsApp)
 - **CTA para servicios de agencia:** "Escríbenos por DM" {{o una palabra
   clave propia, p. ej. MARCA}}
-- **Qué recibe quien la manda:** {{p. ej. demo del agente + precios + link para
-  agendar}}
-- **A dónde va mi link:** {{WhatsApp / web / agenda}}
+- **Qué recibe quien la manda:** un DM con el link a un agente de demostración
+  en WhatsApp para probarlo como si fuera su cliente (que le pregunte horarios,
+  precios o una cita), y una pregunta corta: "¿Qué tipo de negocio tienes?".
+  El demo va primero, sin pedirle datos antes (regla de /ig-dm). La cotización
+  sale de esa conversación. {{número o link wa.me del agente de demostración}}
+- **A dónde va mi link:** WhatsApp {{número}}

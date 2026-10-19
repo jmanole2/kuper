@@ -180,7 +180,7 @@ Ejemplo de calidad (Instagram, Reel, marca de agentes de IA en WhatsApp):
   "trabajo_caption": "A",
   "variantes_copy": [
     {
-      "copy": "Comenta AGENTE y te mando la demo: cómo contestaría tu negocio a las 11:47 p. m.\n\nEse cliente no espera a las 9 de la mañana. Le escribe a 2 o 3 negocios y se queda con el primero que contesta.\n\nUn agente de IA para WhatsApp responde por ti en segundos con lo que ya sabes de tu negocio: horarios, precios, servicios y preguntas frecuentes. Lo configuramos nosotros en 4 pasos. Tú no tocas nada técnico.\n\nDesde $5,499 de configuración y $499 al mes. Tú sigues atendiendo lo importante.",
+      "copy": "Comenta AGENTE y te mando un agente de prueba para que le escribas a las 11:47 p. m.\n\nEse cliente no espera a las 9 de la mañana. Le escribe a 2 o 3 negocios y se queda con el primero que contesta.\n\nUn agente de IA para WhatsApp responde por ti en segundos con lo que ya sabes de tu negocio: horarios, precios, servicios y preguntas frecuentes. Lo configuramos nosotros en 4 pasos. Tú no tocas nada técnico.\n\nLo cotizamos según lo que necesite tu negocio. Tú sigues atendiendo lo importante.",
       "hashtags": ["#WhatsAppBusiness", "#AgenteDeIA", "#AtencionAlCliente"]
     },
     {
