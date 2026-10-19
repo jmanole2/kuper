@@ -34,6 +34,19 @@ test('exige 2 variantes en modo aprobación y la fecha calculada', () => {
   assert.match(errs, /fecha_sugerida/);
 });
 
+test('pilares inactivos y carruseles mal formados', () => {
+  const p2 = { ...perfil, pilares_de_contenido: [...perfil.pilares_de_contenido, { nombre: 'blog', requiere_imagen_real: false, activo: false }] };
+  const out = make('instagram');
+  out.pilar_de_contenido = 'blog';
+  assert.ok(validatePost(out, { ...ctx('instagram'), perfil: p2 }).some((e) => e.includes('no es un pilar activo')));
+  const car = make('instagram');
+  car.formato_contenido = 'carrusel'; car.animacion = null; car.formato_imagen = '4:5';
+  car.slides = [{ titulo: 'x'.repeat(80), texto: '' }];
+  const errs = validatePost(car, ctx('instagram')).join('\n');
+  assert.match(errs, /de 3 a 7 slides/);
+  assert.match(errs, /máximo 60/);
+});
+
 test('pilares con imagen real no llevan imagen sintética', () => {
   const out = make('instagram');
   out.pilar_de_contenido = 'portafolio';
@@ -44,6 +57,7 @@ test('pilares con imagen real no llevan imagen sintética', () => {
 
 test('no repite el pilar anterior de la misma plataforma', () => {
   const out = make('instagram');
-  const errs = validatePost(out, ctx('instagram', { historial: [{ plataforma: 'instagram', pilar: 'tips', tema: 'x' }] }));
+  const errs = validatePost(out, ctx('instagram', { historial: [{ plataforma: 'instagram', pilar: 'tips', tema: 'x', estructura: out.estructura }] }));
   assert.ok(errs.some((e) => e.includes('ya se usó')));
+  assert.ok(errs.some((e) => e.includes('estructura')));
 });

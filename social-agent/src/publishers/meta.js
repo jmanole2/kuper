@@ -40,14 +40,21 @@ async function waitContainer(id, token, { timeoutMs = 10 * 60_000, pollMs = 5000
 }
 
 /**
- * post: { caption, imageUrl?, videoUrl?, coverUrl?, altText? }
+ * post: { caption, imageUrl?, imageUrls? (carrusel, 2-10), videoUrl?, coverUrl?, altText? }
  * Las URLs deben ser públicas: Instagram las descarga desde sus servidores.
  */
 export async function publishInstagram(meta, post, opts = {}) {
   needCreds(meta, ['ig_user_id', 'page_token']);
   const token = meta.page_token;
   let params;
-  if (post.videoUrl) {
+  if (post.imageUrls?.length > 1) {
+    // Carrusel: un contenedor por imagen y luego el contenedor CAROUSEL que los agrupa.
+    const children = [];
+    for (const url of post.imageUrls.slice(0, 10)) {
+      children.push((await graphCall('POST', `${meta.ig_user_id}/media`, { image_url: url, is_carousel_item: 'true' }, token)).id);
+    }
+    params = { media_type: 'CAROUSEL', children: children.join(','), caption: post.caption };
+  } else if (post.videoUrl) {
     params = { media_type: 'REELS', video_url: post.videoUrl, caption: post.caption, share_to_feed: 'true' };
     if (post.coverUrl) params.cover_url = post.coverUrl;
   } else if (post.imageUrl) {
@@ -68,7 +75,15 @@ export async function publishFacebook(meta, post) {
   needCreds(meta, ['page_id', 'page_token']);
   const token = meta.page_token;
   let res;
-  if (post.videoUrl) {
+  if (post.imageUrls?.length > 1) {
+    // Varias fotos: se suben sin publicar y luego se adjuntan a una sola publicación.
+    const params = { message: post.caption };
+    for (const [i, url] of post.imageUrls.entries()) {
+      const ph = await graphCall('POST', `${meta.page_id}/photos`, { url, published: 'false' }, token);
+      params[`attached_media[${i}]`] = JSON.stringify({ media_fbid: ph.id });
+    }
+    res = await graphCall('POST', `${meta.page_id}/feed`, params, token);
+  } else if (post.videoUrl) {
     res = await graphCall('POST', `${meta.page_id}/videos`, { file_url: post.videoUrl, description: post.caption }, token);
   } else if (post.imageUrl) {
     res = await graphCall('POST', `${meta.page_id}/photos`, { url: post.imageUrl, message: post.caption, alt_text_custom: post.altText }, token);

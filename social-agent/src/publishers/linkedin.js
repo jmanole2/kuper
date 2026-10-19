@@ -70,7 +70,7 @@ async function uploadVideo(owner, token, file, { timeoutMs = 10 * 60_000, pollMs
   throw new Error('LinkedIn tardó demasiado en procesar el video');
 }
 
-/** post: { copy, hashtags, imageFile?, videoFile?, altText?, title? } */
+/** post: { copy, hashtags, imageFile?, imageFiles? (carrusel, 2-20), videoFile?, altText?, title? } */
 export async function publishLinkedIn(creds, post, opts = {}) {
   if (!creds?.org_id || !creds?.access_token) throw new Error('Faltan credenciales de LinkedIn: org_id, access_token');
   const owner = `urn:li:organization:${String(creds.org_id).replace(/^urn:li:organization:/, '')}`;
@@ -83,7 +83,11 @@ export async function publishLinkedIn(creds, post, opts = {}) {
     lifecycleState: 'PUBLISHED',
     isReshareDisabledByAuthor: false,
   };
-  if (post.videoFile) {
+  if (post.imageFiles?.length > 1) {
+    const images = [];
+    for (const f of post.imageFiles.slice(0, 20)) images.push({ id: await uploadImage(owner, token, f), altText: post.altText || '' });
+    body.content = { multiImage: { images } };
+  } else if (post.videoFile) {
     body.content = { media: { id: await uploadVideo(owner, token, post.videoFile, opts), title: post.title || '' } };
   } else if (post.imageFile) {
     body.content = { media: { id: await uploadImage(owner, token, post.imageFile), altText: post.altText || '' } };

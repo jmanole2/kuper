@@ -6,7 +6,7 @@ import * as db from './db.js';
 import { generatePost, analyzeCompetitors } from './llm/claude.js';
 import { validatePost, needsApproval, PLATFORM_RULES } from './rules.js';
 import { nextSlot, zonedToUtc, daysUntil, localDate } from './schedule.js';
-import { renderAnimation, renderStill } from './media/animation.js';
+import { createVisual } from './animator/index.js';
 import { generateImage, imageModelConfigured, ensureJpeg } from './media/image.js';
 import { publishPost } from './publishers/index.js';
 import { fetchCompetitors } from './competitors/instagram.js';
@@ -41,7 +41,7 @@ export function slotFor(client, plataforma, now = new Date()) {
 function buildInput(client, plataforma, { feedback, postId } = {}) {
   const slot = slotFor(client, plataforma);
   const historial = db.recentHistory(client.id, { excludeId: postId }).map((h) => ({
-    plataforma: h.plataforma, pilar: h.pilar, tema: h.tema, formato: h.formato, fecha: h.fecha?.slice(0, 10),
+    plataforma: h.plataforma, pilar: h.pilar, tema: h.tema, formato: h.formato, estructura: h.estructura, fecha: h.fecha?.slice(0, 10),
   }));
   const report = db.latestCompetitorReport(client.id);
   return {
@@ -59,29 +59,64 @@ function buildInput(client, plataforma, { feedback, postId } = {}) {
 // Nombre con parte aleatoria: los medios se sirven públicos antes de aprobarse.
 const fileBase = (client, post) => path.join(mediaDir(), `${client.slug}-${post.plataforma}-${post.id}-${randomToken(8)}`);
 
-async function produceMedia(client, post, out) {
-  if (out.requiere_asset_real || out.formato_contenido === 'solo_texto') return { image_path: null, video_path: null };
-  const logoPath = client.logo_path && fs.existsSync(client.logo_path) ? client.logo_path : null;
-  if (out.formato_contenido === 'video_animado') {
-    const { video, cover } = await renderAnimation({
-      animacion: out.animacion, formato: out.formato_imagen, perfil: client.perfil, logoPath, outFile: `${fileBase(client, post)}.mp4`,
-    });
-    return { video_path: video, image_path: cover };
-  }
-  // imagen_estatica
-  if (imageModelConfigured()) {
+const KIND = { video_animado: 'video', carrusel: 'carrusel', imagen_estatica: 'imagen' };
+
+export function brandOf(client) {
+  const p = client.perfil;
+  const estilo = typeof p.estilo_visual === 'string' ? p.estilo_visual : p.estilo_visual ? JSON.stringify(p.estilo_visual) : '';
+  return {
+    name: p.cliente || client.nombre,
+    colors: p.colores_marca || [],
+    fontHead: p.tipografia?.titulos || 'DM Sans',
+    fontBody: p.tipografia?.texto || p.tipografia?.titulos || 'DM Sans',
+    style: estilo,
+    logoPath: client.logo_path && fs.existsSync(client.logo_path) ? client.logo_path : null,
+  };
+}
+
+/** Lo que el animador recibe como K.content. */
+export function visualContent(out) {
+  return {
+    tipo: KIND[out.formato_contenido], tema: out.tema, pilar: out.pilar_de_contenido, cta: out.cta,
+    titular: out.headline_corto, apoyo: out.subheadline,
+    ...(out.animacion ? { escenas: out.animacion.escenas, cierre: out.animacion.cierre } : {}),
+    ...(out.slides ? { slides: out.slides } : {}),
+  };
+}
+
+async function produceMedia(client, post, out, { feedback } = {}) {
+  const none = { image_path: null, video_path: null, images: [], visual: null };
+  if (out.requiere_asset_real || out.formato_contenido === 'solo_texto') return none;
+  const base = fileBase(client, post);
+
+  // Imagen con modelo de IA, solo si la marca lo activó y el redactor escribió el prompt.
+  if (out.formato_contenido === 'imagen_estatica' && out.prompt_imagen && client.perfil.imagenes_ia && imageModelConfigured()) {
     try {
-      const f = await generateImage({ prompt: out.prompt_imagen, formato: out.formato_imagen, outFileBase: fileBase(client, post) });
-      return { image_path: ensureJpeg(f), video_path: null };
+      const f = ensureJpeg(await generateImage({ prompt: out.prompt_imagen, formato: out.formato_imagen, outFileBase: base }));
+      return { ...none, image_path: f, images: [f], visual: { tipo: 'imagen_ia' } };
     } catch (e) {
-      db.logEvent({ postId: post.id, clientId: client.id, tipo: 'imagen_fallo', detalle: `${e.message}. Se usa gráfico de marca.` });
+      db.logEvent({ postId: post.id, clientId: client.id, tipo: 'imagen_fallo', detalle: `${e.message}. Se diseña con el animador.` });
     }
   }
-  // Respaldo: tarjeta gráfica con los colores de la marca.
-  const file = await renderStill({
-    titular: out.tema, apoyo: '', formato: out.formato_imagen, perfil: client.perfil, logoPath, outFile: `${fileBase(client, post)}.jpg`,
-  });
-  return { image_path: file, video_path: null };
+
+  const kind = KIND[out.formato_contenido];
+  const r = await createVisual({
+    kind,
+    formato: out.formato_imagen,
+    duration: out.animacion?.duracion_seg ?? 10,
+    slides: out.slides?.length || 1,
+    content: visualContent(out),
+    brand: brandOf(client),
+    plataforma: post.plataforma,
+    ideaVisual: out.idea_visual,
+    feedback,
+  }, base, { log: (m) => db.logEvent({ postId: post.id, clientId: client.id, tipo: 'animador', detalle: m }) });
+  return {
+    video_path: r.video,
+    image_path: r.cover,
+    images: kind === 'carrusel' ? r.images : [],
+    visual: { concepto: r.concepto, codigo: r.codigo, rondas: r.rondas, respaldo: !!r.respaldo },
+  };
 }
 
 /** Genera (o regenera con feedback) el contenido de un post existente. */
@@ -103,9 +138,10 @@ async function fillPost(postId, { feedback } = {}) {
     db.logEvent({ postId, clientId: client.id, tipo: 'error_generacion', detalle: out.error });
     return db.getPost(postId);
   }
-  const media = await produceMedia(client, post, out);
+  const { visual, ...media } = await produceMedia(client, post, out, { feedback: feedback?.comentarios_del_cliente });
   const advertencias = [...(out.advertencias || []), ...errors.map((e) => `Validación: ${e}`)];
-  const salida = { ...out, advertencias };
+  if (visual?.respaldo && !config.mockLlm) advertencias.push('El animador no logró una pieza a tiempo; se usó el diseño de respaldo. Puedes pedir cambios para regenerarla.');
+  const salida = { ...out, advertencias, visual };
   const scheduledAt = feedback && post.scheduled_at ? post.scheduled_at : zonedToUtc(input.fechaCalculada, horaDe(client, post.plataforma), config.timezone);
 
   let status;
@@ -114,7 +150,7 @@ async function fillPost(postId, { feedback } = {}) {
   else status = 'aprobado';
 
   post = db.updatePost(postId, {
-    status, pilar: out.pilar_de_contenido, tema: out.tema, formato: out.formato_contenido, salida,
+    status, pilar: out.pilar_de_contenido, tema: out.tema, formato: out.formato_contenido, estructura: out.estructura, salida,
     variante: 0, copy_final: out.variantes_copy[0]?.copy ?? '', hashtags: out.variantes_copy[0]?.hashtags ?? [],
     alt_text: out.alt_text, scheduled_at: scheduledAt, error: null,
     ...(out.requiere_asset_real ? {} : media),
@@ -183,7 +219,8 @@ export function attachAsset(postId, filePath, mimetype) {
   const post = db.getPost(postId);
   const client = db.getClient(post.client_id);
   const isVideo = mimetype.startsWith('video/');
-  const patch = isVideo ? { video_path: filePath, image_path: null } : { image_path: ensureJpeg(filePath), video_path: null };
+  const jpg = isVideo ? null : ensureJpeg(filePath);
+  const patch = isVideo ? { video_path: filePath, image_path: null, images: [] } : { image_path: jpg, video_path: null, images: [jpg] };
   db.updatePost(postId, patch);
   if (post.status === 'necesita_asset') {
     const next = needsApproval(modoDe(client, post.plataforma)) ? 'pendiente' : 'aprobado';

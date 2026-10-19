@@ -21,6 +21,8 @@ export const config = {
 
   anthropicModel: env('ANTHROPIC_MODEL', 'claude-opus-5-5'),
   anthropicEffort: env('ANTHROPIC_EFFORT', 'high'),
+  // Esfuerzo del animador (código de las animaciones): xhigh da mejores piezas pero tarda y cuesta más.
+  animatorEffort: env('ANIMATOR_EFFORT', 'high'),
   // MOCK_LLM=1 usa un generador falso (para probar sin gastar API).
   mockLlm: bool('MOCK_LLM', '0'),
 

@@ -4,14 +4,19 @@ import { html, raw, esc, page } from './html.js';
 import { STATUS, PLATFORMS } from '../db.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
+import { FONTS } from '../animator/render.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn' };
-const FORMATO = { imagen_estatica: 'Imagen', video_animado: 'Animación', solo_texto: 'Solo texto' };
+const FORMATO = { imagen_estatica: 'Imagen', video_animado: 'Animación', carrusel: 'Carrusel', solo_texto: 'Solo texto' };
 const fmtDate = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)) : '—');
 const mediaSrc = (p) => (p ? `/media/${encodeURIComponent(path.basename(p))}` : null);
 export const badge = (s) => html`<span class="badge b-${s}">${STATUS[s] || s}</span>`;
 
 function mediaBlock(p) {
+  if (p.images?.length > 1) {
+    return html`<div class="carousel">${p.images.map((f, i) => html`<img src="${mediaSrc(f)}" alt="${`Slide ${i + 1}: ${p.alt_text || ''}`}" loading="lazy">`)}</div>
+      <p class="muted small" style="margin:4px 0 0">${p.images.length} slides · desliza para verlas</p>`;
+  }
   if (p.video_path) return html`<video class="media" src="${mediaSrc(p.video_path)}" ${raw(p.image_path ? `poster="${esc(mediaSrc(p.image_path))}"` : '')} controls playsinline preload="metadata"></video>`;
   if (p.image_path) return html`<img class="media" src="${mediaSrc(p.image_path)}" alt="${p.alt_text || ''}">`;
   return '';
@@ -132,13 +137,13 @@ export function clientFormPage(client, { error, competitors = [], report, posts 
   <form method="post" action="/admin/clientes/${client.id}/logo" enctype="multipart/form-data" class="card row">
     ${client.logo_path ? html`<img src="/media/${path.basename(client.logo_path)}" style="height:48px">` : ''}
     <input type="file" name="archivo" accept="image/png,image/jpeg" required style="width:auto"><button class="btn-warn">Subir logo</button>
-    <span class="muted small">Se usa en el cierre de las animaciones.</span></form>` : ''}
+    <span class="muted small">PNG con fondo transparente. Lo usa el animador en cierres y esquinas.</span></form>` : ''}
 
   <h2>Configuración</h2>
   <form method="post" action="${action}" class="card">
     ${isNew ? html`<label>Identificador (sin espacios)</label><input name="slug" pattern="[a-z0-9-]+" required placeholder="kuper-media">` : ''}
     <label>Nombre</label><input name="nombre" value="${client?.nombre || ''}" required>
-    <label>Perfil de marca (JSON — sección 2 del prompt maestro)</label>
+    <label>Perfil de marca (JSON — sección 2 del prompt maestro). tipografia: ${Object.keys(FONTS).join(' o ')}</label>
     <textarea class="code" name="perfil">${JSON.stringify(client?.perfil || DEFAULT_PERFIL, null, 2)}</textarea>
     <label>Redes y frecuencia (JSON). modo_publicacion: auto | aprobacion · frecuencia: diario, 3_por_semana, 2_por_semana, semanal, quincenal, mensual</label>
     <textarea class="code" name="config" style="min-height:180px">${JSON.stringify(client?.config || DEFAULT_CONFIG, null, 2)}</textarea>
@@ -164,7 +169,9 @@ export function postAdminPage(post, client, events) {
   const body = html`<p><a href="/admin/clientes/${client.id}">← ${client.nombre}</a></p>
   <div class="split"><div>${postCard(post, { base: `/admin/posts/${post.id}`, admin: true })}</div>
   <div><div class="card"><strong>Bitácora</strong><table>${events.map((e) => html`<tr><td class="muted small">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td>${e.tipo}</td><td class="small">${e.detalle}</td></tr>`)}</table></div>
-  ${post.salida ? html`<details class="card" style="margin-top:16px"><summary>Salida completa del agente (JSON)</summary><pre class="small" style="white-space:pre-wrap">${JSON.stringify(post.salida, null, 2)}</pre></details>` : ''}
+  ${post.salida?.visual?.codigo ? html`<details class="card" style="margin-top:16px"><summary>Animador: ${post.salida.visual.respaldo ? 'diseño de respaldo' : `${post.salida.visual.rondas} rondas`}</summary>
+    <p><strong>Concepto:</strong> ${post.salida.visual.concepto}</p><pre class="small" style="white-space:pre-wrap;max-height:420px;overflow:auto">${post.salida.visual.codigo}</pre></details>` : ''}
+  ${post.salida ? html`<details class="card" style="margin-top:16px"><summary>Salida completa del agente (JSON)</summary><pre class="small" style="white-space:pre-wrap">${JSON.stringify({ ...post.salida, visual: undefined }, null, 2)}</pre></details>` : ''}
   ${post.feedback ? html`<div class="card" style="margin-top:16px"><strong>Comentarios del cliente</strong><p>${post.feedback}</p></div>` : ''}</div></div>`;
   return page({ title: `Post ${post.id}`, nav: adminNav, body });
 }
@@ -178,8 +185,13 @@ export const DEFAULT_PERFIL = {
   pilares_de_contenido: [
     { nombre: 'tips del sector', requiere_imagen_real: false },
     { nombre: 'casos de éxito / portafolio', requiere_imagen_real: true },
+    { nombre: 'blog del sitio web', requiere_imagen_real: false, requiere_fuente_real: true, activo: false },
   ],
   colores_marca: ['#111111', '#FFFFFF', '#FF5A36'],
+  tipografia: { titulos: 'DM Sans', texto: 'DM Sans' },
+  estilo_visual: 'Describe el estilo: fondos, efectos, formas, cómo se usa el logo…',
+  imagenes_ia: false,
+  blog_posts: [],
   permite_emojis: false,
   temas_prohibidos: ['política', 'religión'],
   cta_preferido: 'Escríbenos',
@@ -187,7 +199,7 @@ export const DEFAULT_PERFIL = {
 };
 
 export const DEFAULT_CONFIG = {
-  instagram: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '10:00', formatos: ['imagen_estatica', 'video_animado'] },
+  instagram: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '10:00', formatos: ['video_animado', 'carrusel', 'imagen_estatica'] },
   facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '11:00' },
   linkedin: { activo: false, frecuencia: 'quincenal', modo_publicacion: 'aprobacion', hora: '09:00' },
 };

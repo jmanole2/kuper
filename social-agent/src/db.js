@@ -94,6 +94,11 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+  // Migraciones de columnas nuevas (bases creadas con versiones anteriores).
+  const cols = (t) => db.prepare(`PRAGMA table_info(${t})`).all().map((c) => c.name);
+  const ensure = (t, col, def) => { if (!cols(t).includes(col)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${col} ${def}`); };
+  ensure('posts', 'images_json', "TEXT NOT NULL DEFAULT '[]'");
+  ensure('posts', 'estructura', 'TEXT');
   return db;
 }
 
@@ -174,6 +179,7 @@ function hydratePost(row) {
     ...row,
     salida: row.salida_json ? JSON.parse(row.salida_json) : null,
     hashtags: JSON.parse(row.hashtags_json || '[]'),
+    images: JSON.parse(row.images_json || '[]'),
   };
 }
 
@@ -195,13 +201,14 @@ export function createPost(fields) {
   return getPost(Number(r.lastInsertRowid));
 }
 
-const POST_FIELDS = ['status', 'pilar', 'tema', 'formato', 'salida_json', 'variante', 'copy_final', 'hashtags_json',
+const POST_FIELDS = ['status', 'pilar', 'tema', 'formato', 'estructura', 'images_json', 'salida_json', 'variante', 'copy_final', 'hashtags_json',
   'image_path', 'video_path', 'alt_text', 'scheduled_at', 'published_at', 'external_id', 'external_url', 'error', 'feedback'];
 
 export function updatePost(id, patch) {
   const p = { ...patch };
   if ('salida' in p) { p.salida_json = p.salida ? JSON.stringify(p.salida) : null; delete p.salida; }
   if ('hashtags' in p) { p.hashtags_json = JSON.stringify(p.hashtags || []); delete p.hashtags; }
+  if ('images' in p) { p.images_json = JSON.stringify(p.images || []); delete p.images; }
   const keys = Object.keys(p).filter((k) => POST_FIELDS.includes(k));
   if (!keys.length) return getPost(id);
   getDb().prepare(`UPDATE posts SET ${keys.map((k) => `${k} = ?`).join(', ')}, updated_at = datetime('now') WHERE id = ?`)
@@ -235,7 +242,7 @@ export function lastGenerationErrorAt(clientId, plataforma) {
 // Publicaciones recientes (publicadas o ya programadas) para rotación de pilares y fechas.
 export function recentHistory(clientId, { limit = 12, excludeId = 0 } = {}) {
   return getDb().prepare(
-    `SELECT plataforma, pilar, tema, formato, COALESCE(published_at, scheduled_at) AS fecha, status
+    `SELECT plataforma, pilar, tema, formato, estructura, COALESCE(published_at, scheduled_at) AS fecha, status
      FROM posts WHERE client_id = ? AND id != ? AND tema IS NOT NULL
        AND status IN ('publicado','aprobado','publicando','pendiente','necesita_asset')
      ORDER BY COALESCE(published_at, scheduled_at) DESC LIMIT ?`,

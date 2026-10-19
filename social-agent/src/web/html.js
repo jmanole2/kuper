@@ -26,6 +26,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 16px 80px}h1{font-size:26px;mar
 .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--line)}
 .b-pendiente,.b-necesita_asset{background:#fff1d6;color:#8a5a00}.b-aprobado{background:#dff3e7;color:#146c3b}.b-publicado{background:#1f9d55;color:#fff}
 .b-error,.b-error_generacion,.b-rechazado{background:#fde2e2;color:#a12a2a}.b-generando,.b-cambios_solicitados,.b-publicando{background:#e3ecff;color:#2446a6}
+.carousel{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:10px}.carousel img{flex:0 0 88%;width:88%;scroll-snap-align:start;border-radius:10px;display:block}
 .media{width:100%;border-radius:10px;background:#0002;display:block;max-height:520px;object-fit:contain}
 textarea,input,select{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 textarea{min-height:130px}textarea.code{font:13px/1.45 ui-monospace,Menlo,monospace;min-height:260px}
