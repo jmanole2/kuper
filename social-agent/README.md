@@ -71,10 +71,10 @@ En un droplet Ubuntu 22.04/24.04 con un subdominio que ya apunte a su IP. Un ren
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jmanole2/novaplastica/agente-publicador-redes-sociales/social-agent/deploy/install.sh \
-  | sudo DOMINIO=agente.kuper.media bash
+  | sudo DOMINIO=redes.kuper.media bash
 ```
 
-Instala Node 22 y Chromium, deja el agente como servicio (`agente-social`) que arranca solo, y pone https (Caddy, o nginx + certbot si el servidor ya usa nginx). Al final imprime la contraseña del panel. Luego:
+No toca lo que ya corre en el servidor: usa su propio Node en `/opt/agente-social/node`, un puerto libre (3100-3199) solo accesible desde el propio servidor, su propio usuario y servicio (`agente-social`, con límite de memoria), y agrega un sitio nuevo en Caddy o nginx sin editar los demás. Si el dominio ya lo usa otra aplicación, se detiene. Antes de instalar se puede revisar el servidor sin cambiar nada con `REVISAR=1`. Al final imprime la contraseña del panel. Luego:
 
 1. Poner `ANTHROPIC_API_KEY` en `/opt/agente-social/social-agent/.env` y `sudo systemctl restart agente-social`.
 2. `sudo -u agente bash -c 'cd /opt/agente-social/social-agent && npm run seed'` para cargar Kuper Media.
