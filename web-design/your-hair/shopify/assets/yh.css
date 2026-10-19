@@ -414,3 +414,34 @@ details[open]>summary i::after{transform:rotate(0)}
   .yh-faq{padding:64px 0}
   .yh-faq__grid{grid-template-columns:minmax(0,1fr);gap:24px}
 }
+
+/* ---------- footer ---------- */
+.yh-foot{background:var(--yh-ft-bg);color:var(--yh-ft-tx);padding:80px 0 28px;overflow:hidden}
+.yh-foot a{transition:opacity .2s}
+.yh-foot a:hover{opacity:.65}
+.yh-foot__top{display:grid;grid-template-columns:1.3fr repeat(3,.8fr) 1.3fr;gap:40px;align-items:start}
+.yh-foot__brand p{margin-top:20px;font-size:14px;line-height:1.55;color:var(--yh-ft-mut);max-width:240px}
+.yh-foot h3{font-family:var(--yh-sans);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:var(--yh-ft-mut);margin:6px 0 18px}
+.yh-foot__col ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:14px}
+.yh-foot__news{grid-column:-2/-1}
+.yh-foot__news h3{color:var(--yh-ft-tx);font-family:var(--yh-serif);font-size:30px;letter-spacing:0;text-transform:none;font-weight:400;line-height:1.05;margin-top:0}
+.yh-foot__news p{font-size:14px;color:var(--yh-ft-mut);margin-bottom:18px}
+.yh-foot__field{display:flex;border-bottom:1px solid var(--yh-ft-tx)}
+.yh-foot__field input{flex:1;min-width:0;background:none;border:0;padding:12px 0;color:var(--yh-ft-tx);font:inherit;font-size:15px;outline:0}
+.yh-foot__field input::placeholder{color:var(--yh-ft-mut)}
+.yh-foot__field button{background:none;border:0;color:var(--yh-ft-tx);cursor:pointer;padding:0 4px}
+.yh-foot__field button svg{width:18px;height:18px}
+.yh-foot__ok{color:var(--yh-ft-tx)!important}
+.yh-foot__word{font-family:var(--yh-mark);font-weight:600;font-size:clamp(56px,19vw,250px);line-height:1.05;letter-spacing:-.05em;text-align:center;color:var(--yh-ft-line);margin:60px 0 0;white-space:nowrap;user-select:none}
+.yh-foot__bot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-top:28px;padding-top:22px;border-top:1px solid var(--yh-ft-line);font-size:12px;color:var(--yh-ft-mut);letter-spacing:.04em}
+.yh-foot__social{display:flex;gap:22px;text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600}
+.yh-foot__pay{list-style:none;display:flex;gap:6px;margin:0;padding:0}
+.yh-foot__pay svg{width:34px;height:22px;display:block}
+@media (max-width:1000px){.yh-foot__top{grid-template-columns:1fr 1fr 1fr}.yh-foot__brand,.yh-foot__news{grid-column:1/-1}}
+@media (max-width:760px){
+  .yh-foot{padding:56px 0 24px}
+  .yh-foot__top{grid-template-columns:1fr 1fr;gap:30px}
+  .yh-foot__brand,.yh-foot__news{grid-column:1/-1}
+  .yh-foot__word{margin-top:44px}
+  .yh-foot__bot{flex-direction:column;align-items:flex-start;gap:14px}
+}
