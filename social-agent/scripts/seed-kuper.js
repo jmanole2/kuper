@@ -59,6 +59,8 @@ const c = createClient({
     instagram: { activo: true, frecuencia: '3_por_semana', modo_publicacion: 'aprobacion', hora: '19:00', formatos: ['video_animado', 'carrusel'] },
     facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '12:00' },
     linkedin: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '08:30' },
+    // Aviso de posts por revisar: escribe el correo de quien aprueba en el panel. Sin WhatsApp.
+    notificaciones: { email: process.env.AVISO_EMAIL || '', whatsapp: false },
     // Quien comenta AGENTE recibe por DM el link al agente de demostración en WhatsApp.
     respuesta_palabra_clave: {
       activo: true,

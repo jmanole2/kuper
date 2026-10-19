@@ -37,7 +37,20 @@ export const config = {
   schedulerEnabled: bool('SCHEDULER', '1'),
   schedulerIntervalSec: Number(env('SCHEDULER_INTERVAL_SEC', 60)),
   // Con cuántos días de anticipación se genera cada post (para dar tiempo a aprobar).
-  leadDays: Number(env('LEAD_DAYS', 3)),
+  leadDays: Number(env('LEAD_DAYS', 7)),
+  // Ritmo de generación automática: cuántas piezas al día (en total, todos los clientes)
+  // y en qué horas locales (de madrugada para no cargar el servidor mientras atienden los agentes de WhatsApp).
+  maxPiezasDia: Number(env('MAX_PIEZAS_DIA', 1)),
+  horasGeneracion: env('HORAS_GENERACION', '01-06'),
+  // Aviso por correo al cliente cuando tiene posts por revisar (máximo uno al día, desde esta hora local).
+  horaAviso: env('HORA_AVISO', '09:00'),
+  smtp: {
+    host: env('SMTP_HOST', ''),
+    port: Number(env('SMTP_PORT', 465)),
+    user: env('SMTP_USER', ''),
+    pass: env('SMTP_PASS', ''),
+    from: env('SMTP_FROM', env('SMTP_USER', '')),
+  },
   competitorRefreshDays: Number(env('COMPETITOR_REFRESH_DAYS', 7)),
 };
 

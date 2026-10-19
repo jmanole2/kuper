@@ -115,7 +115,8 @@ export function clientFormPage(client, { error, competitors = [], report, posts 
   <h1>${isNew ? 'Nuevo cliente' : client.nombre}</h1>
   ${error ? html`<div class="err">${error}</div>` : ''}
   ${!isNew ? html`<div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
-    <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div></div>
+    <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
+    <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p></div>
   <h2>Generar ahora</h2>
   <div class="row">${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => html`<form method="post" action="/admin/clientes/${client.id}/generar" class="inline"><input type="hidden" name="plataforma" value="${p}"><button class="btn-accent">Post para ${PLAT[p]}</button></form>`)}</div>
   <h2>Posts</h2>
@@ -211,4 +212,6 @@ export const DEFAULT_CONFIG = {
   instagram: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '10:00', formatos: ['video_animado', 'carrusel', 'imagen_estatica'] },
   facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '11:00' },
   linkedin: { activo: false, frecuencia: 'quincenal', modo_publicacion: 'aprobacion', hora: '09:00' },
+  // Aviso de posts por revisar: un correo al día con el link al portal. WhatsApp solo si el cliente lo pide.
+  notificaciones: { email: '', whatsapp: false },
 };

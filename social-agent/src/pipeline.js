@@ -6,13 +6,14 @@ import { cleanOutput } from './textcheck.js';
 import * as db from './db.js';
 import { generatePost, analyzeCompetitors } from './llm/claude.js';
 import { validatePost, needsApproval, PLATFORM_RULES } from './rules.js';
-import { nextSlot, zonedToUtc, daysUntil, localDate } from './schedule.js';
+import { nextSlot, zonedToUtc, daysUntil, localDate, localTime } from './schedule.js';
 import { createVisual } from './animator/index.js';
 import { generateImage, imageModelConfigured, ensureJpeg } from './media/image.js';
 import { publishPost } from './publishers/index.js';
 import { fetchCompetitors } from './competitors/instagram.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
+import { notifyClient } from './notify.js';
 
 // Cola de trabajos en serie: las generaciones abren Chromium y llaman a APIs, mejor de una en una.
 let chain = Promise.resolve();
@@ -273,6 +274,39 @@ export async function runCompetitorAnalysis(clientId) {
 }
 
 // ------------------------------------------------------------ ciclo automático
+/** ¿La hora local cae en la ventana de generación? Formato "01-06" (de 1:00 a 5:59) o "22-04". */
+export function inGenerationWindow(now = new Date(), ventana = config.horasGeneracion) {
+  const m = /^(\d{1,2})-(\d{1,2})$/.exec(String(ventana || '').trim());
+  if (!m) return true; // sin ventana: a cualquier hora
+  const [ini, fin] = [Number(m[1]), Number(m[2])];
+  const h = Number(localTime(now, config.timezone).slice(0, 2));
+  return ini <= fin ? h >= ini && h < fin : h >= ini || h < fin;
+}
+
+/** Piezas que todavía se pueden generar hoy (día local), contando todas las de todos los clientes. */
+export function piecesLeftToday(now = new Date()) {
+  const inicio = zonedToUtc(localDate(now, config.timezone), '00:00', config.timezone);
+  return Math.max(0, config.maxPiezasDia - db.generatedSince(inicio));
+}
+
+/** Lo que toca generar, la publicación más próxima primero. */
+export function generationCandidates(now = new Date()) {
+  const out = [];
+  for (const client of db.listClients().filter((c) => c.activo)) {
+    for (const plataforma of db.PLATFORMS) {
+      if (!platformCfg(client, plataforma).activo) continue;
+      if (db.openPostFor(client.id, plataforma)) continue;
+      const lastErr = db.lastGenerationErrorAt(client.id, plataforma);
+      if (lastErr && (now - new Date(lastErr.replace(' ', 'T') + 'Z')) < 6 * 3600_000) continue; // no reintentar en bucle
+      const slot = slotFor(client, plataforma, now);
+      if (daysUntil(slot.scheduledAt, now) > config.leadDays) continue;
+      out.push({ client, plataforma, scheduledAt: slot.scheduledAt });
+    }
+  }
+  return out.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+}
+
+let generating = false;
 export async function tick(now = new Date()) {
   await publishDue(now);
   for (const client of db.listClients().filter((c) => c.activo)) {
@@ -281,24 +315,25 @@ export async function tick(now = new Date()) {
       enqueue(`kw-${client.id}`, () => processKeywordComments(client).catch((e) =>
         db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: e.message })));
     }
-    // Análisis de competencia periódico.
+    // Aviso al cliente de lo que tiene por revisar (un correo al día como máximo).
+    enqueue(`aviso-${client.id}`, () => notifyClient(client, new Date()).catch((e) =>
+      db.logEvent({ clientId: client.id, tipo: 'aviso_error', detalle: e.message })));
+    // Análisis de competencia periódico (no abre el navegador; puede correr a cualquier hora).
     const report = db.latestCompetitorReport(client.id);
     const stale = !report || daysUntil(report.created_at.replace(' ', 'T') + 'Z', now) < -config.competitorRefreshDays;
     if (stale && db.listCompetitors(client.id).length) {
       enqueue(`comp-${client.id}`, () => runCompetitorAnalysis(client.id).catch((e) =>
         db.logEvent({ clientId: client.id, tipo: 'competencia_error', detalle: e.message })));
     }
-    // Generación con anticipación para cada plataforma activa.
-    for (const plataforma of db.PLATFORMS) {
-      if (!platformCfg(client, plataforma).activo) continue;
-      if (db.openPostFor(client.id, plataforma)) continue;
-      const lastErr = db.lastGenerationErrorAt(client.id, plataforma);
-      if (lastErr && (now - new Date(lastErr.replace(' ', 'T') + 'Z')) < 6 * 3600_000) continue; // no reintentar en bucle
-      const slot = slotFor(client, plataforma, now);
-      if (daysUntil(slot.scheduledAt, now) > config.leadDays) continue;
-      enqueue(`gen-${client.id}-${plataforma}`, () => generateForPlatform(client.id, plataforma).catch(() => {}));
-    }
   }
+  // Generación: pocas piezas al día y de madrugada, una a la vez (cada render usa ~750 MB).
+  if (generating || !inGenerationWindow(now) || piecesLeftToday(now) <= 0) return;
+  const next = generationCandidates(now)[0];
+  if (!next) return;
+  generating = true;
+  const queued = enqueue(`gen-${next.client.id}-${next.plataforma}`, () => generateForPlatform(next.client.id, next.plataforma)
+    .catch(() => {}).finally(() => { generating = false; }));
+  if (!queued) generating = false;
 }
 
 export function startScheduler() {

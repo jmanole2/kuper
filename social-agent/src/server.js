@@ -75,6 +75,10 @@ export function createApp() {
     }
     for (const [k, v] of Object.entries(cfg)) {
       if (k === 'respuesta_palabra_clave') continue;
+      if (k === 'notificaciones') {
+        if (v.email && !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(String(v.email).trim())) throw new Error('notificaciones: "email" no es un correo válido');
+        continue;
+      }
       if (!db.PLATFORMS.includes(k)) throw new Error(`Red no soportada: ${k} (usa ${db.PLATFORMS.join(', ')})`);
       if (v.activo) freqDays(v.frecuencia || 'semanal');
       if (v.hora && !/^\d{2}:\d{2}$/.test(v.hora)) throw new Error(`${k}: "hora" debe ser HH:MM`);

@@ -6,7 +6,7 @@ Agente de contenido con IA para la agencia (Kuper Media y clientes). Para cada c
 2. **Genera posts** — Claude (estratega/redactor) elige pilar, estructura narrativa y formato (Reel animado, carrusel, imagen o solo texto), y escribe copy (2 variantes si requiere aprobación), hashtags y el guion visual, siguiendo `prompts/maestro.md` (v3).
 3. **Valida en código** el auto-chequeo del prompt (palabras, hashtags, emojis, frases de relleno, temas prohibidos, pilares activos, rotación de pilares y estructuras, fecha). Si falla, le regresa los errores a Claude para que corrija.
 4. **Diseña y anima los visuales con Claude** — un segundo agente (el animador, `prompts/animador.md`) escribe el código de cada pieza (video 2D, carrusel o imagen) con la identidad de la marca. Nada de stock. El motor prueba el código (errores, texto cortado, zona segura de Reels) y le enseña a Claude una hoja de contacto de su propia pieza para que la revise como director de arte y la corrija. Si el pilar necesita foto real (portafolio, equipo), se la pide al cliente.
-5. **Aprobación** — cada cliente tiene un portal (`/p/<token>`, funciona en el celular) donde elige la versión, edita, cambia fecha, pide cambios (el agente regenera) o rechaza. Las redes en modo `auto` se saltan este paso.
+5. **Aprobación** — un correo al día avisa al cliente si tiene posts por revisar, con el link a su portal. Cada cliente tiene un portal (`/p/<token>`, funciona en el celular) donde elige la versión, edita, cambia fecha, pide cambios (el agente regenera) o rechaza. Las redes en modo `auto` se saltan este paso.
 6. **Publica** a la hora programada con las APIs oficiales: Meta Graph API (Instagram y Facebook) y LinkedIn Posts API.
 
 ```
@@ -53,6 +53,12 @@ guion del post -> Claude escribe setup()/draw() -> el motor prueba el código ->
 - Recursos de luz y acabado: `K.bg.luminous`, `K.aurora`, `K.fluted` (vidrio acanalado), `K.lightCone`, `K.beam`, `K.hairline`, `K.sparkle`, `K.asterisk`, `K.corners`, texto que entra desenfocado (`style: 'blur'`).
 - `ANIMATOR_EFFORT=high` (o `xhigh` para piezas más cuidadas, más lento y caro).
 
+## Ritmo de trabajo y avisos
+
+- **Una pieza al día, de madrugada.** El programador genera como máximo `MAX_PIEZAS_DIA` piezas al día (1 por defecto, sumando todos los clientes) y solo en `HORAS_GENERACION` (01-06, hora local), la publicación más próxima primero. Así el render de video (~750 MB) no compite de día con los agentes de WhatsApp del mismo servidor. Con `LEAD_DAYS=7` hay una semana de colchón para aprobar. "Generar ahora" en el panel y "Pedir cambios" no esperan a la madrugada.
+- **Aviso por correo.** Con `"notificaciones": { "email": "..." }` en la configuración del cliente, a partir de `HORA_AVISO` (09:00) le llega un solo correo al día con lo que tiene por revisar o por subir, y el link a su portal. Si no hay nada nuevo, no se manda. Necesita `SMTP_*` en el `.env`.
+- **WhatsApp opcional.** `"whatsapp": true` deja anotado que el cliente lo quiere, pero apagado por defecto y todavía sin conectar.
+
 ## Configurar un cliente
 
 Desde **/admin → Nuevo cliente**:
@@ -67,7 +73,7 @@ Después manda al cliente el enlace de su portal.
 
 ## Instalar en el servidor (DigitalOcean)
 
-En un droplet Ubuntu 22.04/24.04 con un subdominio que ya apunte a su IP. Un render de Reel usa ~750 MB en el pico; con 1 GB de RAM funciona porque el instalador agrega 2 GB de swap, y con 2 GB va holgado.
+En un droplet Ubuntu 22.04/24.04 con un subdominio que ya apunte a su IP. Un render de Reel usa ~750 MB en el pico; con 1 GB de RAM funciona porque el instalador agrega 2 GB de swap y el agente genera una pieza al día, de madrugada.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jmanole2/novaplastica/agente-publicador-redes-sociales/social-agent/deploy/install.sh \
@@ -113,12 +119,13 @@ Con `respuesta_palabra_clave` en la configuración de redes del cliente, el agen
 | `src/publishers/` | Meta Graph API y LinkedIn Posts API |
 | `src/competitors/instagram.js` | Business Discovery de Instagram |
 | `src/server.js` · `src/web/` | Panel de admin y portal del cliente |
+| `src/notify.js` | Correo diario al cliente con lo que tiene por revisar |
 | `src/db.js` | SQLite (`data/agente.db`) |
 
 ## Pendiente / siguientes pasos
 
 - Reportes de métricas (sección 10 del prompt v2) y alimentar `ejemplos_de_posts_que_funcionaron` con los posts que mejor funcionaron.
 - Botones "Conectar con Facebook/LinkedIn" (OAuth) en lugar de pegar tokens; renovación de tokens de LinkedIn.
-- Aviso por WhatsApp/correo al cliente cuando tiene posts por aprobar.
+- Conectar el aviso por WhatsApp para los clientes que lo pidan.
 - TikTok.
 - Despliegue (servidor con https, p. ej. Railway/Render/VPS) con el disco de `data/` persistente.

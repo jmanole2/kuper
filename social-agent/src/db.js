@@ -289,5 +289,14 @@ export function recordKeywordReply({ clientId, comment, status, error = null }) 
 }
 export const keywordReplies = (clientId, limit = 20) =>
   getDb().prepare("SELECT * FROM keyword_replies WHERE client_id = ? AND status NOT IN ('propio') ORDER BY created_at DESC LIMIT ?").all(clientId, limit);
+export const kvGet = (k) => getDb().prepare('SELECT v FROM kv WHERE k = ?').get(k)?.v ?? null;
+export const kvSet = (k, v) => getDb().prepare('INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)').run(k, String(v));
+/** Posts creados por el programador desde un instante (ISO UTC), para el límite diario. */
+export const generatedSince = (iso) => getDb().prepare(
+  "SELECT COUNT(*) AS n FROM posts WHERE created_at >= datetime(?)").get(iso).n;
+/** Posts que esperan al cliente (revisar o subir foto) cambiados después de un instante. */
+export const waitingSince = (clientId, iso) => getDb().prepare(
+  `SELECT * FROM posts WHERE client_id = ? AND status IN ('pendiente','necesita_asset') AND updated_at > datetime(?) ORDER BY scheduled_at`,
+).all(clientId, iso).map(hydratePost);
 export const hasKeywordBaseline = (clientId) => !!getDb().prepare('SELECT 1 FROM kv WHERE k = ?').get(`kw_baseline_${clientId}`);
 export const setKeywordBaseline = (clientId) => getDb().prepare('INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)').run(`kw_baseline_${clientId}`, new Date().toISOString());
