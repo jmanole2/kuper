@@ -47,7 +47,7 @@ fi
 revisar() {
   echo "================ Revisión del servidor (no se cambió nada) ================"
   . /etc/os-release 2>/dev/null && echo "Sistema:        $PRETTY_NAME"
-  echo "RAM:            $(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo) MB   swap: $(free -m | awk '/Swap/{print $2}') MB"
+  echo "RAM:            $(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo) MB (disponible: $(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo) MB)   swap: $(free -m | awk '/Swap/{print $2}') MB"
   echo "Disco libre:    $(df -h / | awk 'NR==2{print $4}')"
   echo "Node sistema:   $(command -v node >/dev/null && node -v || echo 'no instalado') (no se toca)"
   command -v pm2 >/dev/null && echo "PM2:            sí ($(pm2 jlist 2>/dev/null | grep -o '"name":"[^"]*"' | cut -d'"' -f4 | tr '\n' ' '))"
@@ -74,9 +74,18 @@ fi
 if [ "$REVISAR" = 1 ]; then
   revisar
   [ "$DOMINIO_OCUPADO" = 1 ] && echo "OJO: https://$DOMINIO ya responde con OTRA aplicación. Usa otro subdominio para el agente."
+  [ "$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)" -lt 900 ] && echo "OJO: menos de 900 MB de RAM; el instalador no se ejecutará aquí (un render de video usa ~750 MB)."
   exit 0
 fi
 revisar
+# Un render de Reel usa ~750 MB en el pico. En servidores de menos de ~900 MB no se instala:
+# con swap seguiría siendo lento y, si se agota la memoria, Linux podría matar a otros servicios.
+RAM_TOTAL=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)
+if [ "$RAM_TOTAL" -lt 900 ] && [ "${FORZAR:-0}" != 1 ]; then
+  echo "Este servidor tiene ${RAM_TOTAL} MB de RAM: es muy poco para renderizar video sin poner en riesgo lo que ya corre aquí."
+  echo "Usa un servidor de 1 GB o más (recomendado 2 GB). No se cambió nada."
+  exit 1
+fi
 if [ "$DOMINIO_OCUPADO" = 1 ] && [ "${FORZAR:-0}" != 1 ]; then
   echo "https://$DOMINIO ya responde con otra aplicación (¿otro agente?). Para no tapar nada, me detengo."
   echo "Usa otro subdominio (p. ej. DOMINIO=redes.kuper.media)."
