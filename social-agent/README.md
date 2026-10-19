@@ -20,6 +20,7 @@ programador (cada minuto) ─▶ competencia (cada 7 días) ─▶ Claude ─▶
 ```bash
 cd social-agent
 npm install
+npx playwright install chromium   # navegador que usa el motor de animación (solo la primera vez)
 cp .env.example .env       # llena ADMIN_PASSWORD, SECRET_KEY, ANTHROPIC_API_KEY…
 npm run seed               # crea Kuper Media en modo simulación
 npm start                  # http://localhost:3000/admin
