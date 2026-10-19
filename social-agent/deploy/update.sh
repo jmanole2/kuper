@@ -4,9 +4,10 @@
 set -euo pipefail
 DIR=/opt/agente-social
 RAMA="${RAMA:-agente-publicador-redes-sociales}"
-git -C "$DIR" fetch --depth 1 origin "$RAMA"
-git -C "$DIR" checkout -B "$RAMA" "origin/$RAMA"
+# El repo es del usuario "agente": git se corre como él (si no, git lo rechaza por "dubious ownership").
 chown -R agente:agente "$DIR"
+sudo -u agente git -C "$DIR" fetch --depth 1 origin "$RAMA"
+sudo -u agente git -C "$DIR" checkout -B "$RAMA" "origin/$RAMA"
 sudo -u agente env PATH="$DIR/node/bin:/usr/bin:/bin" HOME=/home/agente bash -c "cd '$DIR/social-agent' && npm ci --omit=dev"
 systemctl restart agente-social
 systemctl --no-pager status agente-social | head -5
