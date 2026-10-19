@@ -1,5 +1,13 @@
 {% render 'yh-head' %}
-<div class="yh" style="--yh-ann-bg:{{ section.settings.ann_bg }};--yh-ann-tx:{{ section.settings.ann_text }};--yh-hd-bg:{{ section.settings.bg }};--yh-hd-tx:{{ section.settings.text }};--yh-logo-bg:{{ section.settings.logo_bg }};--yh-logo-tx:{{ section.settings.logo_text }};--yh-logo:{{ section.settings.logo_size }}px">
+{%- liquid
+  assign hd_bg = section.settings.bg
+  assign hd_tx = section.settings.text
+  if template.name == 'index' and section.settings.home_custom
+    assign hd_bg = section.settings.home_bg
+    assign hd_tx = section.settings.home_text
+  endif
+-%}
+<div class="yh" style="--yh-ann-bg:{{ section.settings.ann_bg }};--yh-ann-tx:{{ section.settings.ann_text }};--yh-hd-bg:{{ hd_bg }};--yh-hd-tx:{{ hd_tx }};--yh-logo-bg:{{ section.settings.logo_bg }};--yh-logo-tx:{{ section.settings.logo_text }};--yh-logo:{{ section.settings.logo_size }}px">
   {%- if section.settings.announcement != blank -%}
     <div class="yh-ann">{{ section.settings.announcement }}</div>
   {%- endif -%}
@@ -49,6 +57,9 @@
     { "type": "link_list", "id": "menu", "label": "Menú", "default": "main-menu" },
     { "type": "color", "id": "bg", "label": "Header · fondo", "default": "#1F2914" },
     { "type": "color", "id": "text", "label": "Header · texto", "default": "#F7F0E7" },
+    { "type": "checkbox", "id": "home_custom", "label": "Usar otros colores en el inicio", "default": false },
+    { "type": "color", "id": "home_bg", "label": "Inicio · fondo del header", "default": "#1F2914" },
+    { "type": "color", "id": "home_text", "label": "Inicio · texto del header", "default": "#F7F0E7" },
     { "type": "header", "content": "Logo" },
     { "type": "image_picker", "id": "logo", "label": "Logo (opcional)", "info": "Si no subes uno, se dibuja el círculo con texto." },
     { "type": "text", "id": "logo_words", "label": "Texto del logo", "default": "your hair" },

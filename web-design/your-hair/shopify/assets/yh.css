@@ -273,14 +273,16 @@
 .yh-pdp__attrs dt{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--yh-muted);padding-top:2px}
 .yh-pdp__attrs dd{margin:0}
 .yh-pdp__stage{position:relative;border-radius:18px;aspect-ratio:4/5;overflow:hidden}
-.yh-pdp__stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:rgba(255,255,255,.22);pointer-events:none}
+
 .yh-pdp__slides,.yh-pdp__slide{position:absolute;inset:0}
 .yh-pdp__slide{display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .4s;padding:8%}
 .yh-pdp__slide.is-on{opacity:1;z-index:1}
-.yh-pdp__slide img,.yh-pdp__slide video{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;object-fit:contain;filter:drop-shadow(0 26px 24px rgba(40,24,10,.22))}
-.yh-pdp__nav{position:absolute;top:50%;z-index:3;width:42px;height:42px;border-radius:50%;border:0;background:rgba(252,248,243,.85);display:grid;place-items:center;cursor:pointer;color:var(--yh-ink);transform:translateY(-50%)}
-.yh-pdp__nav svg{width:15px;height:15px}
-.yh-pdp__nav--prev{left:14px}.yh-pdp__nav--next{right:14px}
+.yh-pdp__slide img,.yh-pdp__slide video{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;object-fit:contain;filter:none!important;box-shadow:none!important}
+.yh-pdp--shadow .yh-pdp__slide img{filter:drop-shadow(0 26px 24px rgba(40,24,10,.22))!important}
+.yh-pdp__nav{position:absolute;top:50%;z-index:3;width:44px;height:64px;border:0;background:none;padding:0;display:grid;place-items:center;cursor:pointer;color:var(--yh-ink);transform:translateY(-50%);opacity:.55;transition:opacity .2s}
+.yh-pdp__nav:hover{opacity:1}
+.yh-pdp__nav svg{width:26px;height:26px}
+.yh-pdp__nav--prev{left:4px}.yh-pdp__nav--next{right:4px}
 .yh-pdp__dots{display:flex;justify-content:center;gap:8px;margin-top:16px}
 .yh-pdp__dots button{width:8px;height:8px;border-radius:50%;border:1px solid var(--yh-ink);background:transparent;padding:0;cursor:pointer}
 .yh-pdp__dots button.is-on{background:var(--yh-ink)}
