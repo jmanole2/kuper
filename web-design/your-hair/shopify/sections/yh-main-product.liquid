@@ -8,7 +8,7 @@
     assign short = product.description | strip_html | truncatewords: 28
   endif
 -%}
-<section class="yh yh-pdp{% if section.settings.img_shadow %} yh-pdp--shadow{% endif %}" id="yh-{{ section.id }}" data-yh-pdp>
+<section class="yh yh-pdp{% if section.settings.img_shadow %} yh-pdp--shadow{% endif %}{% if section.settings.blend %} yh-blend{% endif %}" id="yh-{{ section.id }}" data-yh-pdp>
   <div class="yh-wrap">
     {%- if section.settings.show_crumbs -%}
     <nav class="yh-crumbs" aria-label="Migas">
@@ -242,6 +242,7 @@
     { "type": "text", "id": "perks", "label": "Ventajas (separadas por |)", "default": "Color safe | pH balanceado | Sin botella de plástico" },
     { "type": "color", "id": "tile_bg", "label": "Fondo de la foto", "info": "Cada producto puede tener el suyo con el metafield custom.bg_color", "default": "#EFD9C6" },
     { "type": "checkbox", "id": "show_crumbs", "label": "Mostrar migas (Inicio / producto)", "default": false },
+    { "type": "checkbox", "id": "blend", "label": "Fundir el fondo blanco de las fotos con el color", "default": true },
     { "type": "checkbox", "id": "img_shadow", "label": "Sombra en la foto", "info": "Solo para fotos PNG sin fondo.", "default": false },
     { "type": "checkbox", "id": "sticky", "label": "Barra flotante de agregar al carrito", "default": true },
     { "type": "select", "id": "after_add", "label": "Después de agregar", "default": "stay", "options": [

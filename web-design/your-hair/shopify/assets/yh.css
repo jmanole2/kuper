@@ -476,7 +476,7 @@ details[open]>summary i::after{transform:rotate(0)}
 .yh-shop__grid{row-gap:34px}
 .yh-shop__grid .ph{padding-bottom:0!important;align-items:center!important}
 .yh-shop__grid .yh-prod{position:absolute;inset:10%;display:flex;align-items:center;justify-content:center}
-.yh-shop__grid .yh-prod img{max-width:100%!important;max-height:100%!important;height:auto!important;width:auto!important;transition:opacity .35s,transform .5s}
+.yh-shop__grid .yh-prod img{position:absolute!important;inset:0;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain;filter:none!important;transition:opacity .35s,transform .5s}
 .yh-shop__grid .yh-card:hover .yh-shop__img{transform:scale(1.04)}
 .yh-shop__img2{position:absolute;opacity:0}
 .yh-shop__grid .yh-card:hover .yh-shop__img2{opacity:1}
@@ -501,3 +501,6 @@ details[open]>summary i::after{transform:rotate(0)}
   .yh-shop__grid{--yh-cols:2!important;row-gap:24px}
   .yh-drop__panel{left:auto;right:0}
 }
+
+/* product photos with a white background: blend it into the tile color */
+.yh-blend .yh-shop__grid .yh-prod img,.yh-blend .yh-pdp__slide img,.yh-blend .yh-sticky__img img{mix-blend-mode:multiply}

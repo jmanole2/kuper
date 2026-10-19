@@ -4,7 +4,7 @@
   assign palette = '#F6C54C,#BEC58B,#B9AFD2,#F7864C,#F6DEC2,#F6B537,#9DDBB7' | split: ','
   assign sort_by = collection.sort_by | default: collection.default_sort_by
 -%}
-<section class="yh yh-shop" id="yh-{{ section.id }}">
+<section class="yh yh-shop{% if section.settings.blend %} yh-blend{% endif %}" id="yh-{{ section.id }}">
   <div class="yh-wrap">
     <header class="yh-shop__head">
       {%- if section.settings.kicker != blank -%}<div class="yh-kicker">{{ section.settings.kicker }}</div>{%- endif -%}
@@ -164,6 +164,7 @@
     { "type": "range", "id": "per_page", "label": "Productos por página", "min": 8, "max": 48, "step": 4, "default": 16 },
     { "type": "range", "id": "columns", "label": "Columnas", "min": 3, "max": 5, "step": 1, "default": 4 },
     { "type": "checkbox", "id": "show_filters", "label": "Mostrar filtros", "info": "Se configuran en la app Search & Discovery de Shopify.", "default": true },
+    { "type": "checkbox", "id": "blend", "label": "Fundir el fondo blanco de las fotos con el color", "info": "Útil si tus fotos tienen fondo blanco. Desactívalo si usas PNG sin fondo.", "default": true },
     { "type": "checkbox", "id": "hover_image", "label": "Mostrar segunda foto al pasar el mouse", "default": true },
     {"type": "header", "content": "Diseño"},
     {"type": "color", "id": "bg", "label": "Fondo", "default": "#F7F0E7"},
