@@ -36,6 +36,7 @@ button,.btn{display:inline-block;border:0;border-radius:10px;padding:9px 15px;fo
 .btn-accent{background:var(--accent);color:#fff}form.inline{display:inline}
 .variant{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;cursor:pointer}.variant:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 2px #ff5a3630}
 .variant input{width:auto;margin-right:6px}.warn{background:#fff6e0;color:#6b4a00;border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0}
+.okmsg{background:#dff5e3;color:#14532d;border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0;word-break:break-word}
 .err{background:#fde2e2;color:#7a1d1d;border-radius:10px;padding:8px 12px;font-size:13px;margin:8px 0;word-break:break-word}
 details summary{cursor:pointer;font-weight:600}table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
 .tags{color:#2446a6;font-size:13px}.kpi{font-size:26px;font-weight:700}.split{display:grid;gap:16px;grid-template-columns:1fr 1fr}

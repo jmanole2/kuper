@@ -17,7 +17,7 @@ function headers(token, extra = {}) {
   };
 }
 
-async function li(method, path, token, body) {
+export async function li(method, path, token, body) {
   const res = await fetch(`${API}${path}`, {
     method,
     headers: headers(token, body ? { 'Content-Type': 'application/json' } : {}),

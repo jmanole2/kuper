@@ -308,13 +308,17 @@ export function generationCandidates(now = new Date()) {
 }
 
 let generating = false;
+const kwPause = new Map();
 export async function tick(now = new Date()) {
   await publishDue(now);
   for (const client of db.listClients().filter((c) => c.activo)) {
     // Respuesta automática a la palabra clave (DM a quien comenta, p. ej. AGENTE).
-    if (client.config.respuesta_palabra_clave?.activo) {
-      enqueue(`kw-${client.id}`, () => processKeywordComments(client).catch((e) =>
-        db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: e.message })));
+    // Si falla (p. ej. token mal capturado), espera 30 min antes de reintentar en vez de cada minuto.
+    if (client.config.respuesta_palabra_clave?.activo && !(kwPause.get(client.id) > now.getTime())) {
+      enqueue(`kw-${client.id}`, () => processKeywordComments(client).catch((e) => {
+        kwPause.set(client.id, Date.now() + 30 * 60_000);
+        db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: `${e.message} (reintenta en 30 min)` });
+      }));
     }
     // Aviso al cliente de lo que tiene por revisar (un correo al día como máximo).
     enqueue(`aviso-${client.id}`, () => notifyClient(client, new Date()).catch((e) =>

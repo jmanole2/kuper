@@ -105,7 +105,7 @@ export function dashboardPage(clients, counts, events) {
   return page({ title: 'Agente Social · Admin', nav: adminNav, body });
 }
 
-export function clientFormPage(client, { error, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -114,6 +114,7 @@ export function clientFormPage(client, { error, competitors = [], report, posts 
   const body = html`
   <h1>${isNew ? 'Nuevo cliente' : client.nombre}</h1>
   ${error ? html`<div class="err">${error}</div>` : ''}
+  ${notice ? html`<div class="okmsg">${notice}</div>` : ''}
   ${!isNew ? html`<div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
     <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
     <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p></div>
@@ -166,7 +167,8 @@ export function clientFormPage(client, { error, competitors = [], report, posts 
     </div></div>
     ${!isNew ? html`<label style="font-weight:400"><input type="checkbox" name="activo" value="1" style="width:auto" ${raw(client.activo ? 'checked' : '')}> Cliente activo (el agente genera y publica)</label>` : ''}
     <p><button>${isNew ? 'Crear cliente' : 'Guardar'}</button></p>
-  </form>`;
+  </form>
+  ${!isNew ? html`<form method="post" action="/admin/clientes/${client.id}/probar"><button class="btn-accent">Probar conexión con Meta y LinkedIn</button></form>` : ''}`;
   return page({ title: isNew ? 'Nuevo cliente' : client.nombre, nav: adminNav, body });
 }
 

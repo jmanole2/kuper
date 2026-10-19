@@ -10,6 +10,7 @@ import * as pipe from './pipeline.js';
 import { sign, unsign, safeEqual, randomToken } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
+import { checkConnections } from './publishers/check.js';
 
 export function createApp() {
   db.getDb();
@@ -84,15 +85,20 @@ export function createApp() {
       if (v.hora && !/^\d{2}:\d{2}$/.test(v.hora)) throw new Error(`${k}: "hora" debe ser HH:MM`);
     }
     const keep = (nv, old) => (nv?.trim() ? nv.trim() : old);
+    // Tokens pegados con espacios, saltos de línea, comillas o el nombre de la variable del .env.
+    const tok = (nv, old) => {
+      const v = String(nv ?? '').replace(/^\s*[A-Z_]+\s*=/, '').replace(/["'\s]/g, '');
+      return v ? v : old;
+    };
     const credentials = {
       meta: {
         page_id: keep(body.meta_page_id, existingCreds.meta?.page_id),
         ig_user_id: keep(body.meta_ig_user_id, existingCreds.meta?.ig_user_id),
-        page_token: keep(body.meta_page_token, existingCreds.meta?.page_token),
+        page_token: tok(body.meta_page_token, existingCreds.meta?.page_token),
       },
       linkedin: {
         org_id: keep(body.li_org_id, existingCreds.linkedin?.org_id),
-        access_token: keep(body.li_access_token, existingCreds.linkedin?.access_token),
+        access_token: tok(body.li_access_token, existingCreds.linkedin?.access_token),
       },
       dry_run: body.dry_run === '1',
     };
@@ -109,8 +115,8 @@ export function createApp() {
     }
   });
 
-  const clientView = (c, error) => V.clientFormPage(c, {
-    error, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
+  const clientView = (c, error, notice) => V.clientFormPage(c, {
+    error, notice, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
     posts: db.listPosts({ clientId: c.id, limit: 30 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
   });
 
@@ -127,6 +133,12 @@ export function createApp() {
     } catch (e) {
       res.status(400).send(clientView(req.client, e.message));
     }
+  });
+  admin.post('/clientes/:cid/probar', async (req, res) => {
+    const r = await checkConnections(db.clientCredentials(req.client));
+    const ok = r.filter((x) => x.ok).map((x) => x.texto).join(' · ');
+    const bad = r.filter((x) => !x.ok).map((x) => x.texto).join(' · ');
+    res.send(clientView(req.client, bad || undefined, ok || undefined));
   });
   admin.post('/clientes/:cid/rotar-token', (req, res) => { db.rotatePortalToken(req.client.id); res.redirect(`/admin/clientes/${req.client.id}`); });
   admin.post('/clientes/:cid/logo', upload.single('archivo'), (req, res) => {
