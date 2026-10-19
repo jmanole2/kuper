@@ -11,7 +11,7 @@ import { sign, unsign, safeEqual, randomToken } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
-import { tiktokAuthUrl, exchangeTikTokCode, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
+import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
 async function withTikTokInfo(client, posts) {
@@ -161,6 +161,15 @@ export function createApp() {
   admin.get('/clientes/:cid/tiktok/conectar', (req, res) => {
     if (!tiktokConfigured()) return res.status(400).send(clientView(req.client, 'Falta TIKTOK_CLIENT_KEY y TIKTOK_CLIENT_SECRET en el .env del servidor.'));
     res.redirect(tiktokAuthUrl(sign(`tiktok:${req.client.id}:${Date.now() + 15 * 60_000}`)));
+  });
+  admin.post('/clientes/:cid/tiktok/desconectar', async (req, res) => {
+    const creds = db.clientCredentials(req.client);
+    let aviso = 'TikTok desconectado. Al volver a conectar, TikTok pedirá iniciar sesión y autorizar de nuevo.';
+    try { await revokeTikTok(creds.tiktok); } catch (e) { aviso += ` (${e.message}; se borró de todos modos)`; }
+    const { tiktok, ...rest } = creds;
+    db.updateClient(req.client.id, { credentials: rest });
+    db.logEvent({ clientId: req.client.id, tipo: 'tiktok_desconectado', detalle: '' });
+    res.send(clientView(db.getClient(req.client.id), undefined, aviso));
   });
   admin.get('/tiktok/callback', async (req, res) => {
     const st = unsign(String(req.query.state || ''));

@@ -41,6 +41,18 @@ async function tokenRequest(params) {
   };
 }
 
+/** Revoca la autorización en TikTok (la próxima conexión vuelve a pedir permisos). */
+export async function revokeTikTok(tk) {
+  if (!tk?.access_token) return;
+  const res = await fetch(`${API}/oauth/revoke/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_key: config.tiktok.clientKey, client_secret: config.tiktok.clientSecret, token: tk.access_token }),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || j.error) throw new Error(`TikTok: no se pudo revocar (${j.error_description || j.error || res.status})`);
+}
+
 export const exchangeTikTokCode = (code) =>
   tokenRequest({ code, grant_type: 'authorization_code', redirect_uri: tiktokRedirectUri() });
 

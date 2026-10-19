@@ -193,7 +193,9 @@ export function clientFormPage(client, { error, notice, competitors = [], report
       <label>ID de la organización</label><input name="li_org_id" value="${li.org_id || ''}" placeholder="12345678">
       <label>Access token (w_organization_social)</label><input name="li_access_token" type="text" placeholder="${set(li.access_token)}" autocomplete="off" spellcheck="false" data-lpignore="true">
       ${!isNew ? html`<p style="margin-top:16px"><strong>TikTok</strong><br><span class="muted small">${creds.tiktok?.access_token ? `Conectado (renovación automática hasta ${fmtDate(creds.tiktok.refresh_expires_at)})` : 'Sin conectar'}</span><br>
-        <a class="small" href="/admin/clientes/${client.id}/tiktok/conectar">${creds.tiktok?.access_token ? 'Volver a conectar TikTok' : 'Conectar TikTok'}</a></p>` : ''}
+        ${creds.tiktok?.access_token
+          ? html`<button class="btn-bad" formaction="/admin/clientes/${client.id}/tiktok/desconectar" formnovalidate onclick="return confirm('¿Desconectar TikTok?')">Desconectar TikTok</button>`
+          : html`<a class="small" href="/admin/clientes/${client.id}/tiktok/conectar">Conectar TikTok</a>`}</p>` : ''}
       <label style="font-weight:400"><input type="checkbox" name="dry_run" value="1" style="width:auto" ${raw(creds.dry_run ? 'checked' : '')}> Modo simulación (no publica de verdad)</label>
     </div></div>
     ${!isNew ? html`<label style="font-weight:400"><input type="checkbox" name="activo" value="1" style="width:auto" ${raw(client.activo ? 'checked' : '')}> Cliente activo (el agente genera y publica)</label>` : ''}
