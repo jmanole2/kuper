@@ -12,6 +12,7 @@ import { generateImage, imageModelConfigured, ensureJpeg } from './media/image.j
 import { publishPost } from './publishers/index.js';
 import { fetchCompetitors } from './competitors/instagram.js';
 import { randomToken } from './crypto.js';
+import { processKeywordComments } from './engage/keyword.js';
 
 // Cola de trabajos en serie: las generaciones abren Chromium y llaman a APIs, mejor de una en una.
 let chain = Promise.resolve();
@@ -275,6 +276,11 @@ export async function runCompetitorAnalysis(clientId) {
 export async function tick(now = new Date()) {
   await publishDue(now);
   for (const client of db.listClients().filter((c) => c.activo)) {
+    // Respuesta automática a la palabra clave (DM a quien comenta, p. ej. AGENTE).
+    if (client.config.respuesta_palabra_clave?.activo) {
+      enqueue(`kw-${client.id}`, () => processKeywordComments(client).catch((e) =>
+        db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: e.message })));
+    }
     // Análisis de competencia periódico.
     const report = db.latestCompetitorReport(client.id);
     const stale = !report || daysUntil(report.created_at.replace(' ', 'T') + 'Z', now) < -config.competitorRefreshDays;

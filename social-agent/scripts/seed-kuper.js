@@ -59,6 +59,14 @@ const c = createClient({
     instagram: { activo: true, frecuencia: '3_por_semana', modo_publicacion: 'aprobacion', hora: '19:00', formatos: ['video_animado', 'carrusel'] },
     facebook: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '12:00' },
     linkedin: { activo: true, frecuencia: 'semanal', modo_publicacion: 'aprobacion', hora: '08:30' },
+    // Quien comenta AGENTE recibe por DM el link al agente de demostración en WhatsApp.
+    respuesta_palabra_clave: {
+      activo: true,
+      palabra: 'AGENTE',
+      mensaje: 'Hola @{usuario}, aquí está: escríbele a nuestro agente de prueba como si fueras tu cliente 👉 https://wa.me/525534907598?text=Hola%2C%20vengo%20de%20Instagram\n\nPregúntale horarios, precios o pídele una cita. Contesta en segundos, a cualquier hora.\n\n¿Qué tipo de negocio tienes?',
+      respuesta_publica: 'Listo @{usuario}, te lo mandé por DM.',
+      dias: 7,
+    },
   },
   credentials: { dry_run: true },
 });

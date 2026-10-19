@@ -74,6 +74,7 @@ export function createApp() {
       throw new Error('El perfil necesita "cliente" y al menos un pilar en "pilares_de_contenido".');
     }
     for (const [k, v] of Object.entries(cfg)) {
+      if (k === 'respuesta_palabra_clave') continue;
       if (!db.PLATFORMS.includes(k)) throw new Error(`Red no soportada: ${k} (usa ${db.PLATFORMS.join(', ')})`);
       if (v.activo) freqDays(v.frecuencia || 'semanal');
       if (v.hora && !/^\d{2}:\d{2}$/.test(v.hora)) throw new Error(`${k}: "hora" debe ser HH:MM`);
@@ -106,7 +107,7 @@ export function createApp() {
 
   const clientView = (c, error) => V.clientFormPage(c, {
     error, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
-    posts: db.listPosts({ clientId: c.id, limit: 30 }), creds: db.clientCredentials(c),
+    posts: db.listPosts({ clientId: c.id, limit: 30 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
   });
 
   admin.param('cid', (req, res, next, id) => {

@@ -120,5 +120,6 @@ ajústalas si alguna no es tuya):
   en WhatsApp para probarlo como si fuera su cliente (que le pregunte horarios,
   precios o una cita), y una pregunta corta: "¿Qué tipo de negocio tienes?".
   El demo va primero, sin pedirle datos antes (regla de /ig-dm). La cotización
-  sale de esa conversación. {{número o link wa.me del agente de demostración}}
-- **A dónde va mi link:** WhatsApp {{número}}
+  sale de esa conversación. Agente de demostración: https://wa.me/525534907598
+  (el DM se manda solo cuando alguien comenta AGENTE).
+- **A dónde va mi link:** WhatsApp 55 3490 7598 (agente de demostración)

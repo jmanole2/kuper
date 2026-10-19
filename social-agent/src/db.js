@@ -85,6 +85,20 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS posts_client_status ON posts(client_id, status);
+    CREATE TABLE IF NOT EXISTS keyword_replies (
+      comment_id TEXT PRIMARY KEY,
+      client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      media_id TEXT,
+      username TEXT,
+      texto TEXT,
+      status TEXT NOT NULL,
+      error TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS kv (
+      k TEXT PRIMARY KEY,
+      v TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS events (
       id INTEGER PRIMARY KEY,
       post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
@@ -266,3 +280,14 @@ export const postEvents = (postId) =>
   getDb().prepare('SELECT * FROM events WHERE post_id = ? ORDER BY id DESC').all(postId);
 export const recentEvents = (limit = 50) =>
   getDb().prepare('SELECT e.*, c.nombre AS cliente FROM events e LEFT JOIN clients c ON c.id = e.client_id ORDER BY e.id DESC LIMIT ?').all(limit);
+
+// ------------------------------------------------------------ palabra clave
+export const keywordReplySeen = (commentId) => !!getDb().prepare('SELECT 1 FROM keyword_replies WHERE comment_id = ?').get(commentId);
+export function recordKeywordReply({ clientId, comment, status, error = null }) {
+  getDb().prepare('INSERT OR REPLACE INTO keyword_replies (comment_id, client_id, media_id, username, texto, status, error) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(comment.id, clientId, comment.media_id ?? null, comment.username ?? null, String(comment.text ?? '').slice(0, 500), status, error);
+}
+export const keywordReplies = (clientId, limit = 20) =>
+  getDb().prepare("SELECT * FROM keyword_replies WHERE client_id = ? AND status NOT IN ('propio') ORDER BY created_at DESC LIMIT ?").all(clientId, limit);
+export const hasKeywordBaseline = (clientId) => !!getDb().prepare('SELECT 1 FROM kv WHERE k = ?').get(`kw_baseline_${clientId}`);
+export const setKeywordBaseline = (clientId) => getDb().prepare('INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)').run(`kw_baseline_${clientId}`, new Date().toISOString());

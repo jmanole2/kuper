@@ -65,6 +65,27 @@ Desde **/admin → Nuevo cliente**:
 
 Después manda al cliente el enlace de su portal.
 
+## Instalar en el servidor (DigitalOcean)
+
+En un droplet Ubuntu 22.04/24.04 (2 GB de RAM recomendado) con un subdominio que ya apunte a su IP:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jmanole2/novaplastica/agente-publicador-redes-sociales/social-agent/deploy/install.sh \
+  | sudo DOMINIO=agente.kuper.media bash
+```
+
+Instala Node 22 y Chromium, deja el agente como servicio (`agente-social`) que arranca solo, y pone https (Caddy, o nginx + certbot si el servidor ya usa nginx). Al final imprime la contraseña del panel. Luego:
+
+1. Poner `ANTHROPIC_API_KEY` en `/opt/agente-social/social-agent/.env` y `sudo systemctl restart agente-social`.
+2. `sudo -u agente bash -c 'cd /opt/agente-social/social-agent && npm run seed'` para cargar Kuper Media.
+3. En el panel, capturar las credenciales de Meta de Kuper y desmarcar "Modo simulación" cuando todo esté probado.
+
+Actualizar: `sudo bash /opt/agente-social/social-agent/deploy/update.sh`. Log: `journalctl -u agente-social -f`.
+
+## Respuesta automática a la palabra clave
+
+Con `respuesta_palabra_clave` en la configuración de redes del cliente, el agente revisa cada minuto los comentarios de los posts recientes de Instagram. A quien comenta la palabra (p. ej. AGENTE) le manda un DM con lo prometido (respuesta privada al comentario, dentro de los 7 días que permite Instagram) y una respuesta pública corta. La primera vez solo registra los comentarios existentes, sin escribirles. Necesita los permisos `instagram_manage_comments` e `instagram_manage_messages` en el token de la página. Lo enviado se ve en la página del cliente en el panel.
+
 ## Credenciales de las APIs
 
 **Meta (Instagram + Facebook)**
