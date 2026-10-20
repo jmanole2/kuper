@@ -1,0 +1,53 @@
+// Página pública para agendar (/agendar/<slug>): muestra horarios libres y crea la cita sin encimarse.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+Object.assign(process.env, { DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'booking-')), SECRET_KEY: 'x', TIMEZONE: 'America/Mexico_City', LOG_EVENTOS: '0', ADMIN_PASSWORD: 'x' });
+const db = await import('../src/db.js');
+const agenda = await import('../src/agenda/index.js');
+const { createApp } = await import('../src/server.js');
+db.openDb(':memory:');
+const client = db.createClient({ slug: 'kuper', nombre: 'Kuper', perfil: { cliente: 'K', pilares_de_contenido: [{ nombre: 'x' }] }, config: { agenda: { calendar_id: 'cal@x', anticipacion_horas: 0, horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'], vie: ['09:00', '18:00'], sab: ['09:00', '18:00'], dom: ['09:00', '18:00'] } } }, credentials: {} });
+const creados = [];
+agenda.hooks.busy = async () => creados.map((e) => [new Date(e.start.dateTime).getTime(), new Date(e.end.dateTime).getTime()]);
+agenda.hooks.insert = async (ev) => { creados.push(ev); return { id: `e${creados.length}` }; };
+
+const server = createApp().listen(0);
+const base = `http://127.0.0.1:${server.address().port}`;
+test.after(() => server.close());
+const post = (body) => fetch(`${base}/agendar/kuper`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(body) });
+
+test('muestra los horarios libres con nombre y teléfono prellenados', async () => {
+  const r = await fetch(`${base}/agendar/kuper?n=Ana&tel=5215511112222`);
+  const h = await r.text();
+  assert.equal(r.status, 200);
+  assert.match(h, /type="radio" name="inicio"/);
+  assert.match(h, /value="Ana"/);
+  assert.match(h, /value="5215511112222"/);
+  assert.equal((await fetch(`${base}/agendar/otro`)).status, 404);
+});
+
+test('agenda la cita, registra el lead y ese horario ya no se ofrece', async () => {
+  const h = await (await fetch(`${base}/agendar/kuper`)).text();
+  const inicio = h.match(/name="inicio" value="([^"]+)"/)[1];
+  const r = await post({ inicio, nombre: 'Ana', telefono: '55 1111 2222', motivo: 'SEO' });
+  assert.equal(r.status, 200);
+  assert.match(await r.text(), /quedó agendada/);
+  assert.equal(creados.length, 1);
+  const lead = db.listLeads(client.id)[0];
+  assert.equal(lead.telefono, '+525511112222');
+  assert.equal(lead.estado, 'cita');
+  assert.ok(!(await (await fetch(`${base}/agendar/kuper`)).text()).includes(`value="${inicio}"`));
+  const again = await post({ inicio, nombre: 'Beto', telefono: '5522223333' });
+  assert.equal(again.status, 409);
+  assert.match(await again.text(), /se acaba de ocupar/);
+  assert.equal(creados.length, 1);
+});
+
+test('rechaza bots (campo trampa) y teléfonos inválidos', async () => {
+  assert.equal((await post({ inicio: 'x', nombre: 'Bot', telefono: '5511112222', sitio: 'spam' })).status, 400);
+  assert.equal((await post({ inicio: 'x', nombre: 'Ana', telefono: '123' })).status, 400);
+});

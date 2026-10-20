@@ -312,3 +312,48 @@ export const DEFAULT_CONFIG = {
   // Aviso de posts por revisar: un correo al día con el link al portal. WhatsApp solo si el cliente lo pide.
   notificaciones: { email: '', whatsapp: false },
 };
+
+// ------------------------------------------------------------ página pública para agendar cita
+const fmtDia = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(iso)).replace(/^./, (c) => c.toUpperCase());
+const fmtHora = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+const BOOK_CSS = `.dias{display:grid;gap:10px;margin:18px 0}.dia{border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.dia summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between}.dia summary::-webkit-details-marker{display:none}
+.dia summary em{font-style:normal;color:var(--muted);font-weight:500;font-size:13px}.dia[open] summary{margin-bottom:12px}
+.horas{display:flex;flex-wrap:wrap;gap:8px}.horas label{position:relative}.horas input{position:absolute;opacity:0;pointer-events:none}
+.horas span{display:inline-block;padding:9px 16px;border-radius:99px;border:1px solid var(--line);font-weight:600;cursor:pointer;font-size:14px}
+.horas input:checked+span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.horas input:focus-visible+span{outline:2px solid var(--accent)}
+.campos{display:grid;gap:12px;margin:18px 0}.campos label{display:grid;gap:6px;font-size:13px;color:var(--muted)}.hp{position:absolute;left:-5000px}`;
+
+export function bookingPage(client, { slots = [], form = {}, error = '', duracion = 45 } = {}) {
+  const dias = new Map();
+  for (const s of slots) { const k = fmtDia(s.inicio); if (!dias.has(k)) dias.set(k, []); dias.get(k).push(s); }
+  const body = html`<style>${raw(BOOK_CSS)}</style>
+  <div style="max-width:640px;margin:0 auto">
+  <div class="row" style="gap:14px;margin-top:6px"><div class="avatar">${client.logo_path ? html`<img src="${mediaSrc(client.logo_path)}" alt="">` : client.nombre.slice(0, 1)}</div>
+  <div><h1 style="margin:0">Agenda tu llamada</h1><p class="muted" style="margin:4px 0 0">${client.nombre} · ${duracion} min · hora del centro de México</p></div></div>
+  ${error ? html`<div class="err">${error}</div>` : ''}
+  ${slots.length ? html`<form method="post" class="card" style="margin-top:18px">
+    <strong>1. Elige un horario</strong>
+    <div class="dias">${[...dias].map(([dia, list], i) => html`<details class="dia" name="dia" ${i === 0 || list.some((s) => s.inicio === form.inicio) ? 'open' : ''}><summary>${dia}<em>${list.length} horarios</em></summary><div class="horas">${list.map((s) => html`<label><input type="radio" name="inicio" value="${s.inicio}" required ${form.inicio === s.inicio ? 'checked' : ''}><span>${fmtHora(s.inicio)}</span></label>`)}</div></details>`)}</div>
+    <strong>2. Tus datos</strong>
+    <div class="campos">
+      <label>Nombre<input name="nombre" required maxlength="80" value="${form.nombre || ''}" autocomplete="name"></label>
+      <label>WhatsApp<input name="telefono" required maxlength="20" inputmode="tel" value="${form.telefono || ''}" autocomplete="tel" placeholder="+52 55 1234 5678"></label>
+      <label>¿De qué quieres hablar? (opcional)<input name="motivo" maxlength="200" value="${form.motivo || ''}"></label>
+      <label class="hp" aria-hidden="true">No llenar<input name="sitio" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <button class="btn-accent" type="submit">Confirmar cita</button>
+  </form>` : html`<div class="card muted" style="margin-top:18px">No hay horarios libres en los próximos días. Escríbenos por WhatsApp y te buscamos un espacio.</div>`}
+  </div>`;
+  return page({ title: `Agenda tu llamada · ${client.nombre}`, body });
+}
+
+export function bookingDone(client, cita) {
+  const body = html`<div style="max-width:560px;margin:40px auto 0;text-align:center" class="card">
+    <div style="font-size:44px">✓</div><h1 style="margin:6px 0">¡Listo, quedó agendada!</h1>
+    <p style="font-size:20px;margin:14px 0 4px">${fmtDia(cita.inicio)}</p>
+    <p style="font-size:28px;font-weight:700;margin:0 0 14px">${fmtHora(cita.inicio)}</p>
+    <p class="muted">Te escribimos por WhatsApp antes de la llamada. Si necesitas cambiarla, contéstanos ahí mismo.</p>
+    <p class="muted small">${client.nombre}</p></div>`;
+  return page({ title: `Cita confirmada · ${client.nombre}`, body });
+}

@@ -82,6 +82,9 @@ export const upcomingEvents = (calendarId, max = 60) =>
   gcal('GET', `/calendars/${encodeURIComponent(calendarId)}/events?${new URLSearchParams({ timeMin: new Date().toISOString(), singleEvents: 'true', orderBy: 'startTime', maxResults: String(max) })}`)
     .then((j) => j.items || []);
 
+// Para pruebas: reemplaza el acceso a Google Calendar ({ busy, insert }).
+export const hooks = {};
+
 // ------------------------------------------------------------ disponibilidad
 const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
 const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
@@ -119,7 +122,7 @@ export const collides = (slot, busyList, margenMin) => {
   const a = slot.start - margenMin * 60_000, b = slot.end + margenMin * 60_000;
   return busyList.some(([s, e]) => s < b && e > a);
 };
-export async function availability(client, { now = new Date(), dias = 7, busyFn = busy } = {}) {
+export async function availability(client, { now = new Date(), dias = 7, busyFn = hooks.busy || busy } = {}) {
   const cfg = agendaCfg(client);
   if (!cfg.calendar_id) throw new Error('Falta "agenda": { "calendar_id": "…" } en la configuración del cliente.');
   const cands = candidateSlots(cfg, { now, dias });
@@ -139,7 +142,7 @@ function withLock(key, fn) {
 export class SlotTaken extends Error {}
 
 /** Reserva una cita. { inicio (ISO), nombre, telefono, motivo }. Lanza SlotTaken si ya no está libre. */
-export function book(client, { inicio, nombre, telefono, motivo = '' }, { now = new Date(), busyFn = busy, insertFn } = {}) {
+export function book(client, { inicio, nombre, telefono, motivo = '' }, { now = new Date(), busyFn = hooks.busy || busy, insertFn = hooks.insert } = {}) {
   return withLock(`agenda-${client.id}`, async () => {
     const cfg = agendaCfg(client);
     if (!cfg.calendar_id) throw new Error('Falta "agenda": { "calendar_id": "…" } en la configuración del cliente.');

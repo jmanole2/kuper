@@ -321,6 +321,51 @@ export function createApp() {
   postActions(admin, (req) => `/admin/posts/${req.post.id}`);
   app.use('/admin', admin);
 
+  // ------------------------------------------------------------ página pública para agendar
+  // /agendar/<slug>?n=Nombre&tel=52155...  (el agente de WhatsApp manda este link en un botón)
+  const bookingClient = (req, res) => {
+    const c = db.listClients().find((x) => x.slug === req.params.slug);
+    if (!c || !agenda.agendaCfg(c).calendar_id || c.config.agenda?.publica === false) { res.status(404).send('Página no encontrada'); return null; }
+    res.setHeader('X-Robots-Tag', 'noindex'); res.setHeader('Referrer-Policy', 'no-referrer');
+    return c;
+  };
+  const intentos = new Map(); // ip -> [ts] (máx. 6 reservas por hora por IP)
+  const limitado = (ip) => {
+    const t = Date.now(), list = (intentos.get(ip) || []).filter((x) => t - x < 3600_000);
+    intentos.set(ip, list);
+    if (list.length >= 6) return true;
+    list.push(t); return false;
+  };
+  const bookingView = async (c, form = {}, error = '') => {
+    let slots = [];
+    try { slots = await agenda.availability(c, { dias: 14 }); } catch (e) { console.error('[agendar]', e.message); error ||= 'No pudimos cargar los horarios. Intenta en unos minutos.'; }
+    return V.bookingPage(c, { slots, form, error, duracion: agenda.agendaCfg(c).duracion_min });
+  };
+  app.get('/agendar/:slug', async (req, res) => {
+    const c = bookingClient(req, res); if (!c) return;
+    res.send(await bookingView(c, { nombre: String(req.query.n || '').slice(0, 80), telefono: String(req.query.tel || '').replace(/[^\d+]/g, '').slice(0, 20) }));
+  });
+  app.post('/agendar/:slug', async (req, res) => {
+    const c = bookingClient(req, res); if (!c) return;
+    const form = { inicio: String(req.body.inicio || ''), nombre: String(req.body.nombre || '').trim().slice(0, 80), telefono: String(req.body.telefono || '').trim().slice(0, 20), motivo: String(req.body.motivo || '').trim().slice(0, 200) };
+    if (req.body.sitio) return res.status(400).send('Solicitud no válida');
+    const digits = form.telefono.replace(/\D/g, '');
+    if (!form.nombre || digits.length < 8 || digits.length > 15) return res.status(400).send(await bookingView(c, form, 'Escribe tu nombre y un número de WhatsApp válido.'));
+    const ip = String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+    if (limitado(ip)) return res.status(429).send(await bookingView(c, form, 'Demasiados intentos. Intenta más tarde o escríbenos por WhatsApp.'));
+    const telefono = `+${digits.length === 10 ? `52${digits}` : digits}`;
+    try {
+      const cita = await agenda.book(c, { inicio: form.inicio, nombre: form.nombre, telefono, motivo: [form.motivo, 'Agendada desde la página de citas'].filter(Boolean).join(' · ') });
+      db.upsertLead(c.id, { nombre: form.nombre, telefono, origen: 'web', estado: 'cita', cita_inicio: cita.inicio, cita_evento: cita.id });
+      db.logEvent({ clientId: c.id, tipo: 'cita_agendada', detalle: `${form.nombre} ${cita.inicio} (página)` });
+      res.send(V.bookingDone(c, cita));
+    } catch (e) {
+      const msg = e instanceof agenda.SlotTaken ? 'Ese horario se acaba de ocupar. Elige otro, por favor.' : 'No pudimos agendar. Intenta de nuevo en unos minutos.';
+      if (!(e instanceof agenda.SlotTaken)) console.error('[agendar]', e.message);
+      res.status(409).send(await bookingView(c, { ...form, inicio: '' }, msg));
+    }
+  });
+
   // ------------------------------------------------------------ portal del cliente
   const portal = express.Router({ mergeParams: true });
   portal.use((req, res, next) => {
