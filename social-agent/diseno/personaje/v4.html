@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"><canvas id="c" width="2000" height="1000"></canvas>
+<script src="mascota2.js"></script><script src="mascota4.js"></script><script>
+const c=document.getElementById('c'),x=c.getContext('2d');bg(x,2000,1000);
+[['normal',{}],['feliz',{expr:'feliz',wave:.6}],['¡wow!',{expr:'estrellas'}],['decidido',{expr:'decidido'}],['cansado',{expr:'cansado'}],['con celular',{phone:true,lookY:.6}]]
+ .forEach(([n,o],i)=>{const cx=190+i*324;drawKuper(x,{cx,cy:700,s:.82,...o});x.fillStyle='#8a93a6';x.font='400 26px system-ui';x.textAlign='center';x.fillText(n,cx,780);});
+x.fillStyle='#e8ecf4';x.font='600 44px system-ui';x.textAlign='center';x.fillText('Personaje Kuper v4',1000,900);
+grain(x,2000,1000,.04);
+</script></body></html>
