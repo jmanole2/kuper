@@ -12,6 +12,7 @@ import { sign, unsign, safeEqual, randomToken } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
+import { sendTestDigest } from './notify.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
@@ -196,6 +197,16 @@ export function createApp() {
       res.redirect(`/admin/clientes/${client.id}`);
     } catch (e) {
       res.status(400).send(clientView(client, e.message));
+    }
+  });
+  admin.post('/clientes/:cid/aviso-prueba', async (req, res) => {
+    const to = String(req.body.to || req.client.config.notificaciones?.email || '').trim();
+    try {
+      if (!to) throw new Error('Pon un correo para la prueba o configura "notificaciones": { "email": "…" }.');
+      const n = await sendTestDigest(req.client, to);
+      res.send(clientView(req.client, undefined, `Correo de prueba enviado a ${to} (${n} posts).`, undefined, { tab: 'config' }));
+    } catch (e) {
+      res.status(400).send(clientView(req.client, `Correo de prueba: ${e.message}`, undefined, undefined, { tab: 'config' }));
     }
   });
   admin.post('/clientes/:cid/rotar-token', (req, res) => { db.rotatePortalToken(req.client.id); res.redirect(`/admin/clientes/${req.client.id}`); });

@@ -201,7 +201,8 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ${t === 'config' ? html`${!isNew ? html`<div style="margin-top:24px"></div>
   <div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
     <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
-    <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p></div>
+    <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p>
+    <form method="post" action="/admin/clientes/${client.id}/aviso-prueba" class="row" style="margin-top:6px"><input name="to" type="email" placeholder="${client.config.notificaciones?.email || 'correo para la prueba'}" style="max-width:320px"><button class="btn-warn">Mandar correo de prueba</button></form></div>
   <h2>Logo</h2>
   <form method="post" action="/admin/clientes/${client.id}/logo" enctype="multipart/form-data" class="card row">
     ${client.logo_path ? html`<img src="/media/${path.basename(client.logo_path)}" style="height:48px">` : ''}

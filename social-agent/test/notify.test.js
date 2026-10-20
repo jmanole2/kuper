@@ -61,7 +61,7 @@ test('aviso por correo: uno al día, solo con posts nuevos y después de la hora
   assert.equal(sent.length, 1);
   assert.equal(sent[0].to, 'cliente@example.com');
   assert.match(sent[0].text, /\/p\//);
-  assert.match(sent[0].subject, /1 post por revisar/);
+  assert.match(sent[0].subject, /1 publicación lista para revisar/);
 
   assert.equal((await notifyClient(client, mx(manana, '15:00'), { send })).skip, 'ya_avisado_hoy');
   const pasado = new Date(Date.now() + 2 * 86400_000).toISOString().slice(0, 10);
