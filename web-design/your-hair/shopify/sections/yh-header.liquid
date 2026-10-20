@@ -26,6 +26,7 @@
         </ul></div>
       </details>
 
+      <div class="yh-logo-wrap">
       <a class="yh-logo" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
         {%- if section.settings.logo != blank -%}
           {{ section.settings.logo | image_url: width: 300 | image_tag: alt: shop.name }}
@@ -34,6 +35,8 @@
           {%- for w in words -%}<span>{{ w }}</span>{%- endfor -%}
         {%- endif -%}
       </a>
+      {%- if section.settings.logo_sub != blank -%}<span class="yh-logo-sub">{{ section.settings.logo_sub }}</span>{%- endif -%}
+      </div>
 
       <div class="yh-head__right">
         <a class="t" href="{{ routes.account_url }}">Cuenta</a>
@@ -63,6 +66,7 @@
     { "type": "header", "content": "Logo" },
     { "type": "image_picker", "id": "logo", "label": "Logo (opcional)", "info": "Si no subes uno, se dibuja el círculo con texto." },
     { "type": "text", "id": "logo_words", "label": "Texto del logo", "default": "your hair" },
+    { "type": "text", "id": "logo_sub", "label": "Texto bajo el logo", "default": "by Yucatán Herbal" },
     { "type": "color", "id": "logo_bg", "label": "Círculo · fondo", "default": "#F7F0E7" },
     { "type": "color", "id": "logo_text", "label": "Círculo · texto", "default": "#1F2914" },
     { "type": "range", "id": "logo_size", "label": "Tamaño del logo", "min": 40, "max": 100, "step": 2, "default": 64, "unit": "px" },

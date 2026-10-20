@@ -505,3 +505,7 @@ details[open]>summary i::after{transform:rotate(0)}
 
 /* product photos with a white background: blend it into the tile color */
 .yh-blend .yh-shop__grid .yh-prod img,.yh-blend .yh-pdp__slide img,.yh-blend .yh-sticky__img img{mix-blend-mode:multiply}
+
+.yh-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.yh-logo-sub{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;white-space:nowrap;opacity:.85}
+@media (max-width:900px){.yh-logo-wrap{justify-self:center}.yh-logo-sub{font-size:8.5px}}
