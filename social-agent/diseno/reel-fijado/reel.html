@@ -1,0 +1,348 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#000">
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.fontsReady = Promise.all([300, 400, 500, 600, 700].map((w) => new FontFace('Inter Tight', `url(../../node_modules/@fontsource/inter-tight/files/inter-tight-latin-${w}-normal.woff2)`, { weight: String(w) }).load().then((f) => document.fonts.add(f)).catch(() => null)));
+</script>
+<script src="../personaje/mascota2.js"></script>
+<script src="../personaje/mascota4.js"></script>
+<script>
+// Reel fijado de Kuper: "Agentes a la medida". 48 s, 1080x1920. Ver ../guion-reel-fijado.md
+const W = 1080, H = 1920, DUR = 48;
+const c = document.getElementById('c'), x = c.getContext('2d');
+const FONT = 'Inter Tight';
+const GREEN = '#8cff2a', BLUE = '#2f6bff', BLUE2 = '#6fa8ff', TXT = '#f2f5fa', MUTED = '#9aa3b5';
+const cl = (v) => Math.max(0, Math.min(1, v));
+const seg = (t, a, b) => cl((t - a) / (b - a));
+const eo = (p) => 1 - Math.pow(1 - p, 3);
+const eio = (p) => (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const back = (p) => { const c1 = 1.7, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const lerp = (a, b, p) => a + (b - a) * p;
+// entra en [a, a+inDur], sale en [b-outDur, b]
+const life = (t, a, b, inD = .45, outD = .35) => Math.min(eo(seg(t, a, a + inD)), 1 - eio(seg(t, b - outD, b)));
+
+// ---------------------------------------------------------------- fondo y grano
+const noise = document.createElement('canvas'); noise.width = 360; noise.height = 640;
+{ const nx = noise.getContext('2d'), d = nx.createImageData(360, 640); let s = 7;
+  for (let i = 0; i < d.data.length; i += 4) { s = (s * 16807) % 2147483647; const v = s / 2147483647 > .5 ? 255 : 0; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; s = (s * 16807) % 2147483647; d.data[i + 3] = (s / 2147483647) * 16; }
+  nx.putImageData(d, 0, 0); }
+function background(t, tint, tintA) {
+  x.fillStyle = '#07080b'; x.fillRect(0, 0, W, H);
+  const r = x.createRadialGradient(W / 2, H * .55, 40, W / 2, H * .55, 1100); r.addColorStop(0, '#181b21'); r.addColorStop(1, '#07080b');
+  x.fillStyle = r; x.fillRect(0, 0, W, H);
+  if (tint && tintA > 0) { x.save(); x.globalAlpha = tintA; const g = x.createRadialGradient(W / 2, H * .5, 30, W / 2, H * .5, 900); g.addColorStop(0, tint); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); x.restore(); }
+  // luces suaves que flotan
+  [[.15, .2, 160, '#22314f'], [.85, .3, 200, '#1c2840'], [.8, .8, 150, '#1d2b20'], [.1, .75, 170, '#232838']].forEach(([px, py, rr, col], i) => {
+    const ox = Math.sin(t * .3 + i) * 30, oy = Math.cos(t * .25 + i) * 30;
+    const b = x.createRadialGradient(px * W + ox, py * H + oy, 0, px * W + ox, py * H + oy, rr); b.addColorStop(0, col + 'aa'); b.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = b; x.fillRect(0, 0, W, H);
+  });
+}
+function grain(t) { x.save(); x.globalAlpha = .9; const o = Math.floor(t * 12) % 4; x.drawImage(noise, -o * 3, -o * 2, W + 20, H + 20); x.restore(); }
+
+// ---------------------------------------------------------------- texto
+function font(size, weight = 500) { return `${weight} ${size}px "${FONT}", system-ui, sans-serif`; }
+// Titular a la izquierda dentro de la zona segura (x 90..850, y >= 250).
+function headline(lines, t, a, b, { y = 300, size = 66, weight = 500, color = TXT, gap = 1.14, accent = {} } = {}) {
+  const k = life(t, a, b, .5, .35); if (k <= 0) return;
+  lines.forEach((ln, i) => {
+    const ki = life(t, a + i * .12, b, .5, .35); if (ki <= 0) return;
+    x.save(); x.globalAlpha = ki; x.font = font(accent[i]?.size || size, accent[i]?.weight || weight); x.fillStyle = accent[i]?.color || color;
+    x.filter = ki < .99 ? `blur(${(1 - ki) * 10}px)` : 'none';
+    let yy = y; for (let j = 0; j < i; j++) yy += (accent[j]?.size || size) * gap;
+    x.fillText(ln, 90, yy + (accent[i]?.size || size) + (1 - ki) * 24);
+    x.restore();
+  });
+}
+function wrap(text, maxW) { const words = text.split(' '); const out = []; let cur = '';
+  for (const w of words) { const tst = cur ? cur + ' ' + w : w; if (x.measureText(tst).width > maxW && cur) { out.push(cur); cur = w; } else cur = tst; } out.push(cur); return out; }
+
+// ---------------------------------------------------------------- piezas
+function rr(px, py, w, h, r) { x.beginPath(); x.roundRect(px, py, w, h, r); }
+function glass(px, py, w, h, r = 28, a = 1) {
+  x.save(); x.globalAlpha *= a; x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 40; x.shadowOffsetY = 14;
+  const g = x.createLinearGradient(0, py, 0, py + h); g.addColorStop(0, 'rgba(255,255,255,.11)'); g.addColorStop(1, 'rgba(255,255,255,.035)');
+  x.fillStyle = g; rr(px, py, w, h, r); x.fill(); x.shadowColor = 'transparent';
+  x.strokeStyle = 'rgba(255,255,255,.16)'; x.lineWidth = 2; rr(px, py, w, h, r); x.stroke(); x.restore();
+}
+function phone(cx, cy, w, h, a, inner) {
+  if (a <= 0) return; x.save(); x.globalAlpha = a;
+  x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 60; x.shadowOffsetY = 20; x.fillStyle = '#121419'; rr(cx - w / 2, cy - h / 2, w, h, 56); x.fill(); x.shadowColor = 'transparent';
+  x.strokeStyle = '#2c3038'; x.lineWidth = 4; rr(cx - w / 2, cy - h / 2, w, h, 56); x.stroke();
+  x.fillStyle = '#0a0b0e'; rr(cx - w / 2 + 16, cy - h / 2 + 16, w - 32, h - 32, 44); x.fill();
+  x.fillStyle = '#1b1e24'; rr(cx - 60, cy - h / 2 + 30, 120, 26, 13); x.fill();
+  x.save(); rr(cx - w / 2 + 16, cy - h / 2 + 16, w - 32, h - 32, 44); x.clip(); inner(cx - w / 2 + 16, cy - h / 2 + 16, w - 32, h - 32); x.restore();
+  x.restore();
+}
+function chatHeader(px, py, w, name, sub) {
+  x.fillStyle = '#15181d'; x.fillRect(px, py, w, 130);
+  x.fillStyle = '#2b3038'; x.beginPath(); x.arc(px + 70, py + 82, 30, 0, 7); x.fill();
+  x.fillStyle = TXT; x.font = font(34, 600); x.fillText(name, px + 120, py + 80);
+  x.fillStyle = MUTED; x.font = font(24, 400); x.fillText(sub, px + 120, py + 112);
+}
+// burbuja de chat: side 'in' (cliente, izquierda) u 'out' (agente, derecha)
+function bubble(px, py, maxW, text, side, a = 1, { time = '', ticks = 0, size = 34 } = {}) {
+  if (a <= 0) return 0; x.save(); x.globalAlpha *= a; x.font = font(size, 400);
+  const lines = wrap(text, maxW - 60), lh = size * 1.3, bw = Math.min(maxW, Math.max(...lines.map((l) => x.measureText(l).width)) + 60 + (time ? 40 : 0)), bh = lines.length * lh + 44 + (time ? 18 : 0);
+  const bx = side === 'in' ? px : px + maxW - bw, off = (1 - a) * 20;
+  x.fillStyle = side === 'in' ? '#20242c' : '#1d4d33'; rr(bx, py + off, bw, bh, 26); x.fill();
+  x.fillStyle = TXT; lines.forEach((l, i) => x.fillText(l, bx + 30, py + off + 22 + size + i * lh));
+  if (time) { x.font = font(20, 400); x.fillStyle = MUTED; x.textAlign = 'right'; x.fillText(time, bx + bw - (ticks ? 56 : 24), py + off + bh - 16);
+    if (ticks) { x.strokeStyle = ticks === 2 ? '#53bdeb' : '#8a93a6'; x.lineWidth = 3; x.lineCap = 'round'; for (const dx of [0, 10]) { x.beginPath(); x.moveTo(bx + bw - 46 + dx, py + off + bh - 24); x.lineTo(bx + bw - 40 + dx, py + off + bh - 18); x.lineTo(bx + bw - 28 + dx, py + off + bh - 32); x.stroke(); } }
+    x.textAlign = 'left'; }
+  x.restore(); return bh;
+}
+function check(cx, cy, r, a, col = GREEN) {
+  if (a <= 0) return; x.save(); x.globalAlpha = a; x.fillStyle = col; x.shadowColor = col; x.shadowBlur = 20; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+  x.strokeStyle = '#0b0c0f'; x.lineWidth = r * .22; x.lineCap = 'round'; x.lineJoin = 'round'; x.shadowBlur = 0;
+  const p = cl(a * 1.4); x.beginPath(); x.moveTo(cx - r * .45, cy); x.lineTo(cx - r * .1, cy + r * .35); if (p > .5) x.lineTo(cx - r * .1 + (r * .55) * ((p - .5) * 2), cy + r * .35 - (r * .75) * ((p - .5) * 2)); x.stroke(); x.restore();
+}
+function pill(cx, cy, text, a, { dot = GREEN, size = 30, bg = 'rgba(255,255,255,.08)' } = {}) {
+  if (a <= 0) return; x.save(); x.globalAlpha *= a; x.font = font(size, 500); const w = x.measureText(text).width + 70;
+  x.fillStyle = bg; rr(cx - w / 2, cy - size, w, size * 2, size); x.fill(); x.strokeStyle = 'rgba(255,255,255,.14)'; x.lineWidth = 2; x.stroke();
+  x.fillStyle = dot; x.beginPath(); x.arc(cx - w / 2 + 30, cy, 7, 0, 7); x.fill(); x.fillStyle = TXT; x.fillText(text, cx - w / 2 + 48, cy + size * .35); x.restore();
+}
+// "puerta" de cada sección: tarjeta con número y nombre
+function door(n, label, sub, t, a, b, col) {
+  const k = life(t, a, b, .55, .4); if (k <= 0) return;
+  const cx = 540, cy = 1000, w = 600, h = 640, open = eo(seg(t, a + .3, a + 1.2));
+  x.save(); x.globalAlpha = k;
+  // luz detrás
+  const g = x.createRadialGradient(cx, cy, 20, cx, cy, 420); g.addColorStop(0, col + '66'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 400, W, 1200);
+  x.translate(cx, cy + (1 - k) * 60);
+  // marco
+  x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 3; rr(-w / 2, -h / 2, w, h, 40); x.stroke();
+  x.fillStyle = col + '22'; rr(-w / 2, -h / 2, w, h, 40); x.fill();
+  // hoja de la puerta que se abre
+  x.save(); x.transform(1 - open * .72, open * .08, 0, 1, -w / 2, -h / 2);
+  const dg = x.createLinearGradient(0, 0, w, 0); dg.addColorStop(0, '#2a2e36'); dg.addColorStop(1, '#1a1c21'); x.fillStyle = dg; rr(0, 0, w, h, 40); x.fill();
+  x.fillStyle = '#3a3f49'; x.beginPath(); x.arc(w - 60, h / 2, 12, 0, 7); x.fill(); x.restore();
+  // contenido detrás
+  x.globalAlpha = k * open; x.fillStyle = col; x.font = font(120, 300); x.textAlign = 'center'; x.fillText(n, 60, -40);
+  x.fillStyle = TXT; x.font = font(52, 600); x.fillText(label, 60, 50); x.fillStyle = MUTED; x.font = font(30, 400); x.fillText(sub, 60, 100); x.textAlign = 'left';
+  x.restore();
+}
+
+// iconos extra para las tarjetas del final
+const baseIcon = drawIcon;
+drawIcon = function (x, k) {
+  if (k === 'post') { x.strokeStyle = '#fff'; x.lineWidth = 4; x.beginPath(); x.roundRect(-17, -17, 34, 34, 7); x.stroke(); x.beginPath(); x.arc(-5, -5, 5, 0, 7); x.stroke(); x.beginPath(); x.moveTo(-15, 13); x.lineTo(-2, 1); x.lineTo(15, 13); x.stroke(); return; }
+  if (k === 'video') { x.fillStyle = '#fff'; x.beginPath(); x.moveTo(-10, -15); x.lineTo(15, 0); x.lineTo(-10, 15); x.closePath(); x.fill(); return; }
+  baseIcon(x, k);
+};
+const FINAL = [
+  { label: 'Contesta\nWhatsApp', icon: 'chat', color: '#25d366' },
+  { label: 'Reserva\ncitas', icon: 'cal', color: '#3b82f6' },
+  { label: 'Da el\nprecio', icon: 'money', color: '#f59e0b' },
+  { label: 'Publica en\nredes', icon: 'post', color: '#a855f7' },
+  { label: 'Crea tus\nvideos', icon: 'video', color: '#ec4899' },
+  { label: 'Atiende\n24/7', icon: 'clock', color: '#06b6d4' },
+];
+
+// ---------------------------------------------------------------- escenas
+function frame(t) {
+  // tinte por sección
+  let tint = null, ta = 0;
+  if (t > 10.6 && t < 23) { tint = '#1d3f8f'; ta = Math.min(seg(t, 10.6, 11.4), 1 - seg(t, 22.4, 23)) * .55; }
+  if (t > 22.6 && t < 34.8) { tint = '#4b2387'; ta = Math.min(seg(t, 22.6, 23.4), 1 - seg(t, 34.2, 34.8)) * .55; }
+  if (t > 34.4 && t < 39.6) { tint = '#1f5f2c'; ta = Math.min(seg(t, 34.4, 35.2), 1 - seg(t, 39, 39.6)) * .5; }
+  background(t, tint, ta);
+
+  // ---- 1. Gancho (0 - 3.2) y 17. Cierre (45.4 - 48)
+  const hookA = life(t, -1, 3.3, .01, .4), endA = life(t, 45.4, 49, .5, .1);
+  const scA = Math.max(hookA, endA);
+  if (scA > 0) {
+    const ending = t > 44;
+    phone(410, 1030, 470, 840, scA, (px, py, w, h) => {
+      chatHeader(px, py, w, 'Cliente', ending ? 'en línea' : 'últ. vez hoy a las 23:46');
+      bubble(px + 24, py + 170, w - 120, '¿Tienen cita mañana?', 'in', 1, { time: '23:47', size: 32 });
+      if (ending) {
+        bubble(px + 70, py + 300, w - 94, 'Sí, a las 10:00 o a las 12:30. ¿Cuál te reservo?', 'out', eo(seg(t, 45.8, 46.3)), { time: '23:47', ticks: 2, size: 30 });
+        bubble(px + 24, py + 500, w - 120, '¡La de las 10! Gracias', 'in', eo(seg(t, 46.6, 47.1)), { time: '23:47', size: 30 });
+      } else {
+        // nadie contesta: escribiendo... nunca aparece; palomita gris
+        x.fillStyle = 'rgba(255,255,255,.25)'; x.font = font(24, 400); x.fillText('Sin respuesta', px + 30, py + 330 + Math.sin(t * 3) * 2);
+      }
+    });
+    // perfil abandonado / post publicado
+    x.save(); x.globalAlpha = scA; glass(690, 1180, 300, 380, 30);
+    x.fillStyle = ending ? 'rgba(168,85,247,.5)' : '#1b1e24'; rr(712, 1204, 256, 210, 16); x.fill();
+    x.fillStyle = TXT; x.font = font(26, 600); x.fillText(ending ? 'Publicado' : 'Último post', 714, 1460);
+    x.fillStyle = MUTED; x.font = font(24, 400); x.fillText(ending ? 'hoy, 23:47' : 'hace 3 semanas', 714, 1496);
+    if (ending) check(940, 1230, 22, eo(seg(t, 46.9, 47.3)));
+    x.restore();
+    // notificación que late
+    if (!ending) { const p = (Math.sin(t * 6) + 1) / 2; x.save(); x.globalAlpha = hookA * (.4 + .6 * p); x.fillStyle = '#25d366'; x.beginPath(); x.arc(632, 620, 16, 0, 7); x.fill(); x.restore(); }
+  }
+  headline(['23:47'], t, -1, 3.3, { y: 250, size: 150, weight: 300, color: TXT });
+  headline(['No contestas, no publicas:', 'venta perdida.'], t, .25, 3.3, { y: 430, size: 56, weight: 500, accent: { 1: { color: GREEN } } });
+  headline(['23:47'], t, 45.4, 49, { y: 250, size: 150, weight: 300 });
+  headline(['Respondido.', 'Publicado.'], t, 45.7, 49, { y: 430, size: 64, weight: 600, accent: { 1: { color: GREEN } } });
+  if (t > 45.4) drawKuper(x, { cx: 840, cy: 1110, s: .55, expr: 'feliz', wave: t > 46.4 ? .75 + .25 * Math.sin((t - 46.4) * 14) : 0, hop: Math.sin(seg(t, 45.4, 45.9) * Math.PI) * 90 });
+
+  // ---- 2. Pendientes (3.2 - 6.4)  3. No alcanzas (6.4 - 8.2)
+  if (t > 3.0 && t < 8.4) {
+    const fall = eio(seg(t, 6.6, 7.6));
+    [['Contestar', ['¿Precio de la limpieza?', '¿Abren el domingo?', '¿Tienen cita hoy?', '¿Hacen envíos?']], ['Publicar', ['Lunes: post', 'Martes: video', 'Miércoles: post', 'Jueves: carrusel', 'Viernes: video']]]
+      .forEach(([title, items], col) => {
+        const a = life(t, 3.2 + col * .2, 8.2, .5, .3), cx = 110 + col * 380, top = 700;
+        if (a <= 0) return; x.save(); x.globalAlpha = a;
+        x.translate(cx + 150, top + 300 + fall * 700); x.rotate(fall * (col ? .5 : -.4)); x.translate(-(cx + 150), -(top + 300));
+        glass(cx, top, 340, 640, 30);
+        x.fillStyle = TXT; x.font = font(36, 600); x.fillText(title, cx + 30, top + 70);
+        items.forEach((it, i) => { const ia = eo(seg(t, 3.6 + col * .3 + i * .42, 3.9 + col * .3 + i * .42)); if (ia <= 0) return;
+          x.save(); x.globalAlpha *= ia; x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 3; rr(cx + 30, top + 118 + i * 100, 30, 30, 8); x.stroke();
+          x.fillStyle = '#d6dbe6'; x.font = font(26, 400); x.fillText(it, cx + 76, top + 143 + i * 100 + (1 - ia) * 14); x.restore(); });
+        x.restore();
+      });
+  }
+  headline(['Contestar a las 23:47.', 'Publicar 5 veces por semana.'], t, 3.2, 6.5, { y: 300, size: 56 });
+  headline(['No alcanzas con todo.'], t, 6.5, 8.3, { y: 300, size: 72, weight: 600 });
+
+  // ---- 4. Kuper arma agentes (8.2 - 11)
+  if (t > 8.0 && t < 11.2) {
+    const a = life(t, 8.1, 11.1, .2, .35), j = seg(t, 8.2, 8.9);
+    x.save(); x.globalAlpha = a;
+    drawKuper(x, { cx: 540, cy: 1380, s: 1.3, hop: Math.sin(j * Math.PI) * 300 * (j < 1 ? 1 : 0), squash: t > 8.9 && t < 9.2 ? Math.sin(seg(t, 8.9, 9.2) * Math.PI) : 0,
+      expr: t > 9.6 ? 'feliz' : 'normal', blink: t > 9.3 && t < 9.45 ? Math.sin(seg(t, 9.3, 9.45) * Math.PI) : 0, look: Math.sin(t * 2) * .2 });
+    x.restore();
+  }
+  headline(['En Kuper armamos', 'agentes de IA', 'a la medida.'], t, 8.5, 11.1, { y: 300, size: 76, weight: 600, accent: { 2: { color: GREEN } } });
+
+  // ---- 5. Puerta WhatsApp (11 - 13)
+  door('01', 'WhatsApp', 'Contesta por ti', t, 11.0, 13.1, BLUE);
+  headline(['¿No alcanzas a', 'contestar WhatsApp?'], t, 11.0, 13.1, { y: 300, size: 66 });
+
+  // ---- 6-8. Chat de la clínica (13 - 23)
+  if (t > 12.9 && t < 23.1) {
+    const a = life(t, 13.0, 23.0, .5, .4);
+    phone(560, 1040, 520, 820, a, (px, py, w, h) => {
+      chatHeader(px, py, w, 'Clínica', 'Agente de IA · en línea');
+      bubble(px + 24, py + 170, w - 120, '¿Hay cita el sábado a las 11?', 'in', eo(seg(t, 13.4, 13.9)), { time: '23:47', size: 30 });
+      bubble(px + 70, py + 320, w - 94, 'Sí, el sábado a las 11:00 está libre. ¿A nombre de quién?', 'out', eo(seg(t, 16.6, 17.1)), { time: '23:47', ticks: 2, size: 30 });
+      bubble(px + 24, py + 520, w - 120, 'Ana López', 'in', eo(seg(t, 17.6, 18.0)), { time: '23:47', size: 30 });
+    });
+    // escribiendo...
+    if (t > 14.2 && t < 16.6) { x.save(); x.globalAlpha = a; x.fillStyle = '#1d4d33'; rr(660, 1150, 130, 64, 32); x.fill(); for (let i = 0; i < 3; i++) { x.fillStyle = `rgba(255,255,255,${.4 + .6 * ((Math.sin(t * 8 - i) + 1) / 2)})`; x.beginPath(); x.arc(695 + i * 30, 1182, 9, 0, 7); x.fill(); } x.restore(); }
+    // tarjeta de calendario
+    const ca = Math.min(eo(seg(t, 17.2, 17.7)), 1 - eio(seg(t, 19.6, 20.0)));
+    if (ca > 0) { x.save(); x.globalAlpha = ca; x.translate(0, (1 - ca) * 30); glass(110, 1390, 420, 150, 26); x.fillStyle = MUTED; x.font = font(24, 500); x.fillText('SÁBADO', 140, 1440); x.fillStyle = TXT; x.font = font(48, 600); x.fillText('11:00', 140, 1500); check(480, 1460, 26, eo(seg(t, 17.5, 18.0))); x.restore(); }
+    // anillo 24/7
+    const ra = Math.min(eo(seg(t, 17.8, 18.3)), 1 - eio(seg(t, 19.6, 20.0)));
+    if (ra > 0) { x.save(); x.globalAlpha = ra; x.translate(760, 1460); x.rotate(t * 1.2); x.strokeStyle = GREEN; x.lineWidth = 6; x.shadowColor = GREEN; x.shadowBlur = 16; x.setLineDash([30, 18]); x.beginPath(); x.arc(0, 0, 80, 0, 7); x.stroke(); x.restore();
+      x.save(); x.globalAlpha = ra; x.fillStyle = TXT; x.font = font(40, 700); x.textAlign = 'center'; x.fillText('24/7', 760, 1474); x.restore(); }
+    // personaje junto al teléfono
+    const ma = Math.min(eo(seg(t, 13.2, 13.8)), 1 - eio(seg(t, 22.4, 23.0)));
+    if (ma > 0) { x.save(); x.globalAlpha = ma; drawKuper(x, { cx: 175, cy: 1190, s: .5, phone: t > 13.8 && t < 19.8, lookY: t < 19.8 ? .6 : 0,
+      expr: t > 17.2 && t < 19.8 ? 'estrellas' : t > 20.2 && t < 21 ? 'decidido' : t > 21.2 ? 'feliz' : 'normal' }); x.restore(); }
+  }
+  headline(['Clínica:', '“¿Hay cita el sábado', 'a las 11?”'], t, 13.0, 16.7, { y: 300, size: 54, accent: { 0: { color: BLUE2, size: 36, weight: 600 } } });
+  headline(['Tu agente la reserva.', 'En segundos, 24/7.'], t, 16.7, 19.9, { y: 300, size: 64, weight: 600, accent: { 1: { color: GREEN } } });
+  headline(['Sin menús de “marca 1”.', 'Entiende como', 'te escriben.'], t, 19.9, 23.0, { y: 300, size: 58, accent: { 1: { color: GREEN }, 2: { color: GREEN } } });
+  // menú viejo que se arruga y burbujas sueltas
+  if (t > 19.8 && t < 23) {
+    const crumple = eio(seg(t, 20.8, 21.5)), a = life(t, 19.9, 23, .4, .3);
+    if (crumple < 1) { x.save(); x.globalAlpha = a * (1 - crumple); x.translate(560 + crumple * 380, 1300 + crumple * 420); x.scale(1 - crumple * .8, 1 - crumple * .8); x.rotate(crumple * 1.2);
+      x.fillStyle = '#1c1f26'; rr(-230, -150, 460, 300, 24); x.fill(); glass(-230, -150, 460, 300, 24); x.fillStyle = TXT; x.font = font(32, 500); ['1. Horarios', '2. Precios', '3. Citas'].forEach((l, i) => x.fillText(l, -190, -80 + i * 70)); x.restore(); }
+  }
+
+  // ---- 9. Puerta redes (23 - 25)
+  door('02', 'Redes', 'Publica por ti', t, 23.0, 25.1, '#a855f7');
+  headline(['¿No tienes tiempo', 'de publicar?'], t, 23.0, 25.1, { y: 300, size: 66 });
+
+  // ---- 10. Calendario con 5 posts (25 - 28.9)  11. Revisar antes (28.9 - 31)  12. Redes (31 - 34.6)
+  if (t > 24.9 && t < 34.8) {
+    const a = life(t, 25.0, 34.7, .5, .4);
+    const calA = Math.min(a, 1 - eio(seg(t, 28.6, 29.1)));
+    if (calA > 0) {
+      x.save(); x.globalAlpha = calA; glass(90, 760, 760, 420, 30);
+      ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].forEach((d, i) => {
+        const cx = 120 + i * 146; x.fillStyle = MUTED; x.font = font(26, 500); x.fillText(d, cx + 30, 820);
+        const p = back(seg(t, 25.6 + i * .42, 26.0 + i * .42)), pa = seg(t, 25.6 + i * .42, 25.8 + i * .42); if (pa <= 0) return;
+        x.save(); x.globalAlpha *= pa; x.translate(cx + 63, 960); x.scale(p, p);
+        const cols = ['#2f6bff', '#a855f7', '#25d366', '#f59e0b', '#ec4899'];
+        const g = x.createLinearGradient(-60, -90, 60, 90); g.addColorStop(0, cols[i]); g.addColorStop(1, '#14161b'); x.fillStyle = g; rr(-60, -90, 120, 180, 16); x.fill();
+        x.fillStyle = 'rgba(255,255,255,.8)'; rr(-42, 40, 70, 10, 5); x.fill(); rr(-42, 58, 50, 10, 5); x.fill();
+        if (i % 2) { x.fillStyle = '#fff'; x.beginPath(); x.moveTo(-10, -30); x.lineTo(16, -14); x.lineTo(-10, 2); x.closePath(); x.fill(); }
+        x.restore(); check(cx + 110, 1120, 16, eo(seg(t, 26.0 + i * .42, 26.3 + i * .42)));
+      });
+      x.restore();
+      drawKuper(x, { cx: 760, cy: 1450, s: .55, expr: t > 27.4 ? 'feliz' : 'decidido', wave: t > 25.4 && t < 27.6 ? .6 + .3 * Math.sin(t * 10) : 0 });
+    }
+    // revisar antes: teléfono con post e interruptor
+    const rvA = Math.min(eo(seg(t, 28.9, 29.4)), 1 - eio(seg(t, 30.7, 31.1)));
+    if (rvA > 0) {
+      phone(540, 1060, 470, 760, rvA, (px, py, w, h) => {
+        x.fillStyle = TXT; x.font = font(30, 600); x.fillText('Post del lunes', px + 30, py + 90);
+        const g = x.createLinearGradient(px, py + 120, px + w, py + 520); g.addColorStop(0, '#2f6bff'); g.addColorStop(1, '#151820'); x.fillStyle = g; rr(px + 30, py + 120, w - 60, 380, 20); x.fill();
+        x.fillStyle = 'rgba(255,255,255,.85)'; x.font = font(34, 600); x.fillText('Tu marca', px + 60, py + 440);
+        // interruptor
+        const on = t < 29.9 ? 1 : t < 30.3 ? 1 - eio(seg(t, 29.9, 30.1)) : eio(seg(t, 30.3, 30.5));
+        x.fillStyle = TXT; x.font = font(30, 500); x.fillText('Revisar antes', px + 30, py + 590);
+        x.fillStyle = on > .5 ? '#25d366' : '#3a3f49'; rr(px + w - 130, py + 552, 100, 54, 27); x.fill();
+        x.fillStyle = '#fff'; x.beginPath(); x.arc(px + w - 103 + on * 46, py + 579, 22, 0, 7); x.fill();
+      });
+    }
+    // se publica en 4 redes
+    const nA = Math.min(eo(seg(t, 31.0, 31.5)), a);
+    if (nA > 0) {
+      const nets = [['Instagram', '#e1306c'], ['Facebook', '#4f7cff'], ['LinkedIn', '#3d8bd9'], ['TikTok', '#f2f5fa']];
+      nets.forEach(([n, col], i) => { const cx = 300 + (i % 2) * 340, cy = 820 + Math.floor(i / 2) * 230, k = eo(seg(t, 31.3 + i * .45, 31.7 + i * .45));
+        x.save(); x.globalAlpha = nA; glass(cx - 150, cy - 80, 300, 160, 26, .6 + .4 * k);
+        x.fillStyle = col; x.globalAlpha = nA * (.3 + .7 * k); x.beginPath(); x.arc(cx - 100, cy, 16, 0, 7); x.fill();
+        x.fillStyle = TXT; x.font = font(32, 600); x.fillText(n, cx - 70, cy + 11); x.restore();
+        check(cx + 120, cy - 60, 18, k * nA);
+        // post que vuela
+        const fly = seg(t, 31.0 + i * .45, 31.4 + i * .45);
+        if (fly > 0 && fly < 1) { x.save(); x.globalAlpha = nA * (1 - fly); x.fillStyle = BLUE; rr(lerp(540, cx, eo(fly)) - 30, lerp(1400, cy, eo(fly)) - 40, 60, 80, 10); x.fill(); x.restore(); }
+      });
+      drawKuper(x, { cx: 540, cy: 1450, s: .55, expr: 'estrellas' });
+    }
+  }
+  headline(['Tu agente crea', 'tus 5 posts por semana,', 'con tu marca.'], t, 25.0, 28.9, { y: 300, size: 60, accent: { 1: { color: GREEN } } });
+  headline(['Si quieres,', 'lo revisas antes.'], t, 28.9, 31.1, { y: 300, size: 70, weight: 600 });
+  headline(['Se publica solo en', 'Instagram, Facebook,', 'LinkedIn y TikTok.'], t, 31.0, 34.7, { y: 300, size: 58 });
+
+  // ---- 13. Puerta otra tarea (34.6 - 37)
+  door('03', 'Otra tarea', 'La que tú nos digas', t, 34.6, 37.1, '#25d366');
+  headline(['¿Otra tarea que', 'repites cada día?'], t, 34.6, 37.1, { y: 300, size: 66 });
+
+  // ---- 14. Nos hablas de ella (37 - 39.4)
+  if (t > 36.9 && t < 39.6) {
+    const a = life(t, 37.0, 39.5, .4, .35), build = eo(seg(t, 38.15, 38.8));
+    ['Notas', 'Horarios', 'Archivos', 'Pasos'].forEach((n, i) => { const ang = i * Math.PI / 2 + .6, r0 = 420, p = eo(seg(t, 37.1 + i * .1, 37.8 + i * .08));
+      const px = 540 + Math.cos(ang) * r0 * (1 - p), py = 1060 + Math.sin(ang) * r0 * .8 * (1 - p);
+      x.save(); x.globalAlpha = a * (1 - p); pill(px, py, n, 1, { dot: [BLUE2, GREEN, '#f59e0b', '#a855f7'][i] }); x.restore(); });
+    x.save(); x.globalAlpha = a; x.translate(540, 1060); x.scale(.8 + .2 * back(build), .8 + .2 * back(build));
+    glass(-220, -150, 440, 300, 34); x.fillStyle = TXT; x.globalAlpha = a * build; x.font = font(52, 600); x.textAlign = 'center'; x.fillText('Tu agente', 0, 20);
+    x.fillStyle = GREEN; x.font = font(28, 500); x.fillText('a la medida', 0, 70); x.textAlign = 'left'; x.restore();
+    drawKuper(x, { cx: 540, cy: 1460, s: .5, expr: build > .9 ? 'feliz' : 'normal', look: Math.sin(t * 3) * .5 });
+  }
+  headline(['Nos hablas de ella.', 'Armamos tu agente.'], t, 37.0, 39.5, { y: 300, size: 64, weight: 600, accent: { 1: { color: GREEN } } });
+
+  // ---- 15. Portada (39.4 - 43)
+  if (t > 39.3 && t < 43.2) {
+    const a = life(t, 39.4, 43.1, .4, .35);
+    const POS = [[-280, -560], [0, -560], [280, -560], [-280, -360], [0, -360], [280, -360]];
+    FINAL.forEach((cd, i) => { const k = eo(seg(t, 39.6 + i * .16, 40.1 + i * .16)); if (k <= 0) return; const [dx, dy] = POS[i];
+      x.save(); x.globalAlpha = a; glassCard(x, { ...cd, cx: 540 + dx * k, cy: 1240 + dy * k + Math.sin(t * 2 + i) * 6, w: 240, h: 165, a: k, sc: .7 + .3 * back(k) }); x.restore(); });
+    x.save(); x.globalAlpha = a; drawKuper(x, { cx: 540, cy: 1380, s: .75, expr: t > 41.4 ? 'feliz' : 'normal', look: Math.sin((t - 39.4) * 2) * .7 }); x.restore();
+  }
+  headline(['Tú no tocas nada técnico.', 'Atiendes lo importante.'], t, 39.4, 43.1, { y: 250, size: 52, accent: { 1: { color: GREEN, weight: 600 } } });
+
+  // ---- 16. CTA (43 - 45.6)
+  if (t > 42.9 && t < 45.7) {
+    const a = life(t, 43.0, 45.6, .45, .35), p = back(seg(t, 43.2, 43.8));
+    x.save(); x.globalAlpha = a; x.translate(540, 940); x.scale(.6 + .4 * p, .6 + .4 * p);
+    x.shadowColor = GREEN; x.shadowBlur = 40 + Math.sin(t * 5) * 10; x.fillStyle = '#10140c'; rr(-330, -120, 660, 240, 40); x.fill(); x.shadowBlur = 0;
+    x.strokeStyle = GREEN; x.lineWidth = 5; rr(-330, -120, 660, 240, 40); x.stroke();
+    x.fillStyle = GREEN; x.font = font(120, 700); x.textAlign = 'center'; x.fillText('AGENTE', 0, 42); x.textAlign = 'left'; x.restore();
+    x.save(); x.globalAlpha = a; drawKuper(x, { cx: 540, cy: 1520, s: .6, expr: 'estrellas', wave: .8 + .2 * Math.sin(t * 12) }); x.restore();
+  }
+  headline(['Comenta'], t, 43.0, 45.6, { y: 560, size: 64, weight: 500 });
+  { const k = life(t, 43.5, 45.6, .5, .35); if (k > 0) { x.save(); x.globalAlpha = k; x.font = font(52, 500); x.fillStyle = TXT; x.textAlign = 'center';
+    x.fillText('y dinos qué quieres', 540, 1150 + (1 - k) * 20); x.fillText('que haga tu agente.', 540, 1214 + (1 - k) * 20); x.textAlign = 'left'; x.restore(); } }
+
+  grain(t);
+}
+window.frame = frame;
+window.DUR = DUR;
+</script></body></html>
