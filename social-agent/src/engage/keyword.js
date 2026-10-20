@@ -80,6 +80,7 @@ export async function processKeywordComments(client, { now = new Date() } = {}) 
         try { await sendPublicReply(meta, c.id, fillTemplate(cfg.respuesta_publica, { usuario: c.username || '' })); } catch { /* el DM ya salió */ }
       }
       db.recordKeywordReply({ clientId: client.id, comment: c, status: 'enviado' });
+      try { db.upsertLead(client.id, { usuario: c.username, origen: 'instagram', nota: `Comentó ${cfg.palabra}` }); } catch { /* sin usuario */ }
       db.logEvent({ clientId: client.id, tipo: 'palabra_clave', detalle: `DM enviado a @${c.username}` });
       enviados++;
     } catch (e) {

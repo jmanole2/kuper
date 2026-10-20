@@ -13,6 +13,7 @@ import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
 import { sendTestDigest } from './notify.js';
+import * as agenda from './agenda/index.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
@@ -48,6 +49,42 @@ export function createApp() {
     limits: { fileSize: 300 * 1024 * 1024 },
     fileFilter: (_req, f, cb) => cb(null, ['image/jpeg', 'image/png', 'video/mp4', 'video/quicktime'].includes(f.mimetype)),
   });
+
+  // ------------------------------------------------------------ API para el agente de WhatsApp
+  // Autorización: "Authorization: Bearer <llave del cliente>" (se genera en el panel, pestaña Configuración).
+  const api = express.Router({ mergeParams: true });
+  api.use(express.json({ limit: '100kb' }));
+  api.use((req, res, next) => {
+    const c = db.listClients().find((x) => x.slug === req.params.slug);
+    const key = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    const want = c && db.clientCredentials(c).api_key;
+    if (!c || !want || !key || !safeEqual(key, want)) return res.status(401).json({ error: 'No autorizado' });
+    req.client = c; next();
+  });
+  api.get('/disponibilidad', async (req, res) => {
+    try { res.json({ horarios: await agenda.availability(req.client, { dias: Math.min(30, Number(req.query.dias) || 7) }) }); }
+    catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  api.post('/citas', async (req, res) => {
+    const { inicio, nombre, telefono, motivo } = req.body || {};
+    try {
+      const cita = await agenda.book(req.client, { inicio, nombre, telefono, motivo });
+      if (telefono) db.upsertLead(req.client.id, { nombre, telefono, origen: 'whatsapp', estado: 'cita', cita_inicio: cita.inicio, cita_evento: cita.id });
+      db.logEvent({ clientId: req.client.id, tipo: 'cita_agendada', detalle: `${nombre || telefono || ''} ${cita.inicio}` });
+      res.json({ ok: true, cita });
+    } catch (e) {
+      if (e instanceof agenda.SlotTaken) {
+        const alternativas = await agenda.availability(req.client, { dias: 7 }).catch(() => []);
+        return res.status(409).json({ error: e.message, alternativas: alternativas.slice(0, 3) });
+      }
+      res.status(500).json({ error: e.message });
+    }
+  });
+  api.post('/leads', (req, res) => {
+    try { res.json({ ok: true, lead: db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' }) }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  app.use('/api/:slug', api);
 
   // ------------------------------------------------------------ sesión admin
   const COOKIE = 'sa_admin';
@@ -94,7 +131,7 @@ export function createApp() {
       throw new Error('El perfil necesita "cliente" y al menos un pilar en "pilares_de_contenido".');
     }
     for (const [k, v] of Object.entries(cfg)) {
-      if (k === 'respuesta_palabra_clave') continue;
+      if (k === 'respuesta_palabra_clave' || k === 'agenda') continue;
       if (k === 'notificaciones') {
         if (v.email && !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(String(v.email).trim())) throw new Error('notificaciones: "email" no es un correo válido');
         continue;
@@ -119,6 +156,7 @@ export function createApp() {
         org_id: keep(body.li_org_id, existingCreds.linkedin?.org_id),
         access_token: tok(body.li_access_token, existingCreds.linkedin?.access_token),
       },
+      api_key: existingCreds.api_key, // llave del agente de WhatsApp (se genera en el panel)
       tiktok: existingCreds.tiktok, // se conecta con el botón "Conectar TikTok", no desde el formulario
       dry_run: body.dry_run === '1',
     };
@@ -146,6 +184,12 @@ export function createApp() {
   });
   admin.get('/clientes/:cid', async (req, res) => {
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
+    if (view.tab === 'leads') view.leads = db.listLeads(req.client.id);
+    if (view.tab === 'citas') {
+      const cfg = agenda.agendaCfg(req.client);
+      try { view.citas = cfg.calendar_id ? await agenda.upcomingEvents(cfg.calendar_id) : null; } catch (e) { view.citasError = e.message; }
+      view.agendaCfg = cfg; view.saEmail = agenda.serviceAccount()?.client_email || null;
+    }
     res.send(clientView(req.client, undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
   });
   // Borrar todos los posts con error o rechazados de un cliente.
@@ -208,6 +252,15 @@ export function createApp() {
     } catch (e) {
       res.status(400).send(clientView(req.client, `Correo de prueba: ${e.message}`, undefined, undefined, { tab: 'config' }));
     }
+  });
+  admin.post('/clientes/:cid/llave-api', (req, res) => {
+    const creds = db.clientCredentials(req.client);
+    db.updateClient(req.client.id, { credentials: { ...creds, api_key: randomToken(24) } });
+    res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Llave%20nueva%20generada`);
+  });
+  admin.post('/clientes/:cid/leads/:leadId', (req, res) => {
+    db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado));
+    res.redirect(`/admin/clientes/${req.client.id}?tab=leads`);
   });
   admin.post('/clientes/:cid/rotar-token', (req, res) => { db.rotatePortalToken(req.client.id); res.redirect(`/admin/clientes/${req.client.id}`); });
   admin.post('/clientes/:cid/logo', upload.single('archivo'), (req, res) => {

@@ -1,7 +1,7 @@
 // Vistas: tarjeta de post (compartida), portal del cliente y panel de admin.
 import path from 'node:path';
 import { html, raw, esc, page } from './html.js';
-import { STATUS, PLATFORMS } from '../db.js';
+import { STATUS, PLATFORMS, LEAD_ESTADOS } from '../db.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
@@ -145,7 +145,7 @@ export function dashboardPage(clients, counts, events) {
   return page({ title: 'Agente Social · Admin', side: side('clientes'), body });
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -158,7 +158,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']];
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']];
   const t = isNew ? 'config' : tab;
   const body = html`
   <h1>${isNew ? 'Nuevo cliente' : client.nombre}</h1>
@@ -174,6 +174,25 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
     <a class="${!red ? 'on' : ''}" href="${url({ red: '' })}">Todas</a>${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => html`<a class="${red === p ? 'on' : ''}" href="${url({ red: p })}"><i style="width:8px;height:8px;border-radius:50%;background:${PCOL[p]}"></i>${PLAT[p]}</a>`)}</div>
   ${fSel[0] === 'descartados' && shown.length ? html`<form method="post" action="/admin/clientes/${client.id}/limpiar" onsubmit="return confirm('¿Eliminar todos los posts con error o rechazados? No se puede deshacer.')" style="margin-bottom:14px"><button class="btn-bad">Eliminar todos (${shown.length})</button></form>` : ''}
   ${shown.length ? html`<div class="grid">${shown.map((p) => postCard(p, { base: `/admin/posts/${p.id}`, admin: true }))}</div>` : html`<div class="card muted">No hay posts en "${fSel[1]}".</div>`}
+  ` : ''}
+
+  ${!isNew && t === 'leads' ? html`<div style="margin-top:24px"></div>
+  ${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
+  ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
+    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
+    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div></td>
+      <td><span class="badge" style="color:${l.origen === 'instagram' ? '#e1306c' : l.origen === 'whatsapp' ? '#25d366' : '#93b4ff'}">${l.origen}</span></td>
+      <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
+      <td><form method="post" action="/admin/clientes/${client.id}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
+  </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram o le escribe a tu agente de WhatsApp.</div>`}
+  ` : ''}
+
+  ${!isNew && t === 'citas' ? html`<div style="margin-top:24px"></div>
+  ${citasError ? html`<div class="err">${citasError}</div>` : ''}
+  ${agendaCfg && !agendaCfg.calendar_id ? html`<div class="card"><strong>Conecta Google Calendar</strong><p class="muted small">1. Crea una cuenta de servicio en Google Cloud (Calendar API activada) y guarda su JSON en el servidor.<br>2. En Google Calendar, comparte tu calendario con ${saEmail ? html`<strong>${saEmail}</strong>` : 'el correo de la cuenta de servicio'} con permiso "Hacer cambios en eventos".<br>3. En Configuración agrega <code>"agenda": { "calendar_id": "tu-correo@gmail.com" }</code>.</p></div>` : ''}
+  ${citas ? html`<p class="muted small">Reglas: citas de ${agendaCfg.duracion_min} min, ${agendaCfg.margen_min} min de margen, con ${agendaCfg.anticipacion_horas} h de anticipación · ${Object.entries(agendaCfg.horario).map(([d, h]) => `${d} ${h[0]}–${h[1]}`).join(', ')}.</p>
+    ${citas.length ? html`<div class="grid">${citas.map((e) => html`<div class="card"><div class="row spread"><strong>${e.summary || 'Cita'}</strong>${e.extendedProperties?.private?.kuper ? html`<span class="badge" style="color:#25d366">Agente</span>` : html`<span class="badge">Manual</span>`}</div>
+      <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p><p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}
   ` : ''}
 
   ${!isNew && t === 'competencia' ? html`<div style="margin-top:24px"></div>
@@ -203,6 +222,11 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
     <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
     <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p>
     <form method="post" action="/admin/clientes/${client.id}/aviso-prueba" class="row" style="margin-top:6px"><input name="to" type="email" placeholder="${client.config.notificaciones?.email || 'correo para la prueba'}" style="max-width:320px"><button class="btn-warn">Mandar correo de prueba</button></form></div>
+  <div class="card" style="margin-top:18px"><strong>Conexión con tu agente de WhatsApp</strong>
+    <p class="muted small">Tu agente de WhatsApp usa esta llave para consultar horarios libres, agendar citas en Google Calendar y registrar leads en este panel.</p>
+    <p class="small">Llave: ${creds.api_key ? html`<details style="display:inline-block"><summary class="small">Mostrar</summary><code style="user-select:all">${creds.api_key}</code></details>` : html`<span class="muted">sin generar</span>`}<br>
+    API: <code>${config.publicBaseUrl}/api/${client.slug}/disponibilidad</code> · <code>/citas</code> · <code>/leads</code></p>
+    <form method="post" action="/admin/clientes/${client.id}/llave-api" onsubmit="return ${creds.api_key ? "confirm('La llave anterior dejará de funcionar. ¿Continuar?')" : 'true'}"><button class="btn-warn">${creds.api_key ? 'Generar llave nueva' : 'Generar llave'}</button></form></div>
   <h2>Logo</h2>
   <form method="post" action="/admin/clientes/${client.id}/logo" enctype="multipart/form-data" class="card row">
     ${client.logo_path ? html`<img src="/media/${path.basename(client.logo_path)}" style="height:48px">` : ''}

@@ -95,6 +95,21 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       error TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS leads (
+      id INTEGER PRIMARY KEY,
+      client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      nombre TEXT,
+      telefono TEXT,
+      usuario TEXT,
+      origen TEXT NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'nuevo',
+      nota TEXT,
+      cita_inicio TEXT,
+      cita_evento TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS leads_client ON leads(client_id, updated_at);
     CREATE TABLE IF NOT EXISTS kv (
       k TEXT PRIMARY KEY,
       v TEXT NOT NULL
@@ -315,6 +330,36 @@ export const recentEvents = (limit = 50) =>
 
 // ------------------------------------------------------------ palabra clave
 export const keywordReplySeen = (commentId) => !!getDb().prepare('SELECT 1 FROM keyword_replies WHERE comment_id = ?').get(commentId);
+// ------------------------------------------------------------------ leads
+export const LEAD_ESTADOS = { nuevo: 'Nuevo', conversacion: 'En conversación', cita: 'Con cita', cliente: 'Cliente', perdido: 'Perdido' };
+const normTel = (t) => (t ? String(t).replace(/[^\d+]/g, '') : null);
+/** Crea o actualiza un lead (se identifica por teléfono o por usuario de Instagram). */
+export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento }) {
+  const tel = normTel(telefono), user = usuario ? String(usuario).replace(/^@/, '').toLowerCase() : null;
+  if (!tel && !user) throw new Error('El lead necesita teléfono o usuario');
+  const d = getDb();
+  const prev = d.prepare('SELECT * FROM leads WHERE client_id = ? AND ((telefono IS NOT NULL AND telefono = ?) OR (usuario IS NOT NULL AND usuario = ?)) LIMIT 1').get(clientId, tel, user);
+  if (prev) {
+    // No se retrocede de estado (un cliente no vuelve a "nuevo" porque escribió otra vez).
+    const ORDEN = Object.keys(LEAD_ESTADOS);
+    const nuevoEstado = estado && (estado === 'perdido' || ORDEN.indexOf(estado) > ORDEN.indexOf(prev.estado)) ? estado : prev.estado;
+    d.prepare(`UPDATE leads SET nombre = COALESCE(?, nombre), telefono = COALESCE(?, telefono), usuario = COALESCE(?, usuario), estado = ?,
+      nota = COALESCE(?, nota), cita_inicio = COALESCE(?, cita_inicio), cita_evento = COALESCE(?, cita_evento), updated_at = datetime('now') WHERE id = ?`)
+      .run(nombre ?? null, tel, user, nuevoEstado, nota ?? null, cita_inicio ?? null, cita_evento ?? null, prev.id);
+    return d.prepare('SELECT * FROM leads WHERE id = ?').get(prev.id);
+  }
+  const r = d.prepare('INSERT INTO leads (client_id, nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(clientId, nombre ?? null, tel, user, origen || 'otro', estado || 'nuevo', nota ?? null, cita_inicio ?? null, cita_evento ?? null);
+  return d.prepare('SELECT * FROM leads WHERE id = ?').get(Number(r.lastInsertRowid));
+}
+export const listLeads = (clientId, { estado, limit = 300 } = {}) => getDb()
+  .prepare(`SELECT * FROM leads WHERE client_id = ? ${estado ? 'AND estado = ?' : ''} ORDER BY updated_at DESC LIMIT ?`)
+  .all(...[clientId, ...(estado ? [estado] : []), limit]);
+export function setLeadEstado(clientId, id, estado) {
+  if (!LEAD_ESTADOS[estado]) throw new Error('Estado no válido');
+  getDb().prepare("UPDATE leads SET estado = ?, updated_at = datetime('now') WHERE id = ? AND client_id = ?").run(estado, id, clientId);
+}
+
 export function recordKeywordReply({ clientId, comment, status, error = null }) {
   getDb().prepare('INSERT OR REPLACE INTO keyword_replies (comment_id, client_id, media_id, username, texto, status, error) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(comment.id, clientId, comment.media_id ?? null, comment.username ?? null, String(comment.text ?? '').slice(0, 500), status, error);

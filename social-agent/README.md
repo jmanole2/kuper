@@ -146,3 +146,17 @@ Con `respuesta_palabra_clave` en la configuración de redes del cliente, el agen
 - Las APIs de Instagram, Facebook y TikTok no dejan agregar música de su biblioteca: por eso va dentro del archivo.
 - Al publicar en Instagram, el mismo video o la primera imagen también se sube a Historias (`"historias": false` en la config de instagram lo apaga).
 - LinkedIn: `"publicar_como": "perfil"` publica en el perfil personal del dueño del token (necesita openid y profile) mientras LinkedIn aprueba el permiso de página (`w_organization_social`).
+
+## Leads, citas y el agente de WhatsApp
+
+- **Leads** (pestaña del cliente): llegan solos de quien comenta la palabra clave en Instagram y de lo que manda el agente de WhatsApp. Estados: nuevo, en conversación, con cita, cliente, perdido (no retroceden solos).
+- **Citas** con Google Calendar como fuente de verdad. Reglas por cliente en `"agenda"`: `calendar_id`, `duracion_min`, `margen_min`, `anticipacion_horas`, `paso_min`, `horario` (`{ "lun": ["09:00","18:00"], … }`). Antes de reservar se vuelve a revisar el calendario y las reservas de un cliente van una a la vez: no se enciman, ni con citas puestas a mano.
+- **Google**: una cuenta de servicio de la agencia (Google Cloud → Calendar API → cuenta de servicio → llave JSON) guardada en el servidor en `data/google-service-account.json` (o `GOOGLE_SA_FILE`). Cada cliente comparte su calendario con el correo de la cuenta de servicio ("Hacer cambios en eventos").
+
+**API para el agente de WhatsApp** (llave en Configuración → "Conexión con tu agente de WhatsApp"; header `Authorization: Bearer <llave>`):
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/api/<cliente>/disponibilidad?dias=7` | `{ horarios: [{ inicio, fin }] }` libres |
+| POST | `/api/<cliente>/citas` | `{ inicio, nombre, telefono, motivo }` → crea el evento. `409` + `alternativas` si ya se ocupó |
+| POST | `/api/<cliente>/leads` | `{ nombre, telefono, nota, estado }` → crea o actualiza el lead |
