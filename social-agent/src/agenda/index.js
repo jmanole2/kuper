@@ -22,7 +22,18 @@ export const AGENDA_DEFAULT = {
   horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'] },
   titulo: 'Cita con {nombre}',
 };
-export const agendaCfg = (client) => ({ ...AGENDA_DEFAULT, ...(client.config.agenda || {}) });
+/** Acepta el ID tal cual (correo) o un link de Google Calendar (embed/ical) y deja solo el ID. */
+export function cleanCalendarId(v) {
+  let s = String(v ?? '').trim().replace(/^['"]|['"]$/g, '');
+  const m = s.match(/[?&]src=([^&#]+)/) || s.match(/\/calendar\/ical\/([^/]+)\//);
+  if (m) s = m[1];
+  try { s = decodeURIComponent(s); } catch { /* ya venía limpio */ }
+  return s.trim();
+}
+export const agendaCfg = (client) => {
+  const cfg = { ...AGENDA_DEFAULT, ...(client.config.agenda || {}) };
+  return { ...cfg, calendar_id: cleanCalendarId(cfg.calendar_id) };
+};
 
 // ------------------------------------------------------------ Google (cuenta de servicio)
 const saFile = () => process.env.GOOGLE_SA_FILE || path.join(config.dataDir, 'google-service-account.json');
@@ -55,7 +66,8 @@ async function gcal(method, p, body) {
   const j = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = j.error?.message || res.status;
-    throw new Error(`Google Calendar: ${msg}${res.status === 404 ? ' (¿compartiste el calendario con la cuenta de servicio?)' : ''}`);
+    const sa = serviceAccount()?.client_email;
+    throw new Error(`Google Calendar: ${msg}${res.status === 404 ? ` (calendario "${decodeURIComponent(p.split('/')[2] || '')}": compártelo con ${sa || 'la cuenta de servicio'} con permiso "Realizar cambios en eventos")` : ''}`);
   }
   return j;
 }

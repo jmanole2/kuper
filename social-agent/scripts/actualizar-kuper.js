@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../src/config.js';
 import * as db from '../src/db.js';
+import { cleanCalendarId } from '../src/agenda/index.js';
 
 const c = db.listClients().find((x) => x.slug === 'kuper-media');
 if (!c) { console.error('No existe el cliente kuper-media'); process.exit(1); }
@@ -14,7 +15,7 @@ const config = {
   // calendar_id: el correo del Google Calendar (CALENDAR_ID=... npm run actualizar-kuper), o se conserva el que ya tenga.
   agenda: {
     ...(c.config.agenda || {}),
-    calendar_id: process.env.CALENDAR_ID || c.config.agenda?.calendar_id || '',
+    calendar_id: cleanCalendarId(process.env.CALENDAR_ID) || c.config.agenda?.calendar_id || '',
     duracion_min: 45, margen_min: 15, anticipacion_horas: 4, paso_min: 30,
     horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'] },
     titulo: 'Kuper · {nombre}',
