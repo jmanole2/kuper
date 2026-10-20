@@ -58,3 +58,39 @@ Hora en 24 h, sin barrios ni ciudades, "reserva" en vez de "agenda", "clínica" 
 
 El DM automático termina con "¿Qué quieres que haga tu agente: contestar tu WhatsApp, publicar en tus
 redes u otra tarea?" (en `scripts/seed-kuper.js`; en el servidor se cambia en "respuesta_palabra_clave").
+
+## Narración (voz en off)
+
+Cada línea empieza en el segundo indicado del video (la narración dura ~45 s; los huecos son pausas).
+
+| Entra en | Línea |
+|---|---|
+| 0:00 | Casi medianoche. No contestas, no publicas. Venta perdida. |
+| 0:03 | Contestar a cualquier hora. Publicar cinco veces por semana. |
+| 0:06.5 | No alcanzas con todo. |
+| 0:08 | En Kuper armamos agentes de IA a tu medida. |
+| 0:11 | ¿No alcanzas a contestar WhatsApp? |
+| 0:13 | ¿Hay cita el sábado a las once? |
+| 0:16.7 | Tu agente la reserva. En segundos. |
+| 0:20 | Sin menús. Entiende como te escriben. |
+| 0:23 | ¿No tienes tiempo de publicar? |
+| 0:25 | Tu agente crea tus cinco posts, con tu marca. |
+| 0:29 | Si quieres, los revisas antes. |
+| 0:31 | Y se publican solos en Instagram, Facebook, LinkedIn y TikTok. |
+| 0:34.6 | ¿Otra tarea que repites cada día? |
+| 0:37 | Nos hablas de ella y armamos tu agente. |
+| 0:39.5 | Tú no tocas nada técnico. |
+| 0:43 | Comenta AGENTE y dinos qué quieres que haga. |
+| 0:45.6 | Casi medianoche. Y ya está respondido. |
+
+## Caption
+
+Comenta AGENTE y te mando un agente de prueba para que le escribas como si fueras tu cliente.
+
+Casi medianoche. Te escriben por WhatsApp y nadie contesta. En Instagram, el último post es de hace tres semanas. No es falta de ganas: no alcanzas con todo.
+
+En Kuper armamos agentes de IA a la medida de tu negocio. Un agente de IA para WhatsApp que contesta, reserva citas y da precios a cualquier hora. Y un agente para tus redes que crea tus posts y videos con tu marca y los publica en Instagram, Facebook, LinkedIn y TikTok. Si quieres, los revisas antes.
+
+¿Tienes otra tarea que repites cada día? Nos hablas de ella y armamos el agente. Tú no tocas nada técnico.
+
+#agentesdeIA #inteligenciaartificial #whatsappbusiness #pymes #marketingdigital

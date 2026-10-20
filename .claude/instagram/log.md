@@ -1,0 +1,1 @@
+- 2026-10-20 · Reel fijado "Agentes a la medida" · gancho #18 Cold Open Demo · "23:47. No contestas, no publicas: venta perdida."
