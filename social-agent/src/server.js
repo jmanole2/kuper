@@ -80,6 +80,16 @@ export function createApp() {
       res.status(500).json({ error: e.message });
     }
   });
+  api.delete('/citas/:eventId', async (req, res) => {
+    try {
+      await agenda.cancelEvent(req.client, req.params.eventId);
+      db.logEvent({ clientId: req.client.id, tipo: 'cita_cancelada', detalle: req.params.eventId });
+      res.json({ ok: true });
+    } catch (e) {
+      if (e instanceof agenda.SlotTaken) return res.status(403).json({ error: e.message });
+      res.status(/Not Found|404/.test(e.message) ? 404 : 500).json({ error: e.message });
+    }
+  });
   api.post('/leads', (req, res) => {
     try { res.json({ ok: true, lead: db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' }) }); }
     catch (e) { res.status(400).json({ error: e.message }); }

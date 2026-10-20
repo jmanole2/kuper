@@ -75,3 +75,11 @@ test('groupRecurring junta las repeticiones de un evento semanal', () => {
   assert.deepEqual(g[0].repeticiones, ['2030-01-08T18:00:00Z', '2030-01-15T18:00:00Z']);
   assert.equal(g[1].repeticiones.length, 0);
 });
+
+test('cancelEvent solo borra citas que agendó el agente', async () => {
+  let borrado = false;
+  await assert.rejects(agenda.cancelEvent(client, 'm1', { getFn: async () => ({ id: 'm1' }), deleteFn: async () => { borrado = true; } }), agenda.SlotTaken);
+  assert.equal(borrado, false);
+  await agenda.cancelEvent(client, 'k1', { getFn: async () => ({ id: 'k1', extendedProperties: { private: { kuper: '1' } } }), deleteFn: async () => { borrado = true; } });
+  assert.equal(borrado, true);
+});

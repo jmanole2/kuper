@@ -162,3 +162,12 @@ export function book(client, { inicio, nombre, telefono, motivo = '' }, { now = 
     return { id: created.id, link: created.htmlLink, inicio: ev.start.dateTime, fin: ev.end.dateTime };
   });
 }
+
+/** Borra una cita del calendario, solo si la creó el agente (nunca toca eventos puestos a mano). */
+export async function cancelEvent(client, eventId, { getFn, deleteFn } = {}) {
+  const cfg = agendaCfg(client), base = `/calendars/${encodeURIComponent(cfg.calendar_id)}/events/${encodeURIComponent(eventId)}`;
+  const ev = await (getFn || (() => gcal('GET', base)))();
+  if (ev?.extendedProperties?.private?.kuper !== '1') throw new SlotTaken('Esa cita no la agendó el agente; no se puede borrar desde aquí.');
+  await (deleteFn || (() => gcal('DELETE', base)))();
+  return true;
+}
