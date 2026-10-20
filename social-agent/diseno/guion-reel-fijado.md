@@ -24,7 +24,7 @@ Otras opciones: #11 Numbered ("3 trabajos de tu negocio que ya hace un agente", 
 | 0:17 | Tu agente la reserva. En segundos, 24/7. | Tarjeta de calendario "Sáb 11:00 ✓" y anillo "24/7". |
 | 0:20 | Sin menús de "marca 1". Entiende como te escriben. | Un menú viejo (1. Horarios, 2. Precios) se arruga; burbujas sueltas fluyen y el personaje contesta. |
 | 0:23 | ¿No tienes tiempo de publicar? | Puerta 2: fondo morado suave, un calendario de contenido vacío. |
-| 0:25 | Tu agente crea el post y el video con tu marca. | El personaje dibuja en el aire: aparece un post y un mini video con colores de la marca. |
+| 0:25 | Tu agente crea tus 5 posts por semana, con tu marca. | El personaje dibuja en el aire: aparece un post y un mini video con colores de la marca. |
 | 0:29 | Si quieres, lo revisas antes. | El post aparece en un teléfono con un interruptor "Revisar antes" que se puede prender o apagar; palomita verde. |
 | 0:33 | Se publica solo en Instagram, Facebook, LinkedIn y TikTok. | El post sale volando a cuatro tarjetas de red (iconos genéricos, sin logos) que se encienden una por una. |
 | 0:36 | ¿Otra tarea que repites cada día? | Puerta 3, entreabierta, con luz. |
