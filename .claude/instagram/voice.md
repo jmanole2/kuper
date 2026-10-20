@@ -70,7 +70,18 @@ inventan nada.
 - **Voz en off o a cámara:** {{definir}}; por ahora, animación con texto en
   pantalla.
 - **Ritmo:** 160 palabras por minuto {{medir}}
-- **Idioma:** español neutro, tuteando ("tú", no "usted").
+- **Idioma:** español neutro, tuteando ("tú", no "usted"), que se entienda
+  igual en México y en España:
+  - Hora en formato 24 h ("23:47"), no "11:47 p. m.".
+  - Sin lugares de un solo país (colonias, barrios, ciudades) en los ejemplos.
+  - Palabras que funcionan en ambos: "reservar una cita" (no "agendar"),
+    "dar el precio" o "presupuesto" (no solo "cotizar"), "clínica" (no
+    "consultorio"), "envío a domicilio", "nos hablas de tu negocio" (no "nos
+    cuentas de").
+  - Tiempos verbales que no delaten: "respondido" o "ya está" mejor que
+    "ya contestó" / "ya ha contestado".
+  - Nada de "vosotros", "ustedes" en plural tampoco hace falta: se le habla a
+    una persona.
 
 ## Mis posturas
 
