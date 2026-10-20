@@ -15,7 +15,8 @@
     "test": "node --no-warnings=ExperimentalWarning --test",
     "token-meta": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/token-meta.js",
     "actualizar-kuper": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/actualizar-kuper.js",
-    "competencia-kuper": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/competencia-kuper.js"
+    "competencia-kuper": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/competencia-kuper.js",
+    "probar-agenda": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/probar-agenda.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
