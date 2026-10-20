@@ -25,7 +25,7 @@ Otras opciones: #11 Numbered ("3 trabajos de tu negocio que ya hace un agente", 
 | 0:20 | Sin menús de "marca 1". Entiende como te escriben. | Un menú viejo (1. Horarios, 2. Precios) se arruga; burbujas sueltas fluyen y el personaje contesta. |
 | 0:23 | ¿No tienes tiempo de publicar? | Puerta 2: fondo morado suave, un calendario de contenido vacío. |
 | 0:25 | Tu agente crea el post y el video con tu marca. | El personaje dibuja en el aire: aparece un post y un mini video con colores de la marca. |
-| 0:29 | Tú lo apruebas desde tu teléfono con 1 clic. | Un dedo toca "Aprobar" en el portal; palomita verde. |
+| 0:29 | Si quieres, lo revisas antes. | El post aparece en un teléfono con un interruptor "Revisar antes" que se puede prender o apagar; palomita verde. |
 | 0:33 | Se publica solo en Instagram, Facebook, LinkedIn y TikTok. | El post sale volando a cuatro tarjetas de red (iconos genéricos, sin logos) que se encienden una por una. |
 | 0:36 | ¿Otra tarea que repites cada día? | Puerta 3, entreabierta, con luz. |
 | 0:39 | Nos hablas de ella. Armamos tu agente. | Piezas (notas, horarios, archivos) vuelan a una tarjeta en blanco que se convierte en "Tu agente". |
@@ -45,7 +45,7 @@ Otras opciones: #11 Numbered ("3 trabajos de tu negocio que ya hace un agente", 
 
 ## Medición
 
-- 135 palabras, ~49 s a 165 palabras por minuto, 18 momentos. Gancho de 2.9 s.
+- ~48 s a 165 palabras por minuto, 18 momentos. Gancho de 2.9 s.
 - Sin muletillas de IA ni palabras prohibidas de voice.md.
 - El final repite "23:47" del gancho y contesta sus dos problemas ("Respondido. Publicado."), así el loop cierra la historia.
 
