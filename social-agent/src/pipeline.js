@@ -251,6 +251,17 @@ export function approvePost(postId, { variante, copy, hashtags, fecha, hora, tik
   return db.getPost(postId);
 }
 
+export const DELETABLE = ['error', 'error_generacion', 'rechazado'];
+/** Elimina un post que no se publicó (con error o rechazado) y sus archivos si nadie más los usa. */
+export function deletePost(postId) {
+  const post = db.getPost(postId);
+  if (!post) return false;
+  if (!DELETABLE.includes(post.status)) throw new Error('Solo se pueden eliminar posts con error o rechazados');
+  for (const f of db.deletePost(postId)) { try { fs.rmSync(f, { force: true }); } catch { /* ya no estaba */ } }
+  db.logEvent({ clientId: post.client_id, tipo: 'eliminado', detalle: `${post.plataforma} #${postId}: ${post.tema || ''}` });
+  return true;
+}
+
 /** Un post que falló al publicar vuelve a aprobación (p. ej. para elegir otra privacidad en TikTok). */
 export function backToReview(postId) {
   const post = db.getPost(postId);

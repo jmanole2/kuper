@@ -220,6 +220,16 @@ export function createPost(fields) {
 const POST_FIELDS = ['status', 'pilar', 'tema', 'formato', 'estructura', 'tipo_post', 'images_json', 'salida_json', 'variante', 'copy_final', 'hashtags_json',
   'image_path', 'video_path', 'alt_text', 'scheduled_at', 'published_at', 'external_id', 'external_url', 'error', 'feedback'];
 
+/** Borra un post (y su bitácora). Devuelve los archivos que ya no usa ningún otro post. */
+export function deletePost(id) {
+  const p = getPost(id); if (!p) return [];
+  const files = [...new Set([p.image_path, p.video_path, ...(p.images || [])].filter(Boolean))];
+  getDb().prepare('DELETE FROM events WHERE post_id = ?').run(id);
+  getDb().prepare('DELETE FROM posts WHERE id = ?').run(id);
+  const used = (f) => getDb().prepare('SELECT 1 FROM posts WHERE image_path = ? OR video_path = ? OR images_json LIKE ? LIMIT 1').get(f, f, `%${JSON.stringify(f).slice(1, -1)}%`);
+  return files.filter((f) => !used(f));
+}
+
 export const sharedCopy = (origenId, plataforma) =>
   hydratePost(getDb().prepare('SELECT * FROM posts WHERE origen_id = ? AND plataforma = ? LIMIT 1').get(origenId, plataforma));
 

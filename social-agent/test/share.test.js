@@ -109,3 +109,14 @@ test('un post con error puede regresar a aprobación', () => {
   assert.equal(db.getPost(p.id).status, 'pendiente');
   assert.equal(db.getPost(p.id).error, null);
 });
+
+test('eliminar: solo posts con error o rechazados, y conserva archivos que usa otro post', () => {
+  const f = path.join(dir, 'compartido.jpg'); fs.writeFileSync(f, 'x');
+  const a = db.createPost({ client_id: client.id, plataforma: 'instagram', status: 'rechazado' });
+  const b = db.createPost({ client_id: client.id, plataforma: 'facebook', status: 'publicado' });
+  db.updatePost(a.id, { image_path: f }); db.updatePost(b.id, { image_path: f });
+  assert.throws(() => pipe.deletePost(b.id), /Solo se pueden eliminar/);
+  assert.equal(pipe.deletePost(a.id), true);
+  assert.equal(db.getPost(a.id), null);
+  assert.ok(fs.existsSync(f), 'el archivo sigue porque lo usa el post publicado');
+});

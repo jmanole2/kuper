@@ -88,26 +88,25 @@ export function postCard(p, { base, admin = false }) {
   ${p.status === 'error' ? html`<form method="post" action="${base}/revisar" class="inline"><p><button class="btn-warn">Regresar a aprobación</button></p></form>` : ''}
   ${admin && ['aprobado', 'error'].includes(p.status) ? html`<form method="post" action="${base}/publicar" class="inline"><p><button class="btn-accent">Publicar ahora</button></p></form>` : ''}
   ${admin && p.status === 'aprobado' ? html`<form method="post" action="${base}/rechazar" class="inline" onsubmit="return confirm('¿Cancelar?')"><button class="btn-bad">Cancelar</button></form>` : ''}
+  ${admin && ['error', 'error_generacion', 'rechazado'].includes(p.status) ? html`<form method="post" action="${base}/eliminar" class="inline" onsubmit="return confirm('¿Eliminar este post? No se puede deshacer.')"><p><button class="btn-bad">Eliminar</button></p></form>` : ''}
 </article>`;
 }
 
 // ------------------------------------------------------------ portal del cliente
-export function portalPage(client, posts, token) {
+export function portalPage(client, posts, token, tab = '') {
   const base = (p) => `/p/${token}/posts/${p.id}`;
   const by = (sts) => posts.filter((p) => sts.includes(p.status));
   const pend = by(['pendiente', 'necesita_asset', 'cambios_solicitados', 'generando']);
   const prog = by(['aprobado', 'publicando']).reverse();
-  const pub = by(['publicado']).slice(0, 12);
+  const pub = by(['publicado']).slice(0, 30);
+  const T = [['revisar', 'Por revisar', pend, 'No tienes nada pendiente.'], ['programadas', 'Programadas', prog, 'Nada programado todavía.'], ['publicadas', 'Publicadas', pub, 'Aún no hay publicaciones.']];
+  const sel = T.find((x) => x[0] === tab) || T[0];
   const body = html`
   <div class="row" style="gap:14px;margin-top:6px"><div class="avatar">${client.logo_path ? html`<img src="${mediaSrc(client.logo_path)}" alt="">` : client.nombre.slice(0, 1)}</div><h1 style="margin:0">Hola, ${client.nombre}</h1></div>
   ${kpis([[pend.length, 'Por revisar', '#fbbf24', pend.length > 0], [prog.length, 'Programadas', '#4ade80'], [pub.length, 'Publicadas', '#c6ff3d']])}
   <p class="muted">Revisa y aprueba tus próximas publicaciones. Nada se publica sin tu visto bueno${PLATFORMS.some((pl) => client.config[pl]?.activo && client.config[pl]?.modo_publicacion === 'auto') ? ' (salvo en las redes que configuraste en automático)' : ''}.</p>
-  <h2>Por revisar (${pend.length})</h2>
-  ${pend.length ? html`<div class="grid">${pend.map((p) => postCard(p, { base: base(p) }))}</div>` : html`<p class="muted">No tienes nada pendiente.</p>`}
-  <h2>Programadas (${prog.length})</h2>
-  ${prog.length ? html`<div class="grid">${prog.map((p) => postCard(p, { base: base(p) }))}</div>` : html`<p class="muted">Nada programado todavía.</p>`}
-  <h2>Publicadas recientemente</h2>
-  ${pub.length ? html`<div class="grid">${pub.map((p) => postCard(p, { base: base(p) }))}</div>` : html`<p class="muted">Aún no hay publicaciones.</p>`}
+  <nav class="tabs">${T.map(([k, l, list]) => html`<a class="${k === sel[0] ? 'on' : ''}" href="/p/${token}?t=${k}">${l} (${list.length})</a>`)}</nav>
+  ${sel[2].length ? html`<div class="grid" style="margin-top:14px">${sel[2].map((p) => postCard(p, { base: base(p) }))}</div>` : html`<div class="card muted" style="margin-top:14px">${sel[3]}</div>`}
   ${pend.some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
   return page({ title: `Publicaciones · ${client.nombre}`, body });
 }
@@ -146,28 +145,38 @@ export function dashboardPage(clients, counts, events) {
   return page({ title: 'Agente Social · Admin', side: side('clientes'), body });
 }
 
-export function clientFormPage(client, { error, notice, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
   const meta = creds.meta || {}, li = creds.linkedin || {};
   const set = (v) => (v ? `guardado: ${String(v).slice(0, 3)}…${String(v).slice(-4)} (${String(v).length} caracteres)` : '');
+  const FILTROS = [['revisar', 'Por revisar', ['pendiente', 'necesita_asset', 'cambios_solicitados', 'generando']], ['programados', 'Programados', ['aprobado', 'publicando']],
+    ['publicados', 'Publicados', ['publicado']], ['descartados', 'Con error / descartados', ['error', 'error_generacion', 'rechazado']]];
+  const deRed = red ? posts.filter((p) => p.plataforma === red) : posts;
+  const count = (sts) => deRed.filter((p) => sts.includes(p.status)).length;
+  const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
+  const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
+  const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
+  const TABS = [['posts', 'Posts'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']];
+  const t = isNew ? 'config' : tab;
   const body = html`
   <h1>${isNew ? 'Nuevo cliente' : client.nombre}</h1>
   ${error ? html`<div class="err">${error}</div>` : ''}
   ${notice ? html`<div class="okmsg">${notice}</div>` : ''}
-  ${!isNew ? html`<div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
-    <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
-    <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p></div>
-  <h2>Generar ahora</h2>
+  ${!isNew ? html`<nav class="tabs">${TABS.map(([k, l]) => html`<a class="${k === t ? 'on' : ''}" href="/admin/clientes/${client.id}?tab=${k}">${l}</a>`)}</nav>` : ''}
+
+  ${!isNew && t === 'posts' ? html`
+  <h2 style="margin-top:24px">Generar ahora</h2>
   <div class="row">${PLATFORMS.filter((p) => client.config[p]?.activo && !reusa(client, p)).map((p) => html`<form method="post" action="/admin/clientes/${client.id}/generar" class="inline"><input type="hidden" name="plataforma" value="${p}"><button class="btn-accent">Post para ${PLAT[p]}</button></form>`)}</div>
-  <h2>Posts</h2>
-  ${posts.length ? html`<div class="grid">${posts.map((p) => postCard(p, { base: `/admin/posts/${p.id}`, admin: true }))}</div>` : html`<p class="muted">Sin posts todavía.</p>`}
-  ${client.config.respuesta_palabra_clave?.activo ? html`<h2>Palabra clave ${client.config.respuesta_palabra_clave.palabra}</h2>
-  <div class="card"><p class="muted small">Quien comenta ${client.config.respuesta_palabra_clave.palabra} en Instagram recibe un DM automático. Se configura en "respuesta_palabra_clave" de la configuración.</p>
-    <table>${keywordReplies.map((r) => html`<tr><td class="muted small">${fmtDate(r.created_at.replace(' ', 'T') + 'Z')}</td><td>@${r.username}</td><td class="small">${r.texto}</td><td>${{ enviado: 'DM enviado', simulado: 'Simulado', error: 'Error', omitido_inicial: 'Anterior a la activación', muy_viejo: 'Más de 7 días' }[r.status] || r.status}${r.error ? html`<br><span class="small" style="color:var(--bad)">${r.error}</span>` : ''}</td></tr>`)}</table>
-    ${keywordReplies.length ? '' : html`<p class="muted small">Todavía nadie ha comentado la palabra.</p>`}</div>` : ''}
-  <h2>Competencia</h2>
+  <div class="pills">${FILTROS.map(([k, l, sts]) => html`<a class="${k === fSel[0] ? 'on' : ''}" href="${url({ f: k })}">${l} <em>${count(sts)}</em></a>`)}
+    <span style="flex:1"></span>
+    <a class="${!red ? 'on' : ''}" href="${url({ red: '' })}">Todas</a>${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => html`<a class="${red === p ? 'on' : ''}" href="${url({ red: p })}"><i style="width:8px;height:8px;border-radius:50%;background:${PCOL[p]}"></i>${PLAT[p]}</a>`)}</div>
+  ${fSel[0] === 'descartados' && shown.length ? html`<form method="post" action="/admin/clientes/${client.id}/limpiar" onsubmit="return confirm('¿Eliminar todos los posts con error o rechazados? No se puede deshacer.')" style="margin-bottom:14px"><button class="btn-bad">Eliminar todos (${shown.length})</button></form>` : ''}
+  ${shown.length ? html`<div class="grid">${shown.map((p) => postCard(p, { base: `/admin/posts/${p.id}`, admin: true }))}</div>` : html`<div class="card muted">No hay posts en "${fSel[1]}".</div>`}
+  ` : ''}
+
+  ${!isNew && t === 'competencia' ? html`<div style="margin-top:24px"></div>
   <div class="split"><div class="card">
     <table>${competitors.map((c) => html`<tr><td>@${c.handle}<br><span class="muted small">${c.notas}</span></td><td style="text-align:right">
       <form method="post" action="/admin/clientes/${client.id}/competencia/${c.id}/borrar" class="inline"><button class="btn-bad">Quitar</button></form></td></tr>`)}</table>
@@ -180,12 +189,25 @@ export function clientFormPage(client, { error, notice, competitors = [], report
     <p><strong>Frecuencia:</strong> ${report.data.frecuencia_publicacion}</p>
     ${(report.data.posts_destacados || []).length ? html`<p><strong>Posts destacados</strong></p><ul>${report.data.posts_destacados.map((d) => html`<li><a href="${d.permalink}" target="_blank" rel="noopener">@${d.competidor}</a> (${d.engagement}): ${d.por_que_funciono}</li>`)}</ul>` : ''}
     ${(report.data.advertencias || []).length ? html`<div class="warn">${report.data.advertencias.map((w) => html`<div>• ${w}</div>`)}</div>` : ''}` : html`<p class="muted">Aún no hay análisis.</p>`}</div></div>
+  ` : ''}
+
+  ${!isNew && t === 'palabra' ? html`<div style="margin-top:24px"></div>
+  ${client.config.respuesta_palabra_clave?.activo ? html`<h2>Palabra clave ${client.config.respuesta_palabra_clave.palabra}</h2>
+  <div class="card"><p class="muted small">Quien comenta ${client.config.respuesta_palabra_clave.palabra} en Instagram recibe un DM automático. Se configura en "respuesta_palabra_clave" de la configuración.</p>
+    <table>${keywordReplies.map((r) => html`<tr><td class="muted small">${fmtDate(r.created_at.replace(' ', 'T') + 'Z')}</td><td>@${r.username}</td><td class="small">${r.texto}</td><td>${{ enviado: 'DM enviado', simulado: 'Simulado', error: 'Error', omitido_inicial: 'Anterior a la activación', muy_viejo: 'Más de 7 días' }[r.status] || r.status}${r.error ? html`<br><span class="small" style="color:var(--bad)">${r.error}</span>` : ''}</td></tr>`)}</table>
+    ${keywordReplies.length ? '' : html`<p class="muted small">Todavía nadie ha comentado la palabra.</p>`}</div>` : html`<div class="card muted">La respuesta automática a una palabra clave está apagada. Se activa con "respuesta_palabra_clave" en la configuración.</div>`}
+  ` : ''}
+
+  ${t === 'config' ? html`${!isNew ? html`<div style="margin-top:24px"></div>
+  <div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
+    <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
+    <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p></div>
   <h2>Logo</h2>
   <form method="post" action="/admin/clientes/${client.id}/logo" enctype="multipart/form-data" class="card row">
     ${client.logo_path ? html`<img src="/media/${path.basename(client.logo_path)}" style="height:48px">` : ''}
     <input type="file" name="archivo" accept="image/png,image/jpeg" required style="width:auto"><button class="btn-warn">Subir logo</button>
-    <span class="muted small">PNG con fondo transparente. Lo usa el animador en cierres y esquinas.</span></form>` : ''}
-
+    <span class="muted small">PNG con fondo transparente. Lo usa el animador en cierres y esquinas.</span></form>
+` : ''}
   <h2>Configuración</h2>
   <form method="post" action="${action}" class="card">
     ${isNew ? html`<label>Identificador (sin espacios)</label><input name="slug" pattern="[a-z0-9-]+" required placeholder="kuper-media">` : ''}
@@ -213,7 +235,8 @@ export function clientFormPage(client, { error, notice, competitors = [], report
     ${!isNew ? html`<label style="font-weight:400"><input type="checkbox" name="activo" value="1" style="width:auto" ${raw(client.activo ? 'checked' : '')}> Cliente activo (el agente genera y publica)</label>` : ''}
     <p><button>${isNew ? 'Crear cliente' : 'Guardar'}</button></p>
   </form>
-  ${!isNew ? html`<form method="post" action="/admin/clientes/${client.id}/probar"><button class="btn-accent">Probar conexión con Meta y LinkedIn</button></form>` : ''}`;
+  ${!isNew ? html`<form method="post" action="/admin/clientes/${client.id}/probar"><button class="btn-accent">Probar conexión con Meta y LinkedIn</button></form>` : ''}
+  ` : ''}`;
   return page({ title: isNew ? 'Nuevo cliente' : client.nombre, side: side(isNew ? 'nuevo' : 'clientes'), body });
 }
 

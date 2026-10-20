@@ -134,31 +134,40 @@ export function createApp() {
     }
   });
 
-  const clientView = (c, error, notice, posts) => V.clientFormPage(c, {
-    error, notice, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
-    posts: posts || db.listPosts({ clientId: c.id, limit: 30 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
+  const clientView = (c, error, notice, posts, view = {}) => V.clientFormPage(c, {
+    error, notice, ...view, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
+    posts: posts || db.listPosts({ clientId: c.id, limit: 400 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
   });
 
   admin.param('cid', (req, res, next, id) => {
     req.client = db.getClient(Number(id));
     return req.client ? next() : res.status(404).send('Cliente no encontrado');
   });
-  admin.get('/clientes/:cid', async (req, res) => res.send(clientView(req.client, undefined, undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 30 })))));
+  admin.get('/clientes/:cid', async (req, res) => {
+    const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
+    res.send(clientView(req.client, undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
+  });
+  // Borrar todos los posts con error o rechazados de un cliente.
+  admin.post('/clientes/:cid/limpiar', (req, res) => {
+    const ps = db.listPosts({ clientId: req.client.id, statuses: pipe.DELETABLE, limit: 1000 });
+    ps.forEach((p) => pipe.deletePost(p.id));
+    res.redirect(`/admin/clientes/${req.client.id}?tab=posts&f=descartados&ok=${encodeURIComponent(`${ps.length} posts eliminados`)}`);
+  });
   admin.post('/clientes/:cid', (req, res) => {
     try {
       const data = parseClientForm(req.body, db.clientCredentials(req.client));
       db.updateClient(req.client.id, { ...data, activo: req.body.activo === '1' });
       pipe.resetKeywordPause(req.client.id);
-      res.redirect(`/admin/clientes/${req.client.id}`);
+      res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Guardado`);
     } catch (e) {
-      res.status(400).send(clientView(req.client, e.message));
+      res.status(400).send(clientView(req.client, e.message, undefined, undefined, { tab: 'config' }));
     }
   });
   admin.post('/clientes/:cid/probar', async (req, res) => {
     const r = await checkConnections(db.clientCredentials(req.client));
     const ok = r.filter((x) => x.ok).map((x) => x.texto).join(' · ');
     const bad = r.filter((x) => !x.ok).map((x) => x.texto).join(' · ');
-    res.send(clientView(req.client, bad || undefined, ok || undefined));
+    res.send(clientView(req.client, bad || undefined, ok || undefined, undefined, { tab: 'config' }));
   });
   // TikTok: el cliente (o la agencia con su sesión) autoriza la app de la agencia.
   admin.get('/clientes/:cid/tiktok/conectar', (req, res) => {
@@ -172,7 +181,7 @@ export function createApp() {
     const { tiktok, ...rest } = creds;
     db.updateClient(req.client.id, { credentials: rest });
     db.logEvent({ clientId: req.client.id, tipo: 'tiktok_desconectado', detalle: '' });
-    res.send(clientView(db.getClient(req.client.id), undefined, aviso));
+    res.send(clientView(db.getClient(req.client.id), undefined, aviso, undefined, { tab: 'config' }));
   });
   admin.get('/tiktok/callback', async (req, res) => {
     const st = unsign(String(req.query.state || ''));
@@ -192,22 +201,22 @@ export function createApp() {
   admin.post('/clientes/:cid/rotar-token', (req, res) => { db.rotatePortalToken(req.client.id); res.redirect(`/admin/clientes/${req.client.id}`); });
   admin.post('/clientes/:cid/logo', upload.single('archivo'), (req, res) => {
     if (req.file) db.updateClient(req.client.id, { logo_path: req.file.path });
-    res.redirect(`/admin/clientes/${req.client.id}`);
+    res.redirect(`/admin/clientes/${req.client.id}?tab=config`);
   });
   admin.post('/clientes/:cid/competencia', (req, res) => {
     db.addCompetitor(req.client.id, req.body.handle, 'instagram', req.body.notas || '');
-    res.redirect(`/admin/clientes/${req.client.id}#competencia`);
+    res.redirect(`/admin/clientes/${req.client.id}?tab=competencia`);
   });
   admin.post('/clientes/:cid/competencia/:compId/borrar', (req, res) => {
     db.deleteCompetitor(req.client.id, Number(req.params.compId));
-    res.redirect(`/admin/clientes/${req.client.id}`);
+    res.redirect(`/admin/clientes/${req.client.id}?tab=competencia`);
   });
   admin.post('/clientes/:cid/analizar', async (req, res) => {
     try {
       await pipe.runCompetitorAnalysis(req.client.id);
-      res.redirect(`/admin/clientes/${req.client.id}`);
+      res.redirect(`/admin/clientes/${req.client.id}?tab=competencia`);
     } catch (e) {
-      res.status(400).send(clientView(req.client, `Análisis de competencia: ${e.message}`));
+      res.status(400).send(clientView(req.client, `Análisis de competencia: ${e.message}`, undefined, undefined, { tab: 'competencia' }));
     }
   });
   admin.post('/clientes/:cid/generar', (req, res) => {
@@ -230,6 +239,11 @@ export function createApp() {
     await pipe.publishOne(req.post.id);
     res.redirect(`/admin/posts/${req.post.id}`);
   });
+  admin.post('/posts/:pid/eliminar', (req, res) => {
+    const cid = req.post.client_id;
+    pipe.deletePost(req.post.id);
+    res.redirect(`/admin/clientes/${cid}?tab=posts&f=descartados&ok=Post%20eliminado`);
+  });
   postActions(admin, (req) => `/admin/posts/${req.post.id}`);
   app.use('/admin', admin);
 
@@ -244,7 +258,7 @@ export function createApp() {
   });
   portal.get('/', async (req, res) => {
     const posts = await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 100 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status)));
-    res.send(V.portalPage(req.client, posts, req.params.token));
+    res.send(V.portalPage(req.client, posts, req.params.token, String(req.query.t || '')));
   });
   portal.param('pid', (req, res, next, id) => {
     req.post = db.getPost(Number(id));
