@@ -1,50 +1,60 @@
 # Reel fijado: agentes a la medida
 
-Video animado, sin narrador, 1080x1920 (9:16), ~45 s. Protagonista: el personaje de Kuper v4
+Video animado, sin narrador, 1080x1920 (9:16), ~49 s. Protagonista: el personaje de Kuper v4
 (`diseno/personaje/mascota4.js`). Fondo oscuro con grano, luz verde de los ojos y acentos azul Kuper.
+Español neutro para México y España (ver `.claude/instagram/voice.md`).
 
-Gancho: #18 Cold Open Demo, calificación 62.6 (OK). Español neutro para México y España (ver voice.md). Las otras opciones fueron #20 Permission
-("No necesitas equipo técnico para tener tu agente", 44.4) y #12 The Objection ("Un bot genérico
-no sirve. Tu agente, sí", 40.8).
+Idea única: Kuper arma agentes de IA a la medida de lo que tu negocio no alcanza a hacer.
+Se muestran los dos agentes que ya existen (WhatsApp y redes sociales) y la puerta abierta a otros.
+
+Gancho: #18 Cold Open Demo, "23:47. No contestas, no publicas: venta perdida.", calificación 62.6 (OK).
+Otras opciones: #11 Numbered ("3 trabajos de tu negocio que ya hace un agente", 47.6) y
+#14 The Callout ("Si no alcanzas a contestar ni a publicar, mira esto", 44.4).
 
 ## Guion (texto en pantalla y escena)
 
 | Tiempo | Texto en pantalla | Escena |
 |---|---|---|
-| 0:00 | **23:47** / No contestas. Pierdes la venta. | Cuarto oscuro. Un móvil se ilumina con un WhatsApp: "¿Tienen cita mañana?". Nadie lo toca; la palomita se queda gris. |
-| 0:03 | Ana no espera. Le escribe al que contesta primero. | La burbuja de Ana sale volando de tu móvil a otro que contesta al instante. |
-| 0:06 | Tu agente contesta tu WhatsApp. **24/7** | El personaje entra de un salto, toma el móvil y sus ojos pasan de normal a feliz. Un anillo "24/7" gira alrededor. |
-| 0:10 | Cada negocio pregunta algo distinto. | La pantalla se abre en tres puertas: clínica, restaurante y tienda. |
-| 0:12 | Clínica: "¿Hay cita el sábado a las 11?" | Fondo azul suave. Burbuja del cliente. El personaje mira la agenda. |
-| 0:15 | Tu agente la reserva. | Tarjeta de calendario: "Sáb 11:00 ✓". Ojos de estrella. |
-| 0:17 | Restaurante: "¿Hacen envíos a domicilio a las 9?" | Fondo cálido. Burbuja del cliente. |
-| 0:19 | Tu agente toma el pedido. | Ticket de pedido que se imprime solo: "Envío 21:00 ✓". |
-| 0:21 | Tienda: "¿Cuánto cuesta el de 2 metros?" | Fondo morado suave. Burbuja del cliente. |
-| 0:24 | Tu agente responde con el precio. | Tarjeta de precio que se arma sola: "Precio enviado ✓". |
-| 0:25 | No es un menú de "marca 1, marca 2". | Aparece un menú viejo (1. Horarios, 2. Precios, 3. Citas). El personaje lo mira con ojos de decidido y lo arruga. |
-| 0:29 | Te escriben como hablan. Tu agente entiende. | Burbujas sueltas, con faltas y mensajes de voz, fluyen hacia el personaje y él contesta feliz. |
-| 0:31 | Nos hablas de tu negocio. **A la medida.** | Piezas del negocio (horarios, precios, preguntas frecuentes, logo) vuelan hacia una tarjeta en blanco y se arma "Tu agente". |
-| 0:35 | 01 Cuentas · 02 Infraestructura · 03 Tu info · 04 Listo | Cuatro tarjetas de vidrio se encienden en orden. |
-| 0:38 | Contesta en segundos. Tú atiendes lo importante. | La portada: el personaje al centro con las tarjetas (WhatsApp, citas, precios, seguimiento, 24/7, reseñas) girando. |
-| 0:41 | **Comenta AGENTE** y pruébalo como tu cliente. | Tarjeta grande "AGENTE". El personaje la señala, con ojos de estrella. |
-| 0:44 | **23:47** Respondido. | Regreso al móvil del inicio, en el mismo minuto: palomitas azules y "¡Perfecto, nos vemos!". El personaje saluda. Corta al inicio (loop). |
+| 0:00 | **23:47** / No contestas, no publicas: venta perdida. | Cuarto oscuro. Un móvil con un WhatsApp sin leer ("¿Tienen cita mañana?") y, al lado, un perfil de Instagram con el último post de hace 3 semanas. |
+| 0:03 | Contestar a las 23:47. Publicar 5 veces por semana. | Dos listas de pendientes que crecen solas. |
+| 0:06 | No alcanzas con todo. | Las listas se caen encima de una silla vacía. |
+| 0:08 | En **Kuper** armamos agentes de IA a la medida. | Entra el personaje de un salto; ojos de normal a feliz. |
+| 0:11 | ¿No alcanzas a contestar WhatsApp? | Puerta 1 se abre: fondo azul suave, burbujas de chat. |
+| 0:13 | Clínica: "¿Hay cita el sábado a las 11?" | Burbuja del cliente. El personaje toma el móvil. |
+| 0:17 | Tu agente la reserva. En segundos, 24/7. | Tarjeta de calendario "Sáb 11:00 ✓" y anillo "24/7". |
+| 0:20 | Sin menús de "marca 1". Entiende como te escriben. | Un menú viejo (1. Horarios, 2. Precios) se arruga; burbujas sueltas fluyen y el personaje contesta. |
+| 0:23 | ¿No tienes tiempo de publicar? | Puerta 2: fondo morado suave, un calendario de contenido vacío. |
+| 0:25 | Tu agente crea el post y el video con tu marca. | El personaje dibuja en el aire: aparece un post y un mini video con colores de la marca. |
+| 0:29 | Tú lo apruebas desde tu teléfono con 1 clic. | Un dedo toca "Aprobar" en el portal; palomita verde. |
+| 0:33 | Se publica solo en Instagram, Facebook, LinkedIn y TikTok. | El post sale volando a cuatro tarjetas de red (iconos genéricos, sin logos) que se encienden una por una. |
+| 0:36 | ¿Otra tarea que repites cada día? | Puerta 3, entreabierta, con luz. |
+| 0:39 | Nos hablas de ella. Armamos tu agente. | Piezas (notas, horarios, archivos) vuelan a una tarjeta en blanco que se convierte en "Tu agente". |
+| 0:41 | Tú no tocas nada técnico. Atiendes lo importante. | Portada: el personaje al centro con las tarjetas girando (Contesta WhatsApp, Reserva citas, Publica en redes, Da seguimiento, 24/7, Pide reseñas). |
+| 0:45 | **Comenta AGENTE** y dinos qué quieres que haga. | Tarjeta grande "AGENTE"; el personaje la señala con ojos de estrella. |
+| 0:48 | **23:47** Respondido. Publicado. | Regreso al inicio, mismo minuto: WhatsApp con palomitas azules y un post nuevo publicado. El personaje saluda. Corta al inicio (loop). |
 
 ## Reglas de producción
 
-- Gancho en pantalla desde el cuadro 1, no después de un silencio.
+- Gancho en pantalla desde el cuadro 1.
 - Máximo 6 palabras por tarjeta grande; las preguntas de los clientes van en burbuja de chat.
 - Zona segura: nada arriba de y=230 ni abajo de y=1440, y libres los 230 px de la derecha.
-- El cuadro cambia en cada línea del guion (ningún momento quieto de más de 4 s).
-- Ana, la clínica, el restaurante y la tienda son ejemplos ilustrativos, no clientes reales.
-  No se muestran cifras de resultados.
-- Sin logos de WhatsApp ni de otras marcas: burbujas verdes genéricas.
+- El cuadro cambia en cada línea (ningún momento quieto de más de 4 s).
+- La clínica y los pendientes son ejemplos ilustrativos, no clientes reales. Sin cifras de resultados.
+- Sin logos de WhatsApp, Instagram, Facebook, LinkedIn ni TikTok: iconos genéricos.
+- Solo se ofrecen agentes que ya existen (WhatsApp y redes). El tercero es "dinos qué necesitas", no un producto inventado.
 
 ## Medición
 
-- ~46 s a 165 palabras por minuto, 17 momentos. Gancho dentro de los 3 s.
-- Revisión de muletillas de IA y palabras prohibidas de voice.md: limpio.
-- El final repite "23:47" del gancho, en el mismo minuto (la velocidad se ve sin decirla), y la repetición del video se ve natural.
+- 135 palabras, ~49 s a 165 palabras por minuto, 18 momentos. Gancho de 2.9 s.
+- Sin muletillas de IA ni palabras prohibidas de voice.md.
+- El final repite "23:47" del gancho y contesta sus dos problemas ("Respondido. Publicado."), así el loop cierra la historia.
 
 ## Español para México y España
 
-Hora en 24 h, sin barrios ni ciudades, "reserva" en vez de "agenda", "responde con el precio" en vez de "cotiza", "clínica" en vez de "consultorio", "nos hablas de" en vez de "nos cuentas de" y "respondido" en vez de "ya contestó". En pantalla se dice "móvil" solo en la descripción de la escena; el texto no lo menciona.
+Hora en 24 h, sin barrios ni ciudades, "reserva" en vez de "agenda", "clínica" en vez de "consultorio",
+"nos hablas de" en vez de "nos cuentas de", "teléfono" en el texto en pantalla (ni "celular" ni "móvil").
+
+## DM de AGENTE
+
+El DM automático termina con "¿Qué quieres que haga tu agente: contestar tu WhatsApp, publicar en tus
+redes u otra tarea?" (en `scripts/seed-kuper.js`; en el servidor se cambia en "respuesta_palabra_clave").
