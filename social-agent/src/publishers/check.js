@@ -30,7 +30,8 @@ export async function checkConnections(creds = {}) {
       } catch (e) {
         // 401 = token inválido o vencido. 403 = el token sirve pero no puede leer datos de la página
         // (normal si solo tiene w_organization_social); publicar sí funciona.
-        if (/LinkedIn 403/.test(e.message)) out.push({ ok: true, texto: 'LinkedIn: token válido (permiso para publicar)' });
+        // 403: el token existe pero no puede leer la página. No confirma que pueda publicar como empresa.
+        if (/LinkedIn 403/.test(e.message)) out.push({ ok: false, texto: 'LinkedIn: no se pudo confirmar el permiso sobre la página de empresa. Si publicar falla con "Organization permissions", genera el token con w_organization_social o usa "publicar_como": "perfil".' });
         else out.push({ ok: false, texto: e.message });
       }
     }

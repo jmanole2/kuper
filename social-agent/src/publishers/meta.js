@@ -71,6 +71,17 @@ export async function publishInstagram(meta, post, opts = {}) {
   return { id: published.id, url };
 }
 
+/** Historia de Instagram con el mismo video o imagen (las historias no llevan texto ni links). */
+export async function publishInstagramStory(meta, { videoUrl, imageUrl }, opts = {}) {
+  needCreds(meta, ['ig_user_id', 'page_token']);
+  const token = meta.page_token;
+  const params = videoUrl ? { media_type: 'STORIES', video_url: videoUrl } : { media_type: 'STORIES', image_url: imageUrl };
+  const container = await graphCall('POST', `${meta.ig_user_id}/media`, params, token);
+  if (videoUrl) await waitContainer(container.id, token, opts);
+  const published = await graphCall('POST', `${meta.ig_user_id}/media_publish`, { creation_id: container.id }, token);
+  return { id: published.id };
+}
+
 export async function publishFacebook(meta, post) {
   needCreds(meta, ['page_id', 'page_token']);
   const token = meta.page_token;

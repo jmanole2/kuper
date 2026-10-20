@@ -81,3 +81,38 @@ test('LinkedIn: sube imagen y crea el post', async () => {
     assert.equal(m.calls.at(-1).headers['X-Restli-Protocol-Version'], '2.0.0');
   } finally { m.restore(); }
 });
+
+test('Instagram: historia con el video del Reel', async () => {
+  const { publishInstagramStory } = await import('../src/publishers/meta.js');
+  const m = mockFetch((u, o) => {
+    if (u.includes('/media_publish')) return [200, { id: 'ST1' }];
+    if (u.includes('/IG1/media')) return [200, { id: 'C1' }];
+    if (u.includes('/C1')) return [200, { status_code: 'FINISHED' }];
+    return [404, {}];
+  });
+  try {
+    const r = await publishInstagramStory({ ig_user_id: 'IG1', page_token: 'T' }, { videoUrl: 'https://x/v.mp4' }, { pollMs: 1 });
+    assert.equal(r.id, 'ST1');
+    assert.equal(new URLSearchParams(m.calls[0].body).get('media_type'), 'STORIES');
+  } finally { m.restore(); }
+});
+
+test('LinkedIn: puede publicar como perfil personal', async () => {
+  const m = mockFetch((u) => {
+    if (u.includes('/v2/userinfo')) return [200, { sub: 'abc' }];
+    if (u.endsWith('/posts')) return [201, '', { 'x-restli-id': 'urn:li:share:9' }];
+    return [404, {}];
+  });
+  try {
+    const r = await publishLinkedIn({ access_token: 'T' }, { copy: 'hola', hashtags: [], as: 'perfil' });
+    assert.equal(r.id, 'urn:li:share:9');
+    assert.equal(JSON.parse(m.calls[1].body).author, 'urn:li:person:abc');
+  } finally { m.restore(); }
+});
+
+test('LinkedIn: explica el error de permisos de organización', async () => {
+  const m = mockFetch(() => [400, { message: 'Organization permissions must be used when using organization as owner' }]);
+  try {
+    await assert.rejects(publishLinkedIn({ org_id: '1', access_token: 'T' }, { copy: 'x', hashtags: [], imageFile: null }), /w_organization_social/);
+  } finally { m.restore(); }
+});

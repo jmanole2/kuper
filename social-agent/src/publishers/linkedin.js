@@ -25,7 +25,13 @@ export async function li(method, path, token, body) {
   });
   const text = await res.text();
   const json = text ? (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })() : {};
-  if (!res.ok) throw new Error(`LinkedIn ${res.status}: ${json.message || json.raw || text.slice(0, 300)}`);
+  if (!res.ok) {
+    const msg = json.message || json.raw || text.slice(0, 300);
+    const hint = /Organization permissions/i.test(msg)
+      ? ' (el token no tiene permiso para publicar como la página de empresa: genéralo con w_organization_social desde la app que tiene "Community Management API", o pon "publicar_como": "perfil" en la config de linkedin para publicar en tu perfil)'
+      : '';
+    throw new Error(`LinkedIn ${res.status}: ${msg}${hint}`);
+  }
   return { json, headers: res.headers };
 }
 
@@ -71,10 +77,19 @@ async function uploadVideo(owner, token, file, { timeoutMs = 10 * 60_000, pollMs
 }
 
 /** post: { copy, hashtags, imageFile?, imageFiles? (carrusel, 2-20), videoFile?, altText?, title? } */
+/** urn:li:person del dueño del token (para publicar en el perfil personal). */
+export async function personUrn(token) {
+  const res = await fetch('https://api.linkedin.com/v2/userinfo', { headers: { Authorization: `Bearer ${token}` } });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || !j.sub) throw new Error('LinkedIn: no se pudo leer tu perfil (el token necesita los permisos openid y profile para publicar como perfil)');
+  return `urn:li:person:${j.sub}`;
+}
+
 export async function publishLinkedIn(creds, post, opts = {}) {
-  if (!creds?.org_id || !creds?.access_token) throw new Error('Faltan credenciales de LinkedIn: org_id, access_token');
-  const owner = `urn:li:organization:${String(creds.org_id).replace(/^urn:li:organization:/, '')}`;
+  const asPerson = post.as === 'perfil';
+  if (!creds?.access_token || (!asPerson && !creds?.org_id)) throw new Error('Faltan credenciales de LinkedIn: org_id, access_token');
   const token = creds.access_token;
+  const owner = asPerson ? await personUrn(token) : `urn:li:organization:${String(creds.org_id).replace(/^urn:li:organization:/, '')}`;
   const body = {
     author: owner,
     commentary: toLittleText(post.copy, post.hashtags),

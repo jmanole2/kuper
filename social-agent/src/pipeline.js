@@ -9,7 +9,7 @@ import { validatePost, needsApproval, PLATFORM_RULES } from './rules.js';
 import { nextSlot, zonedToUtc, daysUntil, localDate, localTime } from './schedule.js';
 import { createVisual } from './animator/index.js';
 import { generateImage, imageModelConfigured, ensureJpeg } from './media/image.js';
-import { publishPost } from './publishers/index.js';
+import { publishPost, publishStory } from './publishers/index.js';
 import { fetchCompetitors } from './competitors/instagram.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
@@ -314,6 +314,15 @@ export async function publishOne(postId) {
     const res = await publishPost(post, client);
     db.updatePost(postId, { status: 'publicado', published_at: new Date().toISOString(), external_id: res.id, external_url: res.url, error: null });
     db.logEvent({ postId, clientId: client.id, tipo: 'publicado', detalle: `${post.plataforma}${res.dryRun ? ' (simulado)' : ''} ${res.url || res.id}` });
+    // También a historias de Instagram (se apaga con "historias": false en la config de instagram).
+    if (post.plataforma === 'instagram' && platformCfg(client, 'instagram').historias !== false) {
+      try {
+        const st = await publishStory(db.getPost(postId), client);
+        db.logEvent({ postId, clientId: client.id, tipo: 'historia_publicada', detalle: st.dryRun ? '(simulada)' : st.id });
+      } catch (e) {
+        db.logEvent({ postId, clientId: client.id, tipo: 'historia_error', detalle: e.message });
+      }
+    }
   } catch (e) {
     db.updatePost(postId, { status: 'error', error: e.message });
     db.logEvent({ postId, clientId: client.id, tipo: 'error_publicacion', detalle: e.message });

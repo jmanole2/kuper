@@ -31,7 +31,7 @@ test('Facebook y TikTok no generan contenido propio si reusan Instagram', () => 
 });
 
 test('al aprobar un Reel se crean sus copias para Facebook y TikTok con texto adaptado', async () => {
-  const ig = db.createPost({ client_id: client.id, plataforma: 'instagram', status: 'pendiente', scheduled_at: '2026-10-21T01:00:00.000Z' });
+  const ig = db.createPost({ client_id: client.id, plataforma: 'instagram', status: 'pendiente', scheduled_at: '2030-10-21T01:00:00.000Z' });
   const video = path.join(dir, 'v.mp4'); fs.writeFileSync(video, 'x');
   db.updatePost(ig.id, { tema: 'Bot vs agente', copy_final: 'El bot te dice marca 1.\n\nComenta AGENTE y te lo mando.', hashtags: ['#pymes'], video_path: video, image_path: null, salida: { variantes_copy: [] } });
   pipe.approvePost(ig.id, {});
@@ -42,7 +42,7 @@ test('al aprobar un Reel se crean sus copias para Facebook y TikTok con texto ad
   assert.equal(fb.video_path, video);
   assert.match(fb.copy_final, /wa\.me/);
   assert.ok(!/comenta/i.test(fb.copy_final));
-  assert.equal(fb.scheduled_at, '2026-10-20T18:00:00.000Z', 'mismo día, a la hora de Facebook');
+  assert.equal(fb.scheduled_at, '2030-10-20T18:00:00.000Z', 'mismo día, a la hora de Facebook');
   assert.equal(tk.status, 'pendiente', 'TikTok siempre pide elegir privacidad');
   assert.throws(() => pipe.approvePost(tk.id, {}), /privacidad|quién puede ver/);
   assert.throws(() => pipe.approvePost(tk.id, { tiktok: { privacy: 'SELF_ONLY', disclose: true, brand_content: true } }), /Solo yo/);

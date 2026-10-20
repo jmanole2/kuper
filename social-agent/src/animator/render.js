@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import ffmpegStatic from 'ffmpeg-static';
 import { ROOT } from '../config.js';
+import { cuesFromMotion, writeSoundtrack, musicFiles } from './audio.js';
 
 const require = createRequire(import.meta.url);
 const FFMPEG = process.env.FFMPEG || ffmpegStatic;
@@ -118,11 +119,24 @@ export class Stage {
     return Buffer.from(url.split(',')[1], 'base64');
   }
 
-  /** MP4 H.264 + pista de audio silenciosa (Reels y LinkedIn la prefieren). */
-  async renderVideo(outFile) {
+  /** Cuánto cambió la imagen respecto al cuadro anterior (0..1), con una miniatura de 32x56. */
+  async motion() {
+    return this.page.evaluate(() => {
+      const cv = document.getElementById('c'), s = window.__th || (window.__th = document.createElement('canvas'));
+      s.width = 32; s.height = 56; const g = s.getContext('2d'); g.drawImage(cv, 0, 0, 32, 56);
+      const d = g.getImageData(0, 0, 32, 56).data, lum = new Float32Array(d.length / 4);
+      for (let k = 0; k < lum.length; k++) lum[k] = (d[k * 4] + d[k * 4 + 1] + d[k * 4 + 2]) / 3;
+      const prev = window.__prev; window.__prev = lum; if (!prev) return 0;
+      let sum = 0; for (let k = 0; k < lum.length; k++) sum += Math.abs(lum[k] - prev[k]);
+      return sum / lum.length / 255;
+    });
+  }
+
+  /** MP4 H.264 con efectos de sonido donde cambia la imagen y música suave (Reels y LinkedIn la prefieren con audio). */
+  async renderVideo(outFile, { seed = 1 } = {}) {
     const { duration, fps } = this.spec;
     const total = Math.round(duration * fps);
-    // Paso 1: solo video. El audio silencioso se agrega aparte (paso 2): si se genera junto, ffmpeg
+    // Paso 1: solo video. El audio se agrega aparte (paso 2): si se genera junto, ffmpeg
     // lo produce más rápido que los cuadros y lo acumula en memoria esperando al video.
     const tmp = outFile.replace(/\.mp4$/, '') + '.solo-video.mp4';
     const ff = spawn(FFMPEG, [
@@ -135,20 +149,35 @@ export class Stage {
       '-crf', '19', '-pix_fmt', 'yuv420p', '-r', String(fps), tmp,
     ], { stdio: ['pipe', 'inherit', 'inherit'] });
     const done = new Promise((res, rej) => ff.on('exit', (c) => (c === 0 ? res() : rej(new Error(`ffmpeg terminó con código ${c}`)))));
+    const diffs = [];
     for (let i = 0; i < total; i++) {
       const buf = await this.capture(i / fps, 'image/jpeg');
+      diffs.push(await this.motion());
       if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
     }
     ff.stdin.end();
     await done;
-    // Paso 2: pista de audio silenciosa (Reels y LinkedIn la prefieren) sin recodificar el video.
-    await new Promise((res, rej) => spawn(FFMPEG, [
-      '-y', '-loglevel', 'error', '-i', tmp,
-      '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000',
-      '-shortest', '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k',
-      '-movflags', '+faststart', outFile,
+    // Paso 2: audio. AUDIO_VIDEO=0 deja una pista silenciosa.
+    const wav = outFile.replace(/\.mp4$/, '') + '.audio.wav';
+    let args;
+    if (process.env.AUDIO_VIDEO === '0') {
+      args = ['-i', tmp, '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000', '-shortest', '-map', '0:v', '-map', '1:a'];
+    } else {
+      const tracks = musicFiles(), cues = cuesFromMotion(diffs, fps, duration);
+      writeSoundtrack(wav, { duration, cues, seed, withMusic: !tracks.length });
+      if (tracks.length) {
+        const track = tracks[seed % tracks.length], fadeOut = Math.max(0, duration - 1.5).toFixed(2);
+        args = ['-i', tmp, '-i', wav, '-stream_loop', '-1', '-i', track, '-filter_complex',
+          `[2:a]atrim=0:${duration},asetpts=N/SR/TB,volume=0.35,afade=t=in:d=0.8,afade=t=out:st=${fadeOut}:d=1.5[m];[1:a][m]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=9[a]`,
+          '-map', '0:v', '-map', '[a]'];
+      } else {
+        args = ['-i', tmp, '-i', wav, '-map', '0:v', '-map', '1:a', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9'];
+      }
+    }
+    await new Promise((res, rej) => spawn(FFMPEG, ['-y', '-loglevel', 'error', ...args,
+      '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-t', String(duration), '-movflags', '+faststart', outFile,
     ], { stdio: ['ignore', 'inherit', 'inherit'] }).on('exit', (c) => (c === 0 ? res() : rej(new Error(`ffmpeg (audio) terminó con código ${c}`)))));
-    fs.rmSync(tmp, { force: true });
+    fs.rmSync(tmp, { force: true }); fs.rmSync(wav, { force: true });
     return outFile;
   }
 

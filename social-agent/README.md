@@ -139,3 +139,10 @@ Con `respuesta_palabra_clave` en la configuración de redes del cliente, el agen
 - Botones "Conectar con Facebook/LinkedIn" (OAuth) en lugar de pegar tokens; renovación de tokens de LinkedIn.
 - Conectar el aviso por WhatsApp para los clientes que lo pidan.
 - Despliegue (servidor con https, p. ej. Railway/Render/VPS) con el disco de `data/` persistente.
+
+## Audio de los videos e historias
+
+- Cada video del agente lleva efectos de sonido sintetizados en código (pop, whoosh, campanita) donde cambia la imagen, y una cama musical suave. Si pones pistas con licencia comercial en `assets/musica/` (mp3/m4a/wav), usa una de esas en lugar de la música sintetizada. `AUDIO_VIDEO=0` deja el video en silencio.
+- Las APIs de Instagram, Facebook y TikTok no dejan agregar música de su biblioteca: por eso va dentro del archivo.
+- Al publicar en Instagram, el mismo video o la primera imagen también se sube a Historias (`"historias": false` en la config de instagram lo apaga).
+- LinkedIn: `"publicar_como": "perfil"` publica en el perfil personal del dueño del token (necesita openid y profile) mientras LinkedIn aprueba el permiso de página (`w_organization_social`).

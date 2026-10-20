@@ -1,7 +1,7 @@
 // Despacha un post aprobado a la plataforma correspondiente.
 import { config, mediaUrl } from '../config.js';
 import { clientCredentials, updateClient } from '../db.js';
-import { publishInstagram, publishFacebook } from './meta.js';
+import { publishInstagram, publishFacebook, publishInstagramStory } from './meta.js';
 import { publishLinkedIn } from './linkedin.js';
 import { publishTikTok, freshTikTokCreds } from './tiktok.js';
 
@@ -31,7 +31,7 @@ export async function publishPost(post, client) {
     case 'linkedin':
       return publishLinkedIn(creds.linkedin, {
         copy: post.copy_final, hashtags: post.hashtags, imageFile: post.video_path ? null : post.image_path, imageFiles: carousel,
-        videoFile: post.video_path, altText: post.alt_text, title: post.tema,
+        videoFile: post.video_path, altText: post.alt_text, title: post.tema, as: client.config.linkedin?.publicar_como,
       });
     case 'tiktok': {
       const tk = await freshTikTokCreds(creds.tiktok, (nuevo) => updateClient(client.id, { credentials: { ...clientCredentials(client), tiktok: nuevo } }));
@@ -40,4 +40,14 @@ export async function publishPost(post, client) {
     default:
       throw new Error(`Plataforma no soportada: ${post.plataforma}`);
   }
+}
+
+/** Sube a historias de Instagram el video (o la primera imagen) de un post ya publicado. */
+export async function publishStory(post, client) {
+  const creds = clientCredentials(client);
+  if (config.dryRun || creds.dry_run) return { id: `dry-run-historia-${post.id}`, dryRun: true };
+  const videoUrl = post.video_path ? mediaUrl(post.video_path) : null;
+  const img = post.images?.[0] || post.image_path;
+  if (!videoUrl && !img) throw new Error('No hay video ni imagen para la historia');
+  return publishInstagramStory(creds.meta, { videoUrl, imageUrl: videoUrl ? null : mediaUrl(img) });
 }

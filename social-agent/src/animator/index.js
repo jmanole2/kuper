@@ -135,7 +135,7 @@ async function designLoop(stage, job, log, askFn) {
 
 async function renderFinal(stage, job, outBase) {
   if (job.kind === 'video') {
-    const video = await stage.renderVideo(`${outBase}.mp4`);
+    const video = await stage.renderVideo(`${outBase}.mp4`, { seed: [...path.basename(outBase)].reduce((a, ch) => a + ch.charCodeAt(0), 0) });
     const cover = `${outBase}-portada.jpg`;
     // Portada: el cuadro al 35% suele tener el primer contenido ya armado.
     fs.writeFileSync(cover, await stage.capture(job.duration * 0.35, 'image/jpeg'));
