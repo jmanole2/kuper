@@ -27,6 +27,13 @@ inventan nada.
   - Proceso en 4 pasos: 01. Cuentas, 02. Infraestructura, 03. Info del
     negocio, 04. Pago.
   - Alianza: "KUPER y AGENCIA BE" en algunas campañas.
+- **Agente de redes sociales:** para negocios que no alcanzan a publicar
+  seguido. Crea los posts, carruseles y videos animados con la marca del
+  negocio; el cliente los aprueba desde su teléfono y se publican solos en
+  Instagram, Facebook, LinkedIn y TikTok. También contesta por DM a quien
+  comenta la palabra clave. Precio: {{precio o "se cotiza"}}.
+- **Otros agentes a la medida:** para tareas que el negocio repite cada día;
+  se arman según lo que nos cuente el cliente (sin prometer uno que no exista).
 - **Servicios de agencia:**
   - Diseño de páginas web y tiendas en línea.
   - Branding e identidad visual.
@@ -38,7 +45,7 @@ inventan nada.
 
 ## Temas de los que hablo
 
-- **Agentes de IA en WhatsApp:** el costo de contestar tarde, cómo funciona un
+- **Agentes de IA a la medida:** WhatsApp y redes sociales. El costo de contestar tarde, el costo de no publicar, cómo funciona un
   agente, bot de menú vs. agente que entiende, atención al cliente por
   WhatsApp, precio y proceso.
 - **Agencia:** diseño web que vende, marca e identidad visual, constancia en

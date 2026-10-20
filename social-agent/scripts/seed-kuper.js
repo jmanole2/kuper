@@ -65,7 +65,7 @@ const c = createClient({
     respuesta_palabra_clave: {
       activo: true,
       palabra: 'AGENTE',
-      mensaje: 'Hola @{usuario}, aquí está: escríbele a nuestro agente de prueba como si fueras tu cliente 👉 https://wa.me/525534907598?text=Hola%2C%20vengo%20de%20Instagram\n\nPregúntale horarios, precios o pídele una cita. Contesta en segundos, a cualquier hora.\n\n¿Qué tipo de negocio tienes?',
+      mensaje: 'Hola @{usuario}, aquí está: escríbele a nuestro agente de prueba como si fueras tu cliente 👉 https://wa.me/525534907598?text=Hola%2C%20vengo%20de%20Instagram\n\nPregúntale horarios, precios o pídele una cita. Contesta en segundos, a cualquier hora.\n\n¿Qué quieres que haga tu agente: contestar tu WhatsApp, publicar en tus redes u otra tarea?',
       respuesta_publica: 'Listo @{usuario}, te lo mandé por DM.',
       dias: 7,
     },
