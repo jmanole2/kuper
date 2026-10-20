@@ -22,7 +22,7 @@ Otras opciones: #11 Numbered ("3 trabajos de tu negocio que ya hace un agente", 
 | 0:11 | ¿No alcanzas a contestar WhatsApp? | Puerta 1 se abre: fondo azul suave, burbujas de chat. |
 | 0:13 | Clínica: "¿Hay cita el sábado a las 11?" | Burbuja del cliente. El personaje toma el móvil. |
 | 0:17 | Tu agente la reserva. En segundos, 24/7. | Tarjeta de calendario "Sáb 11:00 ✓" y anillo "24/7". |
-| 0:20 | Sin menús de "marca 1". Entiende como te escriben. | Un menú viejo (1. Horarios, 2. Precios) se arruga; burbujas sueltas fluyen y el personaje contesta. |
+| 0:20 | No es un bot de opciones. Entiende como te escriben. | Un menú viejo (1. Horarios, 2. Precios) se arruga; burbujas sueltas fluyen y el personaje contesta. |
 | 0:23 | ¿No tienes tiempo de publicar? | Puerta 2: fondo morado suave, un calendario de contenido vacío. |
 | 0:25 | Tu agente crea tus 5 posts por semana, con tu marca. | El personaje dibuja en el aire: aparece un post y un mini video con colores de la marca. |
 | 0:29 | Si quieres, lo revisas antes. | El post aparece en un teléfono con un interruptor "Revisar antes" que se puede prender o apagar; palomita verde. |
@@ -70,9 +70,9 @@ Cada línea empieza en el segundo indicado del video (la narración dura ~45 s; 
 | 0:06.5 | No alcanzas con todo. |
 | 0:08 | En Kuper armamos agentes de IA a tu medida. |
 | 0:11 | ¿No alcanzas a contestar WhatsApp? |
-| 0:13 | ¿Hay cita el sábado a las once? |
+| 0:13 | ¿Tienen cita el sábado a las once? |
 | 0:16.7 | Tu agente la reserva. En segundos. |
-| 0:20 | Sin menús. Entiende como te escriben. |
+| 0:20 | No es un bot de opciones. Entiende como te escriben. |
 | 0:23 | ¿No tienes tiempo de publicar? |
 | 0:25 | Tu agente crea tus cinco posts, con tu marca. |
 | 0:29 | Si quieres, los revisas antes. |
