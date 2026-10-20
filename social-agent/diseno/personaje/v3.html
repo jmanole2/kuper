@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"><canvas id="c" width="2000" height="1650"></canvas>
+<script src="mascota2.js"></script><script src="mascota3.js"></script><script>
+const c=document.getElementById('c'),x=c.getContext('2d');bg(x,2000,1650);
+const rows=[['a','A · Capucha gris, ojos verdes, bufanda azul'],['b','B · Azul Kuper, pantalla oscura, ojos blancos'],['c','C · Espíritu de tinta con capa azul']];
+const ex=[['normal',{}],['feliz',{expr:'feliz',wave:1}],['¡wow!',{expr:'estrellas'}],['decidido',{expr:'decidido'}],['con celular',{phone:true,look:.4}]];
+rows.forEach(([v,t],r)=>{const y=r*540;x.fillStyle='rgba(255,255,255,.03)';x.beginPath();x.roundRect(30,y+20,1940,500,30);x.fill();
+  x.fillStyle='#e8ecf4';x.font='600 34px system-ui';x.textAlign='left';x.fillText(t,70,y+72);
+  ex.forEach(([n,o],i)=>{const cx=240+i*380;drawChibi(x,{cx,cy:y+430,s:.84,v,...o});x.fillStyle='#8a93a6';x.font='400 24px system-ui';x.textAlign='center';x.fillText(n,cx,y+505);});});
+grain(x,2000,1650,.04);
+</script></body></html>
