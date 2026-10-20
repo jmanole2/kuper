@@ -1,0 +1,8 @@
+<!doctype html><html><body style="margin:0"><canvas id="c" width="2000" height="1100"></canvas>
+<script src="mascota.js"></script><script>
+const c=document.getElementById('c'),x=c.getContext('2d');bg(x,2000,1100);
+const poses=[['normal',{}],['saludando',{wave:1}],['mira de lado',{look:-1,lookY:.3}],['parpadeo',{blink:1}],['con celular',{phone:true,lookY:.8}]];
+poses.forEach(([t,o],i)=>{const cx=220+i*390;drawMascota(x,{cx,cy:480,s:.95,...o});x.fillStyle='#9aa3b5';x.font='500 30px system-ui';x.textAlign='center';x.fillText(t,cx,800);});
+x.fillStyle='#e8ecf4';x.font='600 46px system-ui';x.textAlign='center';x.fillText('Personaje Kuper · poses',1000,960);
+grain(x,2000,1100,.07);
+</script></body></html>

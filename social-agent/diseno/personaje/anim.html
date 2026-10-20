@@ -1,0 +1,16 @@
+<!doctype html><html><body style="margin:0"><canvas id="c" width="1080" height="1920"></canvas>
+<script src="mascota.js"></script><script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2, cl=v=>Math.max(0,Math.min(1,v));
+window.frame=(t)=>{ // 4 s: entra caminando, mira, parpadea, saluda
+  bg(x,1080,1920);
+  const walk=cl(t/1.4), cxp=-150+ease(walk)*690;
+  const bob=t<1.4?Math.abs(Math.sin(t*Math.PI*4))*-10:0;
+  const look=t<1.4?1:t<2.0?-(t-1.4)/.6*0.8:t<2.4?-.8+(t-2.0)/.4*.8:0;
+  const blink=(t>2.45&&t<2.6)?Math.sin((t-2.45)/.15*Math.PI):0;
+  const wave=t>2.7?(0.7+0.3*Math.sin((t-2.7)*Math.PI*5))*cl((t-2.7)/.2):0;
+  const squash=t>1.4&&t<1.6?Math.sin((t-1.4)/.2*Math.PI):0;
+  drawMascota(x,{cx:cxp,cy:1000+bob,s:1.5,step:t<1.4?t*2:0,look,blink,wave,squash});
+  grain(x,1080,1920,.06,(Math.floor(t*12)%7)+3);
+};
+</script></body></html>
