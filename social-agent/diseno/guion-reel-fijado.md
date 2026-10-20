@@ -12,9 +12,9 @@ no sirve. Tu agente, sí", 40.8).
 | Tiempo | Texto en pantalla | Escena |
 |---|---|---|
 | 0:00 | **23:47** / No contestas. Pierdes la venta. | Cuarto oscuro. Un móvil se ilumina con un WhatsApp: "¿Tienen cita mañana?". Nadie lo toca; la palomita se queda gris. |
-| 0:03 | Ana no espera. Le escribe al que contesta primero. | La burbuja de Ana sale volando de tu celular a otro que contesta al instante. |
+| 0:03 | Ana no espera. Le escribe al que contesta primero. | La burbuja de Ana sale volando de tu móvil a otro que contesta al instante. |
 | 0:06 | Tu agente contesta tu WhatsApp. **24/7** | El personaje entra de un salto, toma el móvil y sus ojos pasan de normal a feliz. Un anillo "24/7" gira alrededor. |
-| 0:10 | Cada negocio pregunta algo distinto. | La pantalla se abre en tres puertas: consultorio, restaurante y tienda. |
+| 0:10 | Cada negocio pregunta algo distinto. | La pantalla se abre en tres puertas: clínica, restaurante y tienda. |
 | 0:12 | Clínica: "¿Hay cita el sábado a las 11?" | Fondo azul suave. Burbuja del cliente. El personaje mira la agenda. |
 | 0:15 | Tu agente la reserva. | Tarjeta de calendario: "Sáb 11:00 ✓". Ojos de estrella. |
 | 0:17 | Restaurante: "¿Hacen envíos a domicilio a las 9?" | Fondo cálido. Burbuja del cliente. |
@@ -25,7 +25,7 @@ no sirve. Tu agente, sí", 40.8).
 | 0:29 | Te escriben como hablan. Tu agente entiende. | Burbujas sueltas, con faltas y mensajes de voz, fluyen hacia el personaje y él contesta feliz. |
 | 0:31 | Nos hablas de tu negocio. **A la medida.** | Piezas del negocio (horarios, precios, preguntas frecuentes, logo) vuelan hacia una tarjeta en blanco y se arma "Tu agente". |
 | 0:35 | 01 Cuentas · 02 Infraestructura · 03 Tu info · 04 Listo | Cuatro tarjetas de vidrio se encienden en orden. |
-| 0:38 | Contesta en segundos. Tú atiendes lo importante. | La portada: el personaje al centro con las tarjetas (WhatsApp, citas, cotiza, seguimiento, 24/7, reseñas) girando. |
+| 0:38 | Contesta en segundos. Tú atiendes lo importante. | La portada: el personaje al centro con las tarjetas (WhatsApp, citas, precios, seguimiento, 24/7, reseñas) girando. |
 | 0:41 | **Comenta AGENTE** y pruébalo como tu cliente. | Tarjeta grande "AGENTE". El personaje la señala, con ojos de estrella. |
 | 0:44 | **23:47** Respondido. | Regreso al móvil del inicio, en el mismo minuto: palomitas azules y "¡Perfecto, nos vemos!". El personaje saluda. Corta al inicio (loop). |
 
@@ -35,7 +35,7 @@ no sirve. Tu agente, sí", 40.8).
 - Máximo 6 palabras por tarjeta grande; las preguntas de los clientes van en burbuja de chat.
 - Zona segura: nada arriba de y=230 ni abajo de y=1440, y libres los 230 px de la derecha.
 - El cuadro cambia en cada línea del guion (ningún momento quieto de más de 4 s).
-- Ana, el consultorio, el restaurante y la tienda son ejemplos ilustrativos, no clientes reales.
+- Ana, la clínica, el restaurante y la tienda son ejemplos ilustrativos, no clientes reales.
   No se muestran cifras de resultados.
 - Sin logos de WhatsApp ni de otras marcas: burbujas verdes genéricas.
 
