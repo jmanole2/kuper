@@ -11,12 +11,12 @@ if (!c) { console.error('No existe el cliente kuper-media'); process.exit(1); }
 const voz = fs.readFileSync(path.join(ROOT, '..', '.claude/instagram/voice.md'), 'utf8');
 const config = {
   ...c.config,
-  // Reglas de citas de Kuper: 45 min, 15 de margen, 4 h de anticipación, lunes a jueves de 9 a 18.
+  // Reglas de citas de Kuper: 45 min, 15 de margen, 4 h de anticipación, lunes a jueves de 9 a 18, última cita a las 16:00.
   // calendar_id: el correo del Google Calendar (CALENDAR_ID=... npm run actualizar-kuper), o se conserva el que ya tenga.
   agenda: {
     ...(c.config.agenda || {}),
     calendar_id: cleanCalendarId(process.env.CALENDAR_ID) || c.config.agenda?.calendar_id || '',
-    duracion_min: 45, margen_min: 15, anticipacion_horas: 4, paso_min: 30,
+    duracion_min: 45, margen_min: 15, anticipacion_horas: 4, paso_min: 30, ultima_cita: '16:00',
     horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'] },
     titulo: 'Kuper · {nombre}',
   },

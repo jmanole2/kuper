@@ -19,6 +19,7 @@ export const AGENDA_DEFAULT = {
   margen_min: 15,
   anticipacion_horas: 4,
   paso_min: 30,
+  ultima_cita: '', // 'HH:MM': la última cita del día empieza a esta hora como máximo (vacío = la que quepa en el horario)
   horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'] },
   titulo: 'Cita con {nombre}',
 };
@@ -77,7 +78,7 @@ export async function busy(calendarId, fromIso, toIso) {
   if (cal?.errors?.length) throw new Error(`Google Calendar: ${cal.errors.map((e) => e.reason).join(', ')} (¿compartiste el calendario con la cuenta de servicio?)`);
   return (cal?.busy || []).map((b) => [new Date(b.start).getTime(), new Date(b.end).getTime()]);
 }
-export const upcomingEvents = (calendarId, max = 30) =>
+export const upcomingEvents = (calendarId, max = 60) =>
   gcal('GET', `/calendars/${encodeURIComponent(calendarId)}/events?${new URLSearchParams({ timeMin: new Date().toISOString(), singleEvents: 'true', orderBy: 'startTime', maxResults: String(max) })}`)
     .then((j) => j.items || []);
 
@@ -85,13 +86,27 @@ export const upcomingEvents = (calendarId, max = 30) =>
 const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
 const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
+/** Junta las repeticiones de un evento recurrente en una sola tarjeta: [{ ...primero, repeticiones: [fechas siguientes] }]. */
+export function groupRecurring(events) {
+  const out = [], byId = new Map();
+  for (const e of events) {
+    const g = e.recurringEventId && byId.get(e.recurringEventId);
+    if (g) { g.repeticiones.push(e.start?.dateTime || e.start?.date); continue; }
+    const item = { ...e, repeticiones: [] };
+    if (e.recurringEventId) byId.set(e.recurringEventId, item);
+    out.push(item);
+  }
+  return out;
+}
+
 /** Horarios candidatos (sin mirar el calendario) desde hoy por `dias` días, respetando horario y anticipación. */
 export function candidateSlots(cfg, { now = new Date(), dias = 7 } = {}) {
   const out = [], earliest = now.getTime() + cfg.anticipacion_horas * 3600_000, hoy = localDate(now, config.timezone);
   for (let d = 0; d < dias; d++) {
     const fecha = addDays(hoy, d), dia = DIAS[new Date(`${fecha}T12:00:00Z`).getUTCDay()], h = cfg.horario[dia];
     if (!h) continue;
-    for (let m = toMin(h[0]); m + cfg.duracion_min <= toMin(h[1]); m += cfg.paso_min) {
+    const ultima = cfg.ultima_cita ? toMin(cfg.ultima_cita) : Infinity;
+    for (let m = toMin(h[0]); m + cfg.duracion_min <= toMin(h[1]) && m <= ultima; m += cfg.paso_min) {
       const start = new Date(zonedToUtc(fecha, hhmm(m), config.timezone)).getTime();
       if (start < earliest) continue;
       out.push({ start, end: start + cfg.duracion_min * 60_000 });

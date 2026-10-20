@@ -59,3 +59,19 @@ test('leads: se juntan por teléfono y no retroceden de estado', () => {
   assert.equal(l.estado, 'cita');
   assert.equal(db.listLeads(client.id).length, 1);
 });
+
+test('ultima_cita: la última cita del día empieza a esa hora como máximo', () => {
+  const cfg = { ...agenda.AGENDA_DEFAULT, ultima_cita: '16:00', anticipacion_horas: 0 };
+  const slots = agenda.candidateSlots(cfg, { now: new Date('2030-01-07T06:00:00Z'), dias: 1 }); // lunes en CDMX
+  const fmt = (ms) => new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms));
+  assert.equal(fmt(slots.at(-1).start), '16:00');
+  assert.equal(fmt(slots[0].start), '09:00');
+});
+
+test('groupRecurring junta las repeticiones de un evento semanal', () => {
+  const ev = (id, rec, d) => ({ id, recurringEventId: rec, summary: rec || id, start: { dateTime: d } });
+  const g = agenda.groupRecurring([ev('a1', 'A', '2030-01-01T18:00:00Z'), ev('x', null, '2030-01-02T18:00:00Z'), ev('a2', 'A', '2030-01-08T18:00:00Z'), ev('a3', 'A', '2030-01-15T18:00:00Z')]);
+  assert.equal(g.length, 2);
+  assert.deepEqual(g[0].repeticiones, ['2030-01-08T18:00:00Z', '2030-01-15T18:00:00Z']);
+  assert.equal(g[1].repeticiones.length, 0);
+});

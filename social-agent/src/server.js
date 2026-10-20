@@ -187,7 +187,7 @@ export function createApp() {
     if (view.tab === 'leads') view.leads = db.listLeads(req.client.id);
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
-      try { view.citas = cfg.calendar_id ? await agenda.upcomingEvents(cfg.calendar_id) : null; } catch (e) { view.citasError = e.message; }
+      try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch (e) { view.citasError = e.message; }
       view.agendaCfg = cfg; view.saEmail = agenda.serviceAccount()?.client_email || null;
     }
     res.send(clientView(req.client, undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
