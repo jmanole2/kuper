@@ -55,7 +55,7 @@ export function postCard(p, { base, admin = false }) {
   const editable = p.status === 'pendiente';
   const warns = (s?.advertencias || []).filter((w) => admin || !w.startsWith('Validación:'));
   return html`<article class="card" id="post-${p.id}">
-  <div class="row spread"><strong>${PLAT[p.plataforma]} · ${FORMATO[p.formato] || 'Post'}</strong>${badge(p.status)}</div>
+  <div class="row spread"><span class="chip"><i style="background:${PCOL[p.plataforma]}"></i>${PLAT[p.plataforma]} · ${FORMATO[p.formato] || 'Post'}</span>${badge(p.status)}</div>
   <p class="muted small" style="margin:4px 0 10px">${p.tema || 'Generando contenido…'}<br>Publicación: ${fmtDate(p.scheduled_at)}${p.pilar ? ` · ${p.pilar}` : ''}</p>
   ${mediaBlock(p)}
   ${p.status === 'necesita_asset' ? html`<div class="warn">Este post necesita una foto o video real${s?.alt_text ? html`: <em>${s.alt_text}</em>` : ''}.</div>
@@ -99,7 +99,8 @@ export function portalPage(client, posts, token) {
   const prog = by(['aprobado', 'publicando']).reverse();
   const pub = by(['publicado']).slice(0, 12);
   const body = html`
-  <h1>Hola, ${client.nombre}</h1>
+  <div class="row" style="gap:14px;margin-top:6px"><div class="avatar">${client.logo_path ? html`<img src="${mediaSrc(client.logo_path)}" alt="">` : client.nombre.slice(0, 1)}</div><h1 style="margin:0">Hola, ${client.nombre}</h1></div>
+  ${kpis([[pend.length, 'Por revisar', '#fbbf24', pend.length > 0], [prog.length, 'Programadas', '#4ade80'], [pub.length, 'Publicadas', '#c6ff3d']])}
   <p class="muted">Revisa y aprueba tus próximas publicaciones. Nada se publica sin tu visto bueno${PLATFORMS.some((pl) => client.config[pl]?.activo && client.config[pl]?.modo_publicacion === 'auto') ? ' (salvo en las redes que configuraste en automático)' : ''}.</p>
   <h2>Por revisar (${pend.length})</h2>
   ${pend.length ? html`<div class="grid">${pend.map((p) => postCard(p, { base: base(p) }))}</div>` : html`<p class="muted">No tienes nada pendiente.</p>`}
@@ -108,30 +109,41 @@ export function portalPage(client, posts, token) {
   <h2>Publicadas recientemente</h2>
   ${pub.length ? html`<div class="grid">${pub.map((p) => postCard(p, { base: base(p) }))}</div>` : html`<p class="muted">Aún no hay publicaciones.</p>`}
   ${pend.some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
-  return page({ title: `Publicaciones · ${client.nombre}`, brand: client.nombre, body });
+  return page({ title: `Publicaciones · ${client.nombre}`, body });
 }
 
 // ------------------------------------------------------------ admin
-const adminNav = raw('<a href="/admin">Clientes</a><a href="/admin/clientes/nuevo">Nuevo cliente</a><a href="/admin/salir">Salir</a>');
+const side = (on) => [
+  { href: '/admin', icon: 'home', label: 'Clientes', on: on === 'clientes' },
+  { href: '/admin/clientes/nuevo', icon: 'plus', label: 'Nuevo cliente', on: on === 'nuevo' },
+  { href: '/admin/salir', icon: 'out', label: 'Salir', bottom: true },
+];
+const kpis = (items) => html`<div class="kpis">${items.map(([n, label, color, hot]) => html`<div class="kpi${hot ? ' hot' : ''}"><b>${n}</b><small><i style="background:${color}"></i>${label}</small></div>`)}</div>`;
+const PCOL = { instagram: '#e1306c', facebook: '#4f7cff', linkedin: '#3d8bd9', tiktok: '#f2f4f8' };
 
 export function loginPage(error) {
-  return page({ title: 'Entrar', body: html`<div class="card" style="max-width:380px;margin:60px auto">
-    <h1>Panel de agencia</h1>${error ? html`<div class="err">${error}</div>` : ''}
+  return page({ title: 'Entrar', body: html`<div style="min-height:80vh;display:grid;place-items:center"><div class="card" style="width:min(400px,100%);padding:32px">
+    <div class="avatar" style="background:var(--accent);color:var(--accent-ink);margin-bottom:18px">K</div>
+    <h1 style="font-size:32px">Panel de agencia</h1><p class="muted" style="margin-top:0">Agente social de Kuper Media</p>${error ? html`<div class="err">${error}</div>` : ''}
     <form method="post" action="/admin/entrar"><label>Contraseña</label><input type="password" name="password" autofocus required>
-    <p><button>Entrar</button></p></form></div>` });
+    <p style="margin-top:20px"><button class="btn-accent" style="width:100%;justify-content:center">Entrar</button></p></form></div></div>` });
 }
 
 export function dashboardPage(clients, counts, events) {
-  const body = html`<h1>Clientes</h1>
+  const sum = (st) => clients.reduce((n, c) => n + (counts[c.id]?.[st] || 0), 0);
+  const body = html`<h1>Clientes</h1><p class="muted" style="margin:0">Lo que el agente tiene en marcha para cada marca.</p>
+  ${kpis([[sum('pendiente') + sum('necesita_asset'), 'Por revisar', '#fbbf24', true], [sum('aprobado'), 'Programados', '#4ade80'], [sum('publicado'), 'Publicados', '#c6ff3d'], [sum('error') + sum('error_generacion'), 'Con error', '#f87171']])}
+  <h2>Marcas</h2>
   <div class="grid">${clients.map((c) => html`<a class="card" href="/admin/clientes/${c.id}" style="text-decoration:none">
-    <div class="row spread"><strong>${c.nombre}</strong>${c.activo ? '' : badge('rechazado')}</div>
-    <p class="muted small">${PLATFORMS.filter((p) => c.config[p]?.activo).map((p) => `${PLAT[p]} (${c.config[p].modo_publicacion})`).join(' · ') || 'Sin redes activas'}</p>
-    <div class="row">${Object.entries(counts[c.id] || {}).map(([s, n]) => html`<span>${badge(s)} ${n}</span>`)}</div></a>`)}
+    <div class="row spread"><div class="row"><div class="avatar">${c.logo_path ? html`<img src="${mediaSrc(c.logo_path)}" alt="">` : c.nombre.slice(0, 1)}</div>
+      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}</div></div></div>${c.activo ? '' : badge('rechazado')}</div>
+    <div class="row" style="margin:16px 0 12px">${PLATFORMS.filter((p) => c.config[p]?.activo).map((p) => html`<span class="badge" style="color:${PCOL[p]}">${PLAT[p]}</span>`)}</div>
+    <div class="row">${Object.entries(counts[c.id] || {}).map(([st, n]) => html`<span class="small muted">${badge(st)} ${n}</span>`)}</div></a>`)}
   </div>
   ${clients.length ? '' : html`<p class="muted">Todavía no hay clientes. <a href="/admin/clientes/nuevo">Crea el primero</a>.</p>`}
   <h2>Actividad reciente</h2>
-  <div class="card"><table>${events.map((e) => html`<tr><td class="muted small">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td>${e.cliente || ''}</td><td>${e.tipo}</td><td class="small">${e.detalle}</td></tr>`)}</table></div>`;
-  return page({ title: 'Agente Social · Admin', nav: adminNav, body });
+  <div class="card" style="padding:8px 14px"><table>${events.map((e) => html`<tr><td class="muted small" style="white-space:nowrap">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td class="small">${e.cliente || ''}</td><td><span class="badge">${e.tipo}</span></td><td class="small">${e.detalle}</td></tr>`)}</table></div>`;
+  return page({ title: 'Agente Social · Admin', side: side('clientes'), body });
 }
 
 export function clientFormPage(client, { error, notice, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
@@ -202,7 +214,7 @@ export function clientFormPage(client, { error, notice, competitors = [], report
     <p><button>${isNew ? 'Crear cliente' : 'Guardar'}</button></p>
   </form>
   ${!isNew ? html`<form method="post" action="/admin/clientes/${client.id}/probar"><button class="btn-accent">Probar conexión con Meta y LinkedIn</button></form>` : ''}`;
-  return page({ title: isNew ? 'Nuevo cliente' : client.nombre, nav: adminNav, body });
+  return page({ title: isNew ? 'Nuevo cliente' : client.nombre, side: side(isNew ? 'nuevo' : 'clientes'), body });
 }
 
 export function postAdminPage(post, client, events) {
@@ -213,7 +225,7 @@ export function postAdminPage(post, client, events) {
     <p><strong>Concepto:</strong> ${post.salida.visual.concepto}</p><pre class="small" style="white-space:pre-wrap;max-height:420px;overflow:auto">${post.salida.visual.codigo}</pre></details>` : ''}
   ${post.salida ? html`<details class="card" style="margin-top:16px"><summary>Salida completa del agente (JSON)</summary><pre class="small" style="white-space:pre-wrap">${JSON.stringify({ ...post.salida, visual: undefined }, null, 2)}</pre></details>` : ''}
   ${post.feedback ? html`<div class="card" style="margin-top:16px"><strong>Comentarios del cliente</strong><p>${post.feedback}</p></div>` : ''}</div></div>`;
-  return page({ title: `Post ${post.id}`, nav: adminNav, body });
+  return page({ title: `Post ${post.id}`, side: side('clientes'), body });
 }
 
 export const DEFAULT_PERFIL = {

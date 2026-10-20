@@ -4,6 +4,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { config, mediaDir } from './config.js';
 import * as db from './db.js';
 import * as pipe from './pipeline.js';
@@ -33,6 +34,8 @@ export function createApp() {
   app.disable('x-powered-by');
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use('/media', express.static(mediaDir(), { maxAge: '1h', fallthrough: false }));
+  // Tipografía del panel (Inter Tight, la misma de los videos), servida localmente.
+  app.use('/fonts', express.static(path.join(path.dirname(fileURLToPath(import.meta.resolve('@fontsource/inter-tight/package.json'))), 'files'), { maxAge: '30d', fallthrough: false }));
   app.get('/', (_req, res) => res.redirect('/admin'));
   app.get('/salud', (_req, res) => res.json({ ok: true }));
 
@@ -76,7 +79,7 @@ export function createApp() {
     const clients = db.listClients();
     const counts = {};
     for (const p of db.listPosts({ limit: 2000 })) {
-      if (!['pendiente', 'necesita_asset', 'aprobado', 'error', 'error_generacion'].includes(p.status)) continue;
+      if (!['pendiente', 'necesita_asset', 'aprobado', 'publicado', 'error', 'error_generacion'].includes(p.status)) continue;
       (counts[p.client_id] ??= {})[p.status] = (counts[p.client_id][p.status] || 0) + 1;
     }
     res.send(V.dashboardPage(clients, counts, db.recentEvents(40)));
