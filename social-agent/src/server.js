@@ -199,7 +199,7 @@ export function createApp() {
   });
 
   const clientView = (c, error, notice, posts, view = {}) => V.clientFormPage(c, {
-    error, notice, ...view, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
+    error, notice, leadsCount: db.listLeads(c.id).length, ...view, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
     posts: posts || db.listPosts({ clientId: c.id, limit: 400 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
   });
 

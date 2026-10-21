@@ -127,7 +127,8 @@ function anillo(links) {
     const [x1, y1] = pt(R2, a0), [x2, y2] = pt(R2, a1), [x3, y3] = pt(R1, a1), [x4, y4] = pt(R1, a0);
     const d = `M${x1},${y1} A${R2},${R2} 0 0 1 ${x2},${y2} L${x3},${y3} A${R1},${R1} 0 0 0 ${x4},${y4} Z`;
     const [tx, ty] = pt((R1 + R2) / 2, am);
-    return `<a class="cc-seg" href="${l.href}"><path d="${d}"/><g class="ic" transform="translate(${tx - 9},${ty - 24})" style="color:#e6e0d6">${svgI(l.icon, 18)}</g><text x="${tx}" y="${ty + 12}" text-anchor="middle">${l.label}</text></a>`;
+    const rot = am < 180 ? am - 90 : am + 90; // texto siguiendo el anillo, nunca de cabeza
+    return `<a class="cc-seg" href="${l.href}"><path d="${d}"/><g transform="translate(${tx},${ty}) rotate(${rot})"><g class="ic" transform="translate(-9,-22)" style="color:#e6e0d6">${svgI(l.icon, 18)}</g><text x="0" y="14" text-anchor="middle">${l.label}</text></g></a>`;
   }).join('')}</svg>`;
 }
 
@@ -173,7 +174,7 @@ export function controlCenter(p, clients) {
   <div class="cc-dark">
     <nav class="cc-tabs"><a class="on" href="/admin">Resumen</a><a href="${tab('posts')}">Posts</a><a href="${tab('leads')}">Leads</a><a href="${tab('citas')}">Citas</a><a href="${tab('competencia')}">Competencia</a></nav>
     <div class="cc-stage">
-      <div class="cc-orbwrap"><div class="halo"></div>${raw(anillo(links))}<div class="cc-orb"><canvas id="cc-orb" aria-label="Agente en actividad"></canvas></div><div class="pulse"></div></div>
+      <div class="cc-orbwrap"><div class="halo"></div>${raw(anillo(links))}<div class="cc-orb"><canvas id="cc-orb" class="k-orb" aria-label="Agente en actividad"></canvas></div><div class="pulse"></div></div>
       <div class="cc-live cc-glass${v?.activo ? '' : ' idle'}" id="cc-live">
         <span class="mono">${v?.activo ? 'En vivo' : 'Último'}</span><span class="cc-livedot"></span>
         <h3 id="cc-live-n">${v?.nombre || 'Todo tranquilo'}</h3><div class="sub" id="cc-live-c">${v ? `${v.canal} · ${hora(v.t)}` : 'Sin actividad reciente'}</div>
@@ -201,7 +202,7 @@ export function controlCenter(p, clients) {
     </div>
   </div>
 </section>
-<script>(${raw(clientScript.toString())})(${raw(data)});</script>`;
+${orbTag()}<script>(${raw(clientScript.toString())})(${raw(data)});</script>`;
 }
 
 // ---------------------------------------------------------------- animación (corre en el navegador)
@@ -210,37 +211,6 @@ function clientScript(cfg) {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   let activo = cfg.activo;
   const fit = (cv) => { const r = cv.getBoundingClientRect(); cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr); };
-
-  // Esfera de partículas que respira y se deforma.
-  const orb = document.getElementById('cc-orb');
-  const N = 3600, pts = [];
-  for (let i = 0; i < N; i++) { // superficie con puntos al azar (sin patrón de rejilla)
-    const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u), j = 1 + (Math.random() - 0.5) * 0.09;
-    pts.push([Math.cos(th) * r * j, u * j, Math.sin(th) * r * j, Math.random() < 0.025, 1]);
-  }
-  for (let i = 0; i < 1600; i++) { // nube interior (da volumen)
-    const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, rr = Math.cbrt(Math.random()) * 0.92, r = Math.sqrt(1 - u * u) * rr;
-    pts.push([Math.cos(th) * r, u * rr, Math.sin(th) * r, false, 0.45]);
-  }
-  const ox = orb.getContext('2d');
-  function drawOrb(t) {
-    const W = orb.width, H = orb.height, R = Math.min(W, H) * 0.34, cx = W / 2, cy = H / 2;
-    ox.clearRect(0, 0, W, H);
-    const ry = t * 0.00016, rx = 0.35 + Math.sin(t * 0.00009) * 0.25, amp = activo ? 0.11 : 0.065;
-    const cyr = Math.cos(ry), syr = Math.sin(ry), cxr = Math.cos(rx), sxr = Math.sin(rx);
-    for (const [x, y, z, hot, w] of pts) {
-      const n = Math.sin(x * 3.1 + t * 0.0011) * Math.cos(y * 2.7 - t * 0.0009) + Math.sin(z * 4.2 + t * 0.0007) * 0.6 + Math.sin((x + y) * 7 + t * 0.002) * 0.15;
-      const k = 1 + amp * n;
-      let X = x * k, Y = y * k, Z = z * k;
-      const X1 = X * cyr - Z * syr, Z1 = X * syr + Z * cyr;
-      const Y2 = Y * cxr - Z1 * sxr, Z2 = Y * sxr + Z1 * cxr;
-      const p = 2.6 / (2.6 + Z2), px = cx + X1 * R * p, py = cy + Y2 * R * p;
-      const a = Math.max(0.04, Math.min(0.95, (0.5 - Z2 * 0.55) * w));
-      ox.fillStyle = hot ? `rgba(215,255,63,${a})` : `rgba(246,240,230,${a})`;
-      const s = (hot ? 1.6 : 0.95) * dpr * p;
-      ox.fillRect(px, py, s, s);
-    }
-  }
 
   // Onda de audio de "En vivo".
   const wave = document.getElementById('cc-wave'), wx = wave.getContext('2d');
@@ -256,9 +226,9 @@ function clientScript(cfg) {
     }
   }
 
-  const resize = () => { fit(orb); fit(wave); };
+  const resize = () => fit(wave);
   resize(); addEventListener('resize', resize);
-  const loop = (t) => { drawOrb(t); drawWave(t); if (!reduce) requestAnimationFrame(loop); };
+  const loop = (t) => { window.__korbActivo = activo; drawWave(t); if (!reduce) requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
 
   // Contadores que suben, reloj y "actualizado hace…".
@@ -299,3 +269,88 @@ function clientScript(cfg) {
 }
 
 export const feedHtml = (feed) => feed.map(feedItem).join('');
+
+// ---------------------------------------------------------------- esfera reutilizable (todas las páginas)
+// Anima cada <canvas class="k-orb">. data-puntos ajusta la densidad (las esferas chicas usan menos).
+function korb() {
+  if (window.__korb) return; window.__korb = true;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const make = (cv) => {
+    const N = Number(cv.dataset.puntos) || 3600, pts = [];
+    for (let i = 0; i < N; i++) {
+      const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u), j = 1 + (Math.random() - 0.5) * 0.09;
+      pts.push([Math.cos(th) * r * j, u * j, Math.sin(th) * r * j, Math.random() < 0.025, 1]);
+    }
+    for (let i = 0; i < N * 0.45; i++) {
+      const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, rr = Math.cbrt(Math.random()) * 0.92, r = Math.sqrt(1 - u * u) * rr;
+      pts.push([Math.cos(th) * r, u * rr, Math.sin(th) * r, false, 0.45]);
+    }
+    return { cv, ctx: cv.getContext('2d'), pts, seed: Math.random() * 1e4 };
+  };
+  const orbs = [...document.querySelectorAll('canvas.k-orb')].map(make);
+  const fit = () => orbs.forEach(({ cv }) => { const r = cv.getBoundingClientRect(); cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr); });
+  fit(); addEventListener('resize', fit);
+  function draw(o, t) {
+    const { cv, ctx, pts } = o, W = cv.width, H = cv.height, R = Math.min(W, H) * 0.34, cx = W / 2, cy = H / 2;
+    t += o.seed;
+    ctx.clearRect(0, 0, W, H);
+    const ry = t * 0.00016, rx = 0.35 + Math.sin(t * 0.00009) * 0.25, amp = window.__korbActivo ? 0.11 : 0.065;
+    const cyr = Math.cos(ry), syr = Math.sin(ry), cxr = Math.cos(rx), sxr = Math.sin(rx), dot = W < 300 ? 1.25 : 0.95;
+    for (const [x, y, z, hot, w] of pts) {
+      const n = Math.sin(x * 3.1 + t * 0.0011) * Math.cos(y * 2.7 - t * 0.0009) + Math.sin(z * 4.2 + t * 0.0007) * 0.6 + Math.sin((x + y) * 7 + t * 0.002) * 0.15;
+      const k = 1 + amp * n, X = x * k, Y = y * k, Z = z * k;
+      const X1 = X * cyr - Z * syr, Z1 = X * syr + Z * cyr, Y2 = Y * cxr - Z1 * sxr, Z2 = Y * sxr + Z1 * cxr;
+      const p = 2.6 / (2.6 + Z2), a = Math.max(0.04, Math.min(0.95, (0.5 - Z2 * 0.55) * w));
+      ctx.fillStyle = hot ? `rgba(215,255,63,${a})` : `rgba(246,240,230,${a})`;
+      const sz = (hot ? 1.6 : dot) * dpr * p;
+      ctx.fillRect(cx + X1 * R * p, cy + Y2 * R * p, sz, sz);
+    }
+  }
+  const loop = (t) => { orbs.forEach((o) => draw(o, t)); if (!reduce) requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
+export const orbTag = () => raw(`<script>(${korb.toString()})();</script>`);
+
+// ---------------------------------------------------------------- encabezado con la misma línea gráfica
+// Izquierda clara (marca, título, números) y derecha oscura con la esfera y las pestañas.
+const HERO_CSS = `
+.kh{display:grid;grid-template-columns:1.25fr 1fr;border-radius:30px;overflow:hidden;border:1px solid rgba(255,240,220,.08);box-shadow:0 30px 90px rgba(0,0,0,.45);margin:4px 0 26px}
+.kh-l{background:linear-gradient(160deg,#f3f0ea,#e7e3db);color:#1d1b18;padding:26px 28px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.kh-l .who{display:flex;align-items:center;gap:12px}.kh-l .who .av{width:44px;height:44px;border-radius:14px;background:#1d1b18;color:#d7ff3f;display:grid;place-items:center;font-weight:700;overflow:hidden}.kh-l .who .av img{width:100%;height:100%;object-fit:contain;background:#000}
+.kh-l .mono{color:#57534c}.kh-l h1{font-size:44px;font-weight:300;letter-spacing:-.035em;line-height:1.02;margin:4px 0 0;color:#1d1b18}
+.kh-l .sub{color:#7b766d;font-size:13px;margin:0}
+.kh-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:6px}
+.kh-stats a,.kh-stats div{background:#fbfaf7;border-radius:18px;padding:12px 14px;text-decoration:none;color:#1d1b18;box-shadow:0 10px 26px rgba(60,50,30,.07);transition:.2s}.kh-stats a:hover{transform:translateY(-2px)}
+.kh-stats b{display:block;font-size:30px;font-weight:300;letter-spacing:-.03em;line-height:1.05}.kh-stats small{font-size:11.5px;color:#6f6a62;display:flex;align-items:center;gap:6px}.kh-stats small i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.kh-stats .hot{outline:1.5px solid #c9f53a;box-shadow:0 0 0 4px rgba(201,245,58,.18),0 10px 26px rgba(60,50,30,.07)}
+.kh-r{position:relative;padding:18px 20px;color:#efebe4;background:radial-gradient(70% 70% at 50% 60%,#57514a 0%,#2d2a26 50%,#191715 100%);display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:250px;overflow:hidden}
+.kh-r .kh-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;position:relative;z-index:2}
+.kh-tabs a{padding:7px 14px;border-radius:99px;font-size:13px;text-decoration:none;color:#d9d4cb;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px);transition:.2s;white-space:nowrap}
+.kh-tabs a:hover{background:rgba(255,255,255,.12)}.kh-tabs a.on{background:#f4f1eb;color:#1d1b18;font-weight:600}
+.kh-orb{position:absolute;right:28px;bottom:-90px;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle at 50% 45%,#141210,#060505 70%);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 0 14px rgba(255,255,255,.03),0 0 0 15px rgba(255,255,255,.07),0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+.kh-orb canvas{width:100%;height:100%;display:block}
+.kh-orb::after{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid rgba(215,255,63,.35);animation:ccpulse 3.2s ease-out infinite}
+.kh-note{position:relative;z-index:1;text-shadow:0 2px 12px rgba(0,0,0,.8);max-width:46%;font-size:13px;color:#cfc9bf}.kh-note b{display:block;color:#f4efe6;font-weight:400;font-size:17px;margin-top:6px}
+@keyframes ccpulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.22);opacity:0}}
+@media (max-width:900px){.kh{grid-template-columns:1fr}.kh-r{min-height:220px}.kh-r .kh-tabs{justify-content:flex-start}.kh-note{max-width:55%}}
+@media (max-width:600px){.kh{border-radius:24px}.kh-l{padding:20px 16px}.kh-l h1{font-size:34px}.kh-orb{width:210px;height:210px;right:-40px;bottom:-50px}.kh-note{max-width:50%}}
+`;
+export function hero({ kicker = '', title, sub = '', avatar = null, letra = null, stats = [], tabs = [], note = null }) {
+  return html`<style>${raw(HERO_CSS)}</style>
+<section class="kh">
+  <div class="kh-l">
+    <div class="who"><span class="av">${avatar ? raw(avatar) : (letra || String(title || 'K')).slice(0, 1)}</span><span class="mono">${kicker}</span></div>
+    <h1>${title}</h1>${sub ? html`<p class="sub">${sub}</p>` : ''}
+    ${stats.length ? html`<div class="kh-stats">${stats.map(([n, label, color, href, hot]) => href
+      ? html`<a href="${href}" class="${hot ? 'hot' : ''}"><b>${n}</b><small><i style="background:${color}"></i>${label}</small></a>`
+      : html`<div class="${hot ? 'hot' : ''}"><b>${n}</b><small><i style="background:${color}"></i>${label}</small></div>`)}</div>` : ''}
+  </div>
+  <div class="kh-r">
+    ${tabs.length ? html`<nav class="kh-tabs">${tabs.map(([href, label, on]) => html`<a class="${on ? 'on' : ''}" href="${href}">${label}</a>`)}</nav>
+    ${note ? html`<div class="kh-note"><span class="mono">${note[0]}</span><b>${note[1]}</b></div>` : ''}` : html`${note ? html`<div class="kh-note"><span class="mono">${note[0]}</span><b>${note[1]}</b></div>` : ''}<span></span>`}
+    <div class="kh-orb"><canvas class="k-orb" data-puntos="1500" aria-hidden="true"></canvas></div>
+  </div>
+</section>${orbTag()}`;
+}
+
+export const heroCss = () => raw(`<style>${HERO_CSS}</style>`);

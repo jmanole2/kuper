@@ -5,7 +5,7 @@ import { STATUS, PLATFORMS, LEAD_ESTADOS } from '../db.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
-import { controlCenter } from './control.js';
+import { controlCenter, hero, heroCss, orbTag } from './control.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
 const reusa = (c, p) => p === 'tiktok' || !!c.config[p]?.reusar_instagram;
@@ -102,12 +102,16 @@ export function portalPage(client, posts, token, tab = '') {
   const pub = by(['publicado']).slice(0, 30);
   const T = [['revisar', 'Por revisar', pend, 'No tienes nada pendiente.'], ['programadas', 'Programadas', prog, 'Nada programado todavía.'], ['publicadas', 'Publicadas', pub, 'Aún no hay publicaciones.']];
   const sel = T.find((x) => x[0] === tab) || T[0];
-  const body = html`
-  <div class="row" style="gap:14px;margin-top:6px"><div class="avatar">${client.logo_path ? html`<img src="${mediaSrc(client.logo_path)}" alt="">` : client.nombre.slice(0, 1)}</div><h1 style="margin:0">Hola, ${client.nombre}</h1></div>
-  ${kpis([[pend.length, 'Por revisar', '#fbbf24', pend.length > 0], [prog.length, 'Programadas', '#4ade80'], [pub.length, 'Publicadas', '#c6ff3d']])}
-  <p class="muted">Revisa y aprueba tus próximas publicaciones. Nada se publica sin tu visto bueno${PLATFORMS.some((pl) => client.config[pl]?.activo && client.config[pl]?.modo_publicacion === 'auto') ? ' (salvo en las redes que configuraste en automático)' : ''}.</p>
-  <nav class="tabs">${T.map(([k, l, list]) => html`<a class="${k === sel[0] ? 'on' : ''}" href="/p/${token}?t=${k}">${l} (${list.length})</a>`)}</nav>
-  ${sel[2].length ? html`<div class="grid" style="margin-top:14px">${sel[2].map((p) => postCard(p, { base: base(p) }))}</div>` : html`<div class="card muted" style="margin-top:14px">${sel[3]}</div>`}
+  const auto = PLATFORMS.some((pl) => client.config[pl]?.activo && client.config[pl]?.modo_publicacion === 'auto');
+  const body = html`${hero({
+    kicker: 'Portal de aprobación', title: `Hola, ${client.nombre}`, letra: client.nombre,
+    sub: `Revisa y aprueba tus próximas publicaciones. Nada se publica sin tu visto bueno${auto ? ' (salvo en las redes que configuraste en automático)' : ''}.`,
+    avatar: client.logo_path ? `<img src="${esc(mediaSrc(client.logo_path))}" alt="">` : null,
+    stats: [[pend.length, 'Por revisar', '#fbbf24', `/p/${token}?t=revisar`, pend.length > 0], [prog.length, 'Programadas', '#4ade80', `/p/${token}?t=programadas`], [pub.length, 'Publicadas', '#c9f53a', `/p/${token}?t=publicadas`]],
+    tabs: T.map(([k, l, list]) => [`/p/${token}?t=${k}`, `${l} (${list.length})`, k === sel[0]]),
+    note: pend.length ? ['Pendiente', `${pend.length} ${pend.length === 1 ? 'publicación espera' : 'publicaciones esperan'} tu visto bueno`] : ['Al día', 'No tienes nada pendiente'],
+  })}
+  ${sel[2].length ? html`<div class="grid">${sel[2].map((p) => postCard(p, { base: base(p) }))}</div>` : html`<div class="card muted">${sel[3]}</div>`}
   ${pend.some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
   return page({ title: `Publicaciones · ${client.nombre}`, body });
 }
@@ -122,11 +126,19 @@ const kpis = (items) => html`<div class="kpis">${items.map(([n, label, color, ho
 const PCOL = { instagram: '#e1306c', facebook: '#4f7cff', linkedin: '#3d8bd9', tiktok: '#f2f4f8' };
 
 export function loginPage(error) {
-  return page({ title: 'Entrar', body: html`<div style="min-height:80vh;display:grid;place-items:center"><div class="card" style="width:min(400px,100%);padding:32px">
-    <div class="avatar" style="background:var(--accent);color:var(--accent-ink);margin-bottom:18px">K</div>
-    <h1 style="font-size:32px">Panel de agencia</h1><p class="muted" style="margin-top:0">Agente social de Kuper Media</p>${error ? html`<div class="err">${error}</div>` : ''}
-    <form method="post" action="/admin/entrar"><label>Contraseña</label><input type="password" name="password" autofocus required>
-    <p style="margin-top:20px"><button class="btn-accent" style="width:100%;justify-content:center">Entrar</button></p></form></div></div>` });
+  return page({ title: 'Entrar', body: html`<div style="min-height:86vh;display:grid;place-items:center">
+  <div class="kh" style="width:min(860px,100%);margin:0">
+    <div class="kh-l" style="justify-content:center;padding:34px 30px">
+      <div class="who"><span class="av">K</span><span class="mono">Kuper · Agentes</span></div>
+      <h1>Tus agentes<br>de IA</h1><p class="sub">Panel de agencia del agente social de Kuper Media.</p>
+      ${error ? html`<div class="err" style="background:#fde8e8;color:#9b1c1c">${error}</div>` : ''}
+      <form method="post" action="/admin/entrar" style="margin-top:8px"><label style="color:#57534c">Contraseña</label>
+        <input type="password" name="password" autofocus required style="background:#fbfaf7;color:#1d1b18;border-color:#d9d4cb">
+        <p style="margin-top:16px"><button class="btn-accent" style="width:100%;justify-content:center">Entrar</button></p></form>
+    </div>
+    <div class="kh-r" style="min-height:420px;justify-content:flex-end"><div class="kh-note"><span class="mono">En línea</span><b>Publica, responde y agenda por ti.</b></div>
+      <div class="kh-orb" style="width:340px;height:340px;right:-50px;bottom:-70px"><canvas class="k-orb" data-puntos="2200" aria-hidden="true"></canvas></div></div>
+  </div></div>${heroCss()}${orbTag()}` });
 }
 
 export function dashboardPage(clients, counts, pulso) {
@@ -142,7 +154,7 @@ export function dashboardPage(clients, counts, pulso) {
   return page({ title: 'Kuper · Centro de control', side: side('clientes'), body });
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, leadsCount = 0, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -158,10 +170,24 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']];
   const t = isNew ? 'config' : tab;
   const body = html`
-  <h1>${isNew ? 'Nuevo cliente' : client.nombre}</h1>
+  ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Llena el perfil de marca y las redes; el agente empieza a crear contenido solo.' }) : hero({
+    kicker: client.activo ? 'Agente activo' : 'Agente en pausa', title: client.nombre,
+    sub: `Publica en ${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => PLAT[p]).join(', ') || 'ninguna red todavía'}`,
+    avatar: client.logo_path ? `<img src="${esc(mediaSrc(client.logo_path))}" alt="">` : null,
+    stats: [
+      [posts.filter((p) => ['pendiente', 'necesita_asset', 'cambios_solicitados'].includes(p.status)).length, 'Por revisar', '#fbbf24', `/admin/clientes/${client.id}?tab=posts&f=revisar`, posts.some((p) => ['pendiente', 'necesita_asset'].includes(p.status))],
+      [posts.filter((p) => ['aprobado', 'publicando'].includes(p.status)).length, 'Programados', '#4ade80', `/admin/clientes/${client.id}?tab=posts&f=programados`],
+      [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
+      [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
+    ],
+    tabs: TABS.map(([k, l]) => [`/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    note: (() => {
+      const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
+      return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
+    })(),
+  })}
   ${error ? html`<div class="err">${error}</div>` : ''}
   ${notice ? html`<div class="okmsg">${notice}</div>` : ''}
-  ${!isNew ? html`<nav class="tabs">${TABS.map(([k, l]) => html`<a class="${k === t ? 'on' : ''}" href="/admin/clientes/${client.id}?tab=${k}">${l}</a>`)}</nav>` : ''}
 
   ${!isNew && t === 'posts' ? html`
   <h2 style="margin-top:24px">Generar ahora</h2>
@@ -325,11 +351,10 @@ export function bookingPage(client, { slots = [], form = {}, error = '', duracio
   const dias = new Map();
   for (const s of slots) { const k = fmtDia(s.inicio); if (!dias.has(k)) dias.set(k, []); dias.get(k).push(s); }
   const body = html`<style>${raw(BOOK_CSS)}</style>
-  <div style="max-width:640px;margin:0 auto">
-  <div class="row" style="gap:14px;margin-top:6px"><div class="avatar">${client.logo_path ? html`<img src="${mediaSrc(client.logo_path)}" alt="">` : client.nombre.slice(0, 1)}</div>
-  <div><h1 style="margin:0">Agenda tu llamada</h1><p class="muted" style="margin:4px 0 0">${client.nombre} · ${duracion} min · hora del centro de México</p></div></div>
+  <div style="max-width:760px;margin:0 auto">
+  ${hero({ kicker: client.nombre, title: 'Agenda tu llamada', letra: client.nombre, sub: `${duracion} min · hora del centro de México`, avatar: client.logo_path ? `<img src="${esc(mediaSrc(client.logo_path))}" alt="">` : null, note: ['Paso 1 de 2', 'Elige el día y la hora'] })}
   ${error ? html`<div class="err">${error}</div>` : ''}
-  ${slots.length ? html`<form method="post" class="card" style="margin-top:18px">
+  ${slots.length ? html`<form method="post" class="card">
     <strong>1. Elige un horario</strong>
     <div class="dias">${[...dias].map(([dia, list], i) => html`<details class="dia" name="dia" ${i === 0 || list.some((s) => s.inicio === form.inicio) ? 'open' : ''}><summary>${dia}<em>${list.length} horarios</em></summary><div class="horas">${list.map((s) => html`<label><input type="radio" name="inicio" value="${s.inicio}" required ${form.inicio === s.inicio ? 'checked' : ''}><span>${fmtHora(s.inicio)}</span></label>`)}</div></details>`)}</div>
     <strong>2. Tus datos</strong>
@@ -363,10 +388,10 @@ export function leadChatPage(client, lead, mensajes) {
   const body = html`<style>${raw(`.chat{display:flex;flex-direction:column;gap:8px;max-width:720px}.burb{max-width:80%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;line-height:1.45;font-size:15px}
 .burb.lead{align-self:flex-start;background:var(--card2);border-bottom-left-radius:4px}.burb.agente{align-self:flex-end;background:rgba(198,255,61,.12);color:#e6ffd0;border-bottom-right-radius:4px}
 .burb time{display:block;font-size:11px;color:var(--muted);margin-top:4px}`)}</style>
-  <p><a class="muted small" href="/admin/clientes/${client.id}?tab=leads">← Leads</a></p>
-  <div class="row spread" style="max-width:720px"><div><h1 style="margin:0">${lead.nombre || lead.usuario || lead.telefono}</h1>
-  <p class="muted" style="margin:4px 0 0">${[lead.telefono, lead.usuario, lead.origen].filter(Boolean).join(' · ')}${lead.cita_inicio ? ` · cita ${fmtDate(lead.cita_inicio)}` : ''}</p></div>
-  ${tel ? html`<a class="btn btn-accent" href="https://wa.me/${tel}" target="_blank" rel="noopener">Escribirle por WhatsApp</a>` : ''}</div>
-  <div class="card chat" style="margin-top:18px">${mensajes.length ? mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`) : html`<p class="muted">Sin mensajes todavía.</p>`}</div>`;
+  ${hero({ kicker: `Conversación · ${lead.origen}`, title: lead.nombre || lead.usuario || lead.telefono || 'Lead', letra: lead.nombre || 'L',
+    sub: [lead.telefono, lead.usuario, lead.cita_inicio ? `cita ${fmtDate(lead.cita_inicio)}` : ''].filter(Boolean).join(' · '),
+    stats: [[mensajes.filter((m) => m.rol === 'lead').length, 'Mensajes del lead', '#93b4ff'], [mensajes.filter((m) => m.rol === 'agente').length, 'Respuestas del agente', '#c9f53a']],
+    tabs: [[`/admin/clientes/${client.id}?tab=leads`, '← Leads', false], ...(tel ? [[`https://wa.me/${tel}`, 'Escribirle por WhatsApp', true]] : [])] })}
+  <div class="card chat">${mensajes.length ? mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`) : html`<p class="muted">Sin mensajes todavía.</p>`}</div>`;
   return page({ title: `Chat · ${lead.nombre || lead.telefono || ''}`, body, side: side('clientes') });
 }
