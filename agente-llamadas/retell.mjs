@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { configFunciones, definiciones } from './funciones.mjs';
 
 const API = 'https://api.retellai.com';
 const aqui = dirname(fileURLToPath(import.meta.url));
@@ -67,6 +68,14 @@ Tu meta principal es agendar ${cfg.tipo_de_cita}.
 5. Usa la función de agendar cita con esos datos.
 6. Confirma en voz alta el día, la hora y que le llegará la confirmación por correo.
 7. Pregunta si necesita algo más y despídete amablemente; luego termina la llamada.
+
+## Cambiar o cancelar una cita
+${configFunciones() ? `Si la persona ya tiene una cita y quiere moverla o cancelarla:
+1. Pide el correo con el que agendó y confírmalo letra por letra.
+2. Usa buscar_cita y dile qué cita encontraste.
+3. Para cambiarla: pregunta qué día y horario prefiere, consulta la disponibilidad, ofrece dos o tres horarios libres y, cuando elija, usa cambiar_cita.
+4. Para cancelarla: confirma que de verdad quiere cancelar (ofrece cambiarla en lugar de cancelar) y usa cancelar_cita.
+5. Confirma en voz alta lo que quedó y que le llegará un correo.` : 'Si la persona quiere cambiar o cancelar una cita que ya tiene, toma su nombre, su correo y el nuevo horario que prefiere, y dile que un asesor se lo confirmará por correo.'}
 
 ## Reglas
 - Respuestas cortas: una o dos frases por turno. Es una llamada telefónica, no un correo.
@@ -136,6 +145,7 @@ async function crear() {
     await api('PATCH', `/update-retell-llm/${llmId}`, llm);
     await api('PATCH', `/update-agent/${previo.agent_id}`, agente);
     console.log(`Agente actualizado: ${previo.agent_id} (LLM ${llmId})`);
+    await sincronizarFunciones(llmId);
     return;
   }
 
@@ -145,7 +155,24 @@ async function crear() {
     response_engine: { type: 'retell-llm', llm_id: nuevoLlm.llm_id },
   });
   console.log(`Agente creado: ${nuevo.agent_id} (LLM ${nuevoLlm.llm_id})`);
+  await sincronizarFunciones(nuevoLlm.llm_id);
   console.log('Siguiente paso: en el panel de Retell agrega las funciones de Cal.com (ver LEEME.md).');
+}
+
+// Agrega (o actualiza) las funciones buscar/cambiar/cancelar cita sin tocar las demás (p. ej. las de Cal.com del panel).
+const NUESTRAS = ['buscar_cita', 'cambiar_cita', 'cancelar_cita'];
+async function sincronizarFunciones(llmId) {
+  const f = configFunciones();
+  try {
+    const llm = await api('GET', `/get-retell-llm/${llmId}`);
+    const otras = (llm.general_tools || []).filter((t) => !NUESTRAS.includes(t.name));
+    const nuevas = f ? definiciones(f, tz) : [];
+    if (!f && otras.length === (llm.general_tools || []).length) return console.log('Funciones de citas: sin CAL_API_KEY o PUBLIC_URL, no se agregan.');
+    await api('PATCH', `/update-retell-llm/${llmId}`, { general_tools: [...otras, ...nuevas] });
+    console.log(f ? `Funciones de citas listas: ${NUESTRAS.join(', ')} -> ${f.url}/funciones` : 'Funciones de citas quitadas (falta CAL_API_KEY o PUBLIC_URL).');
+  } catch (e) {
+    console.error(`No pude agregar las funciones de citas: ${e.message}`);
+  }
 }
 
 async function voces() {

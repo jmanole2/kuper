@@ -86,3 +86,9 @@ PANEL_API_KEY=<llave de la API del cliente en el panel, pestaña Configuración>
 ```
 
 Cada minuto revisa las llamadas terminadas de los últimos 2 días y manda las que falten (anota las enviadas en `agente-llamadas/datos/enviadas.json`). `/salud` dice `"panel": true` cuando está activo. Pruebas: `node --test agente-llamadas/test/panel.test.mjs`.
+
+## 7. Cambiar o cancelar citas por teléfono
+
+Con `CAL_API_KEY` (Cal.com → Settings → Developer → API keys) y `PUBLIC_URL` (el dominio de la página, p. ej. `https://llamadas.kuper.media`) en el `.env`, el comando `crear` (y `update.sh`) agrega a Sofía tres funciones: `buscar_cita`, `cambiar_cita` y `cancelar_cita`. La persona da el correo con el que agendó; Sofía busca la cita, revisa horarios libres y la mueve o la cancela en Cal.com. Cal.com le manda el correo de confirmación.
+
+Retell llama a `https://<dominio>/funciones/<nombre>` con una llave que se deriva de la clave de Retell (no hay que guardar otra). Las funciones de Cal.com agregadas en el panel de Retell no se tocan. `/salud` dice `"citas": true` cuando está activo. Pruebas: `node --test agente-llamadas/test/*.test.mjs`.

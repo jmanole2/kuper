@@ -10,6 +10,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as panel from './panel.mjs';
+import { configFunciones, crearFunciones } from './funciones.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -96,9 +97,29 @@ async function crearLlamada(req, res) {
   }
 }
 
+// Funciones que Sofía usa en la llamada para buscar, cambiar o cancelar citas (CAL_API_KEY + PUBLIC_URL en el .env).
+const cfgFunciones = configFunciones();
+const funciones = cfgFunciones ? crearFunciones({ ...cfgFunciones, tz: cfg.zona_horaria }) : null;
+function leerCuerpo(req, max = 1_000_000) {
+  return new Promise((ok, mal) => {
+    let n = 0; const partes = [];
+    req.on('data', (c) => { n += c.length; if (n > max) { mal(new Error('cuerpo muy grande')); req.destroy(); } else partes.push(c); });
+    req.on('end', () => ok(Buffer.concat(partes).toString('utf8')));
+    req.on('error', mal);
+  });
+}
+async function atenderFuncion(req, res, nombre) {
+  if (!funciones) return json(res, 404, { error: 'Funciones de citas no configuradas' });
+  let cuerpo;
+  try { cuerpo = JSON.parse(await leerCuerpo(req) || '{}'); } catch { return json(res, 400, { error: 'JSON no válido' }); }
+  const [codigo, datos] = await funciones.atender(nombre, req.headers.authorization, cuerpo);
+  if (codigo === 200) console.log(`${new Date().toISOString()} función ${nombre}: ${String(datos.resultado || '').slice(0, 120)}`);
+  json(res, codigo, datos);
+}
+
 const server = createServer(async (req, res) => {
   const ruta = new URL(req.url, 'http://x').pathname;
-  if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro) });
+  if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro), citas: Boolean(funciones) });
   if (ruta === '/api/config') {
     return json(res, 200, {
       negocio: cfg.negocio,
@@ -109,6 +130,8 @@ const server = createServer(async (req, res) => {
     });
   }
   if (ruta === '/api/llamada' && req.method === 'POST') return crearLlamada(req, res);
+  const fn = /^\/funciones\/([a-z_]+)$/.exec(ruta);
+  if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
   const archivo = archivos[ruta];
   if (archivo && req.method === 'GET') {
     const p = resolve(aqui, archivo[0]);
