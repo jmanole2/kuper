@@ -159,7 +159,7 @@ export function book(client, { inicio, nombre, telefono, motivo = '' }, { now = 
       description: [motivo && `Motivo: ${motivo}`, telefono && `Teléfono: ${telefono}`, 'Agendada por el agente de Kuper'].filter(Boolean).join('\n'),
       start: { dateTime: new Date(slot.start).toISOString(), timeZone: config.timezone },
       end: { dateTime: new Date(slot.end).toISOString(), timeZone: config.timezone },
-      extendedProperties: { private: { kuper: '1', telefono: telefono || '' } },
+      extendedProperties: { private: { kuper: '1', telefono: telefono || '', nombre: String(nombre || '').slice(0, 80) } },
     };
     const created = await (insertFn || ((e) => gcal('POST', `/calendars/${encodeURIComponent(cfg.calendar_id)}/events`, e)))(ev);
     return { id: created.id, link: created.htmlLink, inicio: ev.start.dateTime, fin: ev.end.dateTime };
@@ -173,4 +173,14 @@ export async function cancelEvent(client, eventId, { getFn, deleteFn } = {}) {
   if (ev?.extendedProperties?.private?.kuper !== '1') throw new SlotTaken('Esa cita no la agendó el agente; no se puede borrar desde aquí.');
   await (deleteFn || (() => gcal('DELETE', base)))();
   return true;
+}
+
+/** Próximas citas que agendó el agente o la página (para que el agente de WhatsApp se entere). */
+export async function agentEvents(client, { dias = 45, listFn } = {}) {
+  const cfg = agendaCfg(client);
+  if (!cfg.calendar_id) throw new Error('Falta el calendario');
+  const q = new URLSearchParams({ timeMin: new Date().toISOString(), timeMax: new Date(Date.now() + dias * 86400_000).toISOString(), singleEvents: 'true', orderBy: 'startTime', maxResults: '250', privateExtendedProperty: 'kuper=1' });
+  const items = listFn ? await listFn() : (await gcal('GET', `/calendars/${encodeURIComponent(cfg.calendar_id)}/events?${q}`)).items || [];
+  return items.filter((e) => e.status !== 'cancelled' && e.extendedProperties?.private?.kuper === '1')
+    .map((e) => ({ id: e.id, inicio: e.start?.dateTime, telefono: e.extendedProperties.private.telefono || null, nombre: e.extendedProperties.private.nombre || null }));
 }

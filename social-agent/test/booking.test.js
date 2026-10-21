@@ -51,3 +51,22 @@ test('rechaza bots (campo trampa) y teléfonos inválidos', async () => {
   assert.equal((await post({ inicio: 'x', nombre: 'Bot', telefono: '5511112222', sitio: 'spam' })).status, 400);
   assert.equal((await post({ inicio: 'x', nombre: 'Ana', telefono: '123' })).status, 400);
 });
+
+test('API del agente: mensajes del chat, citas del agente y teléfonos de México sin duplicar', async () => {
+  const key = 'llave-prueba-123';
+  db.updateClient(client.id, { credentials: { ...db.clientCredentials(client), api_key: key } });
+  const api = (m, p, body) => fetch(`${base}/api/kuper${p}`, { method: m, headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
+  assert.equal((await api('POST', '/mensajes', { telefono: '+5215511112222', rol: 'lead', texto: 'Hola' })).status, 200);
+  assert.equal((await api('POST', '/mensajes', { telefono: '+5215511112222', rol: 'agente', texto: '¡Hola! ¿En qué te ayudo?' })).status, 200);
+  assert.equal((await api('POST', '/mensajes', { telefono: '+5215511112222', rol: 'x', texto: 'no' })).status, 400);
+  const leads = db.listLeads(client.id).filter((l) => l.telefono === '+525511112222');
+  assert.equal(leads.length, 1, 'el 521 de WhatsApp y el 52 de la página son el mismo lead');
+  const msgs = db.leadMessages(leads[0].id);
+  assert.deepEqual(msgs.map((m) => m.rol), ['lead', 'agente']);
+  const ev = await agenda.agentEvents(client, { listFn: async () => [
+    { id: 'a', status: 'confirmed', start: { dateTime: '2030-01-01T16:00:00Z' }, extendedProperties: { private: { kuper: '1', telefono: '+525511112222', nombre: 'Ana' } } },
+    { id: 'b', status: 'confirmed', start: { dateTime: '2030-01-01T18:00:00Z' } },
+  ] });
+  assert.deepEqual(ev, [{ id: 'a', inicio: '2030-01-01T16:00:00Z', telefono: '+525511112222', nombre: 'Ana' }]);
+  assert.equal(creados[0].extendedProperties.private.nombre, 'Ana');
+});

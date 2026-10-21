@@ -80,6 +80,15 @@ export function createApp() {
       res.status(500).json({ error: e.message });
     }
   });
+  api.get('/citas', async (req, res) => {
+    try { res.json({ citas: await agenda.agentEvents(req.client, { dias: Math.min(90, Number(req.query.dias) || 45) }) }); }
+    catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  api.post('/mensajes', (req, res) => {
+    const { telefono, usuario, origen, rol, texto } = req.body || {};
+    try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto }); res.json({ ok: true }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
+  });
   api.delete('/citas/:eventId', async (req, res) => {
     try {
       await agenda.cancelEvent(req.client, req.params.eventId);
@@ -194,7 +203,7 @@ export function createApp() {
   });
   admin.get('/clientes/:cid', async (req, res) => {
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
-    if (view.tab === 'leads') view.leads = db.listLeads(req.client.id);
+    if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); }
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
       try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch (e) { view.citasError = e.message; }
@@ -267,6 +276,11 @@ export function createApp() {
     const creds = db.clientCredentials(req.client);
     db.updateClient(req.client.id, { credentials: { ...creds, api_key: randomToken(24) } });
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Llave%20nueva%20generada`);
+  });
+  admin.get('/clientes/:cid/leads/:leadId/chat', (req, res) => {
+    const lead = db.getLead(req.client.id, Number(req.params.leadId));
+    if (!lead) return res.status(404).send('Lead no encontrado');
+    res.send(V.leadChatPage(req.client, lead, db.leadMessages(lead.id)));
   });
   admin.post('/clientes/:cid/leads/:leadId', (req, res) => {
     db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado));

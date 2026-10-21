@@ -110,6 +110,14 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS leads_client ON leads(client_id, updated_at);
+    CREATE TABLE IF NOT EXISTS lead_mensajes (
+      id INTEGER PRIMARY KEY,
+      lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+      rol TEXT NOT NULL,
+      texto TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS lead_mensajes_lead ON lead_mensajes(lead_id, id);
     CREATE TABLE IF NOT EXISTS kv (
       k TEXT PRIMARY KEY,
       v TEXT NOT NULL
@@ -130,6 +138,8 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('posts', 'estructura', 'TEXT');
   ensure('posts', 'tipo_post', 'TEXT');
   ensure('posts', 'origen_id', 'INTEGER'); // post de Instagram del que se reutilizó el video/carrusel
+  // Celulares de México: WhatsApp los manda como 521 + 10 dígitos; se guardan como +52 + 10 para no duplicar leads.
+  db.exec("UPDATE leads SET telefono = '+52' || substr(telefono, 5) WHERE telefono LIKE '+521%' AND length(telefono) = 14");
   return db;
 }
 
@@ -332,7 +342,14 @@ export const recentEvents = (limit = 50) =>
 export const keywordReplySeen = (commentId) => !!getDb().prepare('SELECT 1 FROM keyword_replies WHERE comment_id = ?').get(commentId);
 // ------------------------------------------------------------------ leads
 export const LEAD_ESTADOS = { nuevo: 'Nuevo', conversacion: 'En conversación', cita: 'Con cita', cliente: 'Cliente', perdido: 'Perdido' };
-const normTel = (t) => (t ? String(t).replace(/[^\d+]/g, '') : null);
+function normTel(t) {
+  if (!t) return null;
+  let d = String(t).replace(/\D/g, '');
+  if (!d) return null;
+  if (d.length === 10) d = `52${d}`;                         // número de México sin lada de país
+  if (d.length === 13 && d.startsWith('521')) d = `52${d.slice(3)}`; // formato de WhatsApp para celulares de México
+  return `+${d}`;
+}
 /** Crea o actualiza un lead (se identifica por teléfono o por usuario de Instagram). */
 export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento }) {
   const tel = normTel(telefono), user = usuario ? String(usuario).replace(/^@/, '').toLowerCase() : null;
@@ -352,6 +369,20 @@ export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado
     .run(clientId, nombre ?? null, tel, user, origen || 'otro', estado || 'nuevo', nota ?? null, cita_inicio ?? null, cita_evento ?? null);
   return d.prepare('SELECT * FROM leads WHERE id = ?').get(Number(r.lastInsertRowid));
 }
+export const getLead = (clientId, id) => getDb().prepare('SELECT * FROM leads WHERE id = ? AND client_id = ?').get(id, clientId);
+/** Guarda un mensaje de la conversación del lead (lo manda el agente de WhatsApp). */
+export function addLeadMessage(clientId, ident, { rol, texto }) {
+  if (!['lead', 'agente'].includes(rol) || !String(texto ?? '').trim()) throw new Error('Mensaje no válido');
+  const lead = upsertLead(clientId, ident);
+  getDb().prepare('INSERT INTO lead_mensajes (lead_id, rol, texto) VALUES (?, ?, ?)').run(lead.id, rol, String(texto).slice(0, 4000));
+  getDb().prepare("UPDATE leads SET updated_at = datetime('now') WHERE id = ?").run(lead.id);
+  return lead;
+}
+export const leadMessages = (leadId, limit = 400) => getDb()
+  .prepare('SELECT * FROM (SELECT * FROM lead_mensajes WHERE lead_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id').all(leadId, limit);
+export const leadMessageCounts = (clientId) => Object.fromEntries(getDb()
+  .prepare('SELECT m.lead_id, COUNT(*) n FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ? GROUP BY m.lead_id').all(clientId).map((r) => [r.lead_id, r.n]));
+
 export const listLeads = (clientId, { estado, limit = 300 } = {}) => getDb()
   .prepare(`SELECT * FROM leads WHERE client_id = ? ${estado ? 'AND estado = ?' : ''} ORDER BY updated_at DESC LIMIT ?`)
   .all(...[clientId, ...(estado ? [estado] : []), limit]);

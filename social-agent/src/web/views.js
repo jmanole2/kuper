@@ -145,7 +145,7 @@ export function dashboardPage(clients, counts, events) {
   return page({ title: 'Agente Social · Admin', side: side('clientes'), body });
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -180,7 +180,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
   ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
     <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
-    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div></td>
+    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="/admin/clientes/${client.id}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}</td>
       <td><span class="badge" style="color:${l.origen === 'instagram' ? '#e1306c' : l.origen === 'whatsapp' ? '#25d366' : '#93b4ff'}">${l.origen}</span></td>
       <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
       <td><form method="post" action="/admin/clientes/${client.id}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
@@ -356,4 +356,19 @@ export function bookingDone(client, cita) {
     <p class="muted">Te escribimos por WhatsApp antes de la llamada. Si necesitas cambiarla, contéstanos ahí mismo.</p>
     <p class="muted small">${client.nombre}</p></div>`;
   return page({ title: `Cita confirmada · ${client.nombre}`, body });
+}
+
+// ------------------------------------------------------------ conversación de un lead
+const fmtChat = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(iso.replace(' ', 'T') + 'Z'));
+export function leadChatPage(client, lead, mensajes) {
+  const tel = lead.telefono ? lead.telefono.replace(/\D/g, '') : null;
+  const body = html`<style>${raw(`.chat{display:flex;flex-direction:column;gap:8px;max-width:720px}.burb{max-width:80%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;line-height:1.45;font-size:15px}
+.burb.lead{align-self:flex-start;background:var(--card2);border-bottom-left-radius:4px}.burb.agente{align-self:flex-end;background:rgba(198,255,61,.12);color:#e6ffd0;border-bottom-right-radius:4px}
+.burb time{display:block;font-size:11px;color:var(--muted);margin-top:4px}`)}</style>
+  <p><a class="muted small" href="/admin/clientes/${client.id}?tab=leads">← Leads</a></p>
+  <div class="row spread" style="max-width:720px"><div><h1 style="margin:0">${lead.nombre || lead.usuario || lead.telefono}</h1>
+  <p class="muted" style="margin:4px 0 0">${[lead.telefono, lead.usuario, lead.origen].filter(Boolean).join(' · ')}${lead.cita_inicio ? ` · cita ${fmtDate(lead.cita_inicio)}` : ''}</p></div>
+  ${tel ? html`<a class="btn btn-accent" href="https://wa.me/${tel}" target="_blank" rel="noopener">Escribirle por WhatsApp</a>` : ''}</div>
+  <div class="card chat" style="margin-top:18px">${mensajes.length ? mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`) : html`<p class="muted">Sin mensajes todavía.</p>`}</div>`;
+  return page({ title: `Chat · ${lead.nombre || lead.telefono || ''}`, body, side: side('clientes') });
 }
