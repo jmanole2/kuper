@@ -63,7 +63,7 @@ Tu meta principal es agendar ${cfg.tipo_de_cita}.
 1. Entiende qué necesita la persona en una o dos preguntas.
 2. Pregunta qué día y en qué horario le acomoda.
 3. Usa la función de consultar disponibilidad del calendario y ofrece como máximo dos o tres horarios libres.
-4. Cuando elija uno, pide su nombre completo y su correo electrónico. Repite el correo letra por letra para confirmarlo.
+4. Cuando elija uno, pide su nombre completo y su correo electrónico. Repite el correo letra por letra para confirmarlo. Si la llamada es desde la web (no hay número), pide también un número de WhatsApp para mandarle la confirmación; si no lo quiere dar, no insistas.
 5. Usa la función de agendar cita con esos datos.
 6. Confirma en voz alta el día, la hora y que le llegará la confirmación por correo.
 7. Pregunta si necesita algo más y despídete amablemente; luego termina la llamada.
@@ -123,6 +123,7 @@ async function crear() {
       { type: 'boolean', name: 'cita_agendada', description: '¿Se agendó una cita durante la llamada?' },
       { type: 'string', name: 'nombre_cliente', description: 'Nombre completo del cliente, si lo dio.' },
       { type: 'string', name: 'correo_cliente', description: 'Correo del cliente, si lo dio.' },
+      { type: 'string', name: 'telefono_cliente', description: 'Número de teléfono o WhatsApp que dio el cliente, solo dígitos con lada (por ejemplo 5512345678). Vacío si no lo dio.' },
     ],
   };
 

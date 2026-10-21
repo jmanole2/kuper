@@ -9,6 +9,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as panel from './panel.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -97,7 +98,7 @@ async function crearLlamada(req, res) {
 
 const server = createServer(async (req, res) => {
   const ruta = new URL(req.url, 'http://x').pathname;
-  if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas' });
+  if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro) });
   if (ruta === '/api/config') {
     return json(res, 200, {
       negocio: cfg.negocio,
@@ -119,5 +120,8 @@ const server = createServer(async (req, res) => {
   res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('No encontrado');
 });
+
+// Cada llamada terminada se manda al panel de Kuper como lead (si el .env tiene PANEL_URL, PANEL_SLUG y PANEL_API_KEY).
+const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
 
 server.listen(PORT, HOST, () => console.log(`Agente de llamadas: http://${HOST}:${PORT}`));

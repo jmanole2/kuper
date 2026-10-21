@@ -5,3 +5,4 @@ out/*
 !out/kuper-agente.mp4
 
 agente-llamadas/.env
+agente-llamadas/datos/

@@ -72,3 +72,17 @@ El instalador usa su propio Node, carpeta (`/opt/agente-llamadas`), puerto (3200
 Actualizar: `sudo bash /opt/agente-llamadas/agente-llamadas/deploy/update.sh`. Log: `journalctl -u agente-llamadas -f`.
 
 El archivo `public/vendor/retell-sdk.js` es el SDK web de Retell (`retell-client-js-sdk` 3.0.2) empaquetado en un solo archivo con esbuild, para no depender de CDNs.
+
+## 6. Mandar las llamadas al panel de Kuper
+
+Cada llamada que termina se manda al panel (redes.kuper.media). Ahí queda como lead (origen "Llamada"), con su resumen, lo que se dijo y si agendó cita, y aparece en la pestaña **Llamadas** y en el reporte del mes. Si la persona ya había escrito por WhatsApp con el mismo número, se junta en el mismo lead.
+
+Agrega al `.env` del servidor:
+
+```
+PANEL_URL=https://redes.kuper.media
+PANEL_SLUG=kuper-media
+PANEL_API_KEY=<llave de la API del cliente en el panel, pestaña Configuración>
+```
+
+Cada minuto revisa las llamadas terminadas de los últimos 2 días y manda las que falten (anota las enviadas en `agente-llamadas/datos/enviadas.json`). `/salud` dice `"panel": true` cuando está activo. Pruebas: `node --test agente-llamadas/test/panel.test.mjs`.
