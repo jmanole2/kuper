@@ -206,7 +206,7 @@ export function leadsSection(client, leads, chats, base) {
   return html`${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
   ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
     <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
-    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}</td>
+    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}${l.control === 'humano' ? html` <span class="badge" style="color:#93b4ff">Atiende una persona</span>` : ''}</td>
       <td><span class="badge" style="color:${l.origen === 'instagram' ? '#e1306c' : l.origen === 'whatsapp' ? '#25d366' : '#93b4ff'}">${l.origen}</span></td>
       <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
       <td><form method="post" action="${base}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
@@ -304,7 +304,10 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
     <p class="muted small">Tu agente de WhatsApp usa esta llave para consultar horarios libres, agendar citas en Google Calendar y registrar leads en este panel.</p>
     <p class="small">Llave: ${creds.api_key ? html`<details style="display:inline-block"><summary class="small">Mostrar</summary><code style="user-select:all">${creds.api_key}</code></details>` : html`<span class="muted">sin generar</span>`}<br>
     API: <code>${config.publicBaseUrl}/api/${client.slug}/disponibilidad</code> · <code>/citas</code> · <code>/leads</code></p>
-    <form method="post" action="/admin/clientes/${client.id}/llave-api" onsubmit="return ${creds.api_key ? "confirm('La llave anterior dejará de funcionar. ¿Continuar?')" : 'true'}"><button class="btn-warn">${creds.api_key ? 'Generar llave nueva' : 'Generar llave'}</button></form></div>
+    <form method="post" action="/admin/clientes/${client.id}/llave-api" onsubmit="return ${creds.api_key ? "confirm('La llave anterior dejará de funcionar. ¿Continuar?')" : 'true'}"><button class="btn-warn">${creds.api_key ? 'Generar llave nueva' : 'Generar llave'}</button></form>
+    <form method="post" action="/admin/clientes/${client.id}/agente-url" style="margin-top:14px"><label>URL del agente (para responder y tomar el control desde el panel)</label>
+      <div class="row"><input name="agente_url" type="url" value="${creds.agente_url || ''}" placeholder="https://agente.kuper.mx" style="max-width:420px"><button class="btn-warn">Guardar URL</button></div>
+      <p class="muted small" style="margin:6px 0 0">${creds.agente_url ? 'Conectado: en Leads → Ver chat puedes responder a mano.' : 'Es el dominio donde corre el agente de WhatsApp de esta marca.'}</p></form></div>
   <h2>Logo</h2>
   <form method="post" action="/admin/clientes/${client.id}/logo" enctype="multipart/form-data" class="card row">
     ${client.logo_path ? html`<img src="/media/${path.basename(client.logo_path)}" style="height:48px">` : ''}
@@ -443,16 +446,37 @@ export function bookingDone(client, cita, link = '') {
 
 // ------------------------------------------------------------ conversación de un lead
 const fmtChat = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(iso.replace(' ', 'T') + 'Z'));
-export function leadChatPage(client, lead, mensajes, { back = null, sideBar = null } = {}) {
-  const tel = lead.telefono ? lead.telefono.replace(/\D/g, '') : null;
-  const body = html`<style>${raw(`.chat{display:flex;flex-direction:column;gap:8px;max-width:720px}.burb{max-width:80%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;line-height:1.45;font-size:15px}
+const CHAT_CSS = `.chat{display:flex;flex-direction:column;gap:8px;max-width:760px;max-height:62vh;overflow-y:auto}.burb{max-width:80%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;line-height:1.45;font-size:15px;word-break:break-word}
 .burb.lead{align-self:flex-start;background:var(--card2);border-bottom-left-radius:4px}.burb.agente{align-self:flex-end;background:rgba(198,255,61,.12);color:#e6ffd0;border-bottom-right-radius:4px}
-.burb time{display:block;font-size:11px;color:var(--muted);margin-top:4px}`)}</style>
+.burb.humano{align-self:flex-end;background:rgba(147,180,255,.16);color:#dbe6ff;border-bottom-right-radius:4px}
+.burb time{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+.resp{max-width:760px;margin-top:14px}.resp textarea{min-height:76px}.ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:760px;margin:0 0 12px}`;
+export const chatBurbujas = (mensajes) => String(mensajes.length
+  ? html`${mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : m.rol === 'humano' ? (m.autor || 'Equipo') : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`)}`
+  : html`<p class="muted">Sin mensajes todavía.</p>`);
+
+export function leadChatPage(client, lead, mensajes, { back = null, sideBar = null, base = null, puedeResponder = false, estado = null, error = '', borrador = '' } = {}) {
+  const tel = lead.telefono ? lead.telefono.replace(/\D/g, '') : null;
+  const humano = estado ? !!estado.humano : lead.control === 'humano';
+  const body = html`<style>${raw(CHAT_CSS)}</style>
   ${hero({ kicker: `Conversación · ${lead.origen}`, title: lead.nombre || lead.usuario || lead.telefono || 'Lead', letra: lead.nombre || 'L',
     sub: [lead.telefono, lead.usuario, lead.cita_inicio ? `cita ${fmtDate(lead.cita_inicio)}` : ''].filter(Boolean).join(' · '),
-    stats: [[mensajes.filter((m) => m.rol === 'lead').length, 'Mensajes del lead', '#93b4ff'], [mensajes.filter((m) => m.rol === 'agente').length, 'Respuestas del agente', '#c9f53a']],
-    tabs: [[back || `/admin/clientes/${client.id}?tab=leads`, '← Leads', false], ...(tel ? [[`https://wa.me/${tel}`, 'Escribirle por WhatsApp', true]] : [])] })}
-  <div class="card chat">${mensajes.length ? mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`) : html`<p class="muted">Sin mensajes todavía.</p>`}</div>`;
+    stats: [[mensajes.filter((m) => m.rol === 'lead').length, 'Mensajes del lead', '#93b4ff'], [mensajes.filter((m) => m.rol === 'agente').length, 'Respuestas del agente', '#c9f53a'], [mensajes.filter((m) => m.rol === 'humano').length, 'Respuestas del equipo', '#93b4ff']],
+    tabs: [[back || `/admin/clientes/${client.id}?tab=leads`, '← Leads', false], ...(tel ? [[`https://wa.me/${tel}`, 'Abrir en WhatsApp', false]] : [])],
+    note: puedeResponder ? (humano ? ['Control', 'Tú respondes · el bot está en pausa'] : ['Control', 'El agente responde solo']) : null })}
+  ${error ? html`<div class="err" style="max-width:760px">${error}</div>` : ''}
+  ${puedeResponder && base ? html`<div class="ctl">
+    <span class="badge" style="color:${humano ? '#93b4ff' : '#c9f53a'}">${humano ? 'Tú tienes el control' : 'Responde el agente'}</span>
+    ${estado && estado.ventana_abierta === false ? html`<span class="badge" style="color:#fbbf24">Ventana de 24 h cerrada</span>` : ''}
+    <form method="post" action="${base}/control" class="inline"><input type="hidden" name="humano" value="${humano ? '0' : '1'}"><button class="${humano ? 'btn-accent' : 'btn-warn'}">${humano ? 'Devolver al agente' : 'Tomar control'}</button></form>
+  </div>` : ''}
+  <div class="card chat" id="chat">${raw(chatBurbujas(mensajes))}</div>
+  ${puedeResponder && base ? html`<form class="resp" method="post" action="${base}/responder">
+    <textarea name="texto" maxlength="4000" placeholder="Escribe tu respuesta… (al enviar, el agente se pausa en esta conversación)" required>${borrador}</textarea>
+    <p class="row"><button class="btn-accent">Enviar por WhatsApp</button><span class="muted small">Sale desde el número del agente. ${humano ? 'Cuando termines, toca "Devolver al agente".' : ''}</span></p></form>`
+    : html`<p class="muted small" style="max-width:760px">Para responder desde aquí, Kuper tiene que conectar este panel con tu agente (URL del agente en Configuración).</p>`}
+  ${raw(`<script>(()=>{const c=document.getElementById('chat');c.scrollTop=c.scrollHeight;const u=${JSON.stringify(base ? `${base}/chat.json` : '')};if(!u)return;let last=c.innerHTML;
+  setInterval(async()=>{try{const r=await fetch(u,{headers:{accept:'application/json'}});if(!r.ok)return;const j=await r.json();if(j.html!==last){const abajo=c.scrollHeight-c.scrollTop-c.clientHeight<60;c.innerHTML=j.html;last=j.html;if(abajo)c.scrollTop=c.scrollHeight;}}catch{}},8000);})();</script>`)}`;
   return page({ title: `Chat · ${lead.nombre || lead.telefono || ''}`, body, side: sideBar || side('clientes') });
 }
 
@@ -603,8 +627,8 @@ export function appLeadsPage(client, leads, chats, posts = []) {
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
   return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false })}` });
 }
-export function appChatPage(client, lead, mensajes) {
-  return leadChatPage(client, lead, mensajes, { back: '/app/leads', sideBar: sideApp('leads', client) });
+export function appChatPage(client, lead, mensajes, opts = {}) {
+  return leadChatPage(client, lead, mensajes, { ...opts, back: '/app/leads', sideBar: sideApp('leads', client) });
 }
 export function cuentaPage(user, { error = '', ok = '', client = null } = {}) {
   const body = html`${hero({ kicker: 'Mi cuenta', title: user.nombre, letra: user.nombre, sub: user.email })}

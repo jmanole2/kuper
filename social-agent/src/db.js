@@ -171,6 +171,8 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('posts', 'origen_id', 'INTEGER'); // post de Instagram del que se reutilizó el video/carrusel
   // Celulares de México: WhatsApp los manda como 521 + 10 dígitos; se guardan como +52 + 10 para no duplicar leads.
   db.exec("UPDATE leads SET telefono = '+52' || substr(telefono, 5) WHERE telefono LIKE '+521%' AND length(telefono) = 14");
+  ensure('leads', 'control', "TEXT NOT NULL DEFAULT 'bot'"); // 'bot' | 'humano' (alguien tomó la conversación)
+  ensure('lead_mensajes', 'autor', 'TEXT'); // quién respondió a mano desde el panel
   return db;
 }
 
@@ -382,7 +384,7 @@ function normTel(t) {
   return `+${d}`;
 }
 /** Crea o actualiza un lead (se identifica por teléfono o por usuario de Instagram). */
-export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento }) {
+export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento, control }) {
   const tel = normTel(telefono), user = usuario ? String(usuario).replace(/^@/, '').toLowerCase() : null;
   if (!tel && !user) throw new Error('El lead necesita teléfono o usuario');
   const d = getDb();
@@ -394,6 +396,7 @@ export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado
     d.prepare(`UPDATE leads SET nombre = COALESCE(?, nombre), telefono = COALESCE(?, telefono), usuario = COALESCE(?, usuario), estado = ?,
       nota = COALESCE(?, nota), cita_inicio = COALESCE(?, cita_inicio), cita_evento = COALESCE(?, cita_evento), updated_at = datetime('now') WHERE id = ?`)
       .run(nombre ?? null, tel, user, nuevoEstado, nota ?? null, cita_inicio ?? null, cita_evento ?? null, prev.id);
+    if (control === 'bot' || control === 'humano') d.prepare('UPDATE leads SET control = ? WHERE id = ?').run(control, prev.id);
     return d.prepare('SELECT * FROM leads WHERE id = ?').get(prev.id);
   }
   const r = d.prepare('INSERT INTO leads (client_id, nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -402,10 +405,10 @@ export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado
 }
 export const getLead = (clientId, id) => getDb().prepare('SELECT * FROM leads WHERE id = ? AND client_id = ?').get(id, clientId);
 /** Guarda un mensaje de la conversación del lead (lo manda el agente de WhatsApp). */
-export function addLeadMessage(clientId, ident, { rol, texto }) {
-  if (!['lead', 'agente'].includes(rol) || !String(texto ?? '').trim()) throw new Error('Mensaje no válido');
+export function addLeadMessage(clientId, ident, { rol, texto, autor = null }) {
+  if (!['lead', 'agente', 'humano'].includes(rol) || !String(texto ?? '').trim()) throw new Error('Mensaje no válido');
   const lead = upsertLead(clientId, ident);
-  getDb().prepare('INSERT INTO lead_mensajes (lead_id, rol, texto) VALUES (?, ?, ?)').run(lead.id, rol, String(texto).slice(0, 4000));
+  getDb().prepare('INSERT INTO lead_mensajes (lead_id, rol, texto, autor) VALUES (?, ?, ?, ?)').run(lead.id, rol, String(texto).slice(0, 4000), autor ? String(autor).slice(0, 80) : null);
   getDb().prepare("UPDATE leads SET updated_at = datetime('now') WHERE id = ?").run(lead.id);
   return lead;
 }

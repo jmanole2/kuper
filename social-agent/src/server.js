@@ -19,6 +19,7 @@ import * as plan from './plan.js';
 import * as billing from './billing.js';
 import * as metricas from './metricas.js';
 import { reportePage } from './web/reporte.js';
+import * as agente from './agente.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -99,8 +100,8 @@ export function createApp() {
     catch (e) { res.status(500).json({ error: e.message }); }
   });
   api.post('/mensajes', (req, res) => {
-    const { telefono, usuario, origen, rol, texto } = req.body || {};
-    try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto }); res.json({ ok: true }); }
+    const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
+    try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor }); res.json({ ok: true }); }
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   api.delete('/citas/:eventId', async (req, res) => {
@@ -261,11 +262,7 @@ export function createApp() {
   postActions(appR, (req) => `/app/posts#post-${req.post.id}`);
   appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id), db.leadMessageCounts(req.client.id), appPosts(req.client))));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
-  appR.get('/leads/:leadId/chat', (req, res) => {
-    const lead = db.getLead(req.client.id, Number(req.params.leadId));
-    if (!lead) return res.status(404).send('Lead no encontrado');
-    res.send(V.appChatPage(req.client, lead, db.leadMessages(lead.id)));
-  });
+  chatRoutes(appR, () => '/app', { app: true, prefix: '' });
   appR.get('/citas', async (req, res) => {
     const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg };
     try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
@@ -371,6 +368,7 @@ export function createApp() {
         access_token: tok(body.li_access_token, existingCreds.linkedin?.access_token),
       },
       api_key: existingCreds.api_key, // llave del agente de WhatsApp (se genera en el panel)
+      agente_url: existingCreds.agente_url, // dónde vive el agente (para responder desde el panel)
       tiktok: existingCreds.tiktok, // se conecta con el botón "Conectar TikTok", no desde el formulario
       dry_run: body.dry_run === '1',
     };
@@ -500,10 +498,13 @@ export function createApp() {
     db.updateClient(req.client.id, { credentials: { ...creds, api_key: randomToken(24) } });
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Llave%20nueva%20generada`);
   });
-  admin.get('/clientes/:cid/leads/:leadId/chat', (req, res) => {
-    const lead = db.getLead(req.client.id, Number(req.params.leadId));
-    if (!lead) return res.status(404).send('Lead no encontrado');
-    res.send(V.leadChatPage(req.client, lead, db.leadMessages(lead.id)));
+  chatRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  admin.post('/clientes/:cid/agente-url', (req, res) => {
+    const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
+    if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
+    db.updateClient(req.client.id, { credentials: { ...db.clientCredentials(req.client), agente_url: raw || undefined } });
+    db.logEvent({ clientId: req.client.id, tipo: 'agente_url', detalle: raw || '(quitada)' });
+    res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=URL del agente guardada`);
   });
   admin.post('/clientes/:cid/leads/:leadId', (req, res) => {
     db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado));
@@ -635,6 +636,45 @@ export function createApp() {
   return app;
 
   // Acciones sobre un post (las comparten admin y portal).
+  // Conversación de un lead: ver, responder a mano y tomar/devolver el control (admin y cliente).
+  function chatRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const leadDe = (req, res) => { const l = db.getLead(req.client.id, Number(req.params.leadId)); if (!l) res.status(404).send('Lead no encontrado'); return l; };
+    const ver = async (req, res, extra = {}) => {
+      const lead = leadDe(req, res); if (!lead) return;
+      let estado = null;
+      if (agente.agenteConfigurado(req.client)) estado = await agente.llamarAgente(req.client, 'POST', '/estado', agente.identidad(lead), { timeout: 4000 }).catch(() => null);
+      const opts = { base: `${base(req)}/leads/${lead.id}`, puedeResponder: agente.agenteConfigurado(req.client), estado, ...extra };
+      res.status(extra.error ? 400 : 200).send(app ? V.appChatPage(req.client, lead, db.leadMessages(lead.id), opts) : V.leadChatPage(req.client, lead, db.leadMessages(lead.id), opts));
+    };
+    router.get(`${prefix}/leads/:leadId/chat`, (req, res) => ver(req, res));
+    router.get(`${prefix}/leads/:leadId/chat.json`, (req, res) => {
+      const lead = db.getLead(req.client.id, Number(req.params.leadId));
+      if (!lead) return res.status(404).json({});
+      res.json({ html: V.chatBurbujas(db.leadMessages(lead.id)), control: lead.control });
+    });
+    router.post(`${prefix}/leads/:leadId/responder`, async (req, res) => {
+      const lead = leadDe(req, res); if (!lead) return;
+      const texto = String(req.body.texto || '').trim().slice(0, 4000);
+      if (!texto) return res.redirect(`${base(req)}/leads/${lead.id}/chat`);
+      const autor = req.sesion?.user?.nombre || 'Equipo Kuper';
+      try {
+        await agente.llamarAgente(req.client, 'POST', '/enviar', { ...agente.identidad(lead), texto, autor });
+        db.upsertLead(req.client.id, { ...agente.identidad(lead), control: 'humano' });
+        db.logEvent({ clientId: req.client.id, tipo: 'respuesta_manual', detalle: `${autor} → ${lead.nombre || lead.telefono || lead.usuario}` });
+        res.redirect(`${base(req)}/leads/${lead.id}/chat`);
+      } catch (e) { await ver(req, res, { error: e.message, borrador: texto }); }
+    });
+    router.post(`${prefix}/leads/:leadId/control`, async (req, res) => {
+      const lead = leadDe(req, res); if (!lead) return;
+      const humano = req.body.humano === '1';
+      try {
+        await agente.llamarAgente(req.client, 'POST', '/control', { ...agente.identidad(lead), humano });
+        db.upsertLead(req.client.id, { ...agente.identidad(lead), control: humano ? 'humano' : 'bot' });
+        res.redirect(`${base(req)}/leads/${lead.id}/chat`);
+      } catch (e) { await ver(req, res, { error: e.message }); }
+    });
+  }
+
   function postActions(router, back) {
     router.post('/posts/:pid/aprobar', (req, res) => {
       pipe.approvePost(req.post.id, {
