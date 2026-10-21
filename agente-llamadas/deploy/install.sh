@@ -177,11 +177,18 @@ else
     apt-get update -y && apt-get install -y caddy
   fi
   CF=/etc/caddy/Caddyfile
-  [ -f "$CF" ] && cp "$CF" "$CF.bak.$(date +%s)"
+  RESPALDO="$CF.bak.$(date +%s)"
+  [ -f "$CF" ] && cp "$CF" "$RESPALDO"
   if ! grep -qs "^$DOMINIO" "$CF"; then
     printf '\n%s {\n  reverse_proxy 127.0.0.1:%s\n}\n' "$DOMINIO" "$PUERTO" >> "$CF"
   fi
-  caddy validate --config "$CF" --adapter caddyfile && (systemctl reload caddy || systemctl restart caddy)
+  if ! caddy validate --config "$CF" --adapter caddyfile; then
+    echo "La config nueva de Caddy no pasó la validación: restauro la anterior y no recargo nada."
+    [ -f "$RESPALDO" ] && cp "$RESPALDO" "$CF"
+    exit 1
+  fi
+  # reload no corta las conexiones de los otros sitios; restart solo si reload falla.
+  systemctl reload caddy || systemctl restart caddy
 fi
 
 if command -v ufw >/dev/null && ufw status | grep -q active; then ufw allow 80/tcp; ufw allow 443/tcp; fi
