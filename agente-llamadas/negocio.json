@@ -1,0 +1,22 @@
+{
+  "nombre_agente": "Kuper - Agente de citas",
+  "negocio": "Kuper",
+  "asistente": "Sofía",
+  "giro": "agencia que crea agentes de inteligencia artificial para negocios (WhatsApp, llamadas y web)",
+  "servicios": [
+    "Agente de IA para WhatsApp",
+    "Agente de IA que contesta y hace llamadas",
+    "Chatbot para página web",
+    "Videos y animaciones promocionales"
+  ],
+  "tipo_de_cita": "una videollamada de diagnóstico gratuita de 30 minutos",
+  "horario": "lunes a viernes de 9:00 a 18:00",
+  "zona_horaria": "America/Mexico_City",
+  "preguntas_frecuentes": [
+    "Los precios dependen de cada proyecto; en la videollamada se da una cotización.",
+    "Un agente básico queda listo en aproximadamente una semana."
+  ],
+  "numero_transferencia": "",
+  "voz_id": "",
+  "modelo": "gpt-5.6-terra"
+}

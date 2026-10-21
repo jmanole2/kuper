@@ -37,3 +37,11 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Agente telefónico de citas (Retell + Cal.com)
+
+Agente de voz en español de México que contesta, llama y agenda citas. Pasos en [`agente-llamadas/LEEME.md`](agente-llamadas/LEEME.md).
+
+```bash
+node agente-llamadas/retell.mjs crear
+```
