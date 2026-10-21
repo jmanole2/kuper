@@ -14,6 +14,8 @@ import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
 import { sendTestDigest } from './notify.js';
 import * as agenda from './agenda/index.js';
+import { pulse } from './pulse.js';
+import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
@@ -132,14 +134,18 @@ export function createApp() {
   const admin = express.Router();
   admin.use(requireAdmin);
 
-  admin.get('/', (_req, res) => {
+  admin.get('/pulso.json', async (_req, res) => {
+    const p = await pulse(db.listClients(), { conCitas: false });
+    res.json({ ...p, feedHtml: feedHtml(p.feed) });
+  });
+  admin.get('/', async (_req, res) => {
     const clients = db.listClients();
     const counts = {};
     for (const p of db.listPosts({ limit: 2000 })) {
       if (!['pendiente', 'necesita_asset', 'aprobado', 'publicado', 'error', 'error_generacion'].includes(p.status)) continue;
       (counts[p.client_id] ??= {})[p.status] = (counts[p.client_id][p.status] || 0) + 1;
     }
-    res.send(V.dashboardPage(clients, counts, db.recentEvents(40)));
+    res.send(V.dashboardPage(clients, counts, await pulse(clients)));
   });
 
   function parseClientForm(body, existingCreds = {}) {

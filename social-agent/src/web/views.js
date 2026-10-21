@@ -5,6 +5,7 @@ import { STATUS, PLATFORMS, LEAD_ESTADOS } from '../db.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
+import { controlCenter } from './control.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
 const reusa = (c, p) => p === 'tiktok' || !!c.config[p]?.reusar_instagram;
@@ -128,21 +129,17 @@ export function loginPage(error) {
     <p style="margin-top:20px"><button class="btn-accent" style="width:100%;justify-content:center">Entrar</button></p></form></div></div>` });
 }
 
-export function dashboardPage(clients, counts, events) {
-  const sum = (st) => clients.reduce((n, c) => n + (counts[c.id]?.[st] || 0), 0);
-  const body = html`<h1>Clientes</h1><p class="muted" style="margin:0">Lo que el agente tiene en marcha para cada marca.</p>
-  ${kpis([[sum('pendiente') + sum('necesita_asset'), 'Por revisar', '#fbbf24', true], [sum('aprobado'), 'Programados', '#4ade80'], [sum('publicado'), 'Publicados', '#c6ff3d'], [sum('error') + sum('error_generacion'), 'Con error', '#f87171']])}
-  <h2>Marcas</h2>
-  <div class="grid">${clients.map((c) => html`<a class="card" href="/admin/clientes/${c.id}" style="text-decoration:none">
+export function dashboardPage(clients, counts, pulso) {
+  const body = html`${controlCenter(pulso, clients)}
+  <div class="row spread"><h2 style="margin:0">Marcas</h2><a class="btn btn-warn" href="/admin/clientes/nuevo">+ Nueva marca</a></div>
+  <div class="grid" style="margin-top:16px">${clients.map((c) => html`<a class="card" href="/admin/clientes/${c.id}" style="text-decoration:none">
     <div class="row spread"><div class="row"><div class="avatar">${c.logo_path ? html`<img src="${mediaSrc(c.logo_path)}" alt="">` : c.nombre.slice(0, 1)}</div>
       <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}</div></div></div>${c.activo ? '' : badge('rechazado')}</div>
     <div class="row" style="margin:16px 0 12px">${PLATFORMS.filter((p) => c.config[p]?.activo).map((p) => html`<span class="badge" style="color:${PCOL[p]}">${PLAT[p]}</span>`)}</div>
     <div class="row">${Object.entries(counts[c.id] || {}).map(([st, n]) => html`<span class="small muted">${badge(st)} ${n}</span>`)}</div></a>`)}
   </div>
-  ${clients.length ? '' : html`<p class="muted">Todavía no hay clientes. <a href="/admin/clientes/nuevo">Crea el primero</a>.</p>`}
-  <h2>Actividad reciente</h2>
-  <div class="card" style="padding:8px 14px"><table>${events.map((e) => html`<tr><td class="muted small" style="white-space:nowrap">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td class="small">${e.cliente || ''}</td><td><span class="badge">${e.tipo}</span></td><td class="small">${e.detalle}</td></tr>`)}</table></div>`;
-  return page({ title: 'Agente Social · Admin', side: side('clientes'), body });
+  ${clients.length ? '' : html`<p class="muted">Todavía no hay clientes. <a href="/admin/clientes/nuevo">Crea el primero</a>.</p>`}`;
+  return page({ title: 'Kuper · Centro de control', side: side('clientes'), body });
 }
 
 export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {

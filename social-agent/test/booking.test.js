@@ -70,3 +70,20 @@ test('API del agente: mensajes del chat, citas del agente y teléfonos de Méxic
   assert.deepEqual(ev, [{ id: 'a', inicio: '2030-01-01T16:00:00Z', telefono: '+525511112222', nombre: 'Ana' }]);
   assert.equal(creados[0].extendedProperties.private.nombre, 'Ana');
 });
+
+test('centro de control: números del día, feed y "en vivo"', async () => {
+  const { pulse } = await import('../src/pulse.js');
+  db.logEvent({ clientId: client.id, tipo: 'publicado', detalle: 'Post de prueba' });
+  const p = await pulse(db.listClients(), { conCitas: false });
+  assert.ok(p.tareasHoy >= 3, 'cuenta eventos y respuestas del agente de hoy');
+  assert.equal(p.horas.length, 24);
+  assert.equal(p.serie.length, 14);
+  assert.ok(p.feed.some((f) => f.titulo === 'Post publicado'));
+  assert.equal(p.vivo.nombre, 'Ana');
+  assert.match(p.vivo.texto, /En qué te ayudo/);
+  const { controlCenter } = await import('../src/web/control.js');
+  const h = String(controlCenter(p, db.listClients()));
+  assert.match(h, /id="cc-orb"/);
+  assert.ok(!h.includes('<script>alert'), 'escapa el texto');
+  assert.notEqual((await fetch(`${base}/admin/pulso.json`, { redirect: 'manual' })).status, 200, 'pide sesión');
+});

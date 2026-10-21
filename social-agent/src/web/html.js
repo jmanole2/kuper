@@ -18,11 +18,11 @@ const CSS = `
 @font-face{font-family:"Inter Tight";font-weight:500;font-display:swap;src:url(/fonts/inter-tight-latin-500-normal.woff2) format("woff2")}
 @font-face{font-family:"Inter Tight";font-weight:600;font-display:swap;src:url(/fonts/inter-tight-latin-600-normal.woff2) format("woff2")}
 @font-face{font-family:"Inter Tight";font-weight:300;font-display:swap;src:url(/fonts/inter-tight-latin-300-normal.woff2) format("woff2")}
-:root{--bg:#08090c;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.07);--ink:#f2f4f8;--muted:#9097a6;--line:rgba(255,255,255,.09);
---accent:#c6ff3d;--accent-ink:#0b0d06;--blue:#2f6bff;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--radius:24px;color-scheme:dark}
+:root{--bg:#121110;--card:rgba(255,246,232,.045);--card2:rgba(255,246,232,.08);--ink:#f4f0e8;--muted:#a39d93;--line:rgba(255,240,220,.09);
+--accent:#d7ff3f;--accent-ink:#0b0d06;--blue:#2f6bff;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--radius:24px;color-scheme:dark}
 *{box-sizing:border-box}html{background:var(--bg)}
 body{margin:0;min-height:100vh;color:var(--ink);font:15px/1.5 "Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif;
-background:radial-gradient(900px 600px at 0% 0%,rgba(47,107,255,.16),transparent 60%),radial-gradient(800px 600px at 100% 100%,rgba(140,255,42,.08),transparent 60%),var(--bg);background-attachment:fixed}
+background:radial-gradient(1000px 700px at 0% -10%,rgba(246,238,222,.09),transparent 60%),radial-gradient(900px 700px at 100% 110%,rgba(222,170,60,.10),transparent 60%),var(--bg);background-attachment:fixed}
 a{color:inherit}
 .layout{display:grid;grid-template-columns:84px 1fr;min-height:100vh}
 .side{position:sticky;top:0;height:100vh;padding:18px 0;display:flex;flex-direction:column;align-items:center;gap:10px;border-right:1px solid var(--line);background:rgba(0,0,0,.25);backdrop-filter:blur(14px)}
@@ -30,11 +30,11 @@ a{color:inherit}
 .side a.nav{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;color:var(--muted);text-decoration:none;position:relative}
 .side a.nav:hover,.side a.nav.on{background:var(--card2);color:var(--ink)}
 .side a.nav.on::before{content:"";position:absolute;left:-16px;width:4px;height:22px;border-radius:4px;background:var(--accent)}
-.side a.nav span{position:absolute;left:62px;white-space:nowrap;background:#1b1d23;padding:4px 10px;border-radius:8px;font-size:12px;opacity:0;pointer-events:none;transition:.15s}
+.side a.nav span{position:absolute;left:62px;white-space:nowrap;background:#24211e;padding:4px 10px;border-radius:8px;font-size:12px;opacity:0;pointer-events:none;transition:.15s}
 .side a.nav:hover span{opacity:1}.side .bottom{margin-top:auto}
 .side svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .top{display:flex;align-items:center;gap:14px;padding:22px 32px 0}.top .brand{font-weight:600;font-size:15px;color:var(--muted)}
-main{max-width:1240px;padding:18px 32px 90px}
+main{max-width:1380px;padding:18px 32px 90px}
 .solo main{margin:0 auto}
 h1{font-size:40px;font-weight:500;margin:0 0 6px;letter-spacing:-.03em;line-height:1.1}h2{font-size:20px;font-weight:600;margin:38px 0 14px;letter-spacing:-.01em}
 .muted{color:var(--muted)}.small{font-size:13px}
@@ -102,6 +102,6 @@ export function page({ title, body, side = null, brand = '', mark = 'K' }) {
 ${side.filter((l) => !l.bottom).map((l) => `<a class="nav${l.on ? ' on' : ''}" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}
 <div class="bottom">${side.filter((l) => l.bottom).map((l) => `<a class="nav" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}</div></aside>` : '';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#08090c"><title>${esc(title)}</title><style>${CSS}</style></head><body>
+<meta name="theme-color" content="#121110"><title>${esc(title)}</title><style>${CSS}</style></head><body>
 <div class="${side ? 'layout' : 'solo'}">${nav}<div>${brand ? `<div class="top"><span class="brand">${esc(brand)}</span></div>` : ''}<main>${body}</main></div></div></body></html>`;
 }
