@@ -28,8 +28,8 @@ La clave se queda en el servidor; el navegador nunca la ve. No la subas a git (`
 | `faceId` | Avatar. Los de stock están en el panel de Tavus (Face Library). Ejemplos: `rb32069a3012` Luna, `rc9cff32ceba` Anna, `r3f4182ef554` Lucas. Si entrenas uno con tu cara, pon aquí su ID. |
 | `languages` | Idioma de la conversación (`["es"]`). |
 | `llmModel` | Cerebro del agente. `tavus-gemma-4` es el recomendado por Tavus. |
-| `voice.engine` | `tavus-auto` (voz del avatar), `elevenlabs` o `cartesia`. |
-| `voice.externalVoiceId` | ID de tu voz en ElevenLabs/Cartesia (p. ej. una voz clonada). Para voces privadas pon `ELEVENLABS_API_KEY` en `.env`. |
+| `voice.engine` | `cartesia` (por defecto, con Daniela, voz mexicana), `elevenlabs` o `tavus-auto` (voz original del avatar, que en los avatares de stock suele ser en inglés). |
+| `voice.externalVoiceId` | ID de la voz. Voces públicas de Cartesia: https://play.cartesia.ai (filtra por Spanish). Para voces privadas o clonadas pon `CARTESIA_API_KEY` o `ELEVENLABS_API_KEY` en `.env`. |
 | `maxCallSeconds` | Duración máxima de la llamada. |
 
 Al cambiar `config.json` el servidor crea automáticamente una personalidad (PAL) nueva en Tavus en la siguiente llamada.

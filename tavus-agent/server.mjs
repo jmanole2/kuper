@@ -58,7 +58,9 @@ function palBody(cfg) {
   const tts = { tts_engine: cfg.voice?.engine || 'tavus-auto' };
   if (cfg.voice?.externalVoiceId) tts.external_voice_id = cfg.voice.externalVoiceId;
   if (cfg.voice?.modelName) tts.tts_model_name = cfg.voice.modelName;
-  if (tts.tts_engine === 'elevenlabs' && process.env.ELEVENLABS_API_KEY) tts.api_key = process.env.ELEVENLABS_API_KEY;
+  // Solo hace falta para voces privadas/clonadas; las voces públicas funcionan sin clave.
+  const providerKey = { elevenlabs: process.env.ELEVENLABS_API_KEY, cartesia: process.env.CARTESIA_API_KEY }[tts.tts_engine];
+  if (providerKey) tts.api_key = providerKey;
   return {
     pal_name: cfg.agentName,
     pipeline_mode: 'full',
