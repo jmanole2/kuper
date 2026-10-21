@@ -18,7 +18,10 @@ const DEFAULT = {
   extra_gratis_mes: 1,
   precio_extra: 150,
   conceptos: [], // [{ nombre, monto, tipo: 'mensual' | 'unico' }] en MXN
+  cobro: 'stripe', // 'stripe' (tarjeta domiciliada) | 'cortesia' (gratis) | 'externo' (transferencia, efectivo…)
+  prueba_hasta: '', // 'YYYY-MM-DD': prueba gratis hasta ese día (inclusive)
 };
+export const COBROS = { stripe: 'Tarjeta domiciliada (Stripe)', cortesia: 'Cortesía: gratis', externo: 'Paga por fuera (transferencia, efectivo…)' };
 
 export function planDe(client) {
   const p = client?.config?.plan || {};
@@ -31,6 +34,13 @@ export function tabActiva(client, tab) {
   const s = Object.entries(SERVICIOS).find(([, v]) => v.tabs.includes(tab));
   return !s || tiene(client, s[0]);
 }
+/** Cómo se le cobra hoy: 'prueba' mientras dure la prueba gratis; si no, lo que diga el plan. */
+export function modoCobro(client, now = new Date()) {
+  const p = planDe(client);
+  if (p.prueba_hasta && p.prueba_hasta >= localDate(now, config.timezone)) return 'prueba';
+  return COBROS[p.cobro] ? p.cobro : 'stripe';
+}
+export const sinCosto = (client, now) => ['cortesia', 'prueba'].includes(modoCobro(client, now));
 export const mensualidad = (client) => planDe(client).conceptos.filter((c) => c.tipo !== 'unico').reduce((n, c) => n + (Number(c.monto) || 0), 0);
 export const mxn = (n) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -60,11 +70,13 @@ export function postsDeLaSemana(clientId, now = new Date()) {
 }
 const mesActual = (now = new Date()) => localDate(now, config.timezone).slice(0, 7);
 export const extrasDelMes = (clientId, now = new Date()) => getDb()
-  .prepare("SELECT * FROM extras WHERE client_id = ? AND mes = ? AND estado IN ('gratis','pagado') ORDER BY id").all(clientId, mesActual(now));
+  .prepare("SELECT * FROM extras WHERE client_id = ? AND mes = ? AND estado IN ('gratis','pagado','por_cobrar') ORDER BY id").all(clientId, mesActual(now));
 /** Lo que costaría el siguiente post extra: 0 si aún le queda uno gratis este mes. */
 export function costoExtra(client, now = new Date()) {
   const p = planDe(client), usados = extrasDelMes(client.id, now).filter((e) => e.estado === 'gratis').length;
-  return { gratisRestantes: Math.max(0, p.extra_gratis_mes - usados), monto: usados < p.extra_gratis_mes ? 0 : p.precio_extra };
+  const modo = modoCobro(client, now);
+  if (modo === 'cortesia' || modo === 'prueba') return { gratisRestantes: Infinity, monto: 0, modo }; // sin costo: extras gratis
+  return { gratisRestantes: Math.max(0, p.extra_gratis_mes - usados), monto: usados < p.extra_gratis_mes ? 0 : p.precio_extra, modo };
 }
 export function registrarExtra(clientId, { plataforma, monto, estado, factura = null }, now = new Date()) {
   const r = getDb().prepare('INSERT INTO extras (client_id, mes, plataforma, monto, estado, factura) VALUES (?, ?, ?, ?, ?, ?)')

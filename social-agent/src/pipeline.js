@@ -13,6 +13,7 @@ import { publishPost, publishStory } from './publishers/index.js';
 import { fetchCompetitors } from './competitors/instagram.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
+import { tiene } from './plan.js';
 import { notifyClient } from './notify.js';
 import { adaptCaption } from './llm/adapt.js';
 
@@ -384,7 +385,7 @@ export function piecesLeftToday(now = new Date()) {
 /** Lo que toca generar, la publicación más próxima primero. */
 export function generationCandidates(now = new Date()) {
   const out = [];
-  for (const client of db.listClients().filter((c) => c.activo)) {
+  for (const client of db.listClients().filter((c) => c.activo && tiene(c, 'redes'))) { // solo quien contrató redes
     for (const plataforma of db.PLATFORMS) {
       if (!platformCfg(client, plataforma).activo || reusesInstagram(client, plataforma)) continue;
       if (db.openPostFor(client.id, plataforma)) continue;
@@ -407,7 +408,7 @@ export async function tick(now = new Date()) {
   for (const client of db.listClients().filter((c) => c.activo)) {
     // Respuesta automática a la palabra clave (DM a quien comenta, p. ej. AGENTE).
     // Si falla (p. ej. token mal capturado), espera 30 min antes de reintentar en vez de cada minuto.
-    if (client.config.respuesta_palabra_clave?.activo && !(kwPause.get(client.id) > now.getTime())) {
+    if (client.config.respuesta_palabra_clave?.activo && tiene(client, 'redes') && !(kwPause.get(client.id) > now.getTime())) {
       enqueue(`kw-${client.id}`, () => processKeywordComments(client).catch((e) => {
         kwPause.set(client.id, Date.now() + 30 * 60_000);
         db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: `${e.message} (reintenta en 30 min)` });

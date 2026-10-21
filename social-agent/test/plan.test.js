@@ -136,3 +136,45 @@ test('webhook de Stripe: firma y estados', async () => {
   const ck = await login('ana@clinica.mx', 'ClaveAna2030!');
   assert.match(await (await get('/app', ck)).text(), /rechazó el último cobro/);
 });
+
+test('nueva marca solo con chat: sin redes activas ni posts automáticos', async () => {
+  const admin = await login('', 'maestra-123');
+  const r = await post('/admin/clientes/nuevo', admin, { nombre: 'Tacos Uno', slug: 'tacos-uno', servicio_chat: '1',
+    perfil: JSON.stringify({ cliente: 'Tacos Uno', pilares_de_contenido: [{ nombre: 'x' }] }), config: JSON.stringify({ instagram: { activo: true, frecuencia: 'semanal' }, facebook: { activo: true, frecuencia: 'semanal' } }) });
+  assert.equal(r.status, 302);
+  const c = db.listClients().find((x) => x.slug === 'tacos-uno');
+  assert.equal(c.config.instagram.activo, false);
+  assert.equal(c.config.facebook.activo, false);
+  assert.deepEqual(plan.planDe(c).servicios, { redes: false, chat: true, agenda: false, llamadas: false, videollamadas: false });
+  // aunque alguien active Instagram después, sin el servicio de redes no se generan posts
+  db.updateClient(c.id, { config: { ...c.config, instagram: { activo: true, frecuencia: 'diario' } } });
+  assert.ok(!pipe.generationCandidates().some((g) => g.client.id === c.id));
+});
+
+test('cortesía, pago por fuera y prueba gratis', async () => {
+  const admin = await login('', 'maestra-123');
+  const ck = await login('luis@buensabor.mx', 'ClaveLuis2030!');
+  // cortesía: extras gratis aunque ya usó el del mes
+  await post(`/admin/clientes/${sabor.id}/plan`, admin, { servicio_redes: '1', posts_semana: '4', extra_gratis_mes: '1', precio_extra: '200', conceptos: 'Redes | 2999 | mensual', cobro: 'cortesia' });
+  assert.equal(plan.modoCobro(db.getClient(sabor.id)), 'cortesia');
+  assert.equal(plan.costoExtra(db.getClient(sabor.id)).monto, 0);
+  assert.match(await (await get('/app/pagos', ck)).text(), /cortesía de Kuper/);
+  assert.doesNotMatch(await (await get('/app/pagos', ck)).text(), /Domiciliar mi tarjeta/);
+  // pago por fuera: el extra queda "por cobrar", sin tocar Stripe
+  await post(`/admin/clientes/${sabor.id}/plan`, admin, { servicio_redes: '1', posts_semana: '4', extra_gratis_mes: '1', precio_extra: '200', conceptos: 'Redes | 2999 | mensual', cobro: 'externo' });
+  const antes = llamadas.length;
+  assert.match(await (await get('/app/extra?red=instagram', ck)).text(), /se suma \$200 a tu pago/);
+  assert.equal((await post('/app/extra', ck, { red: 'instagram', monto: '200' })).headers.get('location'), '/app/posts?ok=extra');
+  assert.equal(plan.extrasDelMes(sabor.id).at(-1).estado, 'por_cobrar');
+  assert.equal(llamadas.length, antes, 'no cobró en Stripe');
+  // prueba gratis: el checkout pone el primer cobro al terminar la prueba
+  const fin = new Date(Date.now() + 10 * 86400_000).toISOString().slice(0, 10);
+  await post(`/admin/clientes/${chatOnly.id}/plan`, admin, { servicio_chat: '1', servicio_agenda: '1', conceptos: 'Agente IA | 499 | mensual', cobro: 'stripe', prueba_hasta: fin });
+  assert.equal(plan.modoCobro(db.getClient(chatOnly.id)), 'prueba');
+  db.setBilling(chatOnly.id, { subscription_id: null });
+  const ana = await login('ana@clinica.mx', 'ClaveAna2030!');
+  await post('/app/pagos/domiciliar', ana, {});
+  const s = llamadas.filter((l) => l.p === '/v1/checkout/sessions').at(-1).body;
+  assert.ok(Number(s['subscription_data[trial_end]']) > Date.now() / 1000 + 9 * 86400);
+  assert.doesNotMatch(await (await get('/app', ana)).text(), /rechazó el último cobro/, 'en prueba no hay avisos de cobro');
+});

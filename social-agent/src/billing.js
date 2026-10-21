@@ -45,6 +45,13 @@ async function cliente(client, email) {
   return c.id;
 }
 
+// Si está en prueba gratis, la mensualidad empieza a cobrarse al terminar la prueba.
+function trial(plan) {
+  if (!plan.prueba_hasta) return {};
+  const fin = Math.floor(new Date(`${plan.prueba_hasta}T23:59:00-06:00`).getTime() / 1000);
+  return fin > Date.now() / 1000 + 2 * 86400 ? { trial_end: fin } : {}; // Stripe pide al menos 48 h
+}
+
 /** Página de Stripe para domiciliar la tarjeta (y arrancar la mensualidad del plan si tiene conceptos mensuales). */
 export async function checkoutUrl(client, { email } = {}) {
   const customer = await cliente(client, email);
@@ -60,7 +67,7 @@ export async function checkoutUrl(client, { email } = {}) {
   const s = await stripe('POST', '/checkout/sessions', {
     ...base, mode: 'subscription', payment_method_types: ['card'],
     line_items: [...mensual.map((c) => line(c, true)), ...unico.map((c) => line(c, false))],
-    subscription_data: { metadata: { client_id: client.id } },
+    subscription_data: { metadata: { client_id: client.id }, ...trial(plan) },
   });
   return s.url;
 }

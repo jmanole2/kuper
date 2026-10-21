@@ -6,7 +6,7 @@ import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
-import { SERVICIOS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad } from '../plan.js';
+import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro } from '../plan.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
 const reusa = (c, p) => p === 'tiktok' || !!c.config[p]?.reusar_instagram;
@@ -161,14 +161,14 @@ export function loginPage(error, email = '') {
 }
 
 export function dashboardPage(clients, counts, pulso, billings = {}) {
-  const mrr = clients.filter((c) => c.activo).reduce((n, c) => n + mensualidad(c), 0);
+  const mrr = clients.filter((c) => c.activo && !['cortesia', 'prueba'].includes(modoCobro(c))).reduce((n, c) => n + mensualidad(c), 0);
   const fallidos = clients.filter((c) => billings[c.id]?.estado === 'pago_fallido');
   const body = html`${controlCenter(pulso, clients)}
   ${fallidos.length ? html`<div class="err">Pago rechazado: ${fallidos.map((c) => c.nombre).join(', ')}.</div>` : ''}
   <div class="row spread"><div><h2 style="margin:0">Marcas</h2><p class="muted small" style="margin:6px 0 0">Ingreso mensual de los planes: <b style="color:var(--ink)">${mxn(mrr)}</b></p></div><div class="row"><a class="btn btn-warn" href="/admin/usuarios">Usuarios</a><a class="btn btn-warn" href="/admin/clientes/nuevo">+ Nueva marca</a></div></div>
   <div class="grid" style="margin-top:16px">${clients.map((c) => html`<a class="card" href="/admin/clientes/${c.id}" style="text-decoration:none">
     <div class="row spread"><div class="row"><div class="avatar">${c.logo_path ? html`<img src="${mediaSrc(c.logo_path)}" alt="">` : c.nombre.slice(0, 1)}</div>
-      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}${mensualidad(c) ? ` · ${mxn(mensualidad(c))}/mes` : ''}</div></div></div>${c.activo ? (ESTADO_PAGO[billings[c.id]?.estado] && planDe(c).conceptos.length ? html`<span class="badge" style="color:${ESTADO_PAGO[billings[c.id].estado][1]}">${ESTADO_PAGO[billings[c.id].estado][0]}</span>` : '') : badge('rechazado')}</div>
+      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}${mensualidad(c) ? ` · ${mxn(mensualidad(c))}/mes` : ''}</div></div></div>${c.activo ? (planDe(c).conceptos.length || modoCobro(c) !== 'stripe' ? (([t, col]) => html`<span class="badge" style="color:${col}">${t}</span>`)(estadoCobro(c, billings[c.id])) : '') : badge('rechazado')}</div>
     <div class="muted small" style="margin-top:10px">${Object.entries(SERVICIOS).filter(([k]) => planDe(c).servicios[k]).map(([, v]) => v.nombre).join(' · ')}</div>
     <div class="row" style="margin:16px 0 12px">${PLATFORMS.filter((p) => c.config[p]?.activo).map((p) => html`<span class="badge" style="color:${PCOL[p]}">${PLAT[p]}</span>`)}</div>
     <div class="row">${Object.entries(counts[c.id] || {}).map(([st, n]) => html`<span class="small muted">${badge(st)} ${n}</span>`)}</div></a>`)}
@@ -178,7 +178,7 @@ export function dashboardPage(clients, counts, pulso, billings = {}) {
 }
 
 function planCard(client, billing) {
-  const plan = planDe(client), est = ESTADO_PAGO[billing?.estado] || ESTADO_PAGO.sin_tarjeta;
+  const plan = planDe(client), est = estadoCobro(client, billing);
   return html`<form class="card" method="post" action="/admin/clientes/${client.id}/plan" style="margin-bottom:18px">
     <div class="row spread"><div><strong>Plan contratado y cobro</strong><p class="muted small" style="margin:4px 0 0">El cliente solo ve las secciones de los servicios que contrató.</p></div>
       <span class="badge" style="color:${est[1]}">${est[0]}${billing?.tarjeta ? ` · ${billing.tarjeta}` : ''}</span></div>
@@ -189,6 +189,11 @@ function planCard(client, billing) {
       <div><label>Extras gratis al mes</label><input type="number" name="extra_gratis_mes" min="0" max="20" value="${plan.extra_gratis_mes}"></div>
       <div><label>Precio por extra (MXN)</label><input type="number" name="precio_extra" min="0" step="1" value="${plan.precio_extra}"></div>
     </div>
+    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+      <div><label>Cómo paga</label><select name="cobro">${Object.entries(COBROS).map(([k, l]) => html`<option value="${k}" ${raw(plan.cobro === k ? 'selected' : '')}>${l}</option>`)}</select></div>
+      <div><label>Prueba gratis hasta (opcional)</label><input type="date" name="prueba_hasta" value="${plan.prueba_hasta || ''}"></div>
+    </div>
+    <p class="muted small" style="margin:6px 0 0">Cortesía: no se le cobra nada y sus extras son gratis. Paga por fuera: ve su plan, pero no se le pide tarjeta y sus extras quedan "por cobrar". Durante la prueba todo es gratis; si domicilia en ese tiempo, el primer cobro llega al terminar la prueba.</p>
     <label>Conceptos a cobrar (uno por línea: Nombre | monto | mensual o único)</label>
     <textarea name="conceptos" style="min-height:96px" placeholder="Agente de IA WhatsApp | 499 | mensual&#10;Configuración inicial | 5499 | único">${conceptosTexto(plan)}</textarea>
     <p class="muted small">Mensualidad: <b>${mxn(mensualidad(client))}</b>. Al domiciliar su tarjeta, el cliente paga lo único en el primer cobro y la mensualidad cada mes. Si cambias los montos después, la suscripción ya creada no cambia (se ajusta en Stripe).</p>
@@ -231,7 +236,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
-  ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Llena el perfil de marca y las redes; el agente empieza a crear contenido solo.' }) : hero({
+  ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
     kicker: client.activo ? 'Agente activo' : 'Agente en pausa', title: client.nombre,
     sub: `Publica en ${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => PLAT[p]).join(', ') || 'ninguna red todavía'}`,
     avatar: client.logo_path ? `<img src="${esc(mediaSrc(client.logo_path))}" alt="">` : null,
@@ -307,12 +312,17 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
 ` : ''}
   <h2>Configuración</h2>
   <form method="post" action="${action}" class="card">
-    ${isNew ? html`<label>Identificador (sin espacios)</label><input name="slug" pattern="[a-z0-9-]+" required placeholder="kuper-media">` : ''}
-    <label>Nombre</label><input name="nombre" value="${client?.nombre || ''}" required>
+    <label>Nombre</label><input name="nombre" value="${client?.nombre || ''}" required placeholder="Buen Sabor" ${raw(isNew ? `oninput="if(!this.form.slug.dataset.touched)this.form.slug.value=this.value.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')"` : '')}>
+    ${isNew ? html`<label>Identificador (sin espacios, va en los links)</label><input name="slug" pattern="[a-z0-9-]+" required placeholder="buen-sabor" oninput="this.dataset.touched=1">
+    <label>Servicios que contrató</label>
+    <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">${Object.entries(SERVICIOS).map(([k, v]) => html`<label class="variant" style="margin:0;font-weight:400"><input type="checkbox" name="servicio_${k}" value="1" ${raw(k === 'chat' ? 'checked' : '')}> <strong>${v.nombre}</strong><br><span class="muted small">${v.desc}</span></label>`)}</div>
+    <p class="muted small">Precios, forma de pago y prueba gratis se ajustan después en "Plan contratado y cobro".</p>
+    <details style="margin-top:12px"><summary>Avanzado: perfil de marca y redes (solo si contrató redes sociales)</summary>` : ''}
     <label>Perfil de marca (JSON — sección 2 del prompt maestro). tipografia: ${Object.keys(FONTS).join(' o ')}</label>
     <textarea class="code" name="perfil">${JSON.stringify(client?.perfil || DEFAULT_PERFIL, null, 2)}</textarea>
     <label>Redes y frecuencia (JSON). modo_publicacion: auto | aprobacion · frecuencia: diario, 3_por_semana, 2_por_semana, semanal, quincenal, mensual</label>
     <textarea class="code" name="config" style="min-height:180px">${JSON.stringify(client?.config || DEFAULT_CONFIG, null, 2)}</textarea>
+    ${isNew ? raw('</details>') : ''}
     <h2>Credenciales</h2><p class="muted small">Se guardan cifradas. Deja un campo vacío para conservar el valor actual.</p>
     <div class="split"><div>
       <strong>Meta (Instagram + Facebook)</strong>
@@ -484,8 +494,8 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
 
 // ------------------------------------------------------------ vista del cliente (/app)
 export function appHomePage(client, pulso, billing = null) {
-  const aviso = billing?.estado === 'pago_fallido' ? html`<a class="err" href="/app/pagos" style="display:block;text-decoration:none">Tu banco rechazó el último cobro. Toca aquí para actualizar tu tarjeta y no pausar tus servicios.</a>`
-    : planDe(client).conceptos.length && billing?.estado === 'sin_tarjeta' ? html`<a class="warn" href="/app/pagos" style="display:block;text-decoration:none">Domicilia tu tarjeta para activar el cobro mensual de tu plan →</a>` : '';
+  const aviso = modoCobro(client) === 'stripe' && billing?.estado === 'pago_fallido' ? html`<a class="err" href="/app/pagos" style="display:block;text-decoration:none">Tu banco rechazó el último cobro. Toca aquí para actualizar tu tarjeta y no pausar tus servicios.</a>`
+ : modoCobro(client) === 'stripe' && planDe(client).conceptos.length && billing?.estado === 'sin_tarjeta' ? html`<a class="warn" href="/app/pagos" style="display:block;text-decoration:none">Domicilia tu tarjeta para activar el cobro mensual de tu plan →</a>` : '';
   return page({ title: `${client.nombre} · Panel`, side: sideApp('inicio', client), body: html`${aviso}${controlCenter(pulso, [client], { cliente: client })}` });
 }
 const appHero = (client, t, posts = [], leadsN = 0, extra = {}) => hero({
@@ -515,7 +525,7 @@ export function appPostsPage(client, posts, tab = '', leadsN = 0, cuota = null, 
       <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><b style="font-size:40px;font-weight:300;letter-spacing:-.04em">${cuota.semana}</b><span class="muted">de ${plan.posts_semana} publicaciones</span></div>
       <div style="height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round((cuota.semana / Math.max(1, plan.posts_semana)) * 100))}%;background:#c9f53a;border-radius:99px"></div></div></div>
     <div><span class="mono">Publicaciones extra este mes</span>
-      <p style="margin:8px 0 0">${cuota.costo.gratisRestantes ? raw(cuota.costo.gratisRestantes === 1 ? 'Te queda <b>1 gratis</b>.' : `Te quedan <b>${cuota.costo.gratisRestantes} gratis</b>.`) : html`Ya usaste tu extra gratis. Cada extra cuesta <b>${mxn(plan.precio_extra)}</b>.`}</p>
+      <p style="margin:8px 0 0">${['cortesia', 'prueba'].includes(cuota.costo.modo) ? raw('Tus publicaciones extra son <b>gratis</b>.') : cuota.costo.gratisRestantes ? raw(cuota.costo.gratisRestantes === 1 ? 'Te queda <b>1 gratis</b>.' : `Te quedan <b>${cuota.costo.gratisRestantes} gratis</b>.`) : html`Ya usaste tu extra gratis. Cada extra cuesta <b>${mxn(plan.precio_extra)}</b>.`}</p>
       <p class="muted small" style="margin:4px 0 0">${cuota.extras} ${cuota.extras === 1 ? 'extra pedida' : 'extras pedidas'} este mes.</p></div>
     <div><span class="mono">¿Quieres una más?</span><div class="row" style="margin-top:10px">${redesExtra.map((p) => html`<a class="btn btn-accent" href="/app/extra?red=${p}" style="padding:9px 16px">+ ${PLAT[p]}</a>`)}</div></div>
   </div>` : ''}
@@ -530,26 +540,37 @@ export function appExtraPage(client, { red, costo, tarjeta, error = '' }) {
   <div class="card" style="max-width:560px">
     <span class="mono">Publicación extra · ${PLAT[red]}</span>
     <h1 style="font-size:32px;margin:12px 0 6px">${costo.monto ? `Cuesta ${mxn(costo.monto)}` : 'Esta va gratis'}</h1>
-    <p class="muted">${costo.monto ? html`Tu plan incluye ${plan.posts_semana} publicaciones por semana y ${plan.extra_gratis_mes} extra gratis al mes, que ya usaste. ${tarjeta ? html`Se cobra a tu tarjeta <b>${tarjeta}</b>.` : ''}` : html`Tu plan incluye ${plan.extra_gratis_mes} publicación extra gratis al mes. Después, cada una cuesta ${mxn(plan.precio_extra)}.`}</p>
+    <p class="muted">${costo.monto ? html`Tu plan incluye ${plan.posts_semana} publicaciones por semana y ${plan.extra_gratis_mes} extra gratis al mes, que ya usaste. ${costo.modo === 'externo' ? 'Se suma a tu próximo pago con Kuper.' : tarjeta ? html`Se cobra a tu tarjeta <b>${tarjeta}</b>.` : ''}` : ['cortesia', 'prueba'].includes(costo.modo) ? 'Con tu plan actual, las publicaciones extra no tienen costo.' : html`Tu plan incluye ${plan.extra_gratis_mes} publicación extra gratis al mes. Después, cada una cuesta ${mxn(plan.precio_extra)}.`}</p>
     <p class="muted small">El agente la crea en unos minutos y te llega a "Por revisar" para que la apruebes antes de publicarse.</p>
     ${error ? html`<div class="err">${error}</div>` : ''}
-    ${costo.monto && !tarjeta ? html`<p><a class="btn btn-accent" href="/app/pagos">Primero domicilia tu tarjeta</a></p>` : html`<form method="post" action="/app/extra" class="row" style="margin-top:14px"><input type="hidden" name="red" value="${red}"><input type="hidden" name="monto" value="${costo.monto}">
-      <button class="btn-accent">${costo.monto ? `Pagar ${mxn(costo.monto)} y crear` : 'Crear publicación gratis'}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></form>`}
+    ${costo.monto && costo.modo === 'stripe' && !tarjeta ? html`<p><a class="btn btn-accent" href="/app/pagos">Primero domicilia tu tarjeta</a></p>` : html`<form method="post" action="/app/extra" class="row" style="margin-top:14px"><input type="hidden" name="red" value="${red}"><input type="hidden" name="monto" value="${costo.monto}">
+      <button class="btn-accent">${!costo.monto ? 'Crear publicación gratis' : costo.modo === 'externo' ? `Crear (se suma ${mxn(costo.monto)} a tu pago)` : `Pagar ${mxn(costo.monto)} y crear`}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></form>`}
   </div>`;
   return page({ title: `Publicación extra · ${client.nombre}`, side: sideApp('posts', client), body });
 }
 
+// Etiqueta de cobro que ve el admin y el cliente, según el modo (cortesía, prueba, externo) o el estado en Stripe.
+function estadoCobro(client, billing) {
+  const modo = modoCobro(client), p = planDe(client);
+  if (modo === 'cortesia') return ['Cortesía (gratis)', '#93b4ff'];
+  if (modo === 'prueba') return [`Prueba gratis hasta ${fmtDia(p.prueba_hasta + 'T18:00:00Z').toLowerCase()}`, '#93b4ff'];
+  if (modo === 'externo') return ['Paga por fuera', '#a39d93'];
+  return ESTADO_PAGO[billing?.estado] || ESTADO_PAGO.sin_tarjeta;
+}
 const ESTADO_PAGO = { al_corriente: ['Al corriente', '#4ade80'], sin_tarjeta: ['Sin tarjeta domiciliada', '#fbbf24'], pago_fallido: ['Pago rechazado', '#f87171'], cancelado: ['Suscripción cancelada', '#f87171'] };
 export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true } = {}) {
-  const plan = planDe(client), est = ESTADO_PAGO[r.estado] || ESTADO_PAGO.sin_tarjeta, mensual = mensualidad(client);
+  const plan = planDe(client), est = estadoCobro(client, r), mensual = mensualidad(client), modo = modoCobro(client);
   const body = html`${appHero(client, 'pagos', [], 0, { note: ['Mensualidad', mensual ? `${mxn(mensual)} al mes` : 'Sin mensualidad'] })}
   ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
-  ${r.estado === 'pago_fallido' ? html`<div class="err">Tu banco rechazó el último cobro. Actualiza tu tarjeta para no pausar tus servicios.</div>` : ''}
+  ${modo === 'cortesia' ? html`<div class="okmsg">Tu plan es cortesía de Kuper: no se te cobra nada.</div>` : ''}
+  ${modo === 'prueba' ? html`<div class="okmsg">Estás en tu prueba gratis hasta el ${fmtDia(plan.prueba_hasta + 'T18:00:00Z').toLowerCase()}. Si domicilias tu tarjeta ahora, el primer cobro llega al terminar la prueba.</div>` : ''}
+  ${modo === 'externo' ? html`<div class="card muted" style="margin-bottom:18px">Pagas tu plan directamente con Kuper (transferencia u otro medio). Aquí ves lo que incluye y tus facturas en línea, si las hay.</div>` : ''}
+  ${modo === 'stripe' && r.estado === 'pago_fallido' ? html`<div class="err">Tu banco rechazó el último cobro. Actualiza tu tarjeta para no pausar tus servicios.</div>` : ''}
   <div style="display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start">
     <div class="card"><div class="row spread"><span class="mono">Tu tarjeta</span><span class="badge" style="color:${est[1]}">${est[0]}</span></div>
       <p style="font-size:22px;font-weight:300;margin:14px 0 4px${r.tarjeta ? ';text-transform:capitalize' : ''}">${r.tarjeta || 'Ninguna todavía'}</p>
       ${r.proximo_cobro ? html`<p class="muted small">Próximo cobro: ${fmtDate(r.proximo_cobro)}</p>` : ''}
-      ${!stripeOn ? html`<p class="muted small">Los pagos en línea se activan pronto. Mientras, Kuper te contacta para tu forma de pago.</p>` : html`<div class="row" style="margin-top:14px">
+      ${['cortesia', 'externo'].includes(modo) ? '' : !stripeOn ? html`<p class="muted small">Los pagos en línea se activan pronto. Mientras, Kuper te contacta para tu forma de pago.</p>` : html`<div class="row" style="margin-top:14px">
         ${r.tarjeta ? html`<form method="post" action="/app/pagos/portal" class="inline"><button class="btn-warn">Cambiar tarjeta o ver facturas</button></form>`
           : html`<form method="post" action="/app/pagos/domiciliar" class="inline"><button class="btn-accent">Domiciliar mi tarjeta</button></form>`}</div>
       <p class="muted small" style="margin-top:12px">🔒 Tu tarjeta se guarda en Stripe, el procesador de pagos. Kuper nunca ve ni guarda sus números.</p>`}

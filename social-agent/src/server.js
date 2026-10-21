@@ -216,7 +216,8 @@ export function createApp() {
       const vista = (error) => V.appExtraPage(c, { red, costo, tarjeta, error });
       if (Number(req.body.monto) !== costo.monto) return res.status(409).send(vista('El precio cambió desde que abriste esta página. Revísalo y confirma de nuevo.'));
       let estado = 'gratis', factura = null;
-      if (costo.monto > 0) {
+      if (costo.monto > 0 && costo.modo === 'externo') estado = 'por_cobrar'; // lo cobra Kuper por fuera
+      else if (costo.monto > 0) {
         if (!billing.stripeOn() || !tarjeta) return res.status(402).send(vista('Primero domicilia tu tarjeta en Pagos.'));
         const r = await billing.cobrarExtra(c, { monto: costo.monto, concepto: `Publicación extra en ${red}`, idem: `extra-${c.id}-${plan.extrasDelMes(c.id).length}-${red}` });
         if (!r.ok) return res.status(402).send(vista(r.url ? `Tu banco pidió confirmar el pago. Ábrelo aquí: ${r.url}` : `No se pudo cobrar: ${r.error}`));
@@ -373,7 +374,12 @@ export function createApp() {
   admin.get('/clientes/nuevo', (_req, res) => res.send(V.clientFormPage(null)));
   admin.post('/clientes/nuevo', (req, res) => {
     try {
-      const c = db.createClient({ slug: req.body.slug, ...parseClientForm(req.body) });
+      const data = parseClientForm(req.body);
+      // Servicios elegidos al crear: si no contrató redes, ninguna red queda activa (no se generan posts).
+      const servicios = Object.fromEntries(Object.keys(plan.SERVICIOS).map((k) => [k, req.body[`servicio_${k}`] === '1']));
+      if (!servicios.redes) for (const p of db.PLATFORMS) if (data.config[p]) data.config[p] = { ...data.config[p], activo: false };
+      data.config.plan = { ...(data.config.plan || {}), servicios };
+      const c = db.createClient({ slug: String(req.body.slug || '').trim(), ...data });
       res.redirect(`/admin/clientes/${c.id}`);
     } catch (e) {
       res.status(400).send(V.clientFormPage(null, { error: e.message }));
@@ -424,6 +430,8 @@ export function createApp() {
         servicios: Object.fromEntries(Object.keys(plan.SERVICIOS).map((k) => [k, b[`servicio_${k}`] === '1'])),
         posts_semana: num(b.posts_semana, actual.posts_semana), extra_gratis_mes: num(b.extra_gratis_mes, actual.extra_gratis_mes), precio_extra: num(b.precio_extra, actual.precio_extra),
         conceptos: plan.parseConceptos(b.conceptos),
+        cobro: plan.COBROS[b.cobro] ? b.cobro : 'stripe',
+        prueba_hasta: /^\d{4}-\d{2}-\d{2}$/.test(b.prueba_hasta || '') ? b.prueba_hasta : '',
       };
       db.updateClient(req.client.id, { config: { ...req.client.config, plan: nuevo } });
       db.logEvent({ clientId: req.client.id, tipo: 'plan_actualizado', detalle: Object.entries(nuevo.servicios).filter(([, v]) => v).map(([k]) => k).join(', ') });
