@@ -40,7 +40,7 @@
     <button id="end" class="danger" disabled>Colgar</button>
   </div>
 
-  <details>
+  <details id="meetings" hidden>
     <summary>Enviar el agente a una reunión de Zoom, Google Meet o Teams</summary>
     <div class="row">
       <input id="meeting" type="url" placeholder="https://meet.google.com/abc-defg-hij">
@@ -113,6 +113,7 @@
 
   fetch('/api/info').then((r) => r.json()).then((info) => {
     $('title').textContent = `Videollamada con ${info.agentName}`;
+    $('meetings').hidden = !info.enableMeetings;
     if (!info.hasKey) setStatus('Falta TAVUS_API_KEY en el servidor (archivo tavus-agent/.env).', true);
   });
 </script>

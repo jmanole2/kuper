@@ -21,6 +21,7 @@ La clave se queda en el servidor; el navegador nunca la ve. No la subas a git (`
 | Campo | Qué hace |
 |---|---|
 | `agentName` | Nombre del agente. |
+| `enableMeetings` | `true` para poder mandar el agente a Zoom/Meet/Teams. **Requiere plan de pago de Tavus**; en el plan gratis déjalo en `false`. |
 | `meetingUsername` | Nombre con el que entra a Zoom/Meet/Teams (sin acentos; se le añade un sufijo para que sea único). |
 | `systemPrompt` | Personalidad e instrucciones. Aquí defines a qué se dedica. |
 | `greeting` | Primera frase que dice, palabra por palabra. |

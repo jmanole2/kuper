@@ -79,17 +79,17 @@ const randomUsername = (cfg) =>
 // Crea el PAL (personalidad) la primera vez y lo vuelve a crear si cambias config.json.
 async function ensurePal(cfg) {
   const body = palBody(cfg);
-  const hash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
+  const hash = crypto.createHash('sha256').update(JSON.stringify([body, Boolean(cfg.enableMeetings)])).digest('hex');
   const state = readState();
   if (state.palId && state.hash === hash) return state.palId;
 
   let username = state.username || randomUsername(cfg);
   for (let attempt = 1; ; attempt++) {
     try {
-      const pal = await tavus('POST', '/pals', {
-        ...body,
-        layers: { ...body.layers, conferencing: { username } },
-      });
+      // Las reuniones (Zoom/Meet/Teams) no están en el plan gratis: solo se activan con enableMeetings.
+      const pal = await tavus('POST', '/pals', cfg.enableMeetings
+        ? { ...body, layers: { ...body.layers, conferencing: { username } } }
+        : body);
       const palId = pal.pal_id || pal.persona_id;
       if (!palId) throw new Error('Tavus no devolvió pal_id: ' + JSON.stringify(pal));
       writeState({ palId, hash, username, createdAt: new Date().toISOString() });
@@ -116,7 +116,10 @@ async function startConversation({ meetingUrl } = {}) {
       participant_left_timeout: 30,
     },
   };
-  if (meetingUrl) body.meeting_url = meetingUrl;
+  if (meetingUrl) {
+    if (!cfg.enableMeetings) throw Object.assign(new Error('Las reuniones de Zoom/Meet/Teams están desactivadas (requieren plan de pago de Tavus). Activa "enableMeetings" en config.json.'), { status: 400 });
+    body.meeting_url = meetingUrl;
+  }
   const conv = await tavus('POST', '/conversations', body);
   return { conversationId: conv.conversation_id, conversationUrl: conv.conversation_url, agentName: cfg.agentName };
 }
@@ -140,7 +143,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'GET' && req.url === '/api/info') {
       const cfg = readConfig();
-      return send(res, 200, { agentName: cfg.agentName, hasKey: Boolean(KEY) });
+      return send(res, 200, { agentName: cfg.agentName, hasKey: Boolean(KEY), enableMeetings: Boolean(cfg.enableMeetings) });
     }
     if (!KEY) return send(res, 500, { error: 'Falta TAVUS_API_KEY (ponla en tavus-agent/.env).' });
     if (req.method === 'POST' && req.url === '/api/conversation') {
@@ -155,7 +158,7 @@ const server = http.createServer(async (req, res) => {
     send(res, 404, { error: 'No encontrado' });
   } catch (err) {
     console.error(err.message);
-    send(res, err.status === 401 ? 401 : 500, { error: err.message });
+    send(res, [400, 401].includes(err.status) ? err.status : 500, { error: err.message });
   }
 });
 

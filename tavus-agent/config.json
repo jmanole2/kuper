@@ -1,5 +1,6 @@
 {
   "agentName": "Sofía",
+  "enableMeetings": false,
   "meetingUsername": "Sofia-Kuper",
   "faceId": "rc9cff32ceba",
   "languages": [
