@@ -6,6 +6,7 @@ import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
+import { SERVICIOS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad } from '../plan.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
 const reusa = (c, p) => p === 'tiktok' || !!c.config[p]?.reusar_instagram;
@@ -124,12 +125,17 @@ const side = (on) => [
   { href: '/admin/salir', icon: 'out', label: 'Salir', bottom: true },
 ];
 // Barra lateral del cliente (solo su marca).
-const sideApp = (on) => [
+const AYUDA = 'https://wa.me/525552173832';
+const sideApp = (on, client) => [
   { href: '/app', icon: 'home', label: 'Inicio', on: on === 'inicio', logo: true },
-  { href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' },
-  { href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' },
-  { href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' },
+  ...(tiene(client, 'redes') ? [{ href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }] : []),
+  ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
+  ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
+  ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
+  { href: '/app/pagos', icon: 'card', label: 'Pagos', on: on === 'pagos' },
   { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta' },
+  { href: `${AYUDA}?text=${encodeURIComponent(`Hola, soy de ${client?.nombre || 'un cliente'} y necesito ayuda con mi panel`)}`, icon: 'help', label: 'Ayuda por WhatsApp', bottom: true },
   { href: '/salir', icon: 'out', label: 'Salir', bottom: true },
 ];
 const kpis = (items) => html`<div class="kpis">${items.map(([n, label, color, hot]) => html`<div class="kpi${hot ? ' hot' : ''}"><b>${n}</b><small><i style="background:${color}"></i>${label}</small></div>`)}</div>`;
@@ -154,17 +160,40 @@ export function loginPage(error, email = '') {
   </div></div>${heroCss()}${orbTag()}` });
 }
 
-export function dashboardPage(clients, counts, pulso) {
+export function dashboardPage(clients, counts, pulso, billings = {}) {
+  const mrr = clients.filter((c) => c.activo).reduce((n, c) => n + mensualidad(c), 0);
+  const fallidos = clients.filter((c) => billings[c.id]?.estado === 'pago_fallido');
   const body = html`${controlCenter(pulso, clients)}
-  <div class="row spread"><h2 style="margin:0">Marcas</h2><a class="btn btn-warn" href="/admin/clientes/nuevo">+ Nueva marca</a></div>
+  ${fallidos.length ? html`<div class="err">Pago rechazado: ${fallidos.map((c) => c.nombre).join(', ')}.</div>` : ''}
+  <div class="row spread"><div><h2 style="margin:0">Marcas</h2><p class="muted small" style="margin:6px 0 0">Ingreso mensual de los planes: <b style="color:var(--ink)">${mxn(mrr)}</b></p></div><div class="row"><a class="btn btn-warn" href="/admin/usuarios">Usuarios</a><a class="btn btn-warn" href="/admin/clientes/nuevo">+ Nueva marca</a></div></div>
   <div class="grid" style="margin-top:16px">${clients.map((c) => html`<a class="card" href="/admin/clientes/${c.id}" style="text-decoration:none">
     <div class="row spread"><div class="row"><div class="avatar">${c.logo_path ? html`<img src="${mediaSrc(c.logo_path)}" alt="">` : c.nombre.slice(0, 1)}</div>
-      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}</div></div></div>${c.activo ? '' : badge('rechazado')}</div>
+      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}${mensualidad(c) ? ` · ${mxn(mensualidad(c))}/mes` : ''}</div></div></div>${c.activo ? (ESTADO_PAGO[billings[c.id]?.estado] && planDe(c).conceptos.length ? html`<span class="badge" style="color:${ESTADO_PAGO[billings[c.id].estado][1]}">${ESTADO_PAGO[billings[c.id].estado][0]}</span>` : '') : badge('rechazado')}</div>
+    <div class="muted small" style="margin-top:10px">${Object.entries(SERVICIOS).filter(([k]) => planDe(c).servicios[k]).map(([, v]) => v.nombre).join(' · ')}</div>
     <div class="row" style="margin:16px 0 12px">${PLATFORMS.filter((p) => c.config[p]?.activo).map((p) => html`<span class="badge" style="color:${PCOL[p]}">${PLAT[p]}</span>`)}</div>
     <div class="row">${Object.entries(counts[c.id] || {}).map(([st, n]) => html`<span class="small muted">${badge(st)} ${n}</span>`)}</div></a>`)}
   </div>
   ${clients.length ? '' : html`<p class="muted">Todavía no hay clientes. <a href="/admin/clientes/nuevo">Crea el primero</a>.</p>`}`;
   return page({ title: 'Kuper · Centro de control', side: side('clientes'), body });
+}
+
+function planCard(client, billing) {
+  const plan = planDe(client), est = ESTADO_PAGO[billing?.estado] || ESTADO_PAGO.sin_tarjeta;
+  return html`<form class="card" method="post" action="/admin/clientes/${client.id}/plan" style="margin-bottom:18px">
+    <div class="row spread"><div><strong>Plan contratado y cobro</strong><p class="muted small" style="margin:4px 0 0">El cliente solo ve las secciones de los servicios que contrató.</p></div>
+      <span class="badge" style="color:${est[1]}">${est[0]}${billing?.tarjeta ? ` · ${billing.tarjeta}` : ''}</span></div>
+    <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:14px 0">${Object.entries(SERVICIOS).map(([k, v]) => html`<label class="variant" style="margin:0;font-weight:400">
+      <input type="checkbox" name="servicio_${k}" value="1" ${raw(plan.servicios[k] ? 'checked' : '')}> <strong>${v.nombre}</strong>${v.proximamente ? html` <span class="badge" style="color:#93b4ff">pronto</span>` : ''}<br><span class="muted small">${v.desc}</span></label>`)}</div>
+    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div><label>Publicaciones por semana</label><input type="number" name="posts_semana" min="0" max="50" value="${plan.posts_semana}"></div>
+      <div><label>Extras gratis al mes</label><input type="number" name="extra_gratis_mes" min="0" max="20" value="${plan.extra_gratis_mes}"></div>
+      <div><label>Precio por extra (MXN)</label><input type="number" name="precio_extra" min="0" step="1" value="${plan.precio_extra}"></div>
+    </div>
+    <label>Conceptos a cobrar (uno por línea: Nombre | monto | mensual o único)</label>
+    <textarea name="conceptos" style="min-height:96px" placeholder="Agente de IA WhatsApp | 499 | mensual&#10;Configuración inicial | 5499 | único">${conceptosTexto(plan)}</textarea>
+    <p class="muted small">Mensualidad: <b>${mxn(mensualidad(client))}</b>. Al domiciliar su tarjeta, el cliente paga lo único en el primer cobro y la mensualidad cada mes. Si cambias los montos después, la suscripción ya creada no cambia (se ajusta en Stripe).</p>
+    <button class="btn-accent">Guardar plan</button>
+  </form>`;
 }
 
 export function leadsSection(client, leads, chats, base) {
@@ -186,7 +215,7 @@ export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = fa
       <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}`;
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, leadsCount = 0, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, leadsCount = 0, billing = null, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -199,8 +228,8 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']];
-  const t = isNew ? 'config' : tab;
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
+  const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Llena el perfil de marca y las redes; el agente empieza a crear contenido solo.' }) : hero({
     kicker: client.activo ? 'Agente activo' : 'Agente en pausa', title: client.nombre,
@@ -258,6 +287,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ` : ''}
 
   ${t === 'config' ? html`${!isNew ? html`<div style="margin-top:24px"></div>
+  ${planCard(client, billing)}
   <div class="card" style="margin-bottom:18px"><div class="row spread"><div><strong>Acceso del cliente</strong><p class="muted small" style="margin:4px 0 0">Usuarios con su propio correo y contraseña: ven su resumen, aprueban publicaciones y ven sus leads y citas.</p></div>
     <div class="row"><a class="btn btn-warn" href="/app?c=${client.id}">Ver como el cliente</a><a class="btn btn-accent" href="/admin/usuarios?c=${client.id}">Usuarios de ${client.nombre}</a></div></div></div>
   <div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
@@ -453,38 +483,108 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
 }
 
 // ------------------------------------------------------------ vista del cliente (/app)
-export function appHomePage(client, pulso) {
-  return page({ title: `${client.nombre} · Panel`, side: sideApp('inicio'), body: html`${controlCenter(pulso, [client], { cliente: client })}` });
+export function appHomePage(client, pulso, billing = null) {
+  const aviso = billing?.estado === 'pago_fallido' ? html`<a class="err" href="/app/pagos" style="display:block;text-decoration:none">Tu banco rechazó el último cobro. Toca aquí para actualizar tu tarjeta y no pausar tus servicios.</a>`
+    : planDe(client).conceptos.length && billing?.estado === 'sin_tarjeta' ? html`<a class="warn" href="/app/pagos" style="display:block;text-decoration:none">Domicilia tu tarjeta para activar el cobro mensual de tu plan →</a>` : '';
+  return page({ title: `${client.nombre} · Panel`, side: sideApp('inicio', client), body: html`${aviso}${controlCenter(pulso, [client], { cliente: client })}` });
 }
-const appHero = (client, t, posts = [], leadsN = 0) => hero({
+const appHero = (client, t, posts = [], leadsN = 0, extra = {}) => hero({
   kicker: 'Tu panel', title: client.nombre, letra: client.nombre,
   avatar: client.logo_path ? `<img src="${esc(mediaSrc(client.logo_path))}" alt="">` : null,
-  stats: [[posts.filter((p) => ['pendiente', 'necesita_asset'].includes(p.status)).length, 'Por revisar', '#fbbf24', '/app/posts', posts.some((p) => ['pendiente', 'necesita_asset'].includes(p.status))],
-    [posts.filter((p) => ['aprobado', 'publicando'].includes(p.status)).length, 'Programadas', '#4ade80', '/app/posts?t=programadas'],
-    [posts.filter((p) => p.status === 'publicado').length, 'Publicadas', '#c9f53a', '/app/posts?t=publicadas'], [leadsN, 'Leads', '#93b4ff', '/app/leads']],
-  tabs: [['/app', 'Resumen', false], ['/app/posts', 'Publicaciones', t === 'posts'], ['/app/leads', 'Leads', t === 'leads'], ['/app/citas', 'Citas', t === 'citas']],
+  stats: [
+    ...(tiene(client, 'redes') ? [[posts.filter((p) => ['pendiente', 'necesita_asset'].includes(p.status)).length, 'Por revisar', '#fbbf24', '/app/posts', posts.some((p) => ['pendiente', 'necesita_asset'].includes(p.status))],
+      [posts.filter((p) => ['aprobado', 'publicando'].includes(p.status)).length, 'Programadas', '#4ade80', '/app/posts?t=programadas'],
+      [posts.filter((p) => p.status === 'publicado').length, 'Publicadas', '#c9f53a', '/app/posts?t=publicadas']] : []),
+    ...(tiene(client, 'chat') ? [[leadsN, 'Leads', '#93b4ff', '/app/leads']] : []),
+  ],
+  tabs: [['/app', 'Resumen', false], ...(tiene(client, 'redes') ? [['/app/posts', 'Publicaciones', t === 'posts']] : []), ...(tiene(client, 'chat') ? [['/app/leads', 'Leads', t === 'leads']] : []),
+    ...(tiene(client, 'agenda') ? [['/app/citas', 'Citas', t === 'citas']] : []), ['/app/pagos', 'Pagos', t === 'pagos']],
+  note: extra.note || null,
 });
-export function appPostsPage(client, posts, tab = '', leadsN = 0) {
+export function appPostsPage(client, posts, tab = '', leadsN = 0, cuota = null, aviso = '') {
   const by = (sts) => posts.filter((p) => sts.includes(p.status));
   const T = [['revisar', 'Por revisar', by(['pendiente', 'necesita_asset', 'cambios_solicitados', 'generando']), 'No tienes nada pendiente.'],
     ['programadas', 'Programadas', by(['aprobado', 'publicando']).reverse(), 'Nada programado todavía.'], ['publicadas', 'Publicadas', by(['publicado']).slice(0, 30), 'Aún no hay publicaciones.']];
   const sel = T.find((x) => x[0] === tab) || T[0];
+  const plan = planDe(client);
+  const redesExtra = PLATFORMS.filter((p) => client.config[p]?.activo && !reusa(client, p));
   const body = html`${appHero(client, 'posts', posts, leadsN)}
+  ${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}
+  ${cuota ? html`<div class="card" style="margin-bottom:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:center">
+    <div><span class="mono">Tu plan · esta semana</span>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><b style="font-size:40px;font-weight:300;letter-spacing:-.04em">${cuota.semana}</b><span class="muted">de ${plan.posts_semana} publicaciones</span></div>
+      <div style="height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round((cuota.semana / Math.max(1, plan.posts_semana)) * 100))}%;background:#c9f53a;border-radius:99px"></div></div></div>
+    <div><span class="mono">Publicaciones extra este mes</span>
+      <p style="margin:8px 0 0">${cuota.costo.gratisRestantes ? raw(cuota.costo.gratisRestantes === 1 ? 'Te queda <b>1 gratis</b>.' : `Te quedan <b>${cuota.costo.gratisRestantes} gratis</b>.`) : html`Ya usaste tu extra gratis. Cada extra cuesta <b>${mxn(plan.precio_extra)}</b>.`}</p>
+      <p class="muted small" style="margin:4px 0 0">${cuota.extras} ${cuota.extras === 1 ? 'extra pedida' : 'extras pedidas'} este mes.</p></div>
+    <div><span class="mono">¿Quieres una más?</span><div class="row" style="margin-top:10px">${redesExtra.map((p) => html`<a class="btn btn-accent" href="/app/extra?red=${p}" style="padding:9px 16px">+ ${PLAT[p]}</a>`)}</div></div>
+  </div>` : ''}
   <div class="pills">${T.map(([k, l, list]) => html`<a class="${k === sel[0] ? 'on' : ''}" href="/app/posts?t=${k}">${l} <em>${list.length}</em></a>`)}</div>
   ${sel[2].length ? html`<div class="grid">${sel[2].map((p) => postCard(p, { base: `/app/posts/${p.id}` }))}</div>` : html`<div class="card muted">${sel[3]}</div>`}
   ${sel[2].some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
-  return page({ title: `Publicaciones · ${client.nombre}`, side: sideApp('posts'), body });
+  return page({ title: `Publicaciones · ${client.nombre}`, side: sideApp('posts', client), body });
 }
+export function appExtraPage(client, { red, costo, tarjeta, error = '' }) {
+  const plan = planDe(client);
+  const body = html`${appHero(client, 'posts')}
+  <div class="card" style="max-width:560px">
+    <span class="mono">Publicación extra · ${PLAT[red]}</span>
+    <h1 style="font-size:32px;margin:12px 0 6px">${costo.monto ? `Cuesta ${mxn(costo.monto)}` : 'Esta va gratis'}</h1>
+    <p class="muted">${costo.monto ? html`Tu plan incluye ${plan.posts_semana} publicaciones por semana y ${plan.extra_gratis_mes} extra gratis al mes, que ya usaste. ${tarjeta ? html`Se cobra a tu tarjeta <b>${tarjeta}</b>.` : ''}` : html`Tu plan incluye ${plan.extra_gratis_mes} publicación extra gratis al mes. Después, cada una cuesta ${mxn(plan.precio_extra)}.`}</p>
+    <p class="muted small">El agente la crea en unos minutos y te llega a "Por revisar" para que la apruebes antes de publicarse.</p>
+    ${error ? html`<div class="err">${error}</div>` : ''}
+    ${costo.monto && !tarjeta ? html`<p><a class="btn btn-accent" href="/app/pagos">Primero domicilia tu tarjeta</a></p>` : html`<form method="post" action="/app/extra" class="row" style="margin-top:14px"><input type="hidden" name="red" value="${red}"><input type="hidden" name="monto" value="${costo.monto}">
+      <button class="btn-accent">${costo.monto ? `Pagar ${mxn(costo.monto)} y crear` : 'Crear publicación gratis'}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></form>`}
+  </div>`;
+  return page({ title: `Publicación extra · ${client.nombre}`, side: sideApp('posts', client), body });
+}
+
+const ESTADO_PAGO = { al_corriente: ['Al corriente', '#4ade80'], sin_tarjeta: ['Sin tarjeta domiciliada', '#fbbf24'], pago_fallido: ['Pago rechazado', '#f87171'], cancelado: ['Suscripción cancelada', '#f87171'] };
+export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true } = {}) {
+  const plan = planDe(client), est = ESTADO_PAGO[r.estado] || ESTADO_PAGO.sin_tarjeta, mensual = mensualidad(client);
+  const body = html`${appHero(client, 'pagos', [], 0, { note: ['Mensualidad', mensual ? `${mxn(mensual)} al mes` : 'Sin mensualidad'] })}
+  ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+  ${r.estado === 'pago_fallido' ? html`<div class="err">Tu banco rechazó el último cobro. Actualiza tu tarjeta para no pausar tus servicios.</div>` : ''}
+  <div style="display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start">
+    <div class="card"><div class="row spread"><span class="mono">Tu tarjeta</span><span class="badge" style="color:${est[1]}">${est[0]}</span></div>
+      <p style="font-size:22px;font-weight:300;margin:14px 0 4px${r.tarjeta ? ';text-transform:capitalize' : ''}">${r.tarjeta || 'Ninguna todavía'}</p>
+      ${r.proximo_cobro ? html`<p class="muted small">Próximo cobro: ${fmtDate(r.proximo_cobro)}</p>` : ''}
+      ${!stripeOn ? html`<p class="muted small">Los pagos en línea se activan pronto. Mientras, Kuper te contacta para tu forma de pago.</p>` : html`<div class="row" style="margin-top:14px">
+        ${r.tarjeta ? html`<form method="post" action="/app/pagos/portal" class="inline"><button class="btn-warn">Cambiar tarjeta o ver facturas</button></form>`
+          : html`<form method="post" action="/app/pagos/domiciliar" class="inline"><button class="btn-accent">Domiciliar mi tarjeta</button></form>`}</div>
+      <p class="muted small" style="margin-top:12px">🔒 Tu tarjeta se guarda en Stripe, el procesador de pagos. Kuper nunca ve ni guarda sus números.</p>`}
+    </div>
+    <div class="card"><span class="mono">Tu plan</span>
+      <table style="margin-top:8px">${plan.conceptos.map((c) => html`<tr><td>${c.nombre}</td><td class="muted small">${c.tipo === 'unico' ? 'pago único' : 'al mes'}</td><td style="text-align:right">${mxn(c.monto)}</td></tr>`)}
+      ${plan.conceptos.length ? '' : html`<tr><td class="muted">Kuper todavía no carga tu plan.</td></tr>`}</table>
+      <p class="muted small" style="margin-top:10px">Incluye: ${Object.entries(SERVICIOS).filter(([k]) => plan.servicios[k]).map(([, v]) => v.nombre).join(', ') || '—'}${plan.servicios.redes ? ` · ${plan.posts_semana} publicaciones por semana · ${plan.extra_gratis_mes} extra gratis al mes (después ${mxn(plan.precio_extra)} c/u)` : ''}.</p>
+    </div>
+  </div>
+  <h2>Facturas y cobros</h2>
+  ${r.facturas?.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Fecha</th><th>Concepto</th><th>Estado</th><th style="text-align:right">Total</th><th></th></tr>
+    ${r.facturas.map((f) => html`<tr><td class="small">${fmtDate(f.fecha)}</td><td class="small">${f.concepto || f.numero || ''}</td><td><span class="badge" style="color:${f.estado === 'paid' ? '#4ade80' : f.estado === 'open' ? '#fbbf24' : '#a39d93'}">${{ paid: 'Pagada', open: 'Pendiente', void: 'Anulada', draft: 'Borrador', uncollectible: 'No cobrada' }[f.estado] || f.estado}</span></td>
+      <td style="text-align:right">${mxn(f.total)}</td><td>${f.url ? html`<a class="small" href="${f.url}" target="_blank" rel="noopener">Ver ↗</a>` : ''}</td></tr>`)}</table></div>`
+    : html`<div class="card muted">Aún no hay cobros.</div>`}`;
+  return page({ title: `Pagos · ${client.nombre}`, side: sideApp('pagos', client), body });
+}
+
+export function appProximamentePage(client, servicio) {
+  const s = SERVICIOS[servicio];
+  const body = html`${hero({ kicker: 'Próximamente', title: s.nombre, letra: client.nombre, sub: s.desc, note: ['En preparación', 'Te avisamos en cuanto esté listo'] })}
+  <div class="card muted">Estamos terminando este agente para tu marca. Cuando esté activo verás aquí cada ${servicio === 'llamadas' ? 'llamada' : 'videollamada'}: quién era, de qué hablaron, el resumen y si agendó cita.</div>`;
+  return page({ title: `${s.nombre} · ${client.nombre}`, side: sideApp(servicio, client), body });
+}
+
 export function appLeadsPage(client, leads, chats, posts = []) {
-  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads'), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app')}` });
+  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app')}` });
 }
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
-  return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas'), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false })}` });
+  return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false })}` });
 }
 export function appChatPage(client, lead, mensajes) {
-  return leadChatPage(client, lead, mensajes, { back: '/app/leads', sideBar: sideApp('leads') });
+  return leadChatPage(client, lead, mensajes, { back: '/app/leads', sideBar: sideApp('leads', client) });
 }
-export function cuentaPage(user, { error = '', ok = '' } = {}) {
+export function cuentaPage(user, { error = '', ok = '', client = null } = {}) {
   const body = html`${hero({ kicker: 'Mi cuenta', title: user.nombre, letra: user.nombre, sub: user.email })}
   ${error ? html`<div class="err">${error}</div>` : ''}${ok ? html`<div class="okmsg">${ok}</div>` : ''}
   <form class="card" method="post" action="/app/cuenta" style="max-width:520px">
@@ -493,5 +593,5 @@ export function cuentaPage(user, { error = '', ok = '' } = {}) {
     <label>Nueva contraseña (mínimo 10 caracteres)</label><input type="password" name="nueva" autocomplete="new-password" minlength="10" required>
     <label>Repite la nueva</label><input type="password" name="nueva2" autocomplete="new-password" minlength="10" required>
     <p><button class="btn-accent">Guardar</button></p></form>`;
-  return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('usuarios') : sideApp('cuenta'), body });
+  return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('usuarios') : sideApp('cuenta', client), body });
 }

@@ -121,6 +121,26 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       last_login TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS extras (
+      id INTEGER PRIMARY KEY,
+      client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      mes TEXT NOT NULL,
+      plataforma TEXT NOT NULL,
+      monto REAL NOT NULL DEFAULT 0,
+      estado TEXT NOT NULL,
+      factura TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS billing (
+      client_id INTEGER PRIMARY KEY REFERENCES clients(id) ON DELETE CASCADE,
+      stripe_customer TEXT,
+      subscription_id TEXT,
+      estado TEXT NOT NULL DEFAULT 'sin_tarjeta',
+      tarjeta TEXT,
+      proximo_cobro TEXT,
+      ultimo_pago TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS lead_mensajes (
       id INTEGER PRIMARY KEY,
       lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
@@ -393,6 +413,16 @@ export const leadMessages = (leadId, limit = 400) => getDb()
   .prepare('SELECT * FROM (SELECT * FROM lead_mensajes WHERE lead_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id').all(leadId, limit);
 export const leadMessageCounts = (clientId) => Object.fromEntries(getDb()
   .prepare('SELECT m.lead_id, COUNT(*) n FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ? GROUP BY m.lead_id').all(clientId).map((r) => [r.lead_id, r.n]));
+
+// ------------------------------------------------------------------ cobro (Stripe)
+export const getBilling = (clientId) => getDb().prepare('SELECT * FROM billing WHERE client_id = ?').get(clientId) || { client_id: clientId, estado: 'sin_tarjeta' };
+export const billingByCustomer = (customer) => getDb().prepare('SELECT * FROM billing WHERE stripe_customer = ?').get(customer);
+export function setBilling(clientId, fields) {
+  getDb().prepare('INSERT OR IGNORE INTO billing (client_id) VALUES (?)').run(clientId);
+  const keys = Object.keys(fields).filter((k) => ['stripe_customer', 'subscription_id', 'estado', 'tarjeta', 'proximo_cobro', 'ultimo_pago'].includes(k));
+  if (keys.length) getDb().prepare(`UPDATE billing SET ${keys.map((k) => `${k} = ?`).join(', ')}, updated_at = datetime('now') WHERE client_id = ?`).run(...keys.map((k) => fields[k] ?? null), clientId);
+  return getBilling(clientId);
+}
 
 // ------------------------------------------------------------------ usuarios del panel
 export const ROLES = { admin: 'Administrador (Kuper)', cliente: 'Cliente' };

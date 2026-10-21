@@ -95,6 +95,10 @@ const ICON = {
   post: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M20 15l-5-5-9 9"/>',
   cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+  card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+  help: '<path d="M4 5h16v11H8l-4 4z"/><path d="M10 9.5a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9V13M12 15.2v.1"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
 };
 export const icon = (k) => `<svg viewBox="0 0 24 24">${ICON[k] || ''}</svg>`;
@@ -106,7 +110,7 @@ export const icon = (k) => `<svg viewBox="0 0 24 24">${ICON[k] || ''}</svg>`;
 export function page({ title, body, side = null, brand = '', mark = 'K' }) {
   const nav = side ? `<aside class="side"><a class="logo" href="${esc(side.find((l) => l.logo)?.href || '/admin')}" title="Inicio">${esc(mark)}</a>
 ${side.filter((l) => !l.bottom).map((l) => `<a class="nav${l.on ? ' on' : ''}" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}
-<div class="bottom">${side.filter((l) => l.bottom).map((l) => `<a class="nav" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}</div></aside>` : '';
+<div class="bottom">${side.filter((l) => l.bottom).map((l) => `<a class="nav" href="${esc(l.href)}"${l.href.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}</div></aside>` : '';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#121110"><title>${esc(title)}</title><style>${CSS}</style></head><body>
 <div class="${side ? 'layout' : 'solo'}">${nav}<div>${brand ? `<div class="top"><span class="brand">${esc(brand)}</span></div>` : ''}<main>${body}</main></div></div></body></html>`;

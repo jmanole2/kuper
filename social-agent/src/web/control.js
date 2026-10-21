@@ -2,6 +2,7 @@
 // esfera de partículas animada, accesos en anillo, "En vivo", citas, WhatsApp y actividad.
 import { html, raw } from './html.js';
 import { config } from '../config.js';
+import { tiene } from '../plan.js';
 
 const MONO = 'ui-monospace,"SF Mono",Menlo,Consolas,monospace';
 const ICO = {
@@ -11,7 +12,7 @@ const ICO = {
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
-  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.1"/>', arrow: '<path d="M7 17L17 7M9 7h8v8"/>',
+  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.1"/>', card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>', arrow: '<path d="M7 17L17 7M9 7h8v8"/>',
 };
 const svgI = (k, s = 16) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICO[k] || ''}</svg>`;
 
@@ -141,9 +142,12 @@ export function controlCenter(p, clients, { cliente = null } = {}) {
   const c0 = clients.find((c) => c.activo) || clients[0];
   const tab = (t) => (cliente ? `/app/${t === 'competencia' ? '' : t}` : c0 ? `/admin/clientes/${c0.id}?tab=${t}` : '/admin/clientes/nuevo');
   const inicio = cliente ? '/app' : '/admin';
+  const ok = (srv) => !cliente || tiene(cliente, srv);
   const links = [
-    { label: 'Citas', icon: 'cal', href: tab('citas') }, { label: 'Leads', icon: 'users', href: tab('leads') },
-    { label: 'WhatsApp', icon: 'chat', href: tab('leads') }, { label: 'Posts', icon: 'post', href: tab('posts') },
+    ...(ok('agenda') ? [{ label: 'Citas', icon: 'cal', href: tab('citas') }] : []),
+    ...(ok('chat') ? [{ label: 'Leads', icon: 'users', href: tab('leads') }, { label: 'WhatsApp', icon: 'chat', href: tab('leads') }] : []),
+    ...(ok('redes') ? [{ label: 'Posts', icon: 'post', href: tab('posts') }] : []),
+    ...(cliente ? [{ label: 'Pagos', icon: 'card', href: '/app/pagos' }] : []),
     cliente ? { label: 'Mi cuenta', icon: 'check', href: '/app/cuenta' } : { label: 'Competencia', icon: 'eye', href: tab('competencia') },
   ];
   const delta = p.tareasHoy - p.tareasAyer;
@@ -164,17 +168,20 @@ export function controlCenter(p, clients, { cliente = null } = {}) {
       ${raw(lollipopHoras(p.horas))}
     </div>
     <div class="cc-two">
-      <a class="cc-card" href="${tab('posts')}" style="text-decoration:none;color:inherit"><div class="row spread"><span class="mono">Aprobación</span>${raw(svgI('arrow', 14))}</div>${raw(anilloAprobacion(p.aprobacion))}</a>
+      ${ok('redes') ? html`<a class="cc-card" href="${tab('posts')}" style="text-decoration:none;color:inherit"><div class="row spread"><span class="mono">Aprobación</span>${raw(svgI('arrow', 14))}</div>${raw(anilloAprobacion(p.aprobacion))}</a>`
+        : html`<a class="cc-card" href="${tab('leads')}" style="text-decoration:none;color:inherit"><span class="mono">Con cita</span><div class="cc-big"><b style="font-size:34px">${p.leads.porEstado.cita || 0}</b><small>leads</small></div></a>`}
       <div class="cc-card"><span class="mono">Horas ahorradas</span>
         <div class="cc-big" style="margin-top:8px"><b style="font-size:34px">${p.horasSemana}</b><small>h · 7 días</small></div>${raw(capsHoras(p.horasAhorradas))}</div>
     </div>
     <div class="cc-two">
-      <div class="cc-card"><span class="mono">Por revisar</span><div class="cc-big"><b style="font-size:34px">${p.posts.revisar}</b><small>posts</small></div></div>
-      <div class="cc-card"><span class="mono">Programados</span><div class="cc-big"><b style="font-size:34px">${p.posts.programados}</b><small>posts</small></div></div>
+      ${ok('redes') ? html`<div class="cc-card"><span class="mono">Por revisar</span><div class="cc-big"><b style="font-size:34px">${p.posts.revisar}</b><small>posts</small></div></div>
+      <div class="cc-card"><span class="mono">Programados</span><div class="cc-big"><b style="font-size:34px">${p.posts.programados}</b><small>posts</small></div></div>`
+        : html`<div class="cc-card"><span class="mono">Nuevos</span><div class="cc-big"><b style="font-size:34px">${p.leads.porEstado.nuevo || 0}</b><small>leads</small></div></div>
+      <div class="cc-card"><span class="mono">Clientes</span><div class="cc-big"><b style="font-size:34px">${p.leads.porEstado.cliente || 0}</b><small>cerrados</small></div></div>`}
     </div>
   </div>
   <div class="cc-dark">
-    <nav class="cc-tabs"><a class="on" href="${inicio}">Resumen</a><a href="${tab('posts')}">Posts</a><a href="${tab('leads')}">Leads</a><a href="${tab('citas')}">Citas</a>${cliente ? '' : html`<a href="${tab('competencia')}">Competencia</a>`}</nav>
+    <nav class="cc-tabs"><a class="on" href="${inicio}">Resumen</a>${ok('redes') ? html`<a href="${tab('posts')}">Posts</a>` : ''}${ok('chat') ? html`<a href="${tab('leads')}">Leads</a>` : ''}${ok('agenda') ? html`<a href="${tab('citas')}">Citas</a>` : ''}${cliente ? html`<a href="/app/pagos">Pagos</a>` : html`<a href="${tab('competencia')}">Competencia</a>`}</nav>
     <div class="cc-stage">
       <div class="cc-orbwrap"><div class="halo"></div>${raw(anillo(links))}<div class="cc-orb"><canvas id="cc-orb" class="k-orb" aria-label="Agente en actividad"></canvas></div><div class="pulse"></div></div>
       <div class="cc-live cc-glass${v?.activo ? '' : ' idle'}" id="cc-live">

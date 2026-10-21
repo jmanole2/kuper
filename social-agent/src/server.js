@@ -15,6 +15,8 @@ import { checkConnections } from './publishers/check.js';
 import { sendTestDigest } from './notify.js';
 import * as agenda from './agenda/index.js';
 import { pulse } from './pulse.js';
+import * as plan from './plan.js';
+import * as billing from './billing.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -50,6 +52,14 @@ export function createApp() {
     }),
     limits: { fileSize: 300 * 1024 * 1024 },
     fileFilter: (_req, f, cb) => cb(null, ['image/jpeg', 'image/png', 'video/mp4', 'video/quicktime'].includes(f.mimetype)),
+  });
+
+  // ------------------------------------------------------------ avisos de Stripe (pagos)
+  app.post('/webhooks/stripe', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : '';
+    if (!billing.verificarFirma(raw, req.headers['stripe-signature'])) return res.status(400).send('Firma no válida');
+    try { await billing.procesarEvento(JSON.parse(raw)); res.json({ received: true }); }
+    catch (e) { console.error('[stripe]', e.message); res.status(500).json({ error: 'No se pudo procesar' }); }
   });
 
   // ------------------------------------------------------------ API para el agente de WhatsApp
@@ -182,12 +192,65 @@ export function createApp() {
     next();
   });
   const appPosts = (c) => db.listPosts({ clientId: c.id, limit: 400 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status));
-  appR.get('/', async (req, res) => res.send(V.appHomePage(req.client, await pulse(db.listClients(), { clientId: req.client.id }))));
+  // Cada sección solo existe si el cliente la contrató.
+  const servicio = (srv) => (req, res, next) => (plan.tiene(req.client, srv) ? next() : res.redirect('/app'));
+  appR.use(['/posts', '/extra'], servicio('redes'));
+  appR.use('/leads', servicio('chat'));
+  appR.use('/citas', servicio('agenda'));
+  for (const srv of ['llamadas', 'videollamadas']) appR.get(`/${srv}`, servicio(srv), (req, res) => res.send(V.appProximamentePage(req.client, srv)));
+  const cuota = (c) => ({ semana: plan.postsDeLaSemana(c.id), costo: plan.costoExtra(c), extras: plan.extrasDelMes(c.id).length });
+  const redExtra = (c, red) => db.PLATFORMS.includes(red) && c.config[red]?.activo && red !== 'tiktok' && !c.config[red]?.reusar_instagram;
+  appR.get('/extra', (req, res) => {
+    const red = String(req.query.red || '');
+    if (!redExtra(req.client, red)) return res.redirect('/app/posts');
+    res.send(V.appExtraPage(req.client, { red, costo: plan.costoExtra(req.client), tarjeta: db.getBilling(req.client.id).tarjeta }));
+  });
+  const extrasEnCurso = new Set();
+  appR.post('/extra', async (req, res) => {
+    const c = req.client, red = String(req.body.red || '');
+    if (!redExtra(c, red)) return res.redirect('/app/posts');
+    if (extrasEnCurso.has(c.id)) return res.redirect('/app/posts');
+    extrasEnCurso.add(c.id);
+    try {
+      const costo = plan.costoExtra(c), tarjeta = db.getBilling(c.id).tarjeta;
+      const vista = (error) => V.appExtraPage(c, { red, costo, tarjeta, error });
+      if (Number(req.body.monto) !== costo.monto) return res.status(409).send(vista('El precio cambió desde que abriste esta página. Revísalo y confirma de nuevo.'));
+      let estado = 'gratis', factura = null;
+      if (costo.monto > 0) {
+        if (!billing.stripeOn() || !tarjeta) return res.status(402).send(vista('Primero domicilia tu tarjeta en Pagos.'));
+        const r = await billing.cobrarExtra(c, { monto: costo.monto, concepto: `Publicación extra en ${red}`, idem: `extra-${c.id}-${plan.extrasDelMes(c.id).length}-${red}` });
+        if (!r.ok) return res.status(402).send(vista(r.url ? `Tu banco pidió confirmar el pago. Ábrelo aquí: ${r.url}` : `No se pudo cobrar: ${r.error}`));
+        estado = 'pagado'; factura = r.factura;
+      }
+      plan.registrarExtra(c.id, { plataforma: red, monto: costo.monto, estado, factura });
+      db.logEvent({ clientId: c.id, tipo: 'post_extra', detalle: `${red} · ${costo.monto ? plan.mxn(costo.monto) : 'gratis'}` });
+      pipe.enqueue(`extra-${c.id}-${red}-${Date.now()}`, () => pipe.generateForPlatform(c.id, red, { force: true }).catch(() => {}));
+      res.redirect('/app/posts?ok=extra');
+    } catch (e) {
+      console.error('[extra]', e.message);
+      res.status(500).send(V.appExtraPage(c, { red, costo: plan.costoExtra(c), tarjeta: db.getBilling(c.id).tarjeta, error: 'No pudimos procesarlo. Intenta de nuevo en unos minutos.' }));
+    } finally { extrasEnCurso.delete(c.id); }
+  });
+  appR.get('/pagos', async (req, res) => {
+    let r = { ...db.getBilling(req.client.id), facturas: [] }, error = '';
+    try { r = await billing.resumen(req.client); } catch (e) { console.error('[pagos]', e.message); error = 'No pudimos consultar tus pagos en este momento.'; }
+    res.send(V.appPagosPage(req.client, r, { error, ok: req.query.ok ? 'Listo, tu tarjeta quedó domiciliada.' : '', stripeOn: billing.stripeOn() }));
+  });
+  appR.post('/pagos/domiciliar', async (req, res) => {
+    try { res.redirect(303, await billing.checkoutUrl(req.client, { email: req.sesion.user?.email })); }
+    catch (e) { console.error('[pagos]', e.message); res.status(500).send(V.appPagosPage(req.client, { ...db.getBilling(req.client.id), facturas: [] }, { error: 'No pudimos abrir la página de pago. Intenta de nuevo.', stripeOn: billing.stripeOn() })); }
+  });
+  appR.post('/pagos/portal', async (req, res) => {
+    try { res.redirect(303, await billing.portalUrl(req.client)); }
+    catch (e) { console.error('[pagos]', e.message); res.status(500).send(V.appPagosPage(req.client, { ...db.getBilling(req.client.id), facturas: [] }, { error: e.message, stripeOn: billing.stripeOn() })); }
+  });
+  appR.get('/', async (req, res) => res.send(V.appHomePage(req.client, await pulse(db.listClients(), { clientId: req.client.id }), db.getBilling(req.client.id))));
   appR.get('/pulso.json', async (req, res) => {
     const p = await pulse(db.listClients(), { clientId: req.client.id, conCitas: false });
     res.json({ ...p, feedHtml: feedHtml(p.feed) });
   });
-  appR.get('/posts', async (req, res) => res.send(V.appPostsPage(req.client, await withTikTokInfo(req.client, appPosts(req.client)), String(req.query.t || ''), db.listLeads(req.client.id).length)));
+  appR.get('/posts', async (req, res) => res.send(V.appPostsPage(req.client, await withTikTokInfo(req.client, appPosts(req.client)), String(req.query.t || ''), db.listLeads(req.client.id).length,
+    cuota(req.client), req.query.ok === 'extra' ? 'Listo, el agente ya está creando tu publicación extra. En unos minutos aparece en "Por revisar".' : '')));
   appR.param('pid', (req, res, next, id) => {
     req.post = db.getPost(Number(id));
     return req.post && req.post.client_id === req.client.id ? next() : res.status(404).send('Post no encontrado');
@@ -207,19 +270,19 @@ export function createApp() {
   });
   appR.get('/cuenta', (req, res) => {
     if (!req.sesion.user) return res.redirect('/admin');
-    res.send(V.cuentaPage(req.sesion.user));
+    res.send(V.cuentaPage(req.sesion.user, { client: req.sesion.user.client_id ? db.getClient(req.sesion.user.client_id) : null }));
   });
   appR.post('/cuenta', (req, res) => {
     const u = req.sesion.user;
     if (!u) return res.redirect('/admin');
     const { actual = '', nueva = '', nueva2 = '' } = req.body;
-    if (!verifyPassword(actual, u.password_hash)) return res.status(400).send(V.cuentaPage(u, { error: 'La contraseña actual no es correcta.' }));
-    if (nueva.length < 10) return res.status(400).send(V.cuentaPage(u, { error: 'La nueva contraseña debe tener al menos 10 caracteres.' }));
-    if (nueva !== nueva2) return res.status(400).send(V.cuentaPage(u, { error: 'Las contraseñas nuevas no coinciden.' }));
+    if (!verifyPassword(actual, u.password_hash)) return res.status(400).send(V.cuentaPage(u, { client: u.client_id ? db.getClient(u.client_id) : null, error: 'La contraseña actual no es correcta.' }));
+    if (nueva.length < 10) return res.status(400).send(V.cuentaPage(u, { client: u.client_id ? db.getClient(u.client_id) : null, error: 'La nueva contraseña debe tener al menos 10 caracteres.' }));
+    if (nueva !== nueva2) return res.status(400).send(V.cuentaPage(u, { client: u.client_id ? db.getClient(u.client_id) : null, error: 'Las contraseñas nuevas no coinciden.' }));
     db.setUserPassword(u.id, hashPassword(nueva));
     const nu = db.getUser(u.id);
     setSession(res, `u:${nu.id}:${Date.now() + 12 * 3600_000}:${huella(nu)}`);
-    res.send(V.cuentaPage(nu, { ok: 'Listo, tu contraseña cambió.' }));
+    res.send(V.cuentaPage(nu, { client: nu.client_id ? db.getClient(nu.client_id) : null, ok: 'Listo, tu contraseña cambió.' }));
   });
   app.use('/app', appR);
 
@@ -264,7 +327,7 @@ export function createApp() {
       if (!['pendiente', 'necesita_asset', 'aprobado', 'publicado', 'error', 'error_generacion'].includes(p.status)) continue;
       (counts[p.client_id] ??= {})[p.status] = (counts[p.client_id][p.status] || 0) + 1;
     }
-    res.send(V.dashboardPage(clients, counts, await pulse(clients)));
+    res.send(V.dashboardPage(clients, counts, await pulse(clients), Object.fromEntries(clients.map((c) => [c.id, db.getBilling(c.id)]))));
   });
 
   function parseClientForm(body, existingCreds = {}) {
@@ -275,7 +338,7 @@ export function createApp() {
       throw new Error('El perfil necesita "cliente" y al menos un pilar en "pilares_de_contenido".');
     }
     for (const [k, v] of Object.entries(cfg)) {
-      if (k === 'respuesta_palabra_clave' || k === 'agenda') continue;
+      if (k === 'respuesta_palabra_clave' || k === 'agenda' || k === 'plan') continue;
       if (k === 'notificaciones') {
         if (v.email && !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(String(v.email).trim())) throw new Error('notificaciones: "email" no es un correo válido');
         continue;
@@ -318,7 +381,7 @@ export function createApp() {
   });
 
   const clientView = (c, error, notice, posts, view = {}) => V.clientFormPage(c, {
-    error, notice, leadsCount: db.listLeads(c.id).length, ...view, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
+    error, notice, leadsCount: db.listLeads(c.id).length, billing: db.getBilling(c.id), ...view, competitors: db.listCompetitors(c.id), report: db.latestCompetitorReport(c.id),
     posts: posts || db.listPosts({ clientId: c.id, limit: 400 }), creds: db.clientCredentials(c), keywordReplies: db.keywordReplies(c.id),
   });
 
@@ -345,9 +408,26 @@ export function createApp() {
   admin.post('/clientes/:cid', (req, res) => {
     try {
       const data = parseClientForm(req.body, db.clientCredentials(req.client));
+      if (req.client.config.plan) data.config.plan = req.client.config.plan; // el plan se edita en su propia tarjeta
       db.updateClient(req.client.id, { ...data, activo: req.body.activo === '1' });
       pipe.resetKeywordPause(req.client.id);
       res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Guardado`);
+    } catch (e) {
+      res.status(400).send(clientView(req.client, e.message, undefined, undefined, { tab: 'config' }));
+    }
+  });
+  admin.post('/clientes/:cid/plan', (req, res) => {
+    try {
+      const b = req.body, num = (v, d) => (Number.isFinite(Number(v)) && v !== '' ? Math.max(0, Number(v)) : d);
+      const actual = plan.planDe(req.client);
+      const nuevo = {
+        servicios: Object.fromEntries(Object.keys(plan.SERVICIOS).map((k) => [k, b[`servicio_${k}`] === '1'])),
+        posts_semana: num(b.posts_semana, actual.posts_semana), extra_gratis_mes: num(b.extra_gratis_mes, actual.extra_gratis_mes), precio_extra: num(b.precio_extra, actual.precio_extra),
+        conceptos: plan.parseConceptos(b.conceptos),
+      };
+      db.updateClient(req.client.id, { config: { ...req.client.config, plan: nuevo } });
+      db.logEvent({ clientId: req.client.id, tipo: 'plan_actualizado', detalle: Object.entries(nuevo.servicios).filter(([, v]) => v).map(([k]) => k).join(', ') });
+      res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Plan guardado`);
     } catch (e) {
       res.status(400).send(clientView(req.client, e.message, undefined, undefined, { tab: 'config' }));
     }
