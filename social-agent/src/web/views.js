@@ -133,6 +133,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
+  { href: '/app/reporte', icon: 'chart', label: 'Reporte del mes', on: on === 'reporte' },
   { href: '/app/pagos', icon: 'card', label: 'Pagos', on: on === 'pagos' },
   { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta' },
   { href: `${AYUDA}?text=${encodeURIComponent(`Hola, soy de ${client?.nombre || 'un cliente'} y necesito ayuda con mi panel`)}`, icon: 'help', label: 'Ayuda por WhatsApp', bottom: true },
@@ -233,7 +234,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -616,3 +617,6 @@ export function cuentaPage(user, { error = '', ok = '', client = null } = {}) {
     <p><button class="btn-accent">Guardar</button></p></form>`;
   return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('usuarios') : sideApp('cuenta', client), body });
 }
+
+export const adminSide = () => side('clientes');
+export const appSide = (on, client) => sideApp(on, client);

@@ -127,3 +127,9 @@ export async function notifyClient(client, now = new Date(), { send } = {}) {
   if (result.canales.length) db.logEvent({ clientId: client.id, tipo: 'aviso_enviado', detalle: `${result.canales.join(', ')}: ${posts.length} post(s) a ${email}` });
   return result;
 }
+
+/** Correo genérico (reporte mensual, etc.) con el mismo SMTP. */
+export async function sendMail(m) {
+  if (!smtpConfigured()) throw new Error('Falta configurar SMTP en el .env');
+  return getTransport().sendMail({ from: config.smtp.from, ...m });
+}

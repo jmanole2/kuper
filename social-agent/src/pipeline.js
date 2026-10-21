@@ -14,6 +14,9 @@ import { fetchCompetitors } from './competitors/instagram.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
 import { tiene } from './plan.js';
+import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
+import { reporteCorreo } from './web/reporte.js';
+import { sendMail } from './notify.js';
 import { notifyClient } from './notify.js';
 import { adaptCaption } from './llm/adapt.js';
 
@@ -419,6 +422,9 @@ export async function tick(now = new Date()) {
     // Aviso al cliente de lo que tiene por revisar (un correo al día como máximo).
     enqueue(`aviso-${client.id}`, () => notifyClient(client, new Date()).catch((e) =>
       db.logEvent({ clientId: client.id, tipo: 'aviso_error', detalle: e.message })));
+    // Métricas de redes (una vez al día) y reporte del mes anterior (día 1, 9:00).
+    enqueue(`metricas-${client.id}`, () => recolectarSiToca(client, now).catch((e) => db.logEvent({ clientId: client.id, tipo: 'metricas_error', detalle: e.message })));
+    enqueue(`reporte-${client.id}`, () => enviarReporteSiToca(client, now, { send: sendMail, armar: reporteCorreo }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'reporte_error', detalle: e.message })));
     // Análisis de competencia periódico (no abre el navegador; puede correr a cualquier hora).
     const report = db.latestCompetitorReport(client.id);
     const stale = !report || daysUntil(report.created_at.replace(' ', 'T') + 'Z', now) < -config.competitorRefreshDays;

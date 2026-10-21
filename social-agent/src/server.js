@@ -17,6 +17,8 @@ import * as agenda from './agenda/index.js';
 import { pulse } from './pulse.js';
 import * as plan from './plan.js';
 import * as billing from './billing.js';
+import * as metricas from './metricas.js';
+import { reportePage } from './web/reporte.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -269,6 +271,10 @@ export function createApp() {
     try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
     res.send(V.appCitasPage(req.client, view, appPosts(req.client), db.listLeads(req.client.id).length));
   });
+  appR.get('/reporte', (req, res) => {
+    const mes = /^\d{4}-\d{2}$/.test(req.query.mes || '') ? req.query.mes : metricas.mesActual();
+    res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: '/app/reporte?', meses: metricas.ultimosMeses(), side: V.appSide('reporte', req.client) }));
+  });
   appR.get('/cuenta', (req, res) => {
     if (!req.sesion.user) return res.redirect('/admin');
     res.send(V.cuentaPage(req.sesion.user, { client: req.sesion.user.client_id ? db.getClient(req.sesion.user.client_id) : null }));
@@ -395,7 +401,11 @@ export function createApp() {
     req.client = db.getClient(Number(id));
     return req.client ? next() : res.status(404).send('Cliente no encontrado');
   });
-  admin.get('/clientes/:cid', async (req, res) => {
+  admin.get('/clientes/:cid', async (req, res, next) => {
+    if (req.query.tab === 'reporte') {
+      const mes = /^\d{4}-\d{2}$/.test(req.query.mes || '') ? req.query.mes : metricas.mesActual();
+      return res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: `/admin/clientes/${req.client.id}?tab=reporte&`, meses: metricas.ultimosMeses(), side: V.adminSide() }));
+    }
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
     if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); }
     if (view.tab === 'citas') {
@@ -605,6 +615,10 @@ export function createApp() {
   portal.get('/', async (req, res) => {
     const posts = await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 100 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status)));
     res.send(V.portalPage(req.client, posts, req.params.token, String(req.query.t || '')));
+  });
+  portal.get('/reporte', (req, res) => {
+    const mes = /^\d{4}-\d{2}$/.test(req.query.mes || '') ? req.query.mes : metricas.mesAnterior();
+    res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: `/p/${req.params.token}/reporte?`, meses: metricas.ultimosMeses(), publico: true }));
   });
   portal.param('pid', (req, res, next, id) => {
     req.post = db.getPost(Number(id));
