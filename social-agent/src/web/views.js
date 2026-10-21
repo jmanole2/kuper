@@ -216,15 +216,17 @@ function planCard(client, billing) {
   </form>`;
 }
 
+const ORIGEN_COL = { instagram: '#e1306c', whatsapp: '#25d366', llamada: '#c9f53a', web: '#93b4ff' };
+const ORIGEN_TXT = { instagram: 'Instagram', whatsapp: 'WhatsApp', llamada: 'Llamada', web: 'Página de citas', facebook: 'Facebook' };
 export function leadsSection(client, leads, chats, base) {
   return html`${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
   ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
     <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
-    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}${l.control === 'humano' ? html` <span class="badge" style="color:#93b4ff">Atiende una persona</span>` : ''}</td>
-      <td><span class="badge" style="color:${l.origen === 'instagram' ? '#e1306c' : l.origen === 'whatsapp' ? '#25d366' : '#93b4ff'}">${l.origen}</span></td>
+    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono || l.email)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : '', l.email].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}${l.control === 'humano' ? html` <span class="badge" style="color:#93b4ff">Atiende una persona</span>` : ''}</td>
+      <td><span class="badge" style="color:${ORIGEN_COL[l.origen] || '#93b4ff'}">${ORIGEN_TXT[l.origen] || l.origen}</span></td>
       <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
       <td><form method="post" action="${base}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
-  </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram o le escribe al agente de WhatsApp.</div>`}`;
+  </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram, le escribe al agente de WhatsApp o habla con el agente de llamadas.</div>`}`;
 }
 
 export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = false }) {
@@ -235,7 +237,7 @@ export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = fa
       <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}`;
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, leadsCount = 0, billing = null, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, leadsCount = 0, billing = null, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -248,7 +250,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -281,6 +283,8 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ` : ''}
 
   ${!isNew && t === 'leads' ? leadsSection(client, leads, chats, `/admin/clientes/${client.id}`) : ''}
+
+  ${!isNew && t === 'llamadas' ? llamadasSection(llamadas, llamadasMes, { admin: true }) : ''}
 
   ${!isNew && t === 'citas' ? citasSection({ citas, citasError, agendaCfg, saEmail, admin: true }) : ''}
 
@@ -635,6 +639,36 @@ export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true }
       <td style="text-align:right">${mxn(f.total)}</td><td>${f.url ? html`<a class="small" href="${f.url}" target="_blank" rel="noopener">Ver ↗</a>` : ''}</td></tr>`)}</table></div>`
     : html`<div class="card muted">Aún no hay cobros.</div>`}`;
   return page({ title: `Pagos · ${client.nombre}`, side: sideApp('pagos', client), body });
+}
+
+// ------------------------------------------------------------ llamadas del agente de voz
+const LL_CSS = `.ll{display:grid;gap:12px}.ll details{background:var(--card,rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:14px 18px}
+.ll summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}.ll summary::-webkit-details-marker{display:none}
+.ll .ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(201,245,58,.12);color:#c9f53a;font-size:18px}
+.ll .q{font-weight:600}.ll .r{margin:10px 0 0;line-height:1.5}.ll .der{text-align:right;white-space:nowrap}
+.ll .chat{margin-top:12px;max-height:46vh}@media(max-width:640px){.ll summary{grid-template-columns:auto 1fr}.ll .der{grid-column:2;text-align:left}}`;
+const dur = (s) => (s >= 60 ? `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s` : `${s} s`);
+export function llamadasSection(llamadas, mes, { admin = false } = {}) {
+  const m = mes || { llamadas: 0, minutos: 0, citas: 0 };
+  return html`<style>${raw(CHAT_CSS + LL_CSS)}</style>
+  ${kpis([[m.llamadas, 'Llamadas este mes', '#c9f53a', false], [m.minutos, 'Minutos hablados', '#93b4ff', false], [m.citas, 'Citas agendadas', '#4ade80', m.citas > 0], [llamadas.length, 'Llamadas en total', '#a39d93', false]])}
+  ${llamadas.length ? html`<div class="ll">${llamadas.map((c) => html`<details>
+    <summary><span class="ico">☎</span>
+      <span><span class="q">${c.nombre || c.telefono || c.email || 'Sin datos de contacto'}</span>
+        <span class="muted small"> · ${{ web: 'Prueba web', entrante: 'Entrante', saliente: 'Saliente' }[c.tipo] || c.tipo}</span>
+        ${c.cita ? html` <span class="badge" style="color:#4ade80">Agendó cita</span>` : ''}
+        <div class="muted small">${[c.telefono, c.email].filter(Boolean).join(' · ')}</div></span>
+      <span class="der small muted">${fmtDate(c.inicio)}<br>${dur(c.duracion_s)}</span></summary>
+    ${c.resumen ? html`<p class="r">${c.resumen}</p>` : html`<p class="r muted">Sin resumen.</p>`}
+    ${c.transcripcion.length ? html`<div class="chat">${c.transcripcion.map((t) => html`<div class="burb ${t.rol}">${t.texto}<time>${t.rol === 'lead' ? 'Cliente' : 'Agente'}</time></div>`)}</div>` : ''}
+  </details>`)}</div>`
+    : html`<div class="card muted">Todavía no hay llamadas. ${admin ? 'Aparecen solas en cuanto el agente de llamadas tenga PANEL_URL, PANEL_SLUG y PANEL_API_KEY en su .env.' : 'Aquí verás cada llamada que atienda tu agente: quién era, de qué hablaron, el resumen y si agendó cita.'}</div>`}`;
+}
+export function appLlamadasPage(client, llamadas, mes) {
+  const body = html`${hero({ kicker: 'Agente de llamadas', title: 'Llamadas', letra: client.nombre, sub: 'Cada llamada que atendió tu agente, con su resumen y lo que se dijo.',
+    note: ['Este mes', `${mes.llamadas} ${mes.llamadas === 1 ? 'llamada' : 'llamadas'} · ${mes.citas} ${mes.citas === 1 ? 'cita' : 'citas'}`] })}
+  ${llamadasSection(llamadas, mes)}`;
+  return page({ title: `Llamadas · ${client.nombre}`, side: sideApp('llamadas', client), body });
 }
 
 export function appProximamentePage(client, servicio) {

@@ -173,6 +173,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   db.exec("UPDATE leads SET telefono = '+52' || substr(telefono, 5) WHERE telefono LIKE '+521%' AND length(telefono) = 14");
   ensure('leads', 'control', "TEXT NOT NULL DEFAULT 'bot'"); // 'bot' | 'humano' (alguien tomó la conversación)
   ensure('lead_mensajes', 'autor', 'TEXT'); // quién respondió a mano desde el panel
+  ensure('leads', 'email', 'TEXT'); // leads de llamadas por la web: a veces solo dejan su correo
   return db;
 }
 
@@ -384,23 +385,25 @@ function normTel(t) {
   return `+${d}`;
 }
 /** Crea o actualiza un lead (se identifica por teléfono o por usuario de Instagram). */
-export function upsertLead(clientId, { nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento, control }) {
+export function upsertLead(clientId, { nombre, telefono, usuario, email, origen, estado, nota, cita_inicio, cita_evento, control }) {
   const tel = normTel(telefono), user = usuario ? String(usuario).replace(/^@/, '').toLowerCase() : null;
-  if (!tel && !user) throw new Error('El lead necesita teléfono o usuario');
+  const mail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || '').trim()) ? String(email).trim().toLowerCase() : null;
+  if (!tel && !user && !mail) throw new Error('El lead necesita teléfono, usuario o correo');
   const d = getDb();
-  const prev = d.prepare('SELECT * FROM leads WHERE client_id = ? AND ((telefono IS NOT NULL AND telefono = ?) OR (usuario IS NOT NULL AND usuario = ?)) LIMIT 1').get(clientId, tel, user);
+  const prev = d.prepare(`SELECT * FROM leads WHERE client_id = ? AND ((telefono IS NOT NULL AND telefono = ?) OR (usuario IS NOT NULL AND usuario = ?) OR (email IS NOT NULL AND email = ?))
+    ORDER BY (telefono = ?) DESC LIMIT 1`).get(clientId, tel, user, mail, tel);
   if (prev) {
     // No se retrocede de estado (un cliente no vuelve a "nuevo" porque escribió otra vez).
     const ORDEN = Object.keys(LEAD_ESTADOS);
     const nuevoEstado = estado && (estado === 'perdido' || ORDEN.indexOf(estado) > ORDEN.indexOf(prev.estado)) ? estado : prev.estado;
-    d.prepare(`UPDATE leads SET nombre = COALESCE(?, nombre), telefono = COALESCE(?, telefono), usuario = COALESCE(?, usuario), estado = ?,
+    d.prepare(`UPDATE leads SET nombre = COALESCE(?, nombre), telefono = COALESCE(?, telefono), usuario = COALESCE(?, usuario), email = COALESCE(?, email), estado = ?,
       nota = COALESCE(?, nota), cita_inicio = COALESCE(?, cita_inicio), cita_evento = COALESCE(?, cita_evento), updated_at = datetime('now') WHERE id = ?`)
-      .run(nombre ?? null, tel, user, nuevoEstado, nota ?? null, cita_inicio ?? null, cita_evento ?? null, prev.id);
+      .run(nombre ?? null, tel, user, mail, nuevoEstado, nota ?? null, cita_inicio ?? null, cita_evento ?? null, prev.id);
     if (control === 'bot' || control === 'humano') d.prepare('UPDATE leads SET control = ? WHERE id = ?').run(control, prev.id);
     return d.prepare('SELECT * FROM leads WHERE id = ?').get(prev.id);
   }
-  const r = d.prepare('INSERT INTO leads (client_id, nombre, telefono, usuario, origen, estado, nota, cita_inicio, cita_evento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(clientId, nombre ?? null, tel, user, origen || 'otro', estado || 'nuevo', nota ?? null, cita_inicio ?? null, cita_evento ?? null);
+  const r = d.prepare('INSERT INTO leads (client_id, nombre, telefono, usuario, email, origen, estado, nota, cita_inicio, cita_evento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(clientId, nombre ?? null, tel, user, mail, origen || 'otro', estado || 'nuevo', nota ?? null, cita_inicio ?? null, cita_evento ?? null);
   return d.prepare('SELECT * FROM leads WHERE id = ?').get(Number(r.lastInsertRowid));
 }
 export const getLead = (clientId, id) => getDb().prepare('SELECT * FROM leads WHERE id = ? AND client_id = ?').get(id, clientId);

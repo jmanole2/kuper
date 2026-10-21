@@ -22,6 +22,7 @@ import { reportePage } from './web/reporte.js';
 import * as agente from './agente.js';
 import * as conoc from './conocimiento.js';
 import * as seg from './seguridad.js';
+import * as llamadas from './llamadas.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -74,7 +75,7 @@ export function createApp() {
   // Autorización: "Authorization: Bearer <llave del cliente>" (se genera en el panel, pestaña Configuración).
   const api = express.Router({ mergeParams: true });
   api.use(seg.limite({ max: 300, clave: (req) => `${req.params.slug}|${seg.ipDe(req)}` })); // 300 por minuto por marca e IP
-  api.use(express.json({ limit: '100kb' }));
+  api.use(express.json({ limit: '400kb' })); // una llamada de 10 min con su transcripción cabe de sobra
   api.use((req, res, next) => {
     const c = db.listClients().find((x) => x.slug === req.params.slug);
     const key = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -123,6 +124,11 @@ export function createApp() {
       if (e instanceof agenda.SlotTaken) return res.status(403).json({ error: e.message });
       res.status(/Not Found|404/.test(e.message) ? 404 : 500).json({ error: e.message });
     }
+  });
+  // El agente de llamadas manda aquí cada llamada que termina (resumen, transcripción y datos del cliente).
+  api.post('/llamadas', (req, res) => {
+    try { const r = llamadas.registrar(req.client, req.body || {}); res.json({ ok: true, nueva: r.nueva, lead_id: r.lead?.id ?? r.llamada.lead_id ?? null }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
   });
   api.post('/leads', (req, res) => {
     try { res.json({ ok: true, lead: db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' }) }); }
@@ -231,7 +237,8 @@ export function createApp() {
   appR.use(['/posts', '/extra'], servicio('redes'));
   appR.use('/leads', servicio('chat'));
   appR.use('/citas', servicio('agenda'));
-  for (const srv of ['llamadas', 'videollamadas']) appR.get(`/${srv}`, servicio(srv), (req, res) => res.send(V.appProximamentePage(req.client, srv)));
+  appR.get('/llamadas', servicio('llamadas'), (req, res) => res.send(V.appLlamadasPage(req.client, llamadas.listar(req.client.id), llamadas.delMes(req.client.id, metricas.mesActual()))));
+  appR.get('/videollamadas', servicio('videollamadas'), (req, res) => res.send(V.appProximamentePage(req.client, 'videollamadas')));
   const cuota = (c) => ({ semana: plan.postsDeLaSemana(c.id), costo: plan.costoExtra(c), extras: plan.extrasDelMes(c.id).length });
   const redExtra = (c, red) => db.PLATFORMS.includes(red) && c.config[red]?.activo && red !== 'tiktok' && !c.config[red]?.reusar_instagram;
   appR.get('/extra', (req, res) => {
@@ -469,6 +476,7 @@ export function createApp() {
     }
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
     if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); }
+    if (view.tab === 'llamadas') { view.llamadas = llamadas.listar(req.client.id); view.llamadasMes = llamadas.delMes(req.client.id, metricas.mesActual()); }
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
       try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch (e) { view.citasError = e.message; }

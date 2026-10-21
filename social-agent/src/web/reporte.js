@@ -29,6 +29,7 @@ export function reportePage(client, r, { base, meses = [], side = null, publico 
   const kpis = [
     r.servicios.redes ? [r.publicaciones, 'Publicaciones', null] : null,
     r.servicios.chat ? [r.respuestas, 'Respuestas de tus agentes', null] : null,
+    r.servicios.llamadas ? [r.llamadas?.llamadas ?? 0, 'Llamadas atendidas', null] : null,
     [r.leads, 'Leads nuevos', null],
     [r.citas, 'Citas', null],
     r.instagram ? [r.instagram.seguidores, 'Seguidores en Instagram', r.instagram.crecimiento] : null,
@@ -60,6 +61,7 @@ export function reporteCorreo(client, r, url) {
   const cel = (v, l, c) => `<td width="50%" style="padding:6px"><div style="background:#f6f3ed;border-radius:16px;padding:14px 16px"><div style="font-size:30px;font-weight:300;color:#1d1b18;letter-spacing:-.03em">${escE(n(v))}</div><div style="font-size:12.5px;color:#6f6a62">${escE(l)}${c != null ? ` <b style="color:#3f6212">${escE(signo(c))}</b>` : ''}</div></div></td>`;
   const items = [
     r.servicios.redes ? [r.publicaciones, 'publicaciones'] : null, r.servicios.chat ? [r.respuestas, 'respuestas de tus agentes'] : null,
+    r.servicios.llamadas ? [r.llamadas?.llamadas ?? 0, 'llamadas atendidas'] : null,
     [r.leads, 'leads nuevos'], [r.citas, 'citas'], r.instagram ? [r.instagram.seguidores, 'seguidores en Instagram', r.instagram.crecimiento] : null, [r.horasAhorradas, 'horas ahorradas (aprox.)'],
   ].filter(Boolean);
   const filas = [];

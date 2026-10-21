@@ -6,6 +6,7 @@ import * as db from './db.js';
 import { graphCall } from './publishers/meta.js';
 import { tiene, planDe } from './plan.js';
 import { localDate } from './schedule.js';
+import * as llamadas from './llamadas.js';
 
 const DAY = 86400_000;
 const getDb = () => db.getDb();
@@ -106,7 +107,8 @@ export function resumenMes(client, mes) {
     instagram: ig ? { seguidores: ig.seguidores, crecimiento: ig.crecimiento, alcance: igPosts.reduce((n, p) => n + (p.alcance || 0), 0) || null, interacciones: igPosts.reduce((n, p) => n + (p.interacciones || 0), 0), usuario: ig.detalle.usuario, puntos: ig.puntos } : null,
     facebook: fb ? { seguidores: fb.seguidores, crecimiento: fb.crecimiento } : null,
     top,
-    horasAhorradas: Math.round((posts.length * 0.75 + respuestas * 0.04 + citas * 0.25) * 10) / 10,
+    llamadas: llamadas.delMes(id, mes),
+    horasAhorradas: Math.round((posts.length * 0.75 + respuestas * 0.04 + citas * 0.25 + llamadas.delMes(id, mes).minutos / 60 * 1.2) * 10) / 10,
     servicios: planDe(client).servicios,
   };
 }
@@ -121,7 +123,7 @@ export async function enviarReporteSiToca(client, now = new Date(), { send, arma
   if (db.kvGet(key)) return { skip: 'ya_enviado' };
   const r = resumenMes(client, mes);
   db.kvSet(key, now.toISOString());
-  if (!r.publicaciones && !r.respuestas && !r.leads && !r.instagram) return { skip: 'sin_actividad' };
+  if (!r.publicaciones && !r.respuestas && !r.leads && !r.instagram && !r.llamadas.llamadas) return { skip: 'sin_actividad' };
   const url = `${config.publicBaseUrl}/p/${client.portal_token}/reporte?mes=${mes}`;
   const m = armar(client, r, url);
   await send({ to: email, ...m });
