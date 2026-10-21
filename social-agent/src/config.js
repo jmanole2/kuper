@@ -54,6 +54,8 @@ export const config = {
     pass: env('SMTP_PASS', ''),
     from: env('SMTP_FROM', env('SMTP_USER', '')),
   },
+  // Google Places (búsqueda de empresas por giro y ciudad para el agente de ventas).
+  googlePlacesKey: env('GOOGLE_PLACES_API_KEY', ''),
   competitorRefreshDays: Number(env('COMPETITOR_REFRESH_DAYS', 7)),
 };
 

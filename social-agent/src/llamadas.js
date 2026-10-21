@@ -19,8 +19,11 @@ export function ensureTables() {
     resumen TEXT,
     cita INTEGER NOT NULL DEFAULT 0,
     transcripcion_json TEXT NOT NULL DEFAULT '[]',
+    nombre TEXT, telefono TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE (client_id, call_id))`);
+  const cols = getDb().prepare('PRAGMA table_info(llamadas)').all().map((c) => c.name);
+  for (const c of ['nombre', 'telefono']) if (!cols.includes(c)) getDb().exec(`ALTER TABLE llamadas ADD COLUMN ${c} TEXT`);
 }
 
 const txt = (v, n) => (v == null ? null : String(v).trim().slice(0, n) || null);
@@ -29,7 +32,7 @@ const txt = (v, n) => (v == null ? null : String(v).trim().slice(0, n) || null);
  * Registra una llamada terminada. Es idempotente: si la misma call_id llega dos veces, no se duplica.
  * body: { call_id, tipo, inicio, duracion_s, telefono, nombre, email, resumen, cita, transcripcion: [{ rol: 'lead'|'agente', texto }] }
  */
-export function registrar(client, body = {}) {
+export function registrar(client, body = {}, { sinLead = false } = {}) {
   ensureTables();
   const callId = txt(body.call_id, 120);
   if (!callId) throw new Error('Falta call_id');
@@ -47,7 +50,7 @@ export function registrar(client, body = {}) {
   // Lead: por teléfono (llamadas reales) o por correo (pruebas desde la web). Sin ninguno, la llamada se guarda sin lead.
   let lead = null;
   const ident = { telefono: txt(body.telefono, 30), email: txt(body.email, 120), nombre: txt(body.nombre, 80) };
-  if (ident.telefono || ident.email) {
+  if (!sinLead && (ident.telefono || ident.email)) {
     try {
       const antes = getDb().prepare('SELECT COUNT(*) n FROM leads WHERE client_id = ?').get(client.id).n;
       lead = db.upsertLead(client.id, { ...ident, origen: 'llamada', estado: cita ? 'cita' : 'conversacion' });
@@ -59,16 +62,16 @@ export function registrar(client, body = {}) {
     } catch (e) { lead = null; console.error('[llamadas] lead', e.message); }
   }
 
-  const r = getDb().prepare(`INSERT INTO llamadas (client_id, call_id, lead_id, tipo, inicio, duracion_s, resumen, cita, transcripcion_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(client.id, callId, lead?.id ?? null, tipo, inicio.toISOString(),
-    Math.max(0, Math.round(Number(body.duracion_s) || 0)), resumen, cita ? 1 : 0, JSON.stringify(turnos));
+  const r = getDb().prepare(`INSERT INTO llamadas (client_id, call_id, lead_id, tipo, inicio, duracion_s, resumen, cita, transcripcion_json, nombre, telefono)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(client.id, callId, lead?.id ?? null, tipo, inicio.toISOString(),
+    Math.max(0, Math.round(Number(body.duracion_s) || 0)), resumen, cita ? 1 : 0, JSON.stringify(turnos), ident.nombre, ident.telefono);
   db.logEvent({ clientId: client.id, tipo: 'llamada', detalle: `${TIPOS[tipo]} · ${ident.nombre || ident.telefono || ident.email || 'sin datos'}${cita ? ' · agendó cita' : ''}` });
   return { llamada: getDb().prepare('SELECT * FROM llamadas WHERE id = ?').get(Number(r.lastInsertRowid)), nueva: true, lead };
 }
 
 export function listar(clientId, limit = 100) {
   ensureTables();
-  return getDb().prepare(`SELECT ll.*, l.nombre, l.telefono, l.email, l.estado AS lead_estado FROM llamadas ll
+  return getDb().prepare(`SELECT ll.*, COALESCE(l.nombre, ll.nombre) AS nombre, COALESCE(l.telefono, ll.telefono) AS telefono, l.email, l.estado AS lead_estado FROM llamadas ll
     LEFT JOIN leads l ON l.id = ll.lead_id WHERE ll.client_id = ? ORDER BY ll.inicio DESC LIMIT ?`).all(clientId, limit)
     .map((x) => ({ ...x, transcripcion: JSON.parse(x.transcripcion_json || '[]') }));
 }

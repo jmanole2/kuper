@@ -23,6 +23,7 @@ import * as agente from './agente.js';
 import * as conoc from './conocimiento.js';
 import * as seg from './seguridad.js';
 import * as llamadas from './llamadas.js';
+import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -129,6 +130,12 @@ export function createApp() {
   api.post('/llamadas', (req, res) => {
     try { const r = llamadas.registrar(req.client, req.body || {}); res.json({ ok: true, nueva: r.nueva, lead_id: r.lead?.id ?? r.llamada.lead_id ?? null }); }
     catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  // Agente de ventas: siguiente empresa a llamar (respeta horario, intentos y REPEP) y resultado de cada llamada.
+  api.get('/prospectos/siguiente', (req, res) => res.set('Cache-Control', 'no-store').json(prospeccion.siguiente(req.client)));
+  api.post('/prospectos/:pid/resultado', (req, res) => {
+    try { res.json({ ok: true, prospecto: prospeccion.resultado(req.client, Number(req.params.pid), req.body || {}) }); }
+    catch (e) { res.status(/no encontrado/.test(e.message) ? 404 : 400).json({ error: e.message }); }
   });
   api.post('/leads', (req, res) => {
     try { res.json({ ok: true, lead: db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' }) }); }
@@ -476,13 +483,14 @@ export function createApp() {
     }
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
     if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); }
+    if (view.tab === 'ventas') { view.prospectos = prospeccion.listar(req.client.id); view.ventasActivo = prospeccion.activo(req.client.id); view.placesListo = !!config.googlePlacesKey; }
     if (view.tab === 'llamadas') { view.llamadas = llamadas.listar(req.client.id); view.llamadasMes = llamadas.delMes(req.client.id, metricas.mesActual()); }
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
       try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch (e) { view.citasError = e.message; }
       view.agendaCfg = cfg; view.saEmail = agenda.serviceAccount()?.client_email || null;
     }
-    res.send(clientView(req.client, undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
+    res.send(clientView(req.client, req.query.error ? String(req.query.error).slice(0, 300) : undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
   });
   // Borrar todos los posts con error o rechazados de un cliente.
   admin.post('/clientes/:cid/limpiar', (req, res) => {
@@ -500,6 +508,31 @@ export function createApp() {
     } catch (e) {
       res.status(400).send(clientView(req.client, e.message, undefined, undefined, { tab: 'config' }));
     }
+  });
+  // ------------------------------------------------------------ agente de ventas (prospección)
+  const ventasUrl = (c, msg, error) => `/admin/clientes/${c.id}?tab=ventas&${error ? 'error' : 'ok'}=${encodeURIComponent(msg)}`;
+  admin.post('/clientes/:cid/ventas/buscar', async (req, res) => {
+    try {
+      const r = await prospeccion.buscar(req.client, { giro: req.body.giro, ciudad: req.body.ciudad, cuantas: Number(req.body.cuantas) || 20 });
+      res.redirect(ventasUrl(req.client, `Encontré ${r.encontradas} negocios; ${r.nuevas} nuevos con teléfono quedaron en la lista.`));
+    } catch (e) { res.redirect(ventasUrl(req.client, e.message, true)); }
+  });
+  admin.post('/clientes/:cid/ventas/repep', (req, res) => {
+    const r = prospeccion.aplicarRepep(req.client.id, req.body.numeros);
+    seg.auditar(req, 'repep_revisado', `${req.client.nombre}: ${r.bloqueados} en REPEP, ${r.revisados} revisados`);
+    res.redirect(ventasUrl(req.client, `Listo: ${r.bloqueados} pasaron a "No llamar" y ${r.revisados} quedaron revisados y listos para llamar.`));
+  });
+  admin.post('/clientes/:cid/ventas/activo', (req, res) => {
+    prospeccion.setActivo(req.client.id, req.body.on === '1');
+    seg.auditar(req, 'ventas_llamadas', `${req.client.nombre}: ${req.body.on === '1' ? 'activas' : 'en pausa'}`);
+    res.redirect(ventasUrl(req.client, req.body.on === '1' ? 'Llamadas automáticas activadas.' : 'Llamadas automáticas en pausa.'));
+  });
+  admin.post('/clientes/:cid/ventas/:pid', (req, res) => {
+    try {
+      if (req.body.accion === 'borrar') prospeccion.borrar(req.client.id, Number(req.params.pid));
+      else prospeccion.marcar(req.client.id, Number(req.params.pid), String(req.body.estado));
+      res.redirect(`/admin/clientes/${req.client.id}?tab=ventas`);
+    } catch (e) { res.redirect(ventasUrl(req.client, e.message, true)); }
   });
   admin.post('/clientes/:cid/plan', (req, res) => {
     try {

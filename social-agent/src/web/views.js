@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
 import * as CONOC from '../conocimiento.js';
+import { ESTADOS as PROS_ESTADOS, REGLAS as PROS_REGLAS } from '../prospeccion.js';
 import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro } from '../plan.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
@@ -237,7 +238,7 @@ export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = fa
       <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}`;
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, leadsCount = 0, billing = null, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -250,7 +251,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -283,6 +284,8 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ` : ''}
 
   ${!isNew && t === 'leads' ? leadsSection(client, leads, chats, `/admin/clientes/${client.id}`) : ''}
+
+  ${!isNew && t === 'ventas' ? ventasSection(client, prospectos, { activo: ventasActivo, placesListo }) : ''}
 
   ${!isNew && t === 'llamadas' ? llamadasSection(llamadas, llamadasMes, { admin: true }) : ''}
 
@@ -664,6 +667,42 @@ export function llamadasSection(llamadas, mes, { admin = false } = {}) {
   </details>`)}</div>`
     : html`<div class="card muted">Todavía no hay llamadas. ${admin ? 'Aparecen solas en cuanto el agente de llamadas tenga PANEL_URL, PANEL_SLUG y PANEL_API_KEY en su .env.' : 'Aquí verás cada llamada que atienda tu agente: quién era, de qué hablaron, el resumen y si agendó cita.'}</div>`}`;
 }
+// ------------------------------------------------------------ agente de ventas (solo Kuper)
+export function ventasSection(client, prospectos, { activo, placesListo }) {
+  const base = `/admin/clientes/${client.id}/ventas`;
+  const n = (e) => prospectos.filter((p) => p.estado === e).length;
+  const sinRevisar = prospectos.filter((p) => !p.repep_revisado && ['pendiente', 'sin_respuesta'].includes(p.estado)).length;
+  const listos = prospectos.filter((p) => p.repep_revisado && ['pendiente', 'sin_respuesta'].includes(p.estado) && p.intentos < PROS_REGLAS.maxIntentos).length;
+  return html`${kpis([[n('pendiente') + n('sin_respuesta'), 'Por llamar', '#93b4ff', false], [n('interesado'), 'Interesados', '#c9f53a', n('interesado') > 0], [n('cita'), 'Con cita', '#4ade80', n('cita') > 0], [n('no_interesa') + n('no_llamar'), 'Descartados', '#f87171', false]])}
+  <div class="split">
+    <div class="card"><span class="mono">1 · Buscar empresas</span>
+      ${placesListo ? '' : html`<div class="warn" style="margin-top:10px">Falta <code>GOOGLE_PLACES_API_KEY</code> en el .env del panel.</div>`}
+      <form method="post" action="${base}/buscar"><label>Giro</label><input name="giro" placeholder="dentistas, gimnasios, inmobiliarias…" required maxlength="80">
+        <label>Ciudad</label><input name="ciudad" placeholder="Ciudad de México, Monterrey, Querétaro…" required maxlength="80">
+        <label>Cuántas buscar</label><select name="cuantas"><option value="20">20</option><option value="40">40</option><option value="60">60</option></select>
+        <p><button class="btn-accent">Buscar en Google Maps</button></p></form>
+      <p class="muted small">Solo se guardan negocios abiertos, con teléfono, que no estén ya en tu lista ni en Leads. Cada búsqueda de 20 cuesta unos 4 centavos de dólar en Google.</p></div>
+    <div class="card"><span class="mono">2 · Revisar en el REPEP</span>
+      <p class="small">La ley no permite llamar para ofrecer servicios a números registrados en el <a href="https://repep.profeco.gob.mx" target="_blank" rel="noopener">REPEP de PROFECO</a>. Antes de llamar, consulta los números ahí y pega abajo los que salgan registrados: pasan a "No llamar" y los demás quedan listos.</p>
+      ${sinRevisar ? html`<p class="small" style="margin-bottom:4px"><strong>${sinRevisar}</strong> por revisar:</p><textarea readonly rows="3" onclick="this.select()">${prospectos.filter((p) => !p.repep_revisado && ['pendiente', 'sin_respuesta'].includes(p.estado)).map((p) => p.telefono.replace(/^[+]52/, '')).join(String.fromCharCode(10))}</textarea>` : html`<p class="muted small">Todo lo que está por llamar ya fue revisado.</p>`}
+      <form method="post" action="${base}/repep"><label>Números que salieron en el REPEP (uno por línea; vacío si ninguno)</label><textarea name="numeros" rows="3" placeholder="5512345678"></textarea>
+        <p><button class="btn-warn" ${raw(sinRevisar ? '' : 'disabled')}>Ya los revisé en el REPEP</button></p></form></div>
+    <div class="card"><span class="mono">3 · Llamadas automáticas</span>
+      <p style="font-size:20px;margin:10px 0 4px">${activo ? 'Activas' : 'En pausa'}</p>
+      <p class="muted small">El agente llama de lunes a viernes de 10:00 a 13:30 y de 16:00 a 18:30, una empresa a la vez, máximo ${PROS_REGLAS.maxIntentos} intentos por empresa y con al menos un día entre intentos. Solo funciona cuando el agente de llamadas tenga número de teléfono. Listas para llamar: <strong>${listos}</strong>.</p>
+      <form method="post" action="${base}/activo"><input type="hidden" name="on" value="${activo ? '0' : '1'}"><button class="${activo ? 'btn-warn' : 'btn-accent'}">${activo ? 'Pausar llamadas' : 'Activar llamadas'}</button></form></div>
+  </div>
+  ${prospectos.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto;margin-top:18px"><table>
+    <tr><th class="small muted">Empresa</th><th class="small muted">Teléfono</th><th class="small muted">Estado</th><th class="small muted">Resultado</th><th class="small muted"></th></tr>
+    ${prospectos.map((p) => html`<tr><td><strong>${p.empresa}</strong><div class="muted small">${[p.giro, p.ciudad].filter(Boolean).join(' · ')}${p.rating ? ` · ★ ${p.rating} (${p.resenas || 0})` : ''}</div>${p.web ? html`<a class="small" href="${p.web}" target="_blank" rel="noopener" style="color:var(--accent)">Sitio web ↗</a>` : ''}</td>
+      <td class="small">${p.telefono}<div class="muted small">${p.repep_revisado ? 'REPEP revisado' : 'REPEP sin revisar'}</div></td>
+      <td><span class="badge" style="color:${PROS_ESTADOS[p.estado]?.[1] || '#93b4ff'}">${PROS_ESTADOS[p.estado]?.[0] || p.estado}</span><div class="muted small">${p.intentos ? `${p.intentos} ${p.intentos === 1 ? 'intento' : 'intentos'}` : ''}</div></td>
+      <td class="small" style="max-width:380px">${p.contacto ? html`<strong>${p.contacto}</strong>${p.email ? ` · ${p.email}` : ''}<br>` : ''}${p.resumen || ''}</td>
+      <td style="white-space:nowrap">${p.estado !== 'no_llamar' ? html`<form method="post" action="${base}/${p.id}" class="inline"><input type="hidden" name="estado" value="no_llamar"><button class="btn-warn">No llamar</button></form>` : ''}
+        <form method="post" action="${base}/${p.id}" class="inline" onsubmit="return confirm('¿Quitar ${esc(p.empresa).replace(/'/g, '')} de la lista?')"><input type="hidden" name="accion" value="borrar"><button class="btn-bad">Quitar</button></form></td></tr>`)}
+  </table></div>` : html`<div class="card muted" style="margin-top:18px">Todavía no hay empresas. Busca por giro y ciudad para armar la lista.</div>`}`;
+}
+
 export function appLlamadasPage(client, llamadas, mes) {
   const body = html`${hero({ kicker: 'Agente de llamadas', title: 'Llamadas', letra: client.nombre, sub: 'Cada llamada que atendió tu agente, con su resumen y lo que se dijo.',
     note: ['Este mes', `${mes.llamadas} ${mes.llamadas === 1 ? 'llamada' : 'llamadas'} · ${mes.citas} ${mes.citas === 1 ? 'cita' : 'citas'}`] })}
