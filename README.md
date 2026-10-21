@@ -40,7 +40,7 @@ node render.mjs --page src/agent.html --config agent.config.json --out out/kuper
 
 # Agente telefónico de citas (Retell + Cal.com)
 
-Agente de voz en español de México que contesta, llama y agenda citas. Pasos en [`agente-llamadas/LEEME.md`](agente-llamadas/LEEME.md).
+Agente de voz en español de México que contesta, llama y agenda citas, con una página para que los clientes lo prueben desde el navegador. Pasos e instalación en el servidor en [`agente-llamadas/LEEME.md`](agente-llamadas/LEEME.md).
 
 ```bash
 node agente-llamadas/retell.mjs crear

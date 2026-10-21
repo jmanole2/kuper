@@ -41,3 +41,34 @@ RETELL_FROM_NUMBER=+1XXXXXXXXXX node agente-llamadas/retell.mjs llamar +52XXXXXX
 ```
 
 Antes de llamar a clientes, asegúrate de tener su permiso. El agente siempre dice que es un asistente virtual.
+
+## 5. Página para que el cliente lo pruebe (en nuestro servidor)
+
+`server.mjs` sirve una página con un botón "Llamar": el cliente habla con el agente desde el navegador o el celular, sin número de teléfono. La clave de Retell se queda en el servidor; el navegador solo recibe un permiso de un solo uso por llamada.
+
+Protecciones para no gastar créditos: máximo 5 pruebas al día por persona y 60 en total (`LLAMADAS_POR_IP_DIA`, `LLAMADAS_DIA_TOTAL`), llamadas de 10 minutos como máximo y cuelga tras 30 segundos de silencio. Con `DEMO_CLAVE` la página solo funciona con el enlace `https://dominio/?c=CLAVE`.
+
+**En local:**
+```bash
+cp agente-llamadas/.env.example agente-llamadas/.env   # pon RETELL_API_KEY
+cd agente-llamadas && node --env-file=.env server.mjs    # http://localhost:3000
+```
+
+**En el servidor (DigitalOcean, junto al agente social y los de WhatsApp):** primero crea en tu DNS un registro A de `llamadas.kuper.media` a la IP del servidor. Luego, por SSH:
+
+```bash
+# Revisar sin cambiar nada
+curl -fsSL https://raw.githubusercontent.com/jmanole2/novaplastica/claude/youthful-ramanujan-csahjx/agente-llamadas/deploy/install.sh \
+  | sudo REVISAR=1 DOMINIO=llamadas.kuper.media bash
+
+# Instalar (pide la clave de Retell sin mostrarla)
+read -rsp "Clave de Retell: " K; echo
+curl -fsSL https://raw.githubusercontent.com/jmanole2/novaplastica/claude/youthful-ramanujan-csahjx/agente-llamadas/deploy/install.sh \
+  | sudo DOMINIO=llamadas.kuper.media RETELL_API_KEY="$K" bash
+```
+
+El instalador usa su propio Node, carpeta (`/opt/agente-llamadas`), puerto (3200-3299) y servicio (`agente-llamadas`, máx. 256 MB), agrega solo un sitio nuevo en nginx o Caddy con https, y crea el agente en Retell. No toca lo demás.
+
+Actualizar: `sudo bash /opt/agente-llamadas/agente-llamadas/deploy/update.sh`. Log: `journalctl -u agente-llamadas -f`.
+
+El archivo `public/vendor/retell-sdk.js` es el SDK web de Retell (`retell-client-js-sdk` 3.0.2) empaquetado en un solo archivo con esbuild, para no depender de CDNs.

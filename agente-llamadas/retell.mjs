@@ -115,6 +115,9 @@ async function crear() {
     agent_name: cfg.nombre_agente,
     language: 'es-419',
     voice_id: await elegirVoz(),
+    // Topes para no gastar créditos si alguien deja la llamada abierta.
+    max_call_duration_ms: 10 * 60 * 1000,
+    end_call_after_silence_ms: 30 * 1000,
     post_call_analysis_data: [
       { type: 'system-presets', name: 'call_summary' },
       { type: 'boolean', name: 'cita_agendada', description: '¿Se agendó una cita durante la llamada?' },
