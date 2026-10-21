@@ -16,9 +16,11 @@ const PORT = Number(process.env.PORT || 3000);
 
 function loadDotEnv(file) {
   if (!fs.existsSync(file)) return;
-  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
-    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+  // Tolera BOM, saltos de línea de Windows y comillas tipográficas de TextEdit.
+  const text = fs.readFileSync(file, 'utf8').replace(/^﻿/, '');
+  for (const line of text.split(/\r?\n|\r/)) {
+    const m = line.match(/^\s*(?:export\s+)?([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["'“”‘’]+|["'“”‘’]+$/g, '');
   }
 }
 
