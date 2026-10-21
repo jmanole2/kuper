@@ -81,6 +81,29 @@ export async function buscar(client, { giro, ciudad, cuantas = 20 }) {
   return { encontradas: lugares.length, nuevas };
 }
 
+// ------------------------------------------------------------ importar una lista pegada
+/**
+ * Una empresa por línea: "Empresa | teléfono | giro | ciudad | sitio web" (también separado por tabuladores, como al copiar de Excel).
+ * Solo empresa y teléfono son obligatorios. Devuelve { nuevas, repetidas, invalidas }.
+ */
+export function importar(client, texto) {
+  ensureTables();
+  const conocidos = new Set(getDb().prepare('SELECT telefono FROM leads WHERE client_id = ? AND telefono IS NOT NULL').all(client.id).map((x) => x.telefono));
+  const ins = getDb().prepare('INSERT OR IGNORE INTO prospectos (client_id, empresa, telefono, giro, ciudad, web) VALUES (?, ?, ?, ?, ?, ?)');
+  const r = { nuevas: 0, repetidas: 0, invalidas: [] };
+  for (const linea of String(texto || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 2000)) {
+    const [empresa, tel, giro, ciudad, web] = linea.split(linea.includes('|') ? '|' : '\t').map((x) => x.trim());
+    if (/^empresa$/i.test(empresa || '')) continue; // encabezado
+    const telefono = normTel(tel);
+    if (!empresa || !telefono) { r.invalidas.push(linea.slice(0, 60)); continue; }
+    if (conocidos.has(telefono)) { r.repetidas += 1; continue; }
+    const n = ins.run(client.id, empresa.slice(0, 120), telefono, (giro || '').slice(0, 80) || null, (ciudad || '').slice(0, 80) || null, /^https?:\/\//.test(web || '') ? web.slice(0, 300) : null).changes;
+    if (n) r.nuevas += 1; else r.repetidas += 1;
+  }
+  if (r.nuevas) db.logEvent({ clientId: client.id, tipo: 'prospectos_importados', detalle: `${r.nuevas} empresas` });
+  return r;
+}
+
 // ------------------------------------------------------------ lista y REPEP
 export function listar(clientId, { estado } = {}) {
   ensureTables();

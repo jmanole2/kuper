@@ -517,6 +517,11 @@ export function createApp() {
       res.redirect(ventasUrl(req.client, `Encontré ${r.encontradas} negocios; ${r.nuevas} nuevos con teléfono quedaron en la lista.`));
     } catch (e) { res.redirect(ventasUrl(req.client, e.message, true)); }
   });
+  admin.post('/clientes/:cid/ventas/importar', (req, res) => {
+    const r = prospeccion.importar(req.client, req.body.lista);
+    const msg = `${r.nuevas} empresas nuevas en la lista${r.repetidas ? `, ${r.repetidas} ya estaban` : ''}${r.invalidas.length ? `. Sin empresa o teléfono válido: ${r.invalidas.slice(0, 3).join(' / ')}${r.invalidas.length > 3 ? '…' : ''}` : ''}.`;
+    res.redirect(ventasUrl(req.client, msg, !r.nuevas && r.invalidas.length > 0));
+  });
   admin.post('/clientes/:cid/ventas/repep', (req, res) => {
     const r = prospeccion.aplicarRepep(req.client.id, req.body.numeros);
     seg.auditar(req, 'repep_revisado', `${req.client.nombre}: ${r.bloqueados} en REPEP, ${r.revisados} revisados`);

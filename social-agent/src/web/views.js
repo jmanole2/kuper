@@ -675,13 +675,17 @@ export function ventasSection(client, prospectos, { activo, placesListo }) {
   const listos = prospectos.filter((p) => p.repep_revisado && ['pendiente', 'sin_respuesta'].includes(p.estado) && p.intentos < PROS_REGLAS.maxIntentos).length;
   return html`${kpis([[n('pendiente') + n('sin_respuesta'), 'Por llamar', '#93b4ff', false], [n('interesado'), 'Interesados', '#c9f53a', n('interesado') > 0], [n('cita'), 'Con cita', '#4ade80', n('cita') > 0], [n('no_interesa') + n('no_llamar'), 'Descartados', '#f87171', false]])}
   <div class="split">
-    <div class="card"><span class="mono">1 · Buscar empresas</span>
-      ${placesListo ? '' : html`<div class="warn" style="margin-top:10px">Falta <code>GOOGLE_PLACES_API_KEY</code> en el .env del panel.</div>`}
+    <div class="card"><span class="mono">1 · Agregar empresas</span>
+      <form method="post" action="${base}/importar"><label>Pega la lista (una empresa por línea)</label>
+        <textarea name="lista" rows="6" required placeholder="Empresa | teléfono | giro | ciudad | sitio web\nClínica Dental Sonrisa | 55 1234 5678 | dentista | CDMX | https://sonrisa.mx"></textarea>
+        <p><button class="btn-accent">Agregar a la lista</button></p></form>
+      <p class="muted small">Solo empresa y teléfono son obligatorios. También sirve copiar columnas de Excel. No se repiten números que ya estén en la lista o en Leads.</p>
+      ${placesListo ? html`<details style="margin-top:8px"><summary class="small" style="cursor:pointer">O buscar en Google Maps</summary>
       <form method="post" action="${base}/buscar"><label>Giro</label><input name="giro" placeholder="dentistas, gimnasios, inmobiliarias…" required maxlength="80">
         <label>Ciudad</label><input name="ciudad" placeholder="Ciudad de México, Monterrey, Querétaro…" required maxlength="80">
         <label>Cuántas buscar</label><select name="cuantas"><option value="20">20</option><option value="40">40</option><option value="60">60</option></select>
-        <p><button class="btn-accent">Buscar en Google Maps</button></p></form>
-      <p class="muted small">Solo se guardan negocios abiertos, con teléfono, que no estén ya en tu lista ni en Leads. Cada búsqueda de 20 cuesta unos 4 centavos de dólar en Google.</p></div>
+        <p><button class="btn-warn">Buscar en Google Maps</button></p></form>
+      <p class="muted small">Cada búsqueda de 20 cuesta unos 4 centavos de dólar en Google.</p></details>` : ''}</div>
     <div class="card"><span class="mono">2 · Revisar en el REPEP</span>
       <p class="small">La ley no permite llamar para ofrecer servicios a números registrados en el <a href="https://repep.profeco.gob.mx" target="_blank" rel="noopener">REPEP de PROFECO</a>. Antes de llamar, consulta los números ahí y pega abajo los que salgan registrados: pasan a "No llamar" y los demás quedan listos.</p>
       ${sinRevisar ? html`<p class="small" style="margin-bottom:4px"><strong>${sinRevisar}</strong> por revisar:</p><textarea readonly rows="3" onclick="this.select()">${prospectos.filter((p) => !p.repep_revisado && ['pendiente', 'sin_respuesta'].includes(p.estado)).map((p) => p.telefono.replace(/^[+]52/, '')).join(String.fromCharCode(10))}</textarea>` : html`<p class="muted small">Todo lo que está por llamar ya fue revisado.</p>`}
@@ -700,7 +704,7 @@ export function ventasSection(client, prospectos, { activo, placesListo }) {
       <td class="small" style="max-width:380px">${p.contacto ? html`<strong>${p.contacto}</strong>${p.email ? ` · ${p.email}` : ''}<br>` : ''}${p.resumen || ''}</td>
       <td style="white-space:nowrap">${p.estado !== 'no_llamar' ? html`<form method="post" action="${base}/${p.id}" class="inline"><input type="hidden" name="estado" value="no_llamar"><button class="btn-warn">No llamar</button></form>` : ''}
         <form method="post" action="${base}/${p.id}" class="inline" onsubmit="return confirm('¿Quitar ${esc(p.empresa).replace(/'/g, '')} de la lista?')"><input type="hidden" name="accion" value="borrar"><button class="btn-bad">Quitar</button></form></td></tr>`)}
-  </table></div>` : html`<div class="card muted" style="margin-top:18px">Todavía no hay empresas. Busca por giro y ciudad para armar la lista.</div>`}`;
+  </table></div>` : html`<div class="card muted" style="margin-top:18px">Todavía no hay empresas. Pega una lista para empezar.</div>`}`;
 }
 
 export function appLlamadasPage(client, llamadas, mes) {

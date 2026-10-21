@@ -96,11 +96,27 @@ test('resultado por la API: interesado entra a Leads y Llamadas; no le interesa,
   assert.equal((await api('/prospectos/999999/resultado', { method: 'POST', body: {} })).status, 404);
 });
 
+test('importar una lista pegada (con | o copiada de Excel)', () => {
+  const r = pros.importar(c, [
+    'Empresa | Teléfono | Giro | Ciudad | Web',
+    'Gimnasio Fuerza | 222 111 3344 | gimnasio | Puebla | https://fuerza.mx',
+    'Spa Zen\t(442) 555-0001\tspa\tQuerétaro',
+    'Sin teléfono | | spa',
+    'Ya es lead | 55 9999 0000',
+    'Gimnasio Fuerza otra vez | 2221113344',
+  ].join('\n'));
+  assert.deepEqual([r.nuevas, r.repetidas, r.invalidas.length], [2, 2, 1]);
+  const g = pros.listar(c.id).find((p) => p.empresa === 'Gimnasio Fuerza');
+  assert.deepEqual([g.telefono, g.giro, g.ciudad, g.web, g.repep_revisado], ['+522221113344', 'gimnasio', 'Puebla', 'https://fuerza.mx', 0]);
+  assert.equal(pros.listar(c.id).find((p) => p.empresa === 'Spa Zen').telefono, '+524425550001');
+});
+
 test('el admin ve la pestaña Ventas', async () => {
   const r = await fetch(`${base}/admin/entrar`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ password: 'maestra-123' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0];
   const h = await (await fetch(`${base}/admin/clientes/${c.id}?tab=ventas`, { headers: { cookie } })).text();
-  assert.match(h, /Buscar en Google Maps/);
+  assert.match(h, /Agregar a la lista/);
+  assert.match(h, /Buscar en Google Maps/, 'con clave de Google también aparece la búsqueda');
   assert.match(h, /REPEP/);
   assert.match(h, /Clínica Sonrisa/);
 });
