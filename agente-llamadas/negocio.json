@@ -18,5 +18,7 @@
   ],
   "numero_transferencia": "",
   "voz_id": "",
-  "modelo": "gpt-5.6-terra"
+  "modelo": "gpt-5.6-terra",
+  "cal_evento_id": "1cFfdRwi4qpR1sJZkhLtnu",
+  "link_reservas": "https://cal.com/kuper/30min"
 }
