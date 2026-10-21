@@ -110,6 +110,17 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS leads_client ON leads(client_id, updated_at);
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      nombre TEXT NOT NULL,
+      rol TEXT NOT NULL CHECK (rol IN ('admin', 'cliente')),
+      client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+      password_hash TEXT NOT NULL,
+      activo INTEGER NOT NULL DEFAULT 1,
+      last_login TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS lead_mensajes (
       id INTEGER PRIMARY KEY,
       lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
@@ -382,6 +393,27 @@ export const leadMessages = (leadId, limit = 400) => getDb()
   .prepare('SELECT * FROM (SELECT * FROM lead_mensajes WHERE lead_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id').all(leadId, limit);
 export const leadMessageCounts = (clientId) => Object.fromEntries(getDb()
   .prepare('SELECT m.lead_id, COUNT(*) n FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ? GROUP BY m.lead_id').all(clientId).map((r) => [r.lead_id, r.n]));
+
+// ------------------------------------------------------------------ usuarios del panel
+export const ROLES = { admin: 'Administrador (Kuper)', cliente: 'Cliente' };
+const normEmail = (e) => String(e || '').trim().toLowerCase();
+export function createUser({ email, nombre, rol, client_id = null, password_hash }) {
+  const em = normEmail(email);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) throw new Error('Correo no válido');
+  if (!ROLES[rol]) throw new Error('Rol no válido');
+  if (rol === 'cliente' && !client_id) throw new Error('Elige la marca del usuario');
+  if (getUserByEmail(em)) throw new Error('Ya existe un usuario con ese correo');
+  const r = getDb().prepare('INSERT INTO users (email, nombre, rol, client_id, password_hash) VALUES (?, ?, ?, ?, ?)')
+    .run(em, String(nombre || em).trim().slice(0, 80), rol, rol === 'cliente' ? Number(client_id) : null, password_hash);
+  return getUser(Number(r.lastInsertRowid));
+}
+export const getUser = (id) => getDb().prepare('SELECT * FROM users WHERE id = ?').get(id);
+export const getUserByEmail = (email) => getDb().prepare('SELECT * FROM users WHERE email = ?').get(normEmail(email));
+export const listUsers = () => getDb().prepare('SELECT u.*, c.nombre AS cliente FROM users u LEFT JOIN clients c ON c.id = u.client_id ORDER BY u.rol, c.nombre, u.nombre').all();
+export const setUserPassword = (id, hash) => getDb().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, id);
+export const setUserActivo = (id, activo) => getDb().prepare('UPDATE users SET activo = ? WHERE id = ?').run(activo ? 1 : 0, id);
+export const deleteUser = (id) => getDb().prepare('DELETE FROM users WHERE id = ?').run(id);
+export const touchLogin = (id) => getDb().prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(id);
 
 export const listLeads = (clientId, { estado, limit = 300 } = {}) => getDb()
   .prepare(`SELECT * FROM leads WHERE client_id = ? ${estado ? 'AND estado = ?' : ''} ORDER BY updated_at DESC LIMIT ?`)

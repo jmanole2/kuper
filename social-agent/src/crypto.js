@@ -44,3 +44,20 @@ export function safeEqual(a, b) {
   const y = crypto.createHash('sha256').update(String(b)).digest();
   return crypto.timingSafeEqual(x, y);
 }
+
+// Contraseñas de usuarios del panel: scrypt con sal propia. Formato "scrypt$sal$hash".
+export function hashPassword(pw) {
+  const salt = crypto.randomBytes(16);
+  return `scrypt$${salt.toString('base64url')}$${crypto.scryptSync(String(pw), salt, 32).toString('base64url')}`;
+}
+export function verifyPassword(pw, stored) {
+  const [alg, salt, hash] = String(stored || '').split('$');
+  if (alg !== 'scrypt' || !salt || !hash) return false;
+  const got = crypto.scryptSync(String(pw), Buffer.from(salt, 'base64url'), 32), want = Buffer.from(hash, 'base64url');
+  return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+/** Contraseña temporal fácil de dictar (sin letras que se confunden). */
+export function tempPassword() {
+  const abc = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from(crypto.randomBytes(12), (b) => abc[b % abc.length]).join('').replace(/(.{4})(?!$)/g, '$1-');
+}

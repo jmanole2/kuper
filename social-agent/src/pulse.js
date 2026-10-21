@@ -20,9 +20,11 @@ const FEED = {
 };
 const ERROR = /error|fallo|interrumpido/;
 
-let citasCache = { at: 0, data: null };
+const citasCache = new Map(); // ids de clientes -> { at, data }
 async function citas(clients, now) {
-  if (citasCache.data && now - citasCache.at < 60_000) return citasCache.data;
+  const key = clients.map((c) => c.id).join(',');
+  const hit = citasCache.get(key);
+  if (hit && now - hit.at < 60_000) return hit.data;
   const out = { hoy: 0, semana: 0, proximas: [], porDia: [], libres: null, error: null };
   const dias = Array.from({ length: 7 }, (_, i) => dayKey(new Date(now.getTime() + i * DAY)));
   const porDia = Object.fromEntries(dias.map((d) => [d, []]));
@@ -47,19 +49,22 @@ async function citas(clients, now) {
     } catch (e) { out.error = e.message; }
   }
   out.porDia = dias.map((d) => ({ dia: d, eventos: porDia[d] }));
-  citasCache = { at: now.getTime(), data: out };
+  citasCache.set(key, { at: now.getTime(), data: out });
   return out;
 }
 
-export async function pulse(clients, { now = new Date(), conCitas = true } = {}) {
+export async function pulse(clients, { now = new Date(), conCitas = true, clientId = null } = {}) {
+  // Con clientId solo cuenta lo de esa marca (vista del cliente).
+  if (clientId) clients = clients.filter((c) => c.id === clientId);
+  const f = clientId ? ' AND client_id = ' + Number(clientId) : '';
   const db = getDb();
   const desde = new Date(now.getTime() - 15 * DAY).toISOString().replace('T', ' ').slice(0, 19);
   const nombres = Object.fromEntries(clients.map((c) => [c.id, c.nombre]));
-  const events = db.prepare('SELECT id, client_id, tipo, detalle, created_at FROM events WHERE created_at >= ? ORDER BY id DESC').all(desde);
+  const events = db.prepare(`SELECT id, client_id, tipo, detalle, created_at FROM events WHERE created_at >= ?${f} ORDER BY id DESC`).all(desde);
   const msgs = db.prepare(`SELECT m.id, m.rol, m.texto, m.created_at, l.nombre, l.telefono, l.usuario, l.client_id FROM lead_mensajes m
-    JOIN leads l ON l.id = m.lead_id WHERE m.created_at >= ? ORDER BY m.id DESC`).all(desde);
-  const leads = db.prepare('SELECT estado, origen, created_at FROM leads').all();
-  const posts = db.prepare("SELECT status, COUNT(*) n FROM posts GROUP BY status").all();
+    JOIN leads l ON l.id = m.lead_id WHERE m.created_at >= ?${clientId ? ' AND l.client_id = ' + Number(clientId) : ''} ORDER BY m.id DESC`).all(desde);
+  const leads = db.prepare(`SELECT estado, origen, created_at FROM leads WHERE 1=1${f}`).all();
+  const posts = db.prepare(`SELECT status, COUNT(*) n FROM posts WHERE 1=1${f} GROUP BY status`).all();
   const pc = Object.fromEntries(posts.map((r) => [r.status, r.n]));
 
   const hoy = dayKey(now), ayer = dayKey(new Date(now.getTime() - DAY));

@@ -118,22 +118,35 @@ export function portalPage(client, posts, token, tab = '') {
 
 // ------------------------------------------------------------ admin
 const side = (on) => [
-  { href: '/admin', icon: 'home', label: 'Clientes', on: on === 'clientes' },
+  { href: '/admin', icon: 'home', label: 'Inicio', on: on === 'clientes', logo: true },
   { href: '/admin/clientes/nuevo', icon: 'plus', label: 'Nuevo cliente', on: on === 'nuevo' },
+  { href: '/admin/usuarios', icon: 'users', label: 'Usuarios', on: on === 'usuarios' },
   { href: '/admin/salir', icon: 'out', label: 'Salir', bottom: true },
+];
+// Barra lateral del cliente (solo su marca).
+const sideApp = (on) => [
+  { href: '/app', icon: 'home', label: 'Inicio', on: on === 'inicio', logo: true },
+  { href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' },
+  { href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' },
+  { href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' },
+  { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta' },
+  { href: '/salir', icon: 'out', label: 'Salir', bottom: true },
 ];
 const kpis = (items) => html`<div class="kpis">${items.map(([n, label, color, hot]) => html`<div class="kpi${hot ? ' hot' : ''}"><b>${n}</b><small><i style="background:${color}"></i>${label}</small></div>`)}</div>`;
 const PCOL = { instagram: '#e1306c', facebook: '#4f7cff', linkedin: '#3d8bd9', tiktok: '#f2f4f8' };
 
-export function loginPage(error) {
+export function loginPage(error, email = '') {
   return page({ title: 'Entrar', body: html`<div style="min-height:86vh;display:grid;place-items:center">
   <div class="kh" style="width:min(860px,100%);margin:0">
     <div class="kh-l" style="justify-content:center;padding:34px 30px">
       <div class="who"><span class="av">K</span><span class="mono">Kuper · Agentes</span></div>
-      <h1>Tus agentes<br>de IA</h1><p class="sub">Panel de agencia del agente social de Kuper Media.</p>
+      <h1>Tus agentes<br>de IA</h1><p class="sub">Entra con el correo y la contraseña que te dio Kuper.</p>
       ${error ? html`<div class="err" style="background:#fde8e8;color:#9b1c1c">${error}</div>` : ''}
-      <form method="post" action="/admin/entrar" style="margin-top:8px"><label style="color:#57534c">Contraseña</label>
-        <input type="password" name="password" autofocus required style="background:#fbfaf7;color:#1d1b18;border-color:#d9d4cb">
+      <form method="post" action="/entrar" style="margin-top:8px">
+        <label style="color:#57534c">Correo</label>
+        <input type="email" name="email" autocomplete="username" autofocus value="${email || ''}" placeholder="tu@correo.com" style="background:#fbfaf7;color:#1d1b18;border-color:#d9d4cb">
+        <label style="color:#57534c">Contraseña</label>
+        <input type="password" name="password" autocomplete="current-password" required style="background:#fbfaf7;color:#1d1b18;border-color:#d9d4cb">
         <p style="margin-top:16px"><button class="btn-accent" style="width:100%;justify-content:center">Entrar</button></p></form>
     </div>
     <div class="kh-r" style="min-height:420px;justify-content:flex-end"><div class="kh-note"><span class="mono">En línea</span><b>Publica, responde y agenda por ti.</b></div>
@@ -152,6 +165,25 @@ export function dashboardPage(clients, counts, pulso) {
   </div>
   ${clients.length ? '' : html`<p class="muted">Todavía no hay clientes. <a href="/admin/clientes/nuevo">Crea el primero</a>.</p>`}`;
   return page({ title: 'Kuper · Centro de control', side: side('clientes'), body });
+}
+
+export function leadsSection(client, leads, chats, base) {
+  return html`${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
+  ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
+    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
+    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}</td>
+      <td><span class="badge" style="color:${l.origen === 'instagram' ? '#e1306c' : l.origen === 'whatsapp' ? '#25d366' : '#93b4ff'}">${l.origen}</span></td>
+      <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
+      <td><form method="post" action="${base}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
+  </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram o le escribe al agente de WhatsApp.</div>`}`;
+}
+
+export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = false }) {
+  return html`${citasError ? html`<div class="err">${citasError}</div>` : ''}
+  ${agendaCfg && !agendaCfg.calendar_id ? (!admin ? html`<div class="card muted">La agenda todavía no está conectada. Kuper la activa por ti.</div>` : html`<div class="card"><strong>Conecta Google Calendar</strong><p class="muted small">1. Crea una cuenta de servicio en Google Cloud (Calendar API activada) y guarda su JSON en el servidor.<br>2. En Google Calendar, comparte tu calendario con ${saEmail ? html`<strong>${saEmail}</strong>` : 'el correo de la cuenta de servicio'} con permiso "Hacer cambios en eventos".<br>3. En Configuración agrega <code>"agenda": { "calendar_id": "tu-correo@gmail.com" }</code>.</p></div>`) : ''}
+  ${citas ? html`<p class="muted small">Reglas: citas de ${agendaCfg.duracion_min} min, ${agendaCfg.margen_min} min de margen, con ${agendaCfg.anticipacion_horas} h de anticipación · ${Object.entries(agendaCfg.horario).map(([d, h]) => `${d} ${h[0]}–${h[1]}`).join(', ')}${agendaCfg.ultima_cita ? ` · última cita a las ${agendaCfg.ultima_cita}` : ''}.</p>
+    ${citas.length ? html`<div class="grid">${citas.map((e) => html`<div class="card"><div class="row spread"><strong>${e.summary || 'Cita'}</strong>${e.extendedProperties?.private?.kuper ? html`<span class="badge" style="color:#25d366">Agente</span>` : html`<span class="badge">Manual</span>`}</div>
+      <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}`;
 }
 
 export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, leadsCount = 0, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
@@ -199,24 +231,9 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ${shown.length ? html`<div class="grid">${shown.map((p) => postCard(p, { base: `/admin/posts/${p.id}`, admin: true }))}</div>` : html`<div class="card muted">No hay posts en "${fSel[1]}".</div>`}
   ` : ''}
 
-  ${!isNew && t === 'leads' ? html`<div style="margin-top:24px"></div>
-  ${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
-  ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
-    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
-    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : ''].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="/admin/clientes/${client.id}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}</td>
-      <td><span class="badge" style="color:${l.origen === 'instagram' ? '#e1306c' : l.origen === 'whatsapp' ? '#25d366' : '#93b4ff'}">${l.origen}</span></td>
-      <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
-      <td><form method="post" action="/admin/clientes/${client.id}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
-  </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram o le escribe a tu agente de WhatsApp.</div>`}
-  ` : ''}
+  ${!isNew && t === 'leads' ? leadsSection(client, leads, chats, `/admin/clientes/${client.id}`) : ''}
 
-  ${!isNew && t === 'citas' ? html`<div style="margin-top:24px"></div>
-  ${citasError ? html`<div class="err">${citasError}</div>` : ''}
-  ${agendaCfg && !agendaCfg.calendar_id ? html`<div class="card"><strong>Conecta Google Calendar</strong><p class="muted small">1. Crea una cuenta de servicio en Google Cloud (Calendar API activada) y guarda su JSON en el servidor.<br>2. En Google Calendar, comparte tu calendario con ${saEmail ? html`<strong>${saEmail}</strong>` : 'el correo de la cuenta de servicio'} con permiso "Hacer cambios en eventos".<br>3. En Configuración agrega <code>"agenda": { "calendar_id": "tu-correo@gmail.com" }</code>.</p></div>` : ''}
-  ${citas ? html`<p class="muted small">Reglas: citas de ${agendaCfg.duracion_min} min, ${agendaCfg.margen_min} min de margen, con ${agendaCfg.anticipacion_horas} h de anticipación · ${Object.entries(agendaCfg.horario).map(([d, h]) => `${d} ${h[0]}–${h[1]}`).join(', ')}${agendaCfg.ultima_cita ? ` · última cita a las ${agendaCfg.ultima_cita}` : ''}.</p>
-    ${citas.length ? html`<div class="grid">${citas.map((e) => html`<div class="card"><div class="row spread"><strong>${e.summary || 'Cita'}</strong>${e.extendedProperties?.private?.kuper ? html`<span class="badge" style="color:#25d366">Agente</span>` : html`<span class="badge">Manual</span>`}</div>
-      <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}
-  ` : ''}
+  ${!isNew && t === 'citas' ? citasSection({ citas, citasError, agendaCfg, saEmail, admin: true }) : ''}
 
   ${!isNew && t === 'competencia' ? html`<div style="margin-top:24px"></div>
   <div class="split"><div class="card">
@@ -241,6 +258,8 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ` : ''}
 
   ${t === 'config' ? html`${!isNew ? html`<div style="margin-top:24px"></div>
+  <div class="card" style="margin-bottom:18px"><div class="row spread"><div><strong>Acceso del cliente</strong><p class="muted small" style="margin:4px 0 0">Usuarios con su propio correo y contraseña: ven su resumen, aprueban publicaciones y ven sus leads y citas.</p></div>
+    <div class="row"><a class="btn btn-warn" href="/app?c=${client.id}">Ver como el cliente</a><a class="btn btn-accent" href="/admin/usuarios?c=${client.id}">Usuarios de ${client.nombre}</a></div></div></div>
   <div class="card"><div class="row spread"><div><strong>Portal de aprobación del cliente</strong><br><a class="small" href="${portal}" target="_blank">${portal}</a></div>
     <form method="post" action="/admin/clientes/${client.id}/rotar-token" onsubmit="return confirm('El enlace anterior dejará de funcionar. ¿Continuar?')"><button class="btn-warn">Nuevo enlace</button></form></div>
     <p class="muted small">Aviso de posts por revisar: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}, uno al día como máximo` : 'sin correo (pon "notificaciones": { "email": "…" } en la configuración)'}${client.config.notificaciones?.whatsapp ? ' · pidió WhatsApp (aún no conectado)' : ''}.</p>
@@ -383,7 +402,7 @@ export function bookingDone(client, cita, link = '') {
 
 // ------------------------------------------------------------ conversación de un lead
 const fmtChat = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(iso.replace(' ', 'T') + 'Z'));
-export function leadChatPage(client, lead, mensajes) {
+export function leadChatPage(client, lead, mensajes, { back = null, sideBar = null } = {}) {
   const tel = lead.telefono ? lead.telefono.replace(/\D/g, '') : null;
   const body = html`<style>${raw(`.chat{display:flex;flex-direction:column;gap:8px;max-width:720px}.burb{max-width:80%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;line-height:1.45;font-size:15px}
 .burb.lead{align-self:flex-start;background:var(--card2);border-bottom-left-radius:4px}.burb.agente{align-self:flex-end;background:rgba(198,255,61,.12);color:#e6ffd0;border-bottom-right-radius:4px}
@@ -391,7 +410,88 @@ export function leadChatPage(client, lead, mensajes) {
   ${hero({ kicker: `Conversación · ${lead.origen}`, title: lead.nombre || lead.usuario || lead.telefono || 'Lead', letra: lead.nombre || 'L',
     sub: [lead.telefono, lead.usuario, lead.cita_inicio ? `cita ${fmtDate(lead.cita_inicio)}` : ''].filter(Boolean).join(' · '),
     stats: [[mensajes.filter((m) => m.rol === 'lead').length, 'Mensajes del lead', '#93b4ff'], [mensajes.filter((m) => m.rol === 'agente').length, 'Respuestas del agente', '#c9f53a']],
-    tabs: [[`/admin/clientes/${client.id}?tab=leads`, '← Leads', false], ...(tel ? [[`https://wa.me/${tel}`, 'Escribirle por WhatsApp', true]] : [])] })}
+    tabs: [[back || `/admin/clientes/${client.id}?tab=leads`, '← Leads', false], ...(tel ? [[`https://wa.me/${tel}`, 'Escribirle por WhatsApp', true]] : [])] })}
   <div class="card chat">${mensajes.length ? mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`) : html`<p class="muted">Sin mensajes todavía.</p>`}</div>`;
-  return page({ title: `Chat · ${lead.nombre || lead.telefono || ''}`, body, side: side('clientes') });
+  return page({ title: `Chat · ${lead.nombre || lead.telefono || ''}`, body, side: sideBar || side('clientes') });
+}
+
+// ------------------------------------------------------------ usuarios (solo administradores)
+export function usersPage(users, clients, { error = '', creado = null, filtro = null } = {}) {
+  const ROL = { admin: 'Administrador', cliente: 'Cliente' };
+  const lista = filtro ? users.filter((u) => u.client_id === filtro) : users;
+  const body = html`${hero({ kicker: 'Equipo y clientes', title: 'Usuarios', sub: 'Los administradores (Kuper) ven y manejan todo. Cada cliente entra con su correo y solo ve su marca.',
+    stats: [[users.filter((u) => u.rol === 'admin').length, 'Administradores', '#c9f53a'], [users.filter((u) => u.rol === 'cliente').length, 'Clientes', '#93b4ff']],
+    tabs: [['/admin/usuarios', 'Todos', !filtro], ...clients.map((c) => [`/admin/usuarios?c=${c.id}`, c.nombre, filtro === c.id])] })}
+  ${error ? html`<div class="err">${error}</div>` : ''}
+  ${creado ? html`<div class="card" style="border-color:#c9f53a;margin-bottom:18px"><span class="mono" style="color:#c9f53a">Contraseña temporal · se muestra solo esta vez</span>
+    <p style="margin:10px 0 4px">Mándale estos datos a <strong>${creado.nombre}</strong> (por WhatsApp o en persona):</p>
+    <p style="font-size:18px;margin:6px 0">Entra a <strong>${config.publicBaseUrl}/entrar</strong><br>Correo: <strong>${creado.email}</strong><br>Contraseña: <strong style="font-family:ui-monospace,Menlo,monospace;color:#c9f53a">${creado.password}</strong></p>
+    <p class="muted small">Al entrar puede cambiarla en "Mi cuenta".</p></div>` : ''}
+  <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);align-items:start" class="usr">
+  <style>@media (max-width:900px){.usr{grid-template-columns:1fr!important}}</style>
+  <div class="card" style="padding:8px 14px;overflow-x:auto"><table>
+    <tr><th>Usuario</th><th>Rol</th><th>Último acceso</th><th>Acciones</th></tr>
+    ${lista.map((u) => html`<tr><td><strong>${u.nombre}</strong><div class="muted small">${u.email}</div></td>
+      <td><span class="badge" style="color:${u.rol === 'admin' ? '#c9f53a' : '#93b4ff'}">${ROL[u.rol]}${u.cliente ? ` · ${u.cliente}` : ''}</span>${u.activo ? '' : html` <span class="badge" style="color:#f87171">Bloqueado</span>`}</td>
+      <td class="small muted">${u.last_login ? fmtDate(u.last_login.replace(' ', 'T') + 'Z') : 'Nunca'}</td>
+      <td><div class="row" style="gap:6px"><form class="inline" method="post" action="/admin/usuarios/${u.id}/clave"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Nueva contraseña</button></form>
+        <form class="inline" method="post" action="/admin/usuarios/${u.id}/activo"><button class="btn-warn" style="padding:6px 12px;font-size:13px">${u.activo ? 'Bloquear' : 'Activar'}</button></form>
+        <form class="inline" method="post" action="/admin/usuarios/${u.id}/eliminar" onsubmit="return confirm('¿Eliminar a ${u.nombre}? Ya no podrá entrar.')"><button class="btn-bad" style="padding:6px 12px;font-size:13px">Eliminar</button></form></div></td></tr>`)}
+    ${lista.length ? '' : html`<tr><td class="muted" colspan="4">Todavía no hay usuarios aquí.</td></tr>`}
+  </table></div>
+  <form class="card" method="post" action="/admin/usuarios">
+    <span class="mono">Nuevo usuario</span>
+    <label>Nombre</label><input name="nombre" required maxlength="80" placeholder="Ej. Laura de Buen Sabor">
+    <label>Correo</label><input name="email" type="email" required placeholder="laura@buensabor.mx">
+    <label>Rol</label><select name="rol" onchange="this.form.client_id.disabled=this.value!=='cliente'">
+      <option value="cliente">Cliente (solo ve su marca)</option><option value="admin">Administrador (Kuper, ve todo)</option></select>
+    <label>Marca</label><select name="client_id">${clients.map((c) => html`<option value="${c.id}" ${raw(filtro === c.id ? 'selected' : '')}>${c.nombre}</option>`)}</select>
+    <p class="muted small">Se genera una contraseña temporal y te la mostramos una sola vez para que se la mandes.</p>
+    <button class="btn-accent">Crear usuario</button>
+  </form></div>`;
+  return page({ title: 'Usuarios', side: side('usuarios'), body });
+}
+
+// ------------------------------------------------------------ vista del cliente (/app)
+export function appHomePage(client, pulso) {
+  return page({ title: `${client.nombre} · Panel`, side: sideApp('inicio'), body: html`${controlCenter(pulso, [client], { cliente: client })}` });
+}
+const appHero = (client, t, posts = [], leadsN = 0) => hero({
+  kicker: 'Tu panel', title: client.nombre, letra: client.nombre,
+  avatar: client.logo_path ? `<img src="${esc(mediaSrc(client.logo_path))}" alt="">` : null,
+  stats: [[posts.filter((p) => ['pendiente', 'necesita_asset'].includes(p.status)).length, 'Por revisar', '#fbbf24', '/app/posts', posts.some((p) => ['pendiente', 'necesita_asset'].includes(p.status))],
+    [posts.filter((p) => ['aprobado', 'publicando'].includes(p.status)).length, 'Programadas', '#4ade80', '/app/posts?t=programadas'],
+    [posts.filter((p) => p.status === 'publicado').length, 'Publicadas', '#c9f53a', '/app/posts?t=publicadas'], [leadsN, 'Leads', '#93b4ff', '/app/leads']],
+  tabs: [['/app', 'Resumen', false], ['/app/posts', 'Publicaciones', t === 'posts'], ['/app/leads', 'Leads', t === 'leads'], ['/app/citas', 'Citas', t === 'citas']],
+});
+export function appPostsPage(client, posts, tab = '', leadsN = 0) {
+  const by = (sts) => posts.filter((p) => sts.includes(p.status));
+  const T = [['revisar', 'Por revisar', by(['pendiente', 'necesita_asset', 'cambios_solicitados', 'generando']), 'No tienes nada pendiente.'],
+    ['programadas', 'Programadas', by(['aprobado', 'publicando']).reverse(), 'Nada programado todavía.'], ['publicadas', 'Publicadas', by(['publicado']).slice(0, 30), 'Aún no hay publicaciones.']];
+  const sel = T.find((x) => x[0] === tab) || T[0];
+  const body = html`${appHero(client, 'posts', posts, leadsN)}
+  <div class="pills">${T.map(([k, l, list]) => html`<a class="${k === sel[0] ? 'on' : ''}" href="/app/posts?t=${k}">${l} <em>${list.length}</em></a>`)}</div>
+  ${sel[2].length ? html`<div class="grid">${sel[2].map((p) => postCard(p, { base: `/app/posts/${p.id}` }))}</div>` : html`<div class="card muted">${sel[3]}</div>`}
+  ${sel[2].some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
+  return page({ title: `Publicaciones · ${client.nombre}`, side: sideApp('posts'), body });
+}
+export function appLeadsPage(client, leads, chats, posts = []) {
+  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads'), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app')}` });
+}
+export function appCitasPage(client, view, posts = [], leadsN = 0) {
+  return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas'), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false })}` });
+}
+export function appChatPage(client, lead, mensajes) {
+  return leadChatPage(client, lead, mensajes, { back: '/app/leads', sideBar: sideApp('leads') });
+}
+export function cuentaPage(user, { error = '', ok = '' } = {}) {
+  const body = html`${hero({ kicker: 'Mi cuenta', title: user.nombre, letra: user.nombre, sub: user.email })}
+  ${error ? html`<div class="err">${error}</div>` : ''}${ok ? html`<div class="okmsg">${ok}</div>` : ''}
+  <form class="card" method="post" action="/app/cuenta" style="max-width:520px">
+    <span class="mono">Cambiar contraseña</span>
+    <label>Contraseña actual</label><input type="password" name="actual" autocomplete="current-password" required>
+    <label>Nueva contraseña (mínimo 10 caracteres)</label><input type="password" name="nueva" autocomplete="new-password" minlength="10" required>
+    <label>Repite la nueva</label><input type="password" name="nueva2" autocomplete="new-password" minlength="10" required>
+    <p><button class="btn-accent">Guardar</button></p></form>`;
+  return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('usuarios') : sideApp('cuenta'), body });
 }

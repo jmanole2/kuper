@@ -91,6 +91,10 @@ const ICON = {
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
   plus: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
   out: '<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M21 20c0-2.6-1.5-4.5-3.8-5.2"/>',
+  post: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M20 15l-5-5-9 9"/>',
+  cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
 };
 export const icon = (k) => `<svg viewBox="0 0 24 24">${ICON[k] || ''}</svg>`;
@@ -100,7 +104,7 @@ export const icon = (k) => `<svg viewBox="0 0 24 24">${ICON[k] || ''}</svg>`;
  * Sin side: página simple (portal del cliente, login).
  */
 export function page({ title, body, side = null, brand = '', mark = 'K' }) {
-  const nav = side ? `<aside class="side"><a class="logo" href="/admin" title="Agente Social">${esc(mark)}</a>
+  const nav = side ? `<aside class="side"><a class="logo" href="${esc(side.find((l) => l.logo)?.href || '/admin')}" title="Inicio">${esc(mark)}</a>
 ${side.filter((l) => !l.bottom).map((l) => `<a class="nav${l.on ? ' on' : ''}" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}
 <div class="bottom">${side.filter((l) => l.bottom).map((l) => `<a class="nav" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}</div></aside>` : '';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

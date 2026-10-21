@@ -19,7 +19,7 @@ const CSS = `
 .cc{display:grid;grid-template-columns:minmax(300px,.85fr) 1.7fr;border-radius:32px;overflow:hidden;border:1px solid rgba(255,240,220,.08);box-shadow:0 40px 120px rgba(0,0,0,.55);margin:6px 0 34px;min-height:780px}
 .cc-light{background:linear-gradient(160deg,#f3f0ea,#e7e3db);color:#1d1b18;padding:30px 28px;display:flex;flex-direction:column;gap:16px}
 .cc-brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#3b3833}.cc-brand i{width:26px;height:26px;border-radius:8px;background:#1d1b18;color:#d7ff3f;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:13px}
-.cc-h{font-size:46px;font-weight:300;letter-spacing:-.035em;line-height:1.02;margin:8px 0 0;color:#1d1b18}
+.cc-h{font:300 46px/1.02 "Inter Tight",system-ui,sans-serif;letter-spacing:-.035em;text-transform:none;margin:8px 0 0;color:#1d1b18}
 .cc-sub{margin:0;color:#7b766d;font-size:13px}
 .mono{font-family:${MONO};font-size:10.5px;letter-spacing:.2em;text-transform:uppercase}
 .cc-card{background:#fbfaf7;border-radius:24px;padding:18px 18px 14px;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 14px 34px rgba(60,50,30,.08)}
@@ -136,25 +136,27 @@ const hora = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: config.timezo
 const feedItem = (f) => `<li class="${f.error ? 'err' : ''}"><i>${svgI(f.icono, 15)}</i><div><b>${esc(f.titulo)}</b><span>${esc(f.detalle)}</span></div><time>${hora(f.t)}</time></li>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function controlCenter(p, clients) {
+// opts.cliente: vista de un cliente (links a /app, sin Competencia, su nombre arriba).
+export function controlCenter(p, clients, { cliente = null } = {}) {
   const c0 = clients.find((c) => c.activo) || clients[0];
-  const tab = (t) => (c0 ? `/admin/clientes/${c0.id}?tab=${t}` : '/admin/clientes/nuevo');
+  const tab = (t) => (cliente ? `/app/${t === 'competencia' ? '' : t}` : c0 ? `/admin/clientes/${c0.id}?tab=${t}` : '/admin/clientes/nuevo');
+  const inicio = cliente ? '/app' : '/admin';
   const links = [
     { label: 'Citas', icon: 'cal', href: tab('citas') }, { label: 'Leads', icon: 'users', href: tab('leads') },
     { label: 'WhatsApp', icon: 'chat', href: tab('leads') }, { label: 'Posts', icon: 'post', href: tab('posts') },
-    { label: 'Competencia', icon: 'eye', href: tab('competencia') },
+    cliente ? { label: 'Mi cuenta', icon: 'check', href: '/app/cuenta' } : { label: 'Competencia', icon: 'eye', href: tab('competencia') },
   ];
   const delta = p.tareasHoy - p.tareasAyer;
   const errores = p.feed.filter((f) => f.error).length;
   const ci = p.citas;
   const v = p.vivo;
-  const data = JSON.stringify({ tz: config.timezone, activo: !!v?.activo }).replace(/</g, '\\u003c');
+  const data = JSON.stringify({ tz: config.timezone, activo: !!v?.activo, url: cliente ? '/app/pulso.json' : '/admin/pulso.json' }).replace(/</g, '\\u003c');
   return html`<style>${raw(CSS)}</style>
 <section class="cc" id="cc">
   <div class="cc-light">
-    <div class="cc-brand"><i>K</i>Kuper · Agentes</div>
+    <div class="cc-brand"><i>${cliente ? cliente.nombre.slice(0, 1) : 'K'}</i>${cliente ? cliente.nombre : 'Kuper · Agentes'}</div>
     <h2 class="cc-h">Tus agentes<br>de IA</h2>
-    <p class="cc-sub">${p.marcas} ${p.marcas === 1 ? 'marca activa' : 'marcas activas'} · actualizado <span id="cc-ago">hace 0 s</span></p>
+    <p class="cc-sub">${cliente ? 'Trabajando para tu marca' : `${p.marcas} ${p.marcas === 1 ? 'marca activa' : 'marcas activas'}`} · actualizado <span id="cc-ago">hace 0 s</span></p>
     <div class="cc-card">
       <div class="row spread"><span class="mono">Tareas hoy<span class="when" id="cc-clock"></span></span><span class="cc-pillok"><span class="cc-dot" style="${errores ? 'background:#f87171' : ''}"></span>${errores ? `${errores} con error` : 'Sin errores'}</span></div>
       <div class="cc-big"><b data-count="${p.tareasHoy}" id="cc-tareas">${p.tareasHoy}</b><small>tareas</small></div>
@@ -172,7 +174,7 @@ export function controlCenter(p, clients) {
     </div>
   </div>
   <div class="cc-dark">
-    <nav class="cc-tabs"><a class="on" href="/admin">Resumen</a><a href="${tab('posts')}">Posts</a><a href="${tab('leads')}">Leads</a><a href="${tab('citas')}">Citas</a><a href="${tab('competencia')}">Competencia</a></nav>
+    <nav class="cc-tabs"><a class="on" href="${inicio}">Resumen</a><a href="${tab('posts')}">Posts</a><a href="${tab('leads')}">Leads</a><a href="${tab('citas')}">Citas</a>${cliente ? '' : html`<a href="${tab('competencia')}">Competencia</a>`}</nav>
     <div class="cc-stage">
       <div class="cc-orbwrap"><div class="halo"></div>${raw(anillo(links))}<div class="cc-orb"><canvas id="cc-orb" class="k-orb" aria-label="Agente en actividad"></canvas></div><div class="pulse"></div></div>
       <div class="cc-live cc-glass${v?.activo ? '' : ' idle'}" id="cc-live">
@@ -250,7 +252,7 @@ function clientScript(cfg) {
   const hora = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: cfg.tz, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
   async function refresh() {
     try {
-      const r = await fetch('/admin/pulso.json', { headers: { accept: 'application/json' } });
+      const r = await fetch(cfg.url, { headers: { accept: 'application/json' } });
       if (!r.ok) return;
       const p = await r.json(); last = Date.now();
       document.getElementById('cc-tareas').textContent = p.tareasHoy;

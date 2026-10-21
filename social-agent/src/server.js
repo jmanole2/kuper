@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { config, mediaDir } from './config.js';
 import * as db from './db.js';
 import * as pipe from './pipeline.js';
-import { sign, unsign, safeEqual, randomToken } from './crypto.js';
+import { sign, unsign, safeEqual, randomToken, hashPassword, verifyPassword, tempPassword } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
@@ -110,29 +110,148 @@ export function createApp() {
   // ------------------------------------------------------------ sesión admin
   const COOKIE = 'sa_admin';
   const cookies = (req) => Object.fromEntries((req.headers.cookie || '').split(';').map((c) => c.trim().split('=')).filter((x) => x[0]).map(([k, ...v]) => [k, decodeURIComponent(v.join('='))]));
-  const isAdmin = (req) => {
+  // Sesión: "admin:<vence>" (contraseña maestra ADMIN_PASSWORD) o "u:<id>:<vence>:<huella>" (usuario).
+  // La huella cambia al cambiar la contraseña, así se cierran las sesiones abiertas.
+  const huella = (u) => u.password_hash.slice(-12);
+  const session = (req) => {
     const v = unsign(cookies(req)[COOKIE]);
-    return !!v && Number(v.split(':')[1]) > Date.now();
+    if (!v) return null;
+    const [tipo, a, b2, c] = v.split(':');
+    if (tipo === 'admin') return Number(a) > Date.now() ? { admin: true, user: null } : null;
+    if (tipo !== 'u' || Number(b2) <= Date.now()) return null;
+    const u = db.getUser(Number(a));
+    if (!u || !u.activo || huella(u) !== c) return null;
+    return { admin: u.rol === 'admin', user: u };
   };
-  const requireAdmin = (req, res, next) => (isAdmin(req) ? next() : res.redirect('/admin/entrar'));
-
-  app.get('/admin/entrar', (_req, res) => res.send(V.loginPage()));
-  app.post('/admin/entrar', (req, res) => {
-    if (!config.adminPassword) return res.status(500).send(V.loginPage('Configura ADMIN_PASSWORD en el .env'));
-    if (!safeEqual(req.body.password || '', config.adminPassword)) return res.status(401).send(V.loginPage('Contraseña incorrecta'));
-    const value = sign(`admin:${Date.now() + 12 * 3600_000}`);
+  const isAdmin = (req) => !!session(req)?.admin;
+  const requireAdmin = (req, res, next) => {
+    const s = session(req);
+    if (s?.admin) { req.sesion = s; return next(); }
+    res.redirect(s?.user ? '/app' : '/entrar');
+  };
+  const setSession = (res, value) => {
     const secure = config.publicBaseUrl.startsWith('https') ? '; Secure' : '';
-    res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(value)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${secure}`);
-    res.redirect('/admin');
+    res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(sign(value))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${secure}`);
+  };
+  // Freno a intentos de contraseña: 8 fallos por IP cada 15 min.
+  const fallos = new Map();
+  const ipDe = (req) => String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+  const bloqueado = (ip) => (fallos.get(ip) || []).filter((t) => Date.now() - t < 15 * 60_000).length >= 8;
+  const fallo = (ip) => fallos.set(ip, [...(fallos.get(ip) || []).filter((t) => Date.now() - t < 15 * 60_000), Date.now()]);
+
+  app.get(['/entrar', '/admin/entrar'], (req, res) => {
+    const s = session(req);
+    if (s) return res.redirect(s.admin ? '/admin' : '/app');
+    res.send(V.loginPage());
   });
-  app.get('/admin/salir', (_req, res) => {
+  app.post(['/entrar', '/admin/entrar'], (req, res) => {
+    const ip = ipDe(req), email = String(req.body.email || '').trim(), pw = String(req.body.password || '');
+    if (bloqueado(ip)) return res.status(429).send(V.loginPage('Demasiados intentos. Espera 15 minutos.', email));
+    if (!email || email.toLowerCase() === 'admin') { // contraseña maestra (la del .env)
+      if (config.adminPassword && safeEqual(pw, config.adminPassword)) { setSession(res, `admin:${Date.now() + 12 * 3600_000}`); return res.redirect('/admin'); }
+      fallo(ip); return res.status(401).send(V.loginPage('Correo o contraseña incorrectos', email));
+    }
+    const u = db.getUserByEmail(email);
+    if (!u || !u.activo || !verifyPassword(pw, u.password_hash)) { fallo(ip); return res.status(401).send(V.loginPage('Correo o contraseña incorrectos', email)); }
+    db.touchLogin(u.id);
+    setSession(res, `u:${u.id}:${Date.now() + 12 * 3600_000}:${huella(u)}`);
+    res.redirect(u.rol === 'admin' ? '/admin' : '/app');
+  });
+  app.get(['/salir', '/admin/salir'], (_req, res) => {
     res.setHeader('Set-Cookie', `${COOKIE}=; Path=/; Max-Age=0`);
-    res.redirect('/admin/entrar');
+    res.redirect('/entrar');
   });
+
+  // ------------------------------------------------------------ vista del cliente (/app)
+  // Un cliente solo ve su marca. Un administrador puede verla igual con /app?c=<id>.
+  const appR = express.Router();
+  appR.use((req, res, next) => {
+    const s = session(req);
+    if (!s) return res.redirect('/entrar');
+    req.sesion = s;
+    if (req.path === '/cuenta') return next();
+    let cid = s.user?.rol === 'cliente' ? s.user.client_id : null;
+    if (s.admin) {
+      if (req.query.c) res.setHeader('Set-Cookie', `sa_ver=${Number(req.query.c)}; HttpOnly; SameSite=Lax; Path=/app`);
+      cid = Number(req.query.c || cookies(req).sa_ver) || null;
+      if (!cid) return res.redirect('/admin');
+    }
+    req.client = cid && db.getClient(cid);
+    if (!req.client) return res.status(404).send('Marca no encontrada');
+    res.setHeader('X-Robots-Tag', 'noindex');
+    next();
+  });
+  const appPosts = (c) => db.listPosts({ clientId: c.id, limit: 400 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status));
+  appR.get('/', async (req, res) => res.send(V.appHomePage(req.client, await pulse(db.listClients(), { clientId: req.client.id }))));
+  appR.get('/pulso.json', async (req, res) => {
+    const p = await pulse(db.listClients(), { clientId: req.client.id, conCitas: false });
+    res.json({ ...p, feedHtml: feedHtml(p.feed) });
+  });
+  appR.get('/posts', async (req, res) => res.send(V.appPostsPage(req.client, await withTikTokInfo(req.client, appPosts(req.client)), String(req.query.t || ''), db.listLeads(req.client.id).length)));
+  appR.param('pid', (req, res, next, id) => {
+    req.post = db.getPost(Number(id));
+    return req.post && req.post.client_id === req.client.id ? next() : res.status(404).send('Post no encontrado');
+  });
+  postActions(appR, (req) => `/app/posts#post-${req.post.id}`);
+  appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id), db.leadMessageCounts(req.client.id), appPosts(req.client))));
+  appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
+  appR.get('/leads/:leadId/chat', (req, res) => {
+    const lead = db.getLead(req.client.id, Number(req.params.leadId));
+    if (!lead) return res.status(404).send('Lead no encontrado');
+    res.send(V.appChatPage(req.client, lead, db.leadMessages(lead.id)));
+  });
+  appR.get('/citas', async (req, res) => {
+    const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg };
+    try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
+    res.send(V.appCitasPage(req.client, view, appPosts(req.client), db.listLeads(req.client.id).length));
+  });
+  appR.get('/cuenta', (req, res) => {
+    if (!req.sesion.user) return res.redirect('/admin');
+    res.send(V.cuentaPage(req.sesion.user));
+  });
+  appR.post('/cuenta', (req, res) => {
+    const u = req.sesion.user;
+    if (!u) return res.redirect('/admin');
+    const { actual = '', nueva = '', nueva2 = '' } = req.body;
+    if (!verifyPassword(actual, u.password_hash)) return res.status(400).send(V.cuentaPage(u, { error: 'La contraseña actual no es correcta.' }));
+    if (nueva.length < 10) return res.status(400).send(V.cuentaPage(u, { error: 'La nueva contraseña debe tener al menos 10 caracteres.' }));
+    if (nueva !== nueva2) return res.status(400).send(V.cuentaPage(u, { error: 'Las contraseñas nuevas no coinciden.' }));
+    db.setUserPassword(u.id, hashPassword(nueva));
+    const nu = db.getUser(u.id);
+    setSession(res, `u:${nu.id}:${Date.now() + 12 * 3600_000}:${huella(nu)}`);
+    res.send(V.cuentaPage(nu, { ok: 'Listo, tu contraseña cambió.' }));
+  });
+  app.use('/app', appR);
 
   // ------------------------------------------------------------ admin
   const admin = express.Router();
   admin.use(requireAdmin);
+
+  // Usuarios del panel
+  const usersView = (req, extra = {}) => V.usersPage(db.listUsers(), db.listClients(), { filtro: Number(req.query.c) || null, ...extra });
+  admin.get('/usuarios', (req, res) => res.send(usersView(req)));
+  admin.post('/usuarios', (req, res) => {
+    const password = tempPassword();
+    try {
+      const u = db.createUser({ email: req.body.email, nombre: req.body.nombre, rol: req.body.rol, client_id: req.body.client_id, password_hash: hashPassword(password) });
+      db.logEvent({ clientId: u.client_id, tipo: 'usuario_creado', detalle: `${u.email} (${u.rol})` });
+      res.send(usersView(req, { creado: { nombre: u.nombre, email: u.email, password }, filtro: u.client_id }));
+    } catch (e) { res.status(400).send(usersView(req, { error: e.message })); }
+  });
+  admin.param('uid', (req, res, next, id) => { req.usuario = db.getUser(Number(id)); return req.usuario ? next() : res.status(404).send('Usuario no encontrado'); });
+  admin.post('/usuarios/:uid/clave', (req, res) => {
+    const password = tempPassword();
+    db.setUserPassword(req.usuario.id, hashPassword(password));
+    res.send(usersView(req, { creado: { nombre: req.usuario.nombre, email: req.usuario.email, password }, filtro: req.usuario.client_id }));
+  });
+  admin.post('/usuarios/:uid/activo', (req, res) => {
+    if (req.sesion.user?.id === req.usuario.id) return res.status(400).send(usersView(req, { error: 'No puedes bloquearte a ti mismo.' }));
+    db.setUserActivo(req.usuario.id, !req.usuario.activo); res.redirect('/admin/usuarios');
+  });
+  admin.post('/usuarios/:uid/eliminar', (req, res) => {
+    if (req.sesion.user?.id === req.usuario.id) return res.status(400).send(usersView(req, { error: 'No puedes eliminarte a ti mismo.' }));
+    db.deleteUser(req.usuario.id); res.redirect('/admin/usuarios');
+  });
 
   admin.get('/pulso.json', async (_req, res) => {
     const p = await pulse(db.listClients(), { conCitas: false });
