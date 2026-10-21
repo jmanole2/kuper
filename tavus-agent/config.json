@@ -15,5 +15,7 @@
     "modelName": "sonic-3",
     "_nota": "Daniela: voz femenina mexicana de Cartesia. Cambia el ID por otra voz de play.cartesia.ai (filtra por Spanish)."
   },
-  "maxCallSeconds": 600
+  "maxCallSeconds": 300,
+  "knowledgeFile": "conocimiento.md",
+  "leadInstructions": "CÓMO LLEVAR LA LLAMADA (dura máximo 5 minutos): 1) Saluda y pregunta el nombre de la persona y a qué se dedica su negocio. 2) Entiende qué quiere resolver y explica brevemente cómo le ayuda Kuper, usando solo la información de la empresa. 3) Antes del minuto 3 pide su WhatsApp o teléfono y su correo para que el equipo le dé seguimiento; repítelos en voz alta para confirmarlos. 4) Propón agendar una llamada con el equipo y pregunta qué día y horario le acomoda. 5) Cierra agradeciendo y confirmando los siguientes pasos."
 }

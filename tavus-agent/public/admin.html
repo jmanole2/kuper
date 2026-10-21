@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prospectos de videollamada</title>
+<style>
+  :root { --bg:#121110; --card:rgba(255,246,232,.045); --card2:rgba(255,246,232,.08); --ink:#f4f0e8; --muted:#a39d93; --line:rgba(255,240,220,.09);
+    --accent:#d7ff3f; --ok:#4ade80; --warn:#fbbf24; --bad:#f87171; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font:15px/1.5 "Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:28px 16px 80px; }
+  header { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:12px; margin-bottom:20px; }
+  h1 { font-size:34px; font-weight:300; letter-spacing:-.03em; margin:0; }
+  .muted { color:var(--muted); }
+  .stats { display:flex; gap:10px; flex-wrap:wrap; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:8px 14px; font-size:13px; }
+  .stat b { font-size:18px; font-weight:600; margin-right:6px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .filters button { font:inherit; font-size:13px; color:var(--muted); background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; }
+  .filters button.on { color:#0b0d06; background:var(--accent); border-color:var(--accent); }
+  .list { display:grid; gap:12px; }
+  .lead { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:18px 20px; }
+  .top { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; }
+  .name { font-size:18px; font-weight:600; }
+  .pill { font-size:12px; border-radius:999px; padding:2px 10px; border:1px solid var(--line); color:var(--muted); }
+  .pill.alto { color:#0b0d06; background:var(--ok); border-color:var(--ok); }
+  .pill.medio { color:#0b0d06; background:var(--warn); border-color:var(--warn); }
+  .pill.bajo { color:var(--bad); border-color:var(--bad); }
+  .date { margin-left:auto; font-size:13px; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px 18px; margin:14px 0 6px; }
+  .grid div span { display:block; font:500 11px/1.4 ui-monospace,"SF Mono",monospace; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  .grid a { color:var(--accent); text-decoration:none; }
+  .resumen { margin:8px 0 0; }
+  details { margin-top:10px; }
+  summary { cursor:pointer; color:var(--muted); font-size:13px; }
+  .turn { margin:6px 0; font-size:14px; }
+  .turn b { color:var(--muted); font-weight:500; }
+  .turn.cliente b { color:var(--accent); }
+  .warn { color:var(--warn); font-size:13px; margin-top:8px; }
+  .empty { text-align:center; padding:60px 16px; color:var(--muted); border:1px dashed var(--line); border-radius:20px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Prospectos de videollamada</h1>
+      <div class="muted">Clientes que hablaron con el agente. Se actualiza solo.</div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+  <div class="filters" id="filters"></div>
+  <div class="list" id="list"></div>
+</main>
+<script>
+  const ESTADOS = { en_curso: 'En llamada', procesando: 'Procesando', listo: 'Listo', sin_conversacion: 'Sin conversación', error: 'Error' };
+  const FILTROS = [['todos', 'Todos'], ['alto', 'Interés alto'], ['medio', 'Interés medio'], ['bajo', 'Interés bajo'], ['pendientes', 'En proceso']];
+  let filtro = 'todos';
+  let data = [];
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fecha = (iso) => new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+  // Números de 10 dígitos se asumen de México (+52) para el enlace de WhatsApp.
+  const waNum = (t) => { const d = t.replace(/\D/g, ''); return d.length === 10 ? '52' + d : d; };
+  const tel = (t) => t ? `<a href="https://wa.me/${esc(waNum(t))}" target="_blank" rel="noopener">${esc(t)}</a>` : '—';
+  const mail = (m) => m ? `<a href="mailto:${esc(m)}">${esc(m)}</a>` : '—';
+
+  function card(l) {
+    const d = l.datos || {};
+    const interes = (d.interes || '').toLowerCase();
+    const campo = (label, html) => `<div><span>${label}</span>${html || '—'}</div>`;
+    return `<article class="lead">
+      <div class="top">
+        <div class="name">${esc(d.nombre || 'Sin nombre')}</div>
+        ${interes ? `<span class="pill ${esc(interes)}">Interés ${esc(interes)}</span>` : ''}
+        <span class="pill">${ESTADOS[l.status] || esc(l.status)}</span>
+        <span class="date">${fecha(l.createdAt)}</span>
+      </div>
+      ${l.status === 'listo' ? `
+      <div class="grid">
+        ${campo('Negocio', esc(d.negocio))}
+        ${campo('WhatsApp / teléfono', tel(d.telefono))}
+        ${campo('Correo', mail(d.correo))}
+        ${campo('Le interesa', esc(d.servicio_interes))}
+        ${campo('Necesidad', esc(d.necesidad))}
+        ${campo('Cita', esc(d.cita))}
+        ${campo('Siguientes pasos', esc(d.siguientes_pasos))}
+      </div>
+      ${d.resumen ? `<p class="resumen">${esc(d.resumen)}</p>` : ''}` : ''}
+      ${d.aviso || l.error ? `<div class="warn">${esc(d.aviso || l.error)}</div>` : ''}
+      ${l.transcript?.length ? `<details><summary>Ver conversación (${l.transcript.length} mensajes)</summary>
+        ${l.transcript.map((t) => `<div class="turn ${t.role}"><b>${t.role === 'cliente' ? 'Cliente' : esc(l.agentName || 'Agente')}:</b> ${esc(t.text)}</div>`).join('')}
+      </details>` : ''}
+    </article>`;
+  }
+
+  function render() {
+    const listos = data.filter((l) => l.status === 'listo');
+    const n = (i) => listos.filter((l) => (l.datos?.interes || '').toLowerCase() === i).length;
+    document.getElementById('stats').innerHTML =
+      `<div class="stat"><b>${data.length}</b>llamadas</div><div class="stat"><b>${n('alto')}</b>interés alto</div>` +
+      `<div class="stat"><b>${listos.filter((l) => l.datos?.telefono || l.datos?.correo).length}</b>con contacto</div>`;
+    document.getElementById('filters').innerHTML = FILTROS.map(([k, t]) =>
+      `<button class="${k === filtro ? 'on' : ''}" data-f="${k}">${t}</button>`).join('');
+    const visibles = data.filter((l) => filtro === 'todos' ? true
+      : filtro === 'pendientes' ? ['en_curso', 'procesando'].includes(l.status)
+      : (l.datos?.interes || '').toLowerCase() === filtro);
+    document.getElementById('list').innerHTML = visibles.length ? visibles.map(card).join('')
+      : '<div class="empty">Todavía no hay prospectos aquí. Cuando alguien hable con el agente aparecerá en esta lista.</div>';
+  }
+
+  document.getElementById('filters').onclick = (e) => {
+    const f = e.target.dataset?.f;
+    if (f) { filtro = f; render(); }
+  };
+
+  async function load() {
+    try {
+      const res = await fetch('/api/leads', { credentials: 'same-origin' });
+      if (res.ok) { data = await res.json(); render(); }
+    } catch {}
+  }
+  load();
+  setInterval(load, 15000);
+</script>
+</body>
+</html>

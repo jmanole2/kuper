@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { createLeads } from './leads.mjs';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const API = 'https://tavusapi.com/v2';
@@ -54,6 +55,17 @@ function toUsername(name) {
   return clean.length >= 2 ? clean : 'Agente';
 }
 
+// Personalidad + lo que sabe de Kuper (conocimiento.md) + cómo capturar al cliente.
+function fullPrompt(cfg) {
+  const kbFile = path.join(DIR, cfg.knowledgeFile || 'conocimiento.md');
+  const kb = fs.existsSync(kbFile) ? fs.readFileSync(kbFile, 'utf8').replace(/^>.*$/gm, '').trim() : '';
+  return [
+    cfg.systemPrompt,
+    kb && `INFORMACIÓN DE LA EMPRESA (úsala para responder; no inventes nada fuera de esto):\n${kb}`,
+    cfg.leadInstructions,
+  ].filter(Boolean).join('\n\n');
+}
+
 function palBody(cfg) {
   const tts = { tts_engine: cfg.voice?.engine || 'tavus-auto' };
   if (cfg.voice?.externalVoiceId) tts.external_voice_id = cfg.voice.externalVoiceId;
@@ -64,7 +76,7 @@ function palBody(cfg) {
   return {
     pal_name: cfg.agentName,
     pipeline_mode: 'full',
-    system_prompt: cfg.systemPrompt,
+    system_prompt: fullPrompt(cfg),
     default_face_id: cfg.faceId,
     layers: {
       llm: { model: cfg.llmModel || 'tavus-gemma-4' },
@@ -123,7 +135,22 @@ async function startConversation({ meetingUrl } = {}) {
     body.meeting_url = meetingUrl;
   }
   const conv = await tavus('POST', '/conversations', body);
+  leads.add({ conversationId: conv.conversation_id, agentName: cfg.agentName, maxCallSeconds: cfg.maxCallSeconds || 600 });
   return { conversationId: conv.conversation_id, conversationUrl: conv.conversation_url, agentName: cfg.agentName };
+}
+
+const leads = createLeads({ dir: DIR, tavus });
+
+// Panel de prospectos: con ADMIN_PASSWORD (usuario cualquiera, o "Authorization: Bearer <clave>");
+// sin ADMIN_PASSWORD solo se puede ver desde esta misma computadora.
+function isAdmin(req) {
+  const pass = process.env.ADMIN_PASSWORD;
+  if (!pass) return ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+  const auth = req.headers.authorization || '';
+  const given = auth.startsWith('Bearer ') ? auth.slice(7)
+    : auth.startsWith('Basic ') ? Buffer.from(auth.slice(6), 'base64').toString().split(':').slice(1).join(':') : '';
+  const a = Buffer.from(given), b = Buffer.from(pass);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 const send = (res, status, data) => {
@@ -143,6 +170,15 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(fs.readFileSync(path.join(DIR, 'public', 'index.html')));
     }
+    if (req.method === 'GET' && (req.url === '/admin' || req.url === '/api/leads')) {
+      if (!isAdmin(req)) {
+        res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Prospectos", charset="UTF-8"' });
+        return res.end('Acceso restringido');
+      }
+      if (req.url === '/api/leads') return send(res, 200, leads.load());
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(fs.readFileSync(path.join(DIR, 'public', 'admin.html')));
+    }
     if (req.method === 'GET' && req.url === '/api/info') {
       const cfg = readConfig();
       return send(res, 200, { agentName: cfg.agentName, hasKey: Boolean(KEY), enableMeetings: Boolean(cfg.enableMeetings) });
@@ -154,7 +190,8 @@ const server = http.createServer(async (req, res) => {
     }
     const end = req.url.match(/^\/api\/conversation\/([\w-]+)\/end$/);
     if (req.method === 'POST' && end) {
-      await tavus('POST', `/conversations/${end[1]}/end`);
+      await tavus('POST', `/conversations/${end[1]}/end`).catch((err) => console.error(err.message));
+      leads.processLead(end[1]);
       return send(res, 200, { ok: true });
     }
     send(res, 404, { error: 'No encontrado' });
@@ -166,5 +203,8 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Agente listo en http://localhost:${PORT}`);
+  console.log(`Prospectos en http://localhost:${PORT}/admin`);
   if (!KEY) console.warn('Aviso: falta TAVUS_API_KEY.');
+  if (!process.env.SUMMARY_API_KEY) console.warn('Aviso: falta SUMMARY_API_KEY: las llamadas se guardan pero sin resumen.');
+  if (KEY) { leads.sweep(); setInterval(leads.sweep, 60_000).unref(); }
 });
