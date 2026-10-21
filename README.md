@@ -37,3 +37,11 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Agente de videollamada con Tavus
+
+Agente con avatar realista que conversa en español por videollamada o entra a Zoom/Meet/Teams. Ver `tavus-agent/README.md`.
+
+```bash
+cd tavus-agent && cp .env.example .env && node server.mjs
+```
