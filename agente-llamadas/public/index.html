@@ -5,106 +5,147 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Habla con nuestra asistente</title>
 <meta name="description" content="Prueba en vivo de un agente de voz con inteligencia artificial que agenda citas.">
+<meta name="theme-color" content="#121110">
 <link rel="icon" href="/logo.png">
 <style>
-  :root {
-    --fondo: #f6f3ec;
-    --tarjeta: #ffffff;
-    --texto: #1b1d1c;
-    --suave: #5d6460;
-    --marca: #1e3b2f;
-    --marca-claro: #e3ece6;
-    --colgar: #c2412d;
-    --borde: #e4e0d6;
-  }
+  :root { --tinta:#1d1b18; --marfil:#f3f0ea; --suave:#6f6a62; --lima:#d7ff3f; --colgar:#e5484d; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body {
-    min-height: 100dvh;
-    background: var(--fondo);
-    color: var(--texto);
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
-  }
-  main {
-    width: 100%;
-    max-width: 440px;
-    background: var(--tarjeta);
-    border: 1px solid var(--borde);
-    border-radius: 24px;
-    padding: 32px 24px 24px;
-    text-align: center;
-    box-shadow: 0 12px 40px rgba(30, 59, 47, .08);
-  }
-  .logo { height: 26px; margin-bottom: 28px; }
-  h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 8px; letter-spacing: -.01em; }
-  .sub { color: var(--suave); margin: 0 0 28px; }
-  .orbe {
-    position: relative;
-    width: 148px; height: 148px;
-    margin: 0 auto 20px;
-    display: grid; place-items: center;
-  }
-  .orbe::before, .orbe::after {
-    content: ""; position: absolute; inset: 0; border-radius: 50%;
-    background: var(--marca-claro); transform: scale(.82); opacity: 0;
-    transition: opacity .3s;
-  }
-  .hablando .orbe::before { opacity: 1; animation: pulso 1.4s ease-out infinite; }
-  .hablando .orbe::after { opacity: 1; animation: pulso 1.4s ease-out .7s infinite; }
-  @keyframes pulso { from { transform: scale(.82); opacity: .9; } to { transform: scale(1.18); opacity: 0; } }
-  button.llamar {
-    position: relative; z-index: 1;
-    width: 116px; height: 116px; border-radius: 50%; border: 0;
-    background: var(--marca); color: #fff; cursor: pointer;
-    display: grid; place-items: center;
-    box-shadow: 0 10px 24px rgba(30, 59, 47, .28);
-    transition: transform .15s, background .2s;
-  }
-  button.llamar:hover { transform: scale(1.04); }
-  button.llamar:disabled { opacity: .6; cursor: wait; transform: none; }
-  button.llamar svg { width: 44px; height: 44px; }
-  .en-llamada button.llamar { background: var(--colgar); box-shadow: 0 10px 24px rgba(194, 65, 45, .28); }
-  .en-llamada button.llamar svg { transform: rotate(135deg); }
-  .estado { min-height: 1.5em; font-weight: 600; margin: 0 0 4px; }
-  .nota { color: var(--suave); font-size: .875rem; margin: 0; }
-  .error { color: var(--colgar); }
-  #charla {
-    text-align: left; margin-top: 24px; max-height: 260px; overflow-y: auto;
-    display: none; flex-direction: column; gap: 8px;
-    border-top: 1px solid var(--borde); padding-top: 16px;
-  }
-  #charla.visible { display: flex; }
-  .msg { padding: 8px 12px; border-radius: 14px; max-width: 85%; font-size: .95rem; }
-  .msg.agent { background: var(--marca-claro); align-self: flex-start; border-bottom-left-radius: 4px; }
-  .msg.user { background: #f0eee8; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .reservar { display: none; margin-top: 20px; color: var(--marca); font-weight: 600; }
+  body { min-height: 100dvh; color: #f4f0e8; font: 15px/1.5 "Inter Tight", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1000px 700px at 0% -10%, rgba(246,238,222,.09), transparent 60%), radial-gradient(900px 700px at 100% 110%, rgba(222,170,60,.12), transparent 60%), #121110;
+    display: grid; place-items: center; padding: 24px 16px; }
+  main { width: min(1080px, 100%); display: grid; grid-template-columns: .95fr 1.15fr; border-radius: 32px; overflow: hidden;
+    border: 1px solid rgba(255,240,220,.08); box-shadow: 0 40px 120px rgba(0,0,0,.55); min-height: 620px; }
+  .mono { font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; }
+  /* lado claro */
+  .claro { background: linear-gradient(160deg, #f3f0ea, #e7e3db); color: var(--tinta); padding: 32px 30px; display: flex; flex-direction: column; gap: 16px; }
+  .marca { display: flex; align-items: center; gap: 12px; color: #57534c; }
+  .logo { height: 22px; }
+  h1 { font-weight: 300; font-size: 48px; line-height: 1.02; letter-spacing: -.035em; margin: 8px 0 0; }
+  .sub { color: var(--suave); margin: 0; font-size: 15px; max-width: 440px; }
+  .datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
+  .datos div { background: #fbfaf7; border-radius: 18px; padding: 12px 14px; box-shadow: 0 10px 26px rgba(60,50,30,.07); }
+  .datos b { display: block; font-size: 22px; font-weight: 300; letter-spacing: -.02em; }
+  .datos small { color: var(--suave); font-size: 12px; }
+  .pasos { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .pasos li { display: flex; gap: 10px; align-items: baseline; color: #3b3833; font-size: 14px; }
+  .pasos li span { font-family: var(--mono); font-size: 11px; color: #8a857c; }
+  .reservar { display: none; align-self: flex-start; margin-top: 4px; color: var(--tinta); font-weight: 600; text-decoration: none; background: #fbfaf7; border-radius: 99px; padding: 9px 16px; box-shadow: 0 6px 18px rgba(60,50,30,.08); }
   .reservar.visible { display: inline-block; }
-  footer { margin-top: 24px; color: var(--suave); font-size: .75rem; }
+  footer { margin-top: auto; color: #8a857c; font-size: 12px; }
+  /* lado oscuro */
+  .oscuro { position: relative; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; overflow: hidden;
+    background: radial-gradient(70% 55% at 50% 42%, #57514a 0%, #2d2a26 48%, #191715 100%); }
+  .vivo { align-self: flex-end; display: flex; align-items: center; gap: 8px; color: #cfc9bf; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 99px; padding: 6px 12px; }
+  .vivo i { width: 7px; height: 7px; border-radius: 50%; background: #8a857c; }
+  .en-llamada .vivo i { background: var(--lima); box-shadow: 0 0 10px var(--lima); animation: parpadeo 1.6s infinite; }
+  @keyframes parpadeo { 50% { opacity: .25; } }
+  .escenario { position: relative; width: min(100%, 380px); aspect-ratio: 1; display: grid; place-items: center; margin-top: 4px; }
+  .esfera { position: absolute; inset: 9%; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 45%, #141210, #060505 70%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 0 0 16px rgba(255,255,255,.03), 0 0 0 17px rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.6), inset 0 0 40px rgba(0,0,0,.9); }
+  .esfera canvas { width: 100%; height: 100%; display: block; }
+  .halo { position: absolute; inset: 3%; border-radius: 50%; border: 1px dashed rgba(255,255,255,.12); animation: girar 60s linear infinite; }
+  .pulso, .pulso2 { position: absolute; inset: 9%; border-radius: 50%; border: 1px solid rgba(215,255,63,.4); opacity: 0; pointer-events: none; }
+  .en-llamada .pulso { animation: onda 3s ease-out infinite; }
+  .hablando .pulso, .hablando .pulso2 { animation: onda 1.4s ease-out infinite; } .hablando .pulso2 { animation-delay: .7s; }
+  @keyframes onda { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.25); opacity: 0; } }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  button.llamar { position: relative; z-index: 2; width: 104px; height: 104px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+    background: var(--lima); color: #1d1b18; box-shadow: 0 0 0 8px rgba(215,255,63,.12), 0 14px 40px rgba(215,255,63,.25); transition: transform .15s, background .2s, box-shadow .2s; }
+  button.llamar:hover { transform: scale(1.05); }
+  button.llamar:disabled { opacity: .6; cursor: wait; transform: none; }
+  button.llamar svg { width: 40px; height: 40px; transition: transform .2s; }
+  .en-llamada button.llamar { background: var(--colgar); color: #fff; box-shadow: 0 0 0 8px rgba(229,72,77,.15), 0 14px 40px rgba(229,72,77,.3); }
+  .en-llamada button.llamar svg { transform: rotate(135deg); }
+  .estado { min-height: 1.5em; font-weight: 500; font-size: 18px; margin: 0; text-align: center; }
+  .nota { color: #a9a399; font-size: 13px; margin: -10px 0 0; text-align: center; min-height: 1.2em; }
+  .error { color: #ff9b9e; }
+  #charla { width: 100%; max-height: 220px; overflow-y: auto; display: none; flex-direction: column; gap: 8px; padding: 14px;
+    background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.12); border-radius: 22px; backdrop-filter: blur(16px); }
+  #charla.visible { display: flex; }
+  .msg { padding: 8px 12px; border-radius: 14px; max-width: 85%; font-size: 14px; line-height: 1.45; }
+  .msg.agent { background: rgba(215,255,63,.12); color: #ecffc4; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: rgba(255,255,255,.1); align-self: flex-end; border-bottom-right-radius: 4px; }
+  @media (max-width: 860px) {
+    body { padding: 0; place-items: stretch; }
+    main { grid-template-columns: 1fr; border-radius: 0; min-height: 100dvh; border: 0; }
+    .oscuro { order: -1; padding: 18px 16px 22px; }
+    .claro { padding: 24px 16px 28px; }
+    h1 { font-size: 36px; }
+    .escenario { width: min(100%, 300px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .halo, .pulso, .pulso2, .vivo i { animation: none !important; } }
 </style>
 </head>
 <body>
 <main id="app">
-  <img class="logo" src="/logo.png" alt="">
-  <h1 id="titulo">Habla con nuestra asistente</h1>
-  <p class="sub" id="sub">Es un agente de voz con inteligencia artificial. Pídele una cita como si llamaras por teléfono.</p>
-
-  <div class="orbe">
-    <button class="llamar" id="boton" aria-label="Iniciar llamada">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
-    </button>
-  </div>
-  <p class="estado" id="estado">Toca para llamar</p>
-  <p class="nota" id="nota">Te pediremos permiso para usar el micrófono.</p>
-
-  <div id="charla" aria-live="polite"></div>
-  <a class="reservar" id="reservar" target="_blank" rel="noopener">O agenda tú mismo aquí →</a>
-  <footer>La conversación puede grabarse para mejorar el servicio.</footer>
+  <section class="claro">
+    <div class="marca"><img class="logo" src="/logo.png" alt=""><span class="mono">Agente de voz · prueba en vivo</span></div>
+    <h1 id="titulo">Habla con nuestra asistente</h1>
+    <p class="sub" id="sub">Es un agente de voz con inteligencia artificial. Pídele una cita como si llamaras por teléfono.</p>
+    <div class="datos">
+      <div><b>24/7</b><small>Contesta siempre</small></div>
+      <div><b>~1 s</b><small>Tiempo de respuesta</small></div>
+      <div><b>Citas</b><small>Agenda en tu calendario</small></div>
+    </div>
+    <ol class="pasos">
+      <li><span>01</span>Toca el botón y da permiso al micrófono.</li>
+      <li><span>02</span>Habla con naturalidad: pregunta, pide horarios, cambia de tema.</li>
+      <li><span>03</span>Al terminar, toca el botón rojo para colgar.</li>
+    </ol>
+    <a class="reservar" id="reservar" target="_blank" rel="noopener">O agenda tú mismo aquí →</a>
+    <footer>La conversación puede grabarse para mejorar el servicio. Es un asistente de inteligencia artificial.</footer>
+  </section>
+  <section class="oscuro">
+    <span class="vivo mono"><i></i><span id="vivoTxt">Lista para llamar</span></span>
+    <div class="escenario">
+      <div class="halo"></div>
+      <div class="esfera"><canvas id="orb" aria-hidden="true"></canvas></div>
+      <div class="pulso"></div><div class="pulso2"></div>
+      <button class="llamar" id="boton" aria-label="Iniciar llamada">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+      </button>
+    </div>
+    <p class="estado" id="estado">Toca para llamar</p>
+    <p class="nota" id="nota">Te pediremos permiso para usar el micrófono.</p>
+    <div id="charla" aria-live="polite"></div>
+  </section>
 </main>
 
+<script>
+  // Esfera de partículas: respira sola y se agita cuando la asistente habla (window.__korbActivo: 0 quieta, 1 en llamada, 2 hablando).
+  (() => {
+    const cv = document.getElementById('orb'), ctx = cv.getContext('2d');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, dpr = Math.min(2, window.devicePixelRatio || 1);
+    const pts = [];
+    for (let i = 0; i < 3200; i++) { const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u), j = 1 + (Math.random() - .5) * .09; pts.push([Math.cos(th) * r * j, u * j, Math.sin(th) * r * j, Math.random() < .03, 1]); }
+    for (let i = 0; i < 1400; i++) { const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, rr = Math.cbrt(Math.random()) * .92, r = Math.sqrt(1 - u * u) * rr; pts.push([Math.cos(th) * r, u * rr, Math.sin(th) * r, false, .45]); }
+    const fit = () => { const b = cv.getBoundingClientRect(); cv.width = Math.max(1, b.width * dpr); cv.height = Math.max(1, b.height * dpr); };
+    fit(); addEventListener('resize', fit);
+    let amp = .06, vel = 1;
+    const draw = (t) => {
+      const nivel = window.__korbActivo || 0, objetivo = [.06, .1, .2][nivel], vObj = [1, 1.4, 2.6][nivel];
+      amp += (objetivo - amp) * .06; vel += (vObj - vel) * .05;
+      const W = cv.width, H = cv.height, R = Math.min(W, H) * .33, cx = W / 2, cy = H / 2, tt = t * vel;
+      ctx.clearRect(0, 0, W, H);
+      const ry = t * .00016, rx = .35 + Math.sin(t * .00009) * .25, cyr = Math.cos(ry), syr = Math.sin(ry), cxr = Math.cos(rx), sxr = Math.sin(rx);
+      for (const [x, y, z, hot, w] of pts) {
+        const n = Math.sin(x * 3.1 + tt * .0011) * Math.cos(y * 2.7 - tt * .0009) + Math.sin(z * 4.2 + tt * .0007) * .6 + Math.sin((x + y) * 7 + tt * .002) * .15;
+        const k = 1 + amp * n, X = x * k, Y = y * k, Z = z * k;
+        const X1 = X * cyr - Z * syr, Z1 = X * syr + Z * cyr, Y2 = Y * cxr - Z1 * sxr, Z2 = Y * sxr + Z1 * cxr;
+        const p = 2.6 / (2.6 + Z2), a = Math.max(.04, Math.min(.95, (.5 - Z2 * .55) * w));
+        ctx.fillStyle = hot || (nivel === 2 && w === 1 && Math.random() < .04) ? `rgba(215,255,63,${a})` : `rgba(246,240,230,${a})`;
+        const s = (hot ? 1.6 : 1.05) * dpr * p;
+        ctx.fillRect(cx + X1 * R * p, cy + Y2 * R * p, s, s);
+      }
+      if (!reduce) requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+    // Texto del indicador "en vivo".
+    const vivo = document.getElementById('vivoTxt'), app = document.getElementById('app');
+    new MutationObserver(() => { vivo.textContent = app.classList.contains('hablando') ? `${window.__asistente || 'La asistente'} está hablando` : app.classList.contains('en-llamada') ? 'En llamada' : 'Lista para llamar'; }).observe(app, { attributes: true, attributeFilter: ['class'] });
+  })();
+</script>
 <script type="module">
   import { RetellWebClient } from '/vendor/retell-sdk.js';
 
@@ -117,6 +158,7 @@
   fetch('/api/config').then((r) => r.json()).then((c) => {
     document.title = `Habla con ${c.asistente} · ${c.negocio}`;
     $('titulo').textContent = `Habla con ${c.asistente}`;
+    window.__asistente = c.asistente;
     $('sub').textContent = `${c.asistente} es la asistente virtual de ${c.negocio}. Pídele ${c.tipo_de_cita} como si llamaras por teléfono.`;
     if (c.link_reservas) $('reservar').href = c.link_reservas;
   }).catch(() => {});
@@ -140,6 +182,7 @@
   function terminar() {
     enLlamada = false;
     app.classList.remove('en-llamada', 'hablando');
+    window.__korbActivo = 0;
     boton.disabled = false;
     boton.setAttribute('aria-label', 'Iniciar llamada');
     mostrar('Llamada terminada. Toca para llamar de nuevo.');
@@ -150,13 +193,14 @@
   cliente.on('call_started', () => {
     enLlamada = true;
     app.classList.add('en-llamada');
+    window.__korbActivo = 1;
     boton.disabled = false;
     boton.setAttribute('aria-label', 'Colgar');
     mostrar('En llamada');
     nota.textContent = 'Habla con naturalidad. Toca el botón rojo para colgar.';
   });
-  cliente.on('agent_start_talking', () => app.classList.add('hablando'));
-  cliente.on('agent_stop_talking', () => app.classList.remove('hablando'));
+  cliente.on('agent_start_talking', () => { app.classList.add('hablando'); window.__korbActivo = 2; });
+  cliente.on('agent_stop_talking', () => { app.classList.remove('hablando'); window.__korbActivo = enLlamada ? 1 : 0; });
   cliente.on('update', (u) => u.transcript && pintarCharla(u.transcript));
   cliente.on('call_ended', terminar);
   cliente.on('error', (e) => {
