@@ -67,11 +67,14 @@ function palBody(cfg) {
     layers: {
       llm: { model: cfg.llmModel || 'tavus-gemma-4' },
       tts,
-      // Nombre con el que entra a Zoom / Meet / Teams.
-      conferencing: { username: toUsername(cfg.agentName) },
     },
   };
 }
+
+// El nombre para Zoom / Meet / Teams es único en todo Tavus, así que le añadimos un sufijo
+// aleatorio ("Sofia-Kuper-3f9a") y lo guardamos para reutilizarlo.
+const randomUsername = (cfg) =>
+  `${toUsername(cfg.meetingUsername || cfg.agentName)}-${crypto.randomBytes(3).toString('hex')}`;
 
 // Crea el PAL (personalidad) la primera vez y lo vuelve a crear si cambias config.json.
 async function ensurePal(cfg) {
@@ -79,12 +82,24 @@ async function ensurePal(cfg) {
   const hash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
   const state = readState();
   if (state.palId && state.hash === hash) return state.palId;
-  const pal = await tavus('POST', '/pals', body);
-  const palId = pal.pal_id || pal.persona_id;
-  if (!palId) throw new Error('Tavus no devolvió pal_id: ' + JSON.stringify(pal));
-  writeState({ palId, hash, createdAt: new Date().toISOString() });
-  console.log(`PAL creado: ${palId}`);
-  return palId;
+
+  let username = state.username || randomUsername(cfg);
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const pal = await tavus('POST', '/pals', {
+        ...body,
+        layers: { ...body.layers, conferencing: { username } },
+      });
+      const palId = pal.pal_id || pal.persona_id;
+      if (!palId) throw new Error('Tavus no devolvió pal_id: ' + JSON.stringify(pal));
+      writeState({ palId, hash, username, createdAt: new Date().toISOString() });
+      console.log(`PAL creado: ${palId} (usuario para reuniones: ${username})`);
+      return palId;
+    } catch (err) {
+      if (attempt >= 5 || !/username/i.test(err.message)) throw err;
+      username = randomUsername(cfg);
+    }
+  }
 }
 
 async function startConversation({ meetingUrl } = {}) {

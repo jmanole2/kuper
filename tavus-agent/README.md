@@ -20,7 +20,8 @@ La clave se queda en el servidor; el navegador nunca la ve. No la subas a git (`
 
 | Campo | Qué hace |
 |---|---|
-| `agentName` | Nombre del agente (también el que muestra en Zoom/Meet). |
+| `agentName` | Nombre del agente. |
+| `meetingUsername` | Nombre con el que entra a Zoom/Meet/Teams (sin acentos; se le añade un sufijo para que sea único). |
 | `systemPrompt` | Personalidad e instrucciones. Aquí defines a qué se dedica. |
 | `greeting` | Primera frase que dice, palabra por palabra. |
 | `faceId` | Avatar. Los de stock están en el panel de Tavus (Face Library). Ejemplos: `rb32069a3012` Luna, `rc9cff32ceba` Anna, `r3f4182ef554` Lucas. Si entrenas uno con tu cara, pon aquí su ID. |
