@@ -18,11 +18,20 @@ export function configFunciones(env = process.env) {
 }
 
 /** Definiciones para Retell (general_tools del LLM). Sofía consulta horarios con la función de Cal.com que ya tiene. */
-export function definiciones({ url, token }, tz) {
+export function definiciones({ url, token }, tz, nombres = ['buscar_cita', 'cambiar_cita', 'cancelar_cita']) {
   const comun = { type: 'custom', method: 'POST', headers: { Authorization: `Bearer ${token}` }, timeout_ms: 20000, speak_during_execution: true, speak_after_execution: true, execution_message_type: 'static_text' };
   const correo = { type: 'string', description: 'Correo electrónico con el que la persona agendó la cita, confirmado letra por letra.' };
   const citaId = { type: 'string', description: 'ID de la cita que devolvió buscar_cita, si la persona tiene más de una.' };
   return [
+    { ...comun, name: 'ver_horarios', url: `${url}/funciones/ver_horarios`, execution_message_description: 'Déjeme revisar la agenda.',
+      description: 'Consulta los horarios libres para la videollamada de diagnóstico. Úsala antes de ofrecer horarios; nunca inventes horarios.',
+      parameters: { type: 'object', properties: { desde: { type: 'string', description: 'Fecha desde la que buscar (AAAA-MM-DD). Vacío = a partir de hoy.' } } } },
+    { ...comun, name: 'agendar_cita', url: `${url}/funciones/agendar_cita`, execution_message_description: 'Perfecto, la estoy agendando.',
+      description: 'Agenda la videollamada de diagnóstico en uno de los horarios que devolvió ver_horarios, cuando la persona ya eligió y dio nombre y correo.',
+      parameters: { type: 'object', required: ['fecha_hora', 'nombre', 'correo'], properties: {
+        fecha_hora: { type: 'string', description: `Inicio exacto tal como lo devolvió ver_horarios (ISO 8601 con zona horaria, ${tz}).` },
+        nombre: { type: 'string', description: 'Nombre completo de la persona.' }, correo,
+        empresa: { type: 'string', description: 'Nombre de la empresa, si aplica.' }, telefono: { type: 'string', description: 'Teléfono de la persona, si lo dio.' } } } },
     { ...comun, name: 'buscar_cita', url: `${url}/funciones/buscar_cita`, execution_message_description: 'Permítame revisar su cita.',
       description: 'Busca las citas próximas de la persona por su correo. Úsala antes de cambiar o cancelar una cita.',
       parameters: { type: 'object', properties: { correo }, required: ['correo'] } },
@@ -33,10 +42,16 @@ export function definiciones({ url, token }, tz) {
     { ...comun, name: 'cancelar_cita', url: `${url}/funciones/cancelar_cita`, execution_message_description: 'Un momento, la estoy cancelando.',
       description: 'Cancela la cita de la persona. Úsala solo si la persona confirmó que quiere cancelar (si solo quiere moverla, usa cambiar_cita).',
       parameters: { type: 'object', required: ['correo'], properties: { correo, cita_id: citaId, motivo: { type: 'string', description: 'Motivo de la cancelación, si lo dijo.' } } } },
-  ];
+  ].filter((d) => nombres.includes(d.name));
 }
 
-export function crearFunciones({ cal, token, tz }) {
+/** Usuario y tipo de evento de Cal.com a partir del link de reservas (https://cal.com/usuario/evento). */
+export function eventoDeLink(link) {
+  const m = /cal\.com\/([^/?#]+)\/([^/?#]+)/.exec(String(link || ''));
+  return m ? { username: m[1], eventTypeSlug: m[2] } : null;
+}
+
+export function crearFunciones({ cal, token, tz, evento = null }) {
   const cuando = (iso) => new Intl.DateTimeFormat('es-MX', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
   const calApi = async (metodo, ruta, version, cuerpo) => {
     const r = await hooks.fetch(CAL + ruta, { method: metodo, headers: { Authorization: `Bearer ${cal}`, 'cal-api-version': version, 'Content-Type': 'application/json' }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
@@ -53,7 +68,43 @@ export function crearFunciones({ cal, token, tz }) {
   };
   const elegir = (citas, id) => (id ? citas.find((c) => c.uid === id) : citas.length === 1 ? citas[0] : null);
 
+  const fechaLocal = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
   const funciones = {
+    async ver_horarios({ desde } = {}) {
+      if (!evento) return { resultado: 'No tengo acceso a la agenda. Toma nombre, correo y horario preferido, y dile que un asesor le confirmará por correo.' };
+      const hoy = new Date(hooks.ahora());
+      const ini = /^\d{4}-\d{2}-\d{2}$/.test(String(desde || '')) && String(desde) > fechaLocal(hoy) ? String(desde) : fechaLocal(hoy);
+      const fin = fechaLocal(new Date(Date.parse(`${ini}T12:00:00Z`) + 7 * 86400_000));
+      const q = new URLSearchParams({ ...evento, start: ini, end: fin, timeZone: tz });
+      const d = await calApi('GET', `/slots?${q}`, '2024-09-04');
+      const lista = Object.values(d.data || {}).flat().map((x) => (typeof x === 'string' ? x : x.start)).filter((x) => x && new Date(x) > hooks.ahora() + 3600_000);
+      if (!lista.length) return { resultado: 'No hay horarios libres en los próximos 7 días. Ofrece buscar más adelante o tomar sus datos para que un asesor le escriba.' };
+      // Pocos por día para que la voz no lea una lista enorme.
+      const porDia = {};
+      for (const x of lista) { const k = fechaLocal(new Date(x)); (porDia[k] ||= []).length < 4 && porDia[k].push(x); }
+      const elegidos = Object.values(porDia).slice(0, 4).flat();
+      return { resultado: `Horarios libres (usa el valor exacto entre paréntesis al agendar): ${elegidos.map((x) => `${cuando(x)} (${x})`).join('; ')}.`, horarios: elegidos };
+    },
+    async agendar_cita({ fecha_hora, nombre, correo, empresa, telefono }) {
+      if (!evento) return { resultado: 'No tengo acceso a la agenda. Toma sus datos y dile que un asesor le confirmará por correo.' };
+      const email = String(correo || '').trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { resultado: 'Ese correo no parece válido. Pídelo de nuevo y confírmalo letra por letra.' };
+      if (!String(nombre || '').trim()) return { resultado: 'Falta el nombre de la persona.' };
+      const inicio = new Date(fecha_hora);
+      if (Number.isNaN(inicio.getTime()) || inicio <= hooks.ahora()) return { resultado: 'Ese horario no es válido. Vuelve a consultar ver_horarios.' };
+      try {
+        const tel = String(telefono || '').replace(/[^\d+]/g, '');
+        await calApi('POST', '/bookings', VERSION_CAMBIO, {
+          start: inicio.toISOString(), ...evento,
+          attendee: { name: String(nombre).trim().slice(0, 80), email, timeZone: tz, language: 'es', ...(tel.startsWith('+') && tel.length > 8 ? { phoneNumber: tel } : {}) },
+          metadata: { origen: 'agente-de-voz', ...(empresa ? { empresa: String(empresa).slice(0, 120) } : {}) },
+        });
+        return { resultado: `Listo: quedó agendada para el ${cuando(inicio)}. Le llegará la invitación a ${email}.` };
+      } catch (e) {
+        console.error(`[funciones] agendar_cita ${e.message}`);
+        return { resultado: 'No se pudo agendar ese horario (puede que se acabe de ocupar). Consulta ver_horarios otra vez y ofrece otro.' };
+      }
+    },
     async buscar_cita({ correo }) {
       const citas = await proximas(correo);
       if (!citas) return { resultado: 'Ese correo no parece válido. Pídelo de nuevo y confírmalo letra por letra.' };

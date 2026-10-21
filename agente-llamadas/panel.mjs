@@ -30,17 +30,31 @@ export function aPanel(call) {
     inicio: new Date(call.start_timestamp || Date.now()).toISOString(),
     duracion_s: Math.round((call.duration_ms ?? ((call.end_timestamp || 0) - (call.start_timestamp || 0))) / 1000) || 0,
     telefono: limpio(telLinea) || limpio(datos.telefono_cliente),
-    nombre: limpio(datos.nombre_cliente),
-    email: limpio(datos.correo_cliente),
+    nombre: limpio(datos.nombre_cliente) || limpio(datos.nombre_contacto),
+    email: limpio(datos.correo_cliente) || limpio(datos.correo_contacto),
     resumen: limpio(call.call_analysis?.call_summary),
-    cita: datos.cita_agendada === true || datos.cita_agendada === 'true',
+    cita: datos.cita_agendada === true || datos.cita_agendada === 'true' || datos.resultado === 'cita',
     transcripcion: (call.transcript_object || [])
       .filter((t) => t.role === 'agent' || t.role === 'user')
       .map((t) => ({ rol: t.role === 'agent' ? 'agente' : 'lead', texto: t.content })),
   };
 }
 
-export function crearSincronizador({ key, agenteId, panel, archivo, log = console }) {
+const SIN_CONTESTAR = /voicemail|no_answer|busy|dial_failed|invalid_destination|not_connected|machine/i;
+const RESULTADOS = ['no_contesto', 'no_interesa', 'interesado', 'cita', 'no_llamar'];
+/** Resultado de una llamada del agente de ventas para la lista de prospectos del panel. */
+export function resultadoVentas(call) {
+  const base = aPanel(call);
+  const datos = call.call_analysis?.custom_analysis_data || {};
+  const nadie = call.call_status !== 'ended' || SIN_CONTESTAR.test(String(call.disconnection_reason || '')) || !base.transcripcion.some((t) => t.rol === 'lead');
+  return {
+    ...base,
+    resultado: nadie ? 'no_contesto' : RESULTADOS.includes(datos.resultado) ? datos.resultado : 'no_contesto',
+    contacto: base.nombre, email: base.email,
+  };
+}
+
+export function crearSincronizador({ key, agenteId, ventasId = null, panel, archivo, log = console }) {
   let enviadas = new Set();
   try { enviadas = new Set(JSON.parse(readFileSync(archivo, 'utf8'))); } catch { /* primera vez */ }
   const guardar = () => {
@@ -60,17 +74,26 @@ export function crearSincronizador({ key, agenteId, panel, archivo, log = consol
     let enviadasAhora = 0;
     try {
       const id = await agenteId();
+      const idVentas = ventasId ? await ventasId().catch(() => null) : null;
       const lista = await retell('POST', '/v3/list-calls', {
-        filter_criteria: { agent: [{ agent_id: id }], call_status: { type: 'enum', op: 'in', value: ['ended'] }, start_timestamp: { type: 'number', op: 'ge', value: ahora - VENTANA_MS } },
+        filter_criteria: { agent: [id, idVentas].filter(Boolean).map((agent_id) => ({ agent_id })), call_status: { type: 'enum', op: 'in', value: ['ended', 'not_connected', 'error'] },
+          start_timestamp: { type: 'number', op: 'ge', value: ahora - VENTANA_MS } },
         sort_order: 'descending', limit: 100,
       });
       for (const resumen of (lista.items || []).reverse()) {
         if (enviadas.has(resumen.call_id)) continue;
-        if (!resumen.call_analysis && ahora - (resumen.end_timestamp || ahora) < ESPERA_ANALISIS_MS) continue; // aún sin resumen
+        const prospecto = resumen.metadata?.prospecto_id;
+        const terminada = resumen.call_status === 'ended';
+        if (!prospecto && !terminada) { enviadas.add(resumen.call_id); guardar(); continue; } // prueba web que no conectó
+        if (terminada && !resumen.call_analysis && ahora - (resumen.end_timestamp || ahora) < ESPERA_ANALISIS_MS) continue; // aún sin resumen
         const call = await retell('GET', `/v2/get-call/${encodeURIComponent(resumen.call_id)}`);
-        const r = await hooks.fetch(`${panel.url}/api/${encodeURIComponent(panel.slug)}/llamadas`, {
-          method: 'POST', headers: { Authorization: `Bearer ${panel.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(aPanel(call)),
+        const [ruta, cuerpo] = prospecto
+          ? [`prospectos/${encodeURIComponent(prospecto)}/resultado`, resultadoVentas({ ...resumen, ...call })]
+          : ['llamadas', aPanel(call)];
+        const r = await hooks.fetch(`${panel.url}/api/${encodeURIComponent(panel.slug)}/${ruta}`, {
+          method: 'POST', headers: { Authorization: `Bearer ${panel.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
         });
+        if (r.status === 404 && prospecto) { log.error(`[panel] prospecto ${prospecto} ya no existe`); enviadas.add(resumen.call_id); guardar(); continue; }
         if (!r.ok) throw new Error(`panel ${r.status}: ${(await r.text()).slice(0, 200)}`);
         enviadas.add(resumen.call_id); enviadasAhora += 1; guardar();
       }
@@ -84,10 +107,10 @@ export function crearSincronizador({ key, agenteId, panel, archivo, log = consol
 }
 
 /** Arranca la sincronización cada minuto. Devuelve null si el panel no está configurado. */
-export function iniciar({ key, agenteId, dirDatos }) {
+export function iniciar({ key, agenteId, ventasId = null, dirDatos }) {
   const panel = configPanel();
   if (!panel || !key) return null;
-  const s = crearSincronizador({ key, agenteId, panel, archivo: join(dirDatos, 'enviadas.json') });
+  const s = crearSincronizador({ key, agenteId, ventasId, panel, archivo: join(dirDatos, 'enviadas.json') });
   setTimeout(() => s.sincronizar(), 5000);
   setInterval(() => s.sincronizar(), 60 * 1000).unref();
   console.log(`Llamadas -> panel ${panel.url} (${panel.slug})`);

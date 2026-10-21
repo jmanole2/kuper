@@ -10,7 +10,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as panel from './panel.mjs';
-import { configFunciones, crearFunciones } from './funciones.mjs';
+import { configFunciones, crearFunciones, eventoDeLink } from './funciones.mjs';
+import * as marcador from './marcador.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -21,6 +22,8 @@ const KEY = process.env.RETELL_API_KEY;
 const CLAVE = process.env.DEMO_CLAVE || '';
 const POR_IP = Number(process.env.LLAMADAS_POR_IP_DIA || 5);
 const POR_DIA = Number(process.env.LLAMADAS_DIA_TOTAL || 60);
+// Con ?ventas=CLAVE la página prueba al agente de ventas (como si llamara a una empresa). Sin VENTAS_CLAVE no se puede.
+const VENTAS_CLAVE = process.env.VENTAS_CLAVE || '';
 
 const archivos = {
   '/': ['public/index.html', 'text/html; charset=utf-8'],
@@ -28,15 +31,19 @@ const archivos = {
   '/logo.png': [cfg.logo || '../assets/kuper-logo.png', 'image/png'],
 };
 
-let agenteId = process.env.RETELL_AGENT_ID || '';
-async function buscarAgente() {
-  if (agenteId) return agenteId;
+const idsAgentes = new Map(process.env.RETELL_AGENT_ID ? [[cfg.nombre_agente, process.env.RETELL_AGENT_ID]] : []);
+async function agentePorNombre(nombre) {
+  if (idsAgentes.has(nombre)) return idsAgentes.get(nombre);
   const r = await fetch('https://api.retellai.com/list-agents', { headers: { Authorization: `Bearer ${KEY}` } });
   if (!r.ok) throw new Error(`list-agents ${r.status}: ${await r.text()}`);
-  const a = (await r.json()).find((x) => x.agent_name === cfg.nombre_agente);
-  if (!a) throw new Error(`No existe el agente "${cfg.nombre_agente}". Córrelo primero: node agente-llamadas/retell.mjs crear`);
-  return (agenteId = a.agent_id);
+  const a = (await r.json()).find((x) => x.agent_name === nombre);
+  if (!a) throw new Error(`No existe el agente "${nombre}". Córrelo primero: node agente-llamadas/retell.mjs crear`);
+  idsAgentes.set(nombre, a.agent_id);
+  return a.agent_id;
 }
+const buscarAgente = () => agentePorNombre(cfg.nombre_agente);
+const buscarVentas = cfg.ventas ? () => agentePorNombre(cfg.ventas.nombre_agente) : null;
+const esPruebaVentas = (url) => Boolean(buscarVentas && VENTAS_CLAVE && url.searchParams.get('ventas') === VENTAS_CLAVE);
 
 // Límite de llamadas para que nadie gaste los créditos: por IP y total, se reinicia cada día.
 let dia = '';
@@ -67,7 +74,9 @@ function json(res, codigo, datos) {
 
 async function crearLlamada(req, res) {
   const url = new URL(req.url, 'http://x');
-  if (CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
+  const ventas = esPruebaVentas(url);
+  if (url.searchParams.has('ventas') && !ventas) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
+  if (!ventas && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
   if (!KEY) return json(res, 500, { error: 'El servidor no tiene configurada la clave de Retell.' });
   const ip = ipDe(req);
   const limite = permitir(ip);
@@ -76,7 +85,11 @@ async function crearLlamada(req, res) {
     const r = await fetch('https://api.retellai.com/v3/create-web-call', {
       method: 'POST',
       headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agent_id: await buscarAgente(), metadata: { origen: 'demo-web' } }),
+      body: JSON.stringify(ventas ? {
+        agent_id: await buscarVentas(), metadata: { origen: 'prueba-ventas' },
+        // Empresa de mentira para probar: ?ventas=CLAVE&empresa=Clínica Sonrisa&giro=dentista&ciudad=Puebla
+        retell_llm_dynamic_variables: Object.fromEntries(['empresa', 'giro', 'ciudad'].map((k) => [k, String(url.searchParams.get(k) || { empresa: 'Clínica Dental Sonrisa', giro: 'dentista', ciudad: 'Ciudad de México' }[k]).slice(0, 80)])),
+      } : { agent_id: await buscarAgente(), metadata: { origen: 'demo-web' } }),
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(`create-web-call ${r.status}: ${JSON.stringify(d)}`);
@@ -99,7 +112,7 @@ async function crearLlamada(req, res) {
 
 // Funciones que Sofía usa en la llamada para buscar, cambiar o cancelar citas (CAL_API_KEY + PUBLIC_URL en el .env).
 const cfgFunciones = configFunciones();
-const funciones = cfgFunciones ? crearFunciones({ ...cfgFunciones, tz: cfg.zona_horaria }) : null;
+const funciones = cfgFunciones ? crearFunciones({ ...cfgFunciones, tz: cfg.zona_horaria, evento: eventoDeLink(cfg.link_reservas) }) : null;
 function leerCuerpo(req, max = 1_000_000) {
   return new Promise((ok, mal) => {
     let n = 0; const partes = [];
@@ -119,8 +132,12 @@ async function atenderFuncion(req, res, nombre) {
 
 const server = createServer(async (req, res) => {
   const ruta = new URL(req.url, 'http://x').pathname;
-  if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro), citas: Boolean(funciones) });
+  if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro), citas: Boolean(funciones), ventas: marcando ? 'marcando' : buscarVentas ? 'solo_pruebas' : false });
   if (ruta === '/api/config') {
+    if (esPruebaVentas(new URL(req.url, 'http://x'))) {
+      return json(res, 200, { negocio: cfg.negocio, asistente: cfg.ventas.asistente, tipo_de_cita: cfg.tipo_de_cita, link_reservas: cfg.link_reservas || '', ventas: true,
+        sub: `Prueba del agente de ventas: ${cfg.ventas.asistente} te llama como si fueras la empresa. Contesta como lo haría el negocio.` });
+    }
     return json(res, 200, {
       negocio: cfg.negocio,
       asistente: cfg.asistente,
@@ -145,6 +162,8 @@ const server = createServer(async (req, res) => {
 });
 
 // Cada llamada terminada se manda al panel de Kuper como lead (si el .env tiene PANEL_URL, PANEL_SLUG y PANEL_API_KEY).
-const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
+const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
+// Agente de ventas: marca a la siguiente empresa de la lista del panel (necesita RETELL_FROM_NUMBER).
+const marcando = sincro && buscarVentas ? marcador.iniciar({ key: KEY, ventasId: buscarVentas }) : null;
 
 server.listen(PORT, HOST, () => console.log(`Agente de llamadas: http://${HOST}:${PORT}`));

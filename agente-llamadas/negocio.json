@@ -20,5 +20,17 @@
   "voz_id": "",
   "modelo": "gpt-5.6-terra",
   "cal_evento_id": "1cFfdRwi4qpR1sJZkhLtnu",
-  "link_reservas": "https://cal.com/kuper/30min"
+  "link_reservas": "https://cal.com/kuper/30min",
+  "ventas": {
+    "nombre_agente": "Kuper - Agente de ventas",
+    "asistente": "Mateo",
+    "voz_id": "",
+    "genero_voz": "male",
+    "propuesta": "Ayudamos a negocios a no perder clientes: un agente de inteligencia artificial contesta su WhatsApp, Instagram y llamadas al instante, las 24 horas, y agenda citas solo.",
+    "beneficios": [
+      "Contesta en segundos, también de noche y fines de semana",
+      "Agenda citas directo en su calendario",
+      "Cuesta menos que una persona de recepción y no se enferma ni renuncia"
+    ]
+  }
 }

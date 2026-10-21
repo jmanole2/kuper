@@ -26,7 +26,7 @@ test('sin PANEL_* no se activa', () => {
 });
 
 test('manda cada llamada una vez y espera el resumen', async () => {
-  const sinAnalisis = { call_id: 'c2', call_type: 'web_call', start_timestamp: ahora - 120_000, end_timestamp: ahora - 60_000 };
+  const sinAnalisis = { call_id: 'c2', call_type: 'web_call', call_status: 'ended', start_timestamp: ahora - 120_000, end_timestamp: ahora - 60_000 };
   const pedidos = [];
   hooks.fetch = async (url, opt) => {
     pedidos.push({ url, opt });

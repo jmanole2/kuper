@@ -92,3 +92,14 @@ Cada minuto revisa las llamadas terminadas de los últimos 2 días y manda las q
 Con `CAL_API_KEY` (Cal.com → Settings → Developer → API keys) y `PUBLIC_URL` (el dominio de la página, p. ej. `https://llamadas.kuper.media`) en el `.env`, el comando `crear` (y `update.sh`) agrega a Sofía tres funciones: `buscar_cita`, `cambiar_cita` y `cancelar_cita`. La persona da el correo con el que agendó; Sofía busca la cita, revisa horarios libres y la mueve o la cancela en Cal.com. Cal.com le manda el correo de confirmación.
 
 Retell llama a `https://<dominio>/funciones/<nombre>` con una llave que se deriva de la clave de Retell (no hay que guardar otra). Las funciones de Cal.com agregadas en el panel de Retell no se tocan. `/salud` dice `"citas": true` cuando está activo. Pruebas: `node --test agente-llamadas/test/*.test.mjs`.
+
+## 8. Agente de ventas (llama a empresas)
+
+`negocio.json → ventas` define a un segundo agente (Mateo) que llama en frío a empresas para ofrecer el diagnóstico gratis. `crear` lo crea o lo actualiza junto con Sofía; tiene sus propias funciones `ver_horarios` y `agendar_cita` (Cal.com, con el link de `link_reservas`), cuelga si contesta un buzón y al terminar clasifica la llamada: no contestó, no le interesa, interesado, cita o no llamar.
+
+La lista de empresas vive en el panel (cliente → pestaña **Ventas**): se buscan por giro y ciudad en Google Maps, se revisan contra el REPEP y se activan las llamadas. El panel decide cuándo toca llamar (lunes a viernes 10:00–13:30 y 16:00–18:30, una a la vez, máximo 3 intentos con un día entre ellos). Si contesta y queda interesado o con cita, entra a Leads.
+
+- **Probar sin número:** pon `VENTAS_CLAVE` en el `.env` y abre `https://dominio/?ventas=CLAVE&empresa=Clínica Sonrisa&giro=dentista&ciudad=Puebla`. Tú contestas como si fueras la empresa.
+- **Llamar de verdad:** compra un número en Retell (Phone Numbers), ponlo en `RETELL_FROM_NUMBER` y activa las llamadas en el panel. `marcador.mjs` pide cada 2 minutos la siguiente empresa.
+
+Pruebas: `node --test agente-llamadas/test/*.test.mjs`.

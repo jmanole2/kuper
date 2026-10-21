@@ -102,11 +102,11 @@ function herramientas() {
   return tools;
 }
 
-async function elegirVoz() {
-  if (cfg.voz_id) return cfg.voz_id;
+async function elegirVoz(vozId = cfg.voz_id, genero = 'female') {
+  if (vozId) return vozId;
   const voces = await api('GET', '/list-voices');
   const latinas = voces.filter((v) => /mexic|latin|spanish|español/i.test(`${v.accent} ${v.voice_name}`));
-  const voz = latinas.find((v) => v.gender === 'female') || latinas[0];
+  const voz = latinas.find((v) => v.gender === genero) || latinas[0];
   if (!voz) throw new Error('No encontré una voz en español. Corre el comando "voces" y pon una en "voz_id" de negocio.json.');
   console.log(`Voz elegida: ${voz.voice_name} (${voz.accent}, ${voz.provider}) -> ${voz.voice_id}`);
   return voz.voice_id;
@@ -159,20 +159,96 @@ async function crear() {
   console.log('Siguiente paso: en el panel de Retell agrega las funciones de Cal.com (ver LEEME.md).');
 }
 
-// Agrega (o actualiza) las funciones buscar/cambiar/cancelar cita sin tocar las demás (p. ej. las de Cal.com del panel).
-const NUESTRAS = ['buscar_cita', 'cambiar_cita', 'cancelar_cita'];
-async function sincronizarFunciones(llmId) {
+// Agrega (o actualiza) nuestras funciones de citas sin tocar las demás (p. ej. las de Cal.com del panel).
+const NUESTRAS = ['ver_horarios', 'agendar_cita', 'buscar_cita', 'cambiar_cita', 'cancelar_cita'];
+async function sincronizarFunciones(llmId, nombres = ['buscar_cita', 'cambiar_cita', 'cancelar_cita']) {
   const f = configFunciones();
   try {
     const llm = await api('GET', `/get-retell-llm/${llmId}`);
     const otras = (llm.general_tools || []).filter((t) => !NUESTRAS.includes(t.name));
-    const nuevas = f ? definiciones(f, tz) : [];
+    const nuevas = f ? definiciones(f, tz, nombres) : [];
     if (!f && otras.length === (llm.general_tools || []).length) return console.log('Funciones de citas: sin CAL_API_KEY o PUBLIC_URL, no se agregan.');
     await api('PATCH', `/update-retell-llm/${llmId}`, { general_tools: [...otras, ...nuevas] });
-    console.log(f ? `Funciones de citas listas: ${NUESTRAS.join(', ')} -> ${f.url}/funciones` : 'Funciones de citas quitadas (falta CAL_API_KEY o PUBLIC_URL).');
+    console.log(f ? `Funciones de citas listas: ${nombres.join(', ')} -> ${f.url}/funciones` : 'Funciones de citas quitadas (falta CAL_API_KEY o PUBLIC_URL).');
   } catch (e) {
     console.error(`No pude agregar las funciones de citas: ${e.message}`);
   }
+}
+
+// ------------------------------------------------------------ agente de ventas (llama a empresas)
+const V = cfg.ventas || null;
+function promptVentas() {
+  const lista = (xs) => xs.map((x) => `- ${x}`).join('\n');
+  return `## Identidad
+Eres ${V.asistente}, asesor virtual de ${cfg.negocio}, ${cfg.giro}. Hablas español de México, con tono amable, seguro y breve. Eres un asistente de inteligencia artificial y lo dices desde el inicio.
+
+## Contexto de esta llamada
+- Llamas a la empresa: {{empresa}} (giro: {{giro}}, ciudad: {{ciudad}}).
+- Fecha y hora actual: {{current_time_${tz}}}
+- Es una llamada en frío: no te esperaban. Respeta su tiempo.
+
+## Lo que ofreces
+${V.propuesta}
+${lista(V.beneficios)}
+
+Servicios:
+${lista(cfg.servicios)}
+
+## Cómo llevar la llamada
+1. Cuando contesten, saluda, di tu nombre, que eres un asistente virtual de ${cfg.negocio}, y pregunta si hablas con {{empresa}}. Si no es ahí, discúlpate y termina la llamada.
+2. Pide hablar con el dueño o con quien atiende los clientes. Si no está, pregunta su nombre y un correo para mandarle información, agradece y termina.
+3. Pregunta si tiene un minuto. Si dice que no, ofrece llamar otro día o mandarle información por correo, y termina.
+4. Haz como máximo dos preguntas para entender cómo atienden hoy (por ejemplo: "¿quién contesta los WhatsApp cuando están ocupados o cerrados?").
+5. Conecta su respuesta con un beneficio concreto, en una o dos frases.
+6. Ofrece ${cfg.tipo_de_cita} sin costo. Si acepta: usa ver_horarios, ofrece dos o tres horarios, pide su nombre completo y su correo (repítelo letra por letra) y usa agendar_cita.
+7. Confirma día y hora, agradece y termina la llamada.
+
+## Reglas
+- Respuestas cortas: una o dos frases por turno.
+- Si dice que no le interesa, agradece una sola vez y termina. No insistas ni discutas.
+- Si pide que no le vuelvan a llamar, discúlpate, confirma que no se le llamará de nuevo y termina.
+- Nunca inventes precios: se cotiza en la videollamada. Nunca inventes horarios.
+- Si contesta un buzón de voz o una grabación, termina la llamada sin dejar mensaje.
+- Si te preguntan cómo conseguiste el número: lo encontraste en el perfil público del negocio en Google Maps.`;
+}
+async function crearVentas() {
+  if (!V) return;
+  const llm = {
+    general_prompt: promptVentas(),
+    begin_message: '',
+    start_speaker: 'user',
+    model_config: { type: 'cascading', primary: { model: cfg.modelo }, temperature: 0.3 },
+    default_dynamic_variables: { empresa: 'su negocio', giro: 'negocio', ciudad: 'México' },
+  };
+  const agente = {
+    agent_name: V.nombre_agente,
+    language: 'es-419',
+    voice_id: await elegirVoz(V.voz_id, V.genero_voz || 'male'),
+    max_call_duration_ms: 6 * 60 * 1000,
+    end_call_after_silence_ms: 20 * 1000,
+    voicemail_option: { action: { type: 'hangup' } },
+    post_call_analysis_data: [
+      { type: 'system-presets', name: 'call_summary' },
+      { type: 'enum', name: 'resultado', description: 'Cómo terminó la llamada.', choices: ['no_contesto', 'no_interesa', 'interesado', 'cita', 'no_llamar'],
+        conditional_prompt: 'no_contesto: buzón, nadie respondió o número equivocado. no_interesa: dijo que no. interesado: quiere información o que le llamen después. cita: se agendó la videollamada. no_llamar: pidió que no le vuelvan a llamar.' },
+      { type: 'string', name: 'nombre_contacto', description: 'Nombre y puesto de la persona con quien se habló, si lo dio.' },
+      { type: 'string', name: 'correo_contacto', description: 'Correo que dio la persona, si lo dio.' },
+    ],
+  };
+  const previo = (await api('GET', '/list-agents')).find((a) => a.agent_name === V.nombre_agente);
+  let llmId;
+  if (previo) {
+    llmId = previo.response_engine?.llm_id;
+    await api('PATCH', `/update-retell-llm/${llmId}`, llm);
+    await api('PATCH', `/update-agent/${previo.agent_id}`, agente);
+    console.log(`Agente de ventas (${V.asistente}) actualizado: ${previo.agent_id}`);
+  } else {
+    const nuevoLlm = await api('POST', '/create-retell-llm', { ...llm, general_tools: [{ type: 'end_call', name: 'terminar_llamada', description: 'Termina la llamada cuando ya te despediste, si no le interesa o si es un buzón de voz.' }] });
+    llmId = nuevoLlm.llm_id;
+    const nuevo = await api('POST', '/create-agent', { ...agente, response_engine: { type: 'retell-llm', llm_id: llmId } });
+    console.log(`Agente de ventas (${V.asistente}) creado: ${nuevo.agent_id}`);
+  }
+  await sincronizarFunciones(llmId, NUESTRAS);
 }
 
 async function voces() {
@@ -213,9 +289,13 @@ async function verPrompt() {
   console.log(prompt());
 }
 
-const comandos = { crear, voces, llamar, prompt: verPrompt };
+async function crearTodo() {
+  await crear();
+  try { await crearVentas(); } catch (e) { console.error(`No pude crear el agente de ventas: ${e.message}`); }
+}
+const comandos = { crear: crearTodo, voces, llamar, prompt: verPrompt, 'prompt-ventas': async () => console.log(V ? promptVentas() : 'No hay "ventas" en negocio.json') };
 if (!comandos[comando]) {
-  console.error('Comandos: prompt | voces | crear | llamar <número> [nombre] [motivo]');
+  console.error('Comandos: prompt | prompt-ventas | voces | crear | llamar <número> [nombre] [motivo]');
   process.exit(1);
 }
 comandos[comando]().catch((e) => {
