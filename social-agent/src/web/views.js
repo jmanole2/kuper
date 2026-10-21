@@ -162,6 +162,18 @@ export function loginPage(error, email = '') {
   </div></div>${heroCss()}${orbTag()}` });
 }
 
+export function codigoPage(error = '') {
+  return page({ title: 'Código de verificación', body: html`<div style="min-height:86vh;display:grid;place-items:center">
+  <div class="kh" style="width:min(560px,100%);margin:0;grid-template-columns:1fr"><div class="kh-l" style="padding:34px 30px">
+    <div class="who"><span class="av">K</span><span class="mono">Verificación en dos pasos</span></div>
+    <h1 style="font-size:36px">Escribe tu código</h1><p class="sub">Abre tu app de autenticación (Google Authenticator, Authy…) y escribe el código de 6 dígitos de Kuper.</p>
+    ${error ? html`<div class="err" style="background:#fde8e8;color:#9b1c1c">${error}</div>` : ''}
+    <form method="post" action="/entrar/codigo"><input name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus placeholder="123 456" style="background:#fbfaf7;color:#1d1b18;border-color:#d9d4cb;font-size:26px;letter-spacing:.3em;text-align:center">
+      <p style="margin-top:16px"><button class="btn-accent" style="width:100%;justify-content:center">Entrar</button></p></form>
+    <p class="sub small"><a href="/entrar" style="color:#57534c">Volver</a></p>
+  </div></div></div>${heroCss()}` });
+}
+
 export function dashboardPage(clients, counts, pulso, billings = {}) {
   const mrr = clients.filter((c) => c.activo && !['cortesia', 'prueba'].includes(modoCobro(c))).reduce((n, c) => n + mensualidad(c), 0);
   const fallidos = clients.filter((c) => billings[c.id]?.estado === 'pago_fallido');
@@ -482,7 +494,10 @@ export function leadChatPage(client, lead, mensajes, { back = null, sideBar = nu
 }
 
 // ------------------------------------------------------------ usuarios (solo administradores)
-export function usersPage(users, clients, { error = '', creado = null, filtro = null } = {}) {
+const ACCION = { entrada: 'Entró', entrada_fallida: 'Contraseña incorrecta', codigo_fallido: 'Código incorrecto', usuario_creado: 'Creó usuario', usuario_eliminado: 'Eliminó usuario',
+  usuario_bloqueado: 'Bloqueó usuario', usuario_activado: 'Activó usuario', clave_reiniciada: 'Nueva contraseña', clave_cambiada: 'Cambió su contraseña', '2fa_activado': 'Activó 2 pasos',
+  '2fa_quitado': 'Quitó 2 pasos', '2fa_quitado_por_admin': 'Admin quitó 2 pasos', plan_actualizado: 'Cambió plan', llave_api_generada: 'Generó llave API', origen_rechazado: 'Bloqueado (otro sitio)' };
+export function usersPage(users, clients, { error = '', creado = null, filtro = null, bitacora = [] } = {}) {
   const ROL = { admin: 'Administrador', cliente: 'Cliente' };
   const lista = filtro ? users.filter((u) => u.client_id === filtro) : users;
   const body = html`${hero({ kicker: 'Equipo y clientes', title: 'Usuarios', sub: 'Los administradores (Kuper) ven y manejan todo. Cada cliente entra con su correo y solo ve su marca.',
@@ -498,10 +513,11 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
   <div class="card" style="padding:8px 14px;overflow-x:auto"><table>
     <tr><th>Usuario</th><th>Rol</th><th>Último acceso</th><th>Acciones</th></tr>
     ${lista.map((u) => html`<tr><td><strong>${u.nombre}</strong><div class="muted small">${u.email}</div></td>
-      <td><span class="badge" style="color:${u.rol === 'admin' ? '#c9f53a' : '#93b4ff'}">${ROL[u.rol]}${u.cliente ? ` · ${u.cliente}` : ''}</span>${u.activo ? '' : html` <span class="badge" style="color:#f87171">Bloqueado</span>`}</td>
+      <td><span class="badge" style="color:${u.rol === 'admin' ? '#c9f53a' : '#93b4ff'}">${ROL[u.rol]}${u.cliente ? ` · ${u.cliente}` : ''}</span>${u.activo ? '' : html` <span class="badge" style="color:#f87171">Bloqueado</span>`}${u.totp_enc ? html` <span class="badge" style="color:#4ade80">2 pasos</span>` : ''}</td>
       <td class="small muted">${u.last_login ? fmtDate(u.last_login.replace(' ', 'T') + 'Z') : 'Nunca'}</td>
       <td><div class="row" style="gap:6px"><form class="inline" method="post" action="/admin/usuarios/${u.id}/clave"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Nueva contraseña</button></form>
         <form class="inline" method="post" action="/admin/usuarios/${u.id}/activo"><button class="btn-warn" style="padding:6px 12px;font-size:13px">${u.activo ? 'Bloquear' : 'Activar'}</button></form>
+        ${u.totp_enc ? html`<form class="inline" method="post" action="/admin/usuarios/${u.id}/quitar-2fa" onsubmit="return confirm('¿Quitar la verificación en dos pasos de ${u.nombre}? (por si perdió su teléfono)')"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Quitar 2 pasos</button></form>` : ''}
         <form class="inline" method="post" action="/admin/usuarios/${u.id}/eliminar" onsubmit="return confirm('¿Eliminar a ${u.nombre}? Ya no podrá entrar.')"><button class="btn-bad" style="padding:6px 12px;font-size:13px">Eliminar</button></form></div></td></tr>`)}
     ${lista.length ? '' : html`<tr><td class="muted" colspan="4">Todavía no hay usuarios aquí.</td></tr>`}
   </table></div>
@@ -514,7 +530,12 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
     <label>Marca</label><select name="client_id">${clients.map((c) => html`<option value="${c.id}" ${raw(filtro === c.id ? 'selected' : '')}>${c.nombre}</option>`)}</select>
     <p class="muted small">Se genera una contraseña temporal y te la mostramos una sola vez para que se la mandes.</p>
     <button class="btn-accent">Crear usuario</button>
-  </form></div>`;
+  </form></div>
+  <h2>Actividad de seguridad</h2>
+  <div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Cuándo</th><th>Quién</th><th>Qué</th><th>IP</th></tr>
+    ${bitacora.map((b) => html`<tr><td class="small muted" style="white-space:nowrap">${fmtDate(b.created_at.replace(' ', 'T') + 'Z')}</td><td class="small">${b.email || '—'}</td>
+      <td class="small"><span class="badge" style="color:${/fallid|rechaz/.test(b.accion) ? '#f87171' : /entrada$/.test(b.accion) ? '#4ade80' : '#d9d4cb'}">${ACCION[b.accion] || b.accion}</span> ${b.detalle || ''}</td><td class="small muted">${b.ip || ''}</td></tr>`)}
+    ${bitacora.length ? '' : html`<tr><td class="muted" colspan="4">Sin actividad todavía.</td></tr>`}</table></div>`;
   return page({ title: 'Usuarios', side: side('usuarios'), body });
 }
 
@@ -631,7 +652,7 @@ export function appCitasPage(client, view, posts = [], leadsN = 0) {
 export function appChatPage(client, lead, mensajes, opts = {}) {
   return leadChatPage(client, lead, mensajes, { ...opts, back: '/app/leads', sideBar: sideApp('leads', client) });
 }
-export function cuentaPage(user, { error = '', ok = '', client = null } = {}) {
+export function cuentaPage(user, { error = '', ok = '', client = null, dosPasos = null } = {}) {
   const body = html`${hero({ kicker: 'Mi cuenta', title: user.nombre, letra: user.nombre, sub: user.email })}
   ${error ? html`<div class="err">${error}</div>` : ''}${ok ? html`<div class="okmsg">${ok}</div>` : ''}
   <form class="card" method="post" action="/app/cuenta" style="max-width:520px">
@@ -639,7 +660,17 @@ export function cuentaPage(user, { error = '', ok = '', client = null } = {}) {
     <label>Contraseña actual</label><input type="password" name="actual" autocomplete="current-password" required>
     <label>Nueva contraseña (mínimo 10 caracteres)</label><input type="password" name="nueva" autocomplete="new-password" minlength="10" required>
     <label>Repite la nueva</label><input type="password" name="nueva2" autocomplete="new-password" minlength="10" required>
-    <p><button class="btn-accent">Guardar</button></p></form>`;
+    <p><button class="btn-accent">Guardar</button></p></form>
+  <div class="card" style="max-width:520px;margin-top:18px"><span class="mono">Verificación en dos pasos</span>
+    ${user.totp_enc ? html`<p><span class="badge" style="color:#4ade80">Activa</span> Al entrar te pedimos un código de tu app de autenticación.</p>
+      <form method="post" action="/app/cuenta/2fa/quitar" class="row"><input name="codigo" inputmode="numeric" maxlength="7" required placeholder="Código actual" style="max-width:180px"><button class="btn-warn">Quitarla</button></form>`
+    : dosPasos ? html`<p>1. Instala <b>Google Authenticator</b> o <b>Authy</b> en tu teléfono.<br>2. En la app toca <b>+</b> → "Ingresar clave de configuración" y pega esta clave (o <a href="${dosPasos.url}">ábrela en tu teléfono</a>):</p>
+      <p><code style="user-select:all;font-size:16px;letter-spacing:.08em;word-break:break-all">${dosPasos.secreto.replace(/(.{4})/g, '$1 ').trim()}</code></p>
+      <form method="post" action="/app/cuenta/2fa/activar"><input type="hidden" name="token" value="${dosPasos.token}"><label>3. Escribe el código de 6 dígitos que te muestra la app</label>
+        <div class="row"><input name="codigo" inputmode="numeric" maxlength="7" required placeholder="123 456" style="max-width:180px"><button class="btn-accent">Activar</button></div></form>`
+    : html`<p class="muted small">Además de tu contraseña, te pediremos un código de tu teléfono al entrar. Así, aunque alguien sepa tu contraseña, no puede entrar.</p>
+      <form method="post" action="/app/cuenta/2fa/iniciar"><button class="btn-accent">Activar verificación en dos pasos</button></form>`}
+  </div>`;
   return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('usuarios') : sideApp('cuenta', client), body });
 }
 

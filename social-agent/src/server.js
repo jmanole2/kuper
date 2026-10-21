@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { config, mediaDir } from './config.js';
 import * as db from './db.js';
 import * as pipe from './pipeline.js';
-import { sign, unsign, safeEqual, randomToken, hashPassword, verifyPassword, tempPassword } from './crypto.js';
+import { sign, unsign, safeEqual, randomToken, hashPassword, verifyPassword, tempPassword, encrypt, decrypt } from './crypto.js';
 import { freqDays } from './schedule.js';
 import * as V from './web/views.js';
 import { checkConnections } from './publishers/check.js';
@@ -21,6 +21,7 @@ import * as metricas from './metricas.js';
 import { reportePage } from './web/reporte.js';
 import * as agente from './agente.js';
 import * as conoc from './conocimiento.js';
+import * as seg from './seguridad.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -42,7 +43,10 @@ export function createApp() {
   db.getDb();
   const app = express();
   app.disable('x-powered-by');
+  seg.ensureTables();
+  app.use(seg.cabeceras);
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
+  app.use(['/admin', '/app', '/entrar', '/salir', '/p', '/agendar'], seg.mismoOrigen);
   app.use('/media', express.static(mediaDir(), { maxAge: '1h', fallthrough: false }));
   // Tipografía del panel (Inter Tight, la misma de los videos), servida localmente.
   app.use('/fonts', express.static(path.join(path.dirname(fileURLToPath(import.meta.resolve('@fontsource/inter-tight/package.json'))), 'files'), { maxAge: '30d', fallthrough: false }));
@@ -69,6 +73,7 @@ export function createApp() {
   // ------------------------------------------------------------ API para el agente de WhatsApp
   // Autorización: "Authorization: Bearer <llave del cliente>" (se genera en el panel, pestaña Configuración).
   const api = express.Router({ mergeParams: true });
+  api.use(seg.limite({ max: 300, clave: (req) => `${req.params.slug}|${seg.ipDe(req)}` })); // 300 por minuto por marca e IP
   api.use(express.json({ limit: '100kb' }));
   api.use((req, res, next) => {
     const c = db.listClients().find((x) => x.slug === req.params.slug);
@@ -149,11 +154,11 @@ export function createApp() {
   };
   const setSession = (res, value) => {
     const secure = config.publicBaseUrl.startsWith('https') ? '; Secure' : '';
-    res.setHeader('Set-Cookie', `${COOKIE}=${encodeURIComponent(sign(value))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${secure}`);
+    res.append('Set-Cookie', `${COOKIE}=${encodeURIComponent(sign(value))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${secure}`);
   };
   // Freno a intentos de contraseña: 8 fallos por IP cada 15 min.
   const fallos = new Map();
-  const ipDe = (req) => String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+  const ipDe = seg.ipDe;
   const bloqueado = (ip) => (fallos.get(ip) || []).filter((t) => Date.now() - t < 15 * 60_000).length >= 8;
   const fallo = (ip) => fallos.set(ip, [...(fallos.get(ip) || []).filter((t) => Date.now() - t < 15 * 60_000), Date.now()]);
 
@@ -166,14 +171,35 @@ export function createApp() {
     const ip = ipDe(req), email = String(req.body.email || '').trim(), pw = String(req.body.password || '');
     if (bloqueado(ip)) return res.status(429).send(V.loginPage('Demasiados intentos. Espera 15 minutos.', email));
     if (!email || email.toLowerCase() === 'admin') { // contraseña maestra (la del .env)
-      if (config.adminPassword && safeEqual(pw, config.adminPassword)) { setSession(res, `admin:${Date.now() + 12 * 3600_000}`); return res.redirect('/admin'); }
-      fallo(ip); return res.status(401).send(V.loginPage('Correo o contraseña incorrectos', email));
+      if (config.adminPassword && process.env.ADMIN_MASTER_LOGIN !== '0' && safeEqual(pw, config.adminPassword)) {
+        setSession(res, `admin:${Date.now() + 12 * 3600_000}`); seg.auditar(req, 'entrada', 'contraseña maestra'); return res.redirect('/admin');
+      }
+      fallo(ip); seg.auditar(req, 'entrada_fallida', 'contraseña maestra'); return res.status(401).send(V.loginPage('Correo o contraseña incorrectos', email));
     }
     const u = db.getUserByEmail(email);
-    if (!u || !u.activo || !verifyPassword(pw, u.password_hash)) { fallo(ip); return res.status(401).send(V.loginPage('Correo o contraseña incorrectos', email)); }
+    if (!u || !u.activo || !verifyPassword(pw, u.password_hash)) { fallo(ip); seg.auditar(req, 'entrada_fallida', email.slice(0, 80)); return res.status(401).send(V.loginPage('Correo o contraseña incorrectos', email)); }
+    if (u.totp_enc) { // segundo paso: código de la app de autenticación
+      const secure = config.publicBaseUrl.startsWith('https') ? '; Secure' : '';
+      res.setHeader('Set-Cookie', `sa_2fa=${encodeURIComponent(sign(`2fa:${u.id}:${Date.now() + 5 * 60_000}`))}; HttpOnly; SameSite=Lax; Path=/entrar; Max-Age=300${secure}`);
+      return res.send(V.codigoPage());
+    }
+    entrar(req, res, u);
+  });
+  const entrar = (req, res, u) => {
     db.touchLogin(u.id);
     setSession(res, `u:${u.id}:${Date.now() + 12 * 3600_000}:${huella(u)}`);
+    seg.auditar(req, 'entrada', u.rol, u);
     res.redirect(u.rol === 'admin' ? '/admin' : '/app');
+  };
+  app.post('/entrar/codigo', (req, res) => {
+    const ip = ipDe(req);
+    if (bloqueado(ip)) return res.status(429).send(V.loginPage('Demasiados intentos. Espera 15 minutos.'));
+    const v = unsign(cookies(req).sa_2fa || ''), [tipo, id, exp] = String(v || '').split(':');
+    const u = tipo === '2fa' && Number(exp) > Date.now() ? db.getUser(Number(id)) : null;
+    if (!u || !u.activo || !u.totp_enc) return res.status(401).send(V.loginPage('El código expiró. Vuelve a entrar.'));
+    if (!seg.verificarTotp(decrypt(u.totp_enc).s, req.body.codigo)) { fallo(ip); seg.auditar(req, 'codigo_fallido', '', u); return res.status(401).send(V.codigoPage('Código incorrecto. Revisa tu app y vuelve a intentar.')); }
+    res.append('Set-Cookie', 'sa_2fa=; Path=/entrar; Max-Age=0');
+    entrar(req, res, u);
   });
   app.get(['/salir', '/admin/salir'], (_req, res) => {
     res.setHeader('Set-Cookie', `${COOKIE}=; Path=/; Max-Age=0`);
@@ -187,7 +213,7 @@ export function createApp() {
     const s = session(req);
     if (!s) return res.redirect('/entrar');
     req.sesion = s;
-    if (req.path === '/cuenta') return next();
+    if (req.path.startsWith('/cuenta')) return next();
     let cid = s.user?.rol === 'cliente' ? s.user.client_id : null;
     if (s.admin) {
       if (req.query.c) res.setHeader('Set-Cookie', `sa_ver=${Number(req.query.c)}; HttpOnly; SameSite=Lax; Path=/app`);
@@ -291,9 +317,33 @@ export function createApp() {
     if (nueva.length < 10) return res.status(400).send(V.cuentaPage(u, { client: u.client_id ? db.getClient(u.client_id) : null, error: 'La nueva contraseña debe tener al menos 10 caracteres.' }));
     if (nueva !== nueva2) return res.status(400).send(V.cuentaPage(u, { client: u.client_id ? db.getClient(u.client_id) : null, error: 'Las contraseñas nuevas no coinciden.' }));
     db.setUserPassword(u.id, hashPassword(nueva));
+    seg.auditar(req, 'clave_cambiada', '', u);
     const nu = db.getUser(u.id);
     setSession(res, `u:${nu.id}:${Date.now() + 12 * 3600_000}:${huella(nu)}`);
     res.send(V.cuentaPage(nu, { client: nu.client_id ? db.getClient(nu.client_id) : null, ok: 'Listo, tu contraseña cambió.' }));
+  });
+  // Verificación en dos pasos (Mi cuenta)
+  const cliDe = (u) => (u.client_id ? db.getClient(u.client_id) : null);
+  appR.post('/cuenta/2fa/iniciar', (req, res) => {
+    const u = req.sesion.user; if (!u) return res.redirect('/admin');
+    const secreto = seg.nuevoSecreto();
+    res.send(V.cuentaPage(u, { client: cliDe(u), dosPasos: { secreto, url: seg.otpauthUrl(secreto, u.email), token: encrypt({ s: secreto, u: u.id, exp: Date.now() + 15 * 60_000 }) } }));
+  });
+  appR.post('/cuenta/2fa/activar', (req, res) => {
+    const u = req.sesion.user; if (!u) return res.redirect('/admin');
+    let t = null; try { t = decrypt(String(req.body.token || '')); } catch { /* token alterado */ }
+    if (!t || t.u !== u.id || t.exp < Date.now()) return res.status(400).send(V.cuentaPage(u, { client: cliDe(u), error: 'Se venció el tiempo para activar. Empieza de nuevo.' }));
+    if (!seg.verificarTotp(t.s, req.body.codigo)) return res.status(400).send(V.cuentaPage(u, { client: cliDe(u), error: 'Código incorrecto. Revisa que la hora de tu teléfono esté bien.', dosPasos: { secreto: t.s, url: seg.otpauthUrl(t.s, u.email), token: req.body.token } }));
+    db.getDb().prepare('UPDATE users SET totp_enc = ? WHERE id = ?').run(encrypt({ s: t.s }), u.id);
+    seg.auditar(req, '2fa_activado', '', u);
+    res.send(V.cuentaPage(db.getUser(u.id), { client: cliDe(u), ok: 'Listo: desde ahora te pediremos un código de tu app al entrar.' }));
+  });
+  appR.post('/cuenta/2fa/quitar', (req, res) => {
+    const u = db.getUser(req.sesion.user?.id); if (!u) return res.redirect('/admin');
+    if (!u.totp_enc || !seg.verificarTotp(decrypt(u.totp_enc).s, req.body.codigo)) return res.status(400).send(V.cuentaPage(u, { client: cliDe(u), error: 'Código incorrecto.' }));
+    db.getDb().prepare('UPDATE users SET totp_enc = NULL WHERE id = ?').run(u.id);
+    seg.auditar(req, '2fa_quitado', '', u);
+    res.send(V.cuentaPage(db.getUser(u.id), { client: cliDe(u), ok: 'Quitaste la verificación en dos pasos.' }));
   });
   app.use('/app', appR);
 
@@ -302,13 +352,14 @@ export function createApp() {
   admin.use(requireAdmin);
 
   // Usuarios del panel
-  const usersView = (req, extra = {}) => V.usersPage(db.listUsers(), db.listClients(), { filtro: Number(req.query.c) || null, ...extra });
+  const usersView = (req, extra = {}) => V.usersPage(db.listUsers(), db.listClients(), { filtro: Number(req.query.c) || null, bitacora: seg.bitacora(40), ...extra });
   admin.get('/usuarios', (req, res) => res.send(usersView(req)));
   admin.post('/usuarios', (req, res) => {
     const password = tempPassword();
     try {
       const u = db.createUser({ email: req.body.email, nombre: req.body.nombre, rol: req.body.rol, client_id: req.body.client_id, password_hash: hashPassword(password) });
       db.logEvent({ clientId: u.client_id, tipo: 'usuario_creado', detalle: `${u.email} (${u.rol})` });
+      seg.auditar(req, 'usuario_creado', `${u.email} (${u.rol})`);
       res.send(usersView(req, { creado: { nombre: u.nombre, email: u.email, password }, filtro: u.client_id }));
     } catch (e) { res.status(400).send(usersView(req, { error: e.message })); }
   });
@@ -316,15 +367,20 @@ export function createApp() {
   admin.post('/usuarios/:uid/clave', (req, res) => {
     const password = tempPassword();
     db.setUserPassword(req.usuario.id, hashPassword(password));
+    seg.auditar(req, 'clave_reiniciada', req.usuario.email);
     res.send(usersView(req, { creado: { nombre: req.usuario.nombre, email: req.usuario.email, password }, filtro: req.usuario.client_id }));
   });
   admin.post('/usuarios/:uid/activo', (req, res) => {
     if (req.sesion.user?.id === req.usuario.id) return res.status(400).send(usersView(req, { error: 'No puedes bloquearte a ti mismo.' }));
-    db.setUserActivo(req.usuario.id, !req.usuario.activo); res.redirect('/admin/usuarios');
+    db.setUserActivo(req.usuario.id, !req.usuario.activo); seg.auditar(req, req.usuario.activo ? 'usuario_bloqueado' : 'usuario_activado', req.usuario.email); res.redirect('/admin/usuarios');
   });
   admin.post('/usuarios/:uid/eliminar', (req, res) => {
     if (req.sesion.user?.id === req.usuario.id) return res.status(400).send(usersView(req, { error: 'No puedes eliminarte a ti mismo.' }));
-    db.deleteUser(req.usuario.id); res.redirect('/admin/usuarios');
+    db.deleteUser(req.usuario.id); seg.auditar(req, 'usuario_eliminado', req.usuario.email); res.redirect('/admin/usuarios');
+  });
+  admin.post('/usuarios/:uid/quitar-2fa', (req, res) => {
+    db.getDb().prepare('UPDATE users SET totp_enc = NULL WHERE id = ?').run(req.usuario.id);
+    seg.auditar(req, '2fa_quitado_por_admin', req.usuario.email); res.redirect('/admin/usuarios');
   });
 
   admin.get('/pulso.json', async (_req, res) => {
@@ -449,6 +505,7 @@ export function createApp() {
         prueba_hasta: /^\d{4}-\d{2}-\d{2}$/.test(b.prueba_hasta || '') ? b.prueba_hasta : '',
       };
       db.updateClient(req.client.id, { config: { ...req.client.config, plan: nuevo } });
+      seg.auditar(req, 'plan_actualizado', req.client.nombre);
       db.logEvent({ clientId: req.client.id, tipo: 'plan_actualizado', detalle: Object.entries(nuevo.servicios).filter(([, v]) => v).map(([k]) => k).join(', ') });
       res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Plan guardado`);
     } catch (e) {
@@ -503,6 +560,7 @@ export function createApp() {
   admin.post('/clientes/:cid/llave-api', (req, res) => {
     const creds = db.clientCredentials(req.client);
     db.updateClient(req.client.id, { credentials: { ...creds, api_key: randomToken(24) } });
+    seg.auditar(req, 'llave_api_generada', req.client.nombre);
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Llave%20nueva%20generada`);
   });
   chatRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
