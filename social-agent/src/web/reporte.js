@@ -37,7 +37,7 @@ export function reportePage(client, r, { base, meses = [], side = null, publico 
   const maxOrigen = Math.max(1, ...Object.values(r.porOrigen));
   const body = html`<style>${raw(CSS)}</style>
   ${hero({ kicker: `Reporte · ${r.nombreMes}`, title: client.nombre, letra: client.nombre, sub: 'Lo que hicieron tus agentes este mes y cómo se movieron tus redes.',
-    tabs: meses.slice(0, 6).map((m) => [`${base}?mes=${m.mes}`, m.nombre, m.mes === r.mes]), note: ['Resumen', `${n(r.leads)} leads · ${n(r.citas)} citas`] })}
+    tabs: meses.slice(0, 6).map((m) => [`${base}?mes=${m.mes}`, m.nombre, m.mes === r.mes]), note: ['Resumen', `${n(r.leads)} ${r.leads === 1 ? 'lead' : 'leads'} · ${n(r.citas)} ${r.citas === 1 ? 'cita' : 'citas'}`] })}
   <div class="rp-acciones"><button class="btn-accent" onclick="window.print()">Descargar PDF</button>${publico ? '' : html`<span class="muted small" style="align-self:center">En la ventana de imprimir elige "Guardar como PDF".</span>`}</div>
   <div class="rp-kpis">${kpis.map(([v, l, c]) => html`<div class="rp-k"><b>${n(v)}</b><small>${l}${c != null ? raw(` <em>${signo(c)} este mes</em>`) : ''}</small></div>`)}</div>
   <div class="rp-grid">
