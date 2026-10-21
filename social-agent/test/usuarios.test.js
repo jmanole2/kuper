@@ -81,6 +81,16 @@ test('cambiar contraseña cierra sesiones viejas; bloquear y contraseña incorre
   assert.equal((await get('/app', ok.cookie)).headers.get('location'), '/entrar', 'y su sesión abierta se corta');
 });
 
+test('"Mi cuenta" para administradores (y aviso si entró con la contraseña maestra)', async () => {
+  const m = await login('', 'maestra-123');
+  const menu = await (await get('/admin', m.cookie)).text();
+  assert.match(menu, /href="\/app\/cuenta"/);
+  assert.match(await (await get('/app/cuenta', m.cookie)).text(), /Contraseña maestra/);
+  db.createUser({ email: 'jefe@kuper.media', nombre: 'Jefe', rol: 'admin', password_hash: hashPassword('ClaveJefe20301') });
+  const a = await login('jefe@kuper.media', 'ClaveJefe20301');
+  assert.match(await (await get('/app/cuenta', a.cookie)).text(), /Activar verificación en dos pasos/);
+});
+
 test('administrador con usuario propio y freno a intentos', async () => {
   db.createUser({ email: 'equipo@kuper.media', nombre: 'Equipo', rol: 'admin', password_hash: hashPassword('ClaveEquipo2030') });
   const a = await login('equipo@kuper.media', 'ClaveEquipo2030');

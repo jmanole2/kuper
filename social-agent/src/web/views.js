@@ -123,6 +123,7 @@ const side = (on) => [
   { href: '/admin', icon: 'home', label: 'Inicio', on: on === 'clientes', logo: true },
   { href: '/admin/clientes/nuevo', icon: 'plus', label: 'Nuevo cliente', on: on === 'nuevo' },
   { href: '/admin/usuarios', icon: 'users', label: 'Usuarios', on: on === 'usuarios' },
+  { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta', bottom: true },
   { href: '/admin/salir', icon: 'out', label: 'Salir', bottom: true },
 ];
 // Barra lateral del cliente (solo su marca).
@@ -671,7 +672,7 @@ export function cuentaPage(user, { error = '', ok = '', client = null, dosPasos 
     : html`<p class="muted small">Además de tu contraseña, te pediremos un código de tu teléfono al entrar. Así, aunque alguien sepa tu contraseña, no puede entrar.</p>
       <form method="post" action="/app/cuenta/2fa/iniciar"><button class="btn-accent">Activar verificación en dos pasos</button></form>`}
   </div>`;
-  return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('usuarios') : sideApp('cuenta', client), body });
+  return page({ title: 'Mi cuenta', side: user.rol === 'admin' ? side('cuenta') : sideApp('cuenta', client), body });
 }
 
 export const adminSide = () => side('clientes');
@@ -702,4 +703,16 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
     </div>
   </form>`;
   return page({ title: `Agente · ${client.nombre}`, side: app ? sideApp('agente', client) : side('clientes'), body });
+}
+
+// Entró con la contraseña maestra: no tiene cuenta propia todavía.
+export function cuentaMaestraPage() {
+  const body = html`${hero({ kicker: 'Mi cuenta', title: 'Contraseña maestra', letra: 'K', sub: 'Entraste con la contraseña del servidor, que no tiene cuenta propia ni verificación en dos pasos.' })}
+  <div class="card" style="max-width:620px"><span class="mono">Para tener tu cuenta segura</span>
+    <p>1. Ve a <a href="/admin/usuarios" style="color:var(--accent)">Usuarios</a> y crea uno con tu correo y el rol <b>Administrador</b>. Copia la contraseña temporal.</p>
+    <p>2. Sal (botón de abajo a la izquierda) y entra con tu correo y esa contraseña.</p>
+    <p>3. Vuelve aquí, a <b>Mi cuenta</b>: cambia la contraseña y activa la <b>verificación en dos pasos</b>.</p>
+    <p class="muted small">Cuando ya entres con tu usuario, puedes apagar la contraseña maestra con ADMIN_MASTER_LOGIN=0 en el .env del servidor.</p>
+    <a class="btn btn-accent" href="/admin/usuarios">Ir a Usuarios</a></div>`;
+  return page({ title: 'Mi cuenta', side: side('cuenta'), body });
 }

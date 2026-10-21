@@ -306,7 +306,7 @@ export function createApp() {
     res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: '/app/reporte?', meses: metricas.ultimosMeses(), side: V.appSide('reporte', req.client) }));
   });
   appR.get('/cuenta', (req, res) => {
-    if (!req.sesion.user) return res.redirect('/admin');
+    if (!req.sesion.user) return res.send(V.cuentaMaestraPage());
     res.send(V.cuentaPage(req.sesion.user, { client: req.sesion.user.client_id ? db.getClient(req.sesion.user.client_id) : null }));
   });
   appR.post('/cuenta', (req, res) => {
