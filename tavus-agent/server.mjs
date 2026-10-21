@@ -44,6 +44,16 @@ async function tavus(method, route, body) {
   return data;
 }
 
+// Tavus solo acepta letras/números sin acentos y . _ - en medio ("Sofía López" -> "Sofia-Lopez").
+function toUsername(name) {
+  const clean = String(name || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^A-Za-z0-9._-]/g, '')
+    .replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
+  return clean.length >= 2 ? clean : 'Agente';
+}
+
 function palBody(cfg) {
   const tts = { tts_engine: cfg.voice?.engine || 'tavus-auto' };
   if (cfg.voice?.externalVoiceId) tts.external_voice_id = cfg.voice.externalVoiceId;
@@ -58,7 +68,7 @@ function palBody(cfg) {
       llm: { model: cfg.llmModel || 'tavus-gemma-4' },
       tts,
       // Nombre con el que entra a Zoom / Meet / Teams.
-      conferencing: { username: cfg.agentName },
+      conferencing: { username: toUsername(cfg.agentName) },
     },
   };
 }
