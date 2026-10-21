@@ -20,6 +20,7 @@ import * as billing from './billing.js';
 import * as metricas from './metricas.js';
 import { reportePage } from './web/reporte.js';
 import * as agente from './agente.js';
+import * as conoc from './conocimiento.js';
 import { feedHtml } from './web/control.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -98,6 +99,10 @@ export function createApp() {
   api.get('/citas', async (req, res) => {
     try { res.json({ citas: await agenda.agentEvents(req.client, { dias: Math.min(90, Number(req.query.dias) || 45) }) }); }
     catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  api.get('/conocimiento', (req, res) => {
+    const k = conoc.actual(req.client.id);
+    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado } : { version: 0, texto: '', datos: {} });
   });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
@@ -263,6 +268,8 @@ export function createApp() {
   appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id), db.leadMessageCounts(req.client.id), appPosts(req.client))));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
   chatRoutes(appR, () => '/app', { app: true, prefix: '' });
+  appR.use('/agente', servicio('chat'));
+  conocimientoRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
     const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg };
     try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
@@ -499,6 +506,7 @@ export function createApp() {
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Llave%20nueva%20generada`);
   });
   chatRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  conocimientoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -672,6 +680,21 @@ export function createApp() {
         db.upsertLead(req.client.id, { ...agente.identidad(lead), control: humano ? 'humano' : 'bot' });
         res.redirect(`${base(req)}/leads/${lead.id}/chat`);
       } catch (e) { await ver(req, res, { error: e.message }); }
+    });
+  }
+
+  // Editor de lo que sabe el agente (admin y cliente).
+  function conocimientoRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const vista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, ...extra }));
+    router.get(`${prefix}/agente`, (req, res) => vista(req, res, { ok: req.query.ok ? 'Guardado. Tu agente lo usa desde su siguiente respuesta.' : '' }));
+    router.post(`${prefix}/agente`, (req, res) => {
+      const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));
+      try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
+      catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
+    });
+    router.post(`${prefix}/agente/restaurar/:vid`, (req, res) => {
+      try { conoc.restaurar(req.client.id, Number(req.params.vid), req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
+      catch (e) { vista(req, res, { error: e.message }); }
     });
   }
 

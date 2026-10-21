@@ -6,6 +6,7 @@ import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
+import * as CONOC from '../conocimiento.js';
 import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro } from '../plan.js';
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
@@ -129,7 +130,7 @@ const AYUDA = 'https://wa.me/525552173832';
 const sideApp = (on, client) => [
   { href: '/app', icon: 'home', label: 'Inicio', on: on === 'inicio', logo: true },
   ...(tiene(client, 'redes') ? [{ href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' }] : []),
-  ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }, { href: '/app/agente', icon: 'brain', label: 'Lo que sabe tu agente', on: on === 'agente' }] : []),
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
@@ -234,7 +235,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -247,7 +248,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [`/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' ? `/admin/clientes/${client.id}/agente` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -644,3 +645,30 @@ export function cuentaPage(user, { error = '', ok = '', client = null } = {}) {
 
 export const adminSide = () => side('clientes');
 export const appSide = (on, client) => sideApp(on, client);
+
+// ------------------------------------------------------------ lo que sabe el agente
+export function conocimientoPage(client, k, versiones, { base, app = false, ok = '', error = '', borrador = null } = {}) {
+  const texto = borrador?.texto ?? k?.texto ?? CONOC.PLANTILLA, datos = borrador?.datos ?? k?.datos ?? {};
+  const body = html`${hero({ kicker: 'Agente de IA', title: 'Lo que sabe tu agente', letra: client.nombre,
+    sub: 'Servicios, precios, preguntas frecuentes, horarios y dirección. Tu agente lo usa para contestar; lo que no esté aquí, no lo inventa.',
+    tabs: app ? [] : [[`/admin/clientes/${client.id}?tab=leads`, '← ' + client.nombre, false]],
+    note: k ? ['Última versión', `${k.autor || '—'} · ${fmtDate(k.actualizado.replace(' ', 'T') + 'Z')}`] : ['Sin información', 'Escribe lo básico y guarda'] })}
+  ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+  <form method="post" action="${base}/agente" style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);align-items:start" class="kn">
+    <style>@media (max-width:900px){.kn{grid-template-columns:1fr!important}}</style>
+    <div class="card"><span class="mono">Información para tu agente</span>
+      <textarea name="texto" maxlength="${CONOC.MAX_TEXTO}" style="min-height:460px;margin-top:10px;font:14px/1.55 ui-monospace,Menlo,monospace">${texto}</textarea>
+      <p class="muted small">Escribe frases cortas y claras. Puedes usar títulos con # y listas con -. Se actualiza en tu agente en unos minutos.</p>
+      <button class="btn-accent">Guardar</button></div>
+    <div style="display:grid;gap:18px">
+      <div class="card"><span class="mono">Datos fijos</span>
+        ${Object.entries(CONOC.CAMPOS).map(([key, label]) => html`<label>${label}</label><input name="dato_${key}" maxlength="300" value="${datos[key] || ''}">`)}
+        <p class="muted small">Se usan tal cual en recordatorios y correos (por ejemplo, la dirección de la entrevista).</p></div>
+      <div class="card"><span class="mono">Versiones anteriores</span>
+        ${versiones.length ? html`<table style="margin-top:6px">${versiones.map((v, i) => html`<tr><td class="small">${fmtDate(v.created_at.replace(' ', 'T') + 'Z')}<div class="muted small">${v.autor || '—'}</div></td>
+          <td style="text-align:right">${i === 0 ? html`<span class="badge" style="color:#c9f53a">Actual</span>` : html`<button class="btn-warn" style="padding:6px 12px;font-size:13px" formaction="${base}/agente/restaurar/${v.id}" formnovalidate onclick="return confirm('¿Volver a esta versión?')">Restaurar</button>`}</td></tr>`)}</table>` : html`<p class="muted small">Aún no hay versiones.</p>`}
+      </div>
+    </div>
+  </form>`;
+  return page({ title: `Agente · ${client.nombre}`, side: app ? sideApp('agente', client) : side('clientes'), body });
+}

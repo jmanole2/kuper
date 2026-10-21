@@ -6,7 +6,7 @@ import { localDate, addDays } from './schedule.js';
 
 export const SERVICIOS = {
   redes: { nombre: 'Redes sociales', desc: 'Publicaciones automáticas en Instagram, Facebook, TikTok y LinkedIn, competencia y palabra clave.', tabs: ['posts', 'competencia', 'palabra'] },
-  chat: { nombre: 'Agente de IA (chat)', desc: 'Responde en WhatsApp, Messenger e Instagram y registra cada lead.', tabs: ['leads'] },
+  chat: { nombre: 'Agente de IA (chat)', desc: 'Responde en WhatsApp, Messenger e Instagram y registra cada lead.', tabs: ['leads', 'agente'] },
   agenda: { nombre: 'Agenda de citas', desc: 'Citas en Google Calendar sin encimarse, con recordatorios.', tabs: ['citas'] },
   llamadas: { nombre: 'Agente de llamadas', desc: 'Contesta y hace llamadas telefónicas.', tabs: ['llamadas'], proximamente: true },
   videollamadas: { nombre: 'Agente de videollamadas', desc: 'Atiende videollamadas con un avatar.', tabs: ['videollamadas'], proximamente: true },
