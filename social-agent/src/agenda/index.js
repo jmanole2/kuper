@@ -22,6 +22,7 @@ export const AGENDA_DEFAULT = {
   ultima_cita: '', // 'HH:MM': la última cita del día empieza a esta hora como máximo (vacío = la que quepa en el horario)
   horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'] },
   titulo: 'Cita con {nombre}',
+  link_reunion: '', // sala fija de videollamada (Google Meet, Zoom…): va en el evento y en la confirmación
 };
 /** Acepta el ID tal cual (correo) o un link de Google Calendar (embed/ical) y deja solo el ID. */
 export function cleanCalendarId(v) {
@@ -156,7 +157,8 @@ export function book(client, { inicio, nombre, telefono, motivo = '' }, { now = 
     if (collides(slot, ocupado, cfg.margen_min)) throw new SlotTaken('Ese horario se acaba de ocupar.');
     const ev = {
       summary: cfg.titulo.replace('{nombre}', nombre || 'cliente'),
-      description: [motivo && `Motivo: ${motivo}`, telefono && `Teléfono: ${telefono}`, 'Agendada por el agente de Kuper'].filter(Boolean).join('\n'),
+      description: [cfg.link_reunion && `Videollamada: ${cfg.link_reunion}`, motivo && `Motivo: ${motivo}`, telefono && `Teléfono: ${telefono}`, 'Agendada por el agente de Kuper'].filter(Boolean).join('\n'),
+      ...(cfg.link_reunion ? { location: cfg.link_reunion } : {}),
       start: { dateTime: new Date(slot.start).toISOString(), timeZone: config.timezone },
       end: { dateTime: new Date(slot.end).toISOString(), timeZone: config.timezone },
       extendedProperties: { private: { kuper: '1', telefono: telefono || '', nombre: String(nombre || '').slice(0, 80) } },

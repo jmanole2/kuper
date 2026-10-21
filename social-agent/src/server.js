@@ -372,7 +372,7 @@ export function createApp() {
       const cita = await agenda.book(c, { inicio: form.inicio, nombre: form.nombre, telefono, motivo: [form.motivo, 'Agendada desde la página de citas'].filter(Boolean).join(' · ') });
       db.upsertLead(c.id, { nombre: form.nombre, telefono, origen: 'web', estado: 'cita', cita_inicio: cita.inicio, cita_evento: cita.id });
       db.logEvent({ clientId: c.id, tipo: 'cita_agendada', detalle: `${form.nombre} ${cita.inicio} (página)` });
-      res.send(V.bookingDone(c, cita));
+      res.send(V.bookingDone(c, cita, agenda.agendaCfg(c).link_reunion));
     } catch (e) {
       const msg = e instanceof agenda.SlotTaken ? 'Ese horario se acaba de ocupar. Elige otro, por favor.' : 'No pudimos agendar. Intenta de nuevo en unos minutos.';
       if (!(e instanceof agenda.SlotTaken)) console.error('[agendar]', e.message);

@@ -83,3 +83,12 @@ test('cancelEvent solo borra citas que agendó el agente', async () => {
   await agenda.cancelEvent(client, 'k1', { getFn: async () => ({ id: 'k1', extendedProperties: { private: { kuper: '1' } } }), deleteFn: async () => { borrado = true; } });
   assert.equal(borrado, true);
 });
+
+test('el link de la videollamada va en el evento', async () => {
+  const c2 = { ...client, id: 999, config: { agenda: { calendar_id: 'cal@x', link_reunion: 'https://meet.google.com/abc-defg-hij', anticipacion_horas: 0 } } };
+  let ev;
+  const [slot] = agenda.candidateSlots(agenda.agendaCfg(c2), { now: new Date('2030-01-07T15:00:00Z'), dias: 1 });
+  await agenda.book(c2, { inicio: new Date(slot.start).toISOString(), nombre: 'Ana' }, { now: new Date('2030-01-07T15:00:00Z'), busyFn: async () => [], insertFn: async (e) => { ev = e; return { id: 'x' }; } });
+  assert.equal(ev.location, 'https://meet.google.com/abc-defg-hij');
+  assert.match(ev.description, /Videollamada: https:\/\/meet\.google\.com\/abc-defg-hij/);
+});

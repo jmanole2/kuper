@@ -17,6 +17,7 @@ const config = {
     ...(c.config.agenda || {}),
     calendar_id: cleanCalendarId(process.env.CALENDAR_ID) || c.config.agenda?.calendar_id || '',
     duracion_min: 45, margen_min: 15, anticipacion_horas: 4, paso_min: 30, ultima_cita: '16:00',
+    link_reunion: 'https://meet.google.com/pvg-ynqe-kin',
     horario: { lun: ['09:00', '18:00'], mar: ['09:00', '18:00'], mie: ['09:00', '18:00'], jue: ['09:00', '18:00'] },
     titulo: 'Kuper · {nombre}',
   },

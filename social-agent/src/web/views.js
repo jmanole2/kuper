@@ -348,11 +348,12 @@ export function bookingPage(client, { slots = [], form = {}, error = '', duracio
   return page({ title: `Agenda tu llamada · ${client.nombre}`, body });
 }
 
-export function bookingDone(client, cita) {
+export function bookingDone(client, cita, link = '') {
   const body = html`<div style="max-width:560px;margin:40px auto 0;text-align:center" class="card">
     <div style="font-size:44px">✓</div><h1 style="margin:6px 0">¡Listo, quedó agendada!</h1>
     <p style="font-size:20px;margin:14px 0 4px">${fmtDia(cita.inicio)}</p>
     <p style="font-size:28px;font-weight:700;margin:0 0 14px">${fmtHora(cita.inicio)}</p>
+    ${link ? html`<p><a class="btn btn-accent" href="${link}" target="_blank" rel="noopener">Link de la videollamada</a></p><p class="muted small" style="word-break:break-all">${link}</p>` : ''}
     <p class="muted">Te escribimos por WhatsApp antes de la llamada. Si necesitas cambiarla, contéstanos ahí mismo.</p>
     <p class="muted small">${client.nombre}</p></div>`;
   return page({ title: `Cita confirmada · ${client.nombre}`, body });
