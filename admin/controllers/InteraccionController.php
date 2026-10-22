@@ -16,11 +16,16 @@ class InteraccionController
         return $this->service->getInteracciones();
     }
 
-    public function start(): array
+    public function start(?int $dispositivoId = null): array
     {
         return [
-            "token" => $this->service->start(),
+            "token" => $this->service->start($dispositivoId),
         ];
+    }
+
+    public function sync(int $dispositivoId, array $payload): bool
+    {
+        return $this->service->sync($dispositivoId, $payload);
     }
 
     public function finish(string $token): bool

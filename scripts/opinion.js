@@ -539,7 +539,24 @@ window.addEventListener("resize", () => {
 });
 window.requestAnimationFrame(updateScrollIndicator);
 
-opinionForm.addEventListener("submit", (event) => {
+const opinionSubmit = opinionForm.querySelector(".opinion-submit");
+const opinionSubmission = window.kaluzForms
+  ? window.kaluzForms.createSubmission("api/opiniones/")
+  : null;
+
+// Si la persona corrige los datos después de un intento fallido, se trata de un envío nuevo.
+opinionForm.addEventListener("input", () => opinionSubmission?.reset());
+opinionForm.addEventListener("change", () => opinionSubmission?.reset());
+
+function clearOpinionForm() {
+  opinionForm.reset();
+  if (keyboard) {
+    for (const input of opinionFields) keyboard.setInput("", input.name);
+  }
+  updateScrollIndicator();
+}
+
+opinionForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const type = opinionTypes.find((input) => input.checked);
   const values = Object.fromEntries(opinionFields.map((input) => [input.name, input.value.trim()]));
@@ -591,5 +608,40 @@ opinionForm.addEventListener("submit", (event) => {
     return;
   }
 
-  updateStatus("Por ahora no podemos completar el envío. Tu opinión no se ha enviado.");
+  if (!opinionSubmission) {
+    updateStatus("Por ahora no podemos completar el envío. Tu opinión no se ha enviado.");
+    return;
+  }
+
+  opinionSubmit.disabled = true;
+  updateStatus("Enviando…");
+
+  const result = await opinionSubmission.send({
+    tipo: type.value,
+    nombre: values.nombre,
+    apellido_paterno: values.apellido_paterno,
+    apellido_materno: values.apellido_materno,
+    pais: countrySelect.value,
+    correo: values.correo,
+    edad: age,
+    genero: genderSelect.value,
+    comentario: values.comentario,
+    privacidad: privacyInput.checked
+  });
+
+  opinionSubmit.disabled = false;
+
+  if (result.busy) return;
+
+  if (result.ok) {
+    clearOpinionForm();
+    updateStatus(result.queued
+      ? "¡Gracias! Tu opinión quedó guardada y se enviará en unos momentos."
+      : "¡Gracias! Recibimos tu opinión.");
+    return;
+  }
+
+  updateStatus(result.invalid && result.message
+    ? result.message
+    : "No pudimos enviar tu opinión. Inténtalo de nuevo en un momento.");
 });

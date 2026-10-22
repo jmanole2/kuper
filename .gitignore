@@ -3,6 +3,6 @@
 *.webm
 *.zip
 node_modules/
-vendor/
+/vendor/
 .env
 .DS_Store

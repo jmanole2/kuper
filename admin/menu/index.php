@@ -22,6 +22,8 @@ $metrics = [
         "finalizadas" => 0,
         "duracion_promedio_segundos" => null,
     ],
+    "opiniones" => ["total" => 0, "felicitaciones" => 0, "solicitudes" => 0, "quejas" => 0],
+    "dispositivos" => ["activos" => 0, "conectados" => 0],
 ];
 $pageError = null;
 

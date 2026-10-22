@@ -212,7 +212,27 @@ for (const input of [registrationName, registrationEmail]) {
   });
 }
 
-registrationForm.addEventListener("submit", (event) => {
+const registrationSubmit = registrationForm.querySelector(".registration-submit");
+const registrationSubmission = window.kaluzForms
+  ? window.kaluzForms.createSubmission("api/registros/")
+  : null;
+
+// Si la persona corrige los datos después de un intento fallido, se trata de un envío nuevo.
+registrationForm.addEventListener("input", () => registrationSubmission?.reset());
+registrationForm.addEventListener("change", () => registrationSubmission?.reset());
+
+function clearRegistrationForm() {
+  registrationForm.reset();
+  for (const input of [registrationName, registrationEmail]) {
+    if (keyboard) keyboard.setInput("", input.name);
+  }
+  if (zoneId) {
+    const currentRoute = routeInputs.find((input) => input.value === zoneId);
+    if (currentRoute) currentRoute.checked = true;
+  }
+}
+
+registrationForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = registrationName.value.trim();
   const email = registrationEmail.value.trim();
@@ -231,5 +251,33 @@ registrationForm.addEventListener("submit", (event) => {
     routeInputs[0].focus();
     return;
   }
-  updateStatus("Por ahora no podemos completar el registro. Tus datos no se han enviado.");
+  if (!registrationSubmission) {
+    updateStatus("Por ahora no podemos completar el registro. Tus datos no se han enviado.");
+    return;
+  }
+
+  registrationSubmit.disabled = true;
+  updateStatus("Enviando…");
+
+  const result = await registrationSubmission.send({
+    nombre: name,
+    correo: email,
+    recorridos: routeInputs.filter((input) => input.checked).map((input) => input.value)
+  });
+
+  registrationSubmit.disabled = false;
+
+  if (result.busy) return;
+
+  if (result.ok) {
+    clearRegistrationForm();
+    updateStatus(result.queued
+      ? "¡Gracias! Tu registro quedó guardado y se enviará en unos momentos."
+      : "¡Gracias! Te enviaremos información de los recorridos.");
+    return;
+  }
+
+  updateStatus(result.invalid && result.message
+    ? result.message
+    : "No pudimos enviar tu registro. Inténtalo de nuevo en un momento.");
 });

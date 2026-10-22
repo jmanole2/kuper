@@ -1841,3 +1841,119 @@ body.admin-body #footer i {
         animation-iteration-count: 1 !important;
     }
 }
+
+/* Dispositivos y opiniones */
+.admin-status--activo,
+.admin-status--conectado {
+    color: #ffffff;
+    background: var(--admin-black);
+}
+
+.admin-status--pendiente,
+.admin-status--desconectado {
+    color: #444444;
+    background: #dedede;
+}
+
+.admin-status--revocado {
+    color: #777777;
+    background: #f3f3f3;
+    text-decoration: line-through;
+}
+
+.admin-status + .admin-status {
+    margin-left: 6px;
+}
+
+.admin-activation-code {
+    margin-bottom: 24px;
+    padding: 28px 32px;
+    color: var(--admin-white);
+    background: var(--admin-black);
+    border-radius: var(--admin-radius-lg);
+}
+
+.admin-activation-code .admin-eyebrow {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.admin-activation-code strong {
+    display: block;
+    margin: 10px 0 6px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 40px;
+    letter-spacing: 0.12em;
+    user-select: all;
+}
+
+.admin-activation-code small {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.admin-device-form-card {
+    margin-bottom: 24px;
+}
+
+.admin-device-form {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: end;
+}
+
+.admin-device-form > label {
+    display: block;
+    width: 100%;
+    margin: 0;
+}
+
+.admin-device-form .admin-profile-input input {
+    width: 100%;
+    min-width: 0;
+}
+
+.admin-device-actions {
+    white-space: nowrap;
+}
+
+.admin-device-actions form {
+    display: inline-block;
+    margin: 2px;
+}
+
+.admin-small-button {
+    padding: 7px 12px;
+    color: var(--admin-black);
+    background: transparent;
+    border: 1px solid var(--admin-line);
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-small-button:hover {
+    border-color: var(--admin-black);
+}
+
+.admin-small-button--danger:hover {
+    color: var(--admin-white);
+    background: var(--admin-black);
+}
+
+.admin-long-text {
+    min-width: 240px;
+    max-width: 420px;
+    white-space: normal !important;
+}
+
+@media (max-width: 900px) {
+    .admin-device-form {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-activation-code strong {
+        font-size: 30px;
+    }
+}

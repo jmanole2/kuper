@@ -61,3 +61,87 @@ function apiReadJson(): array
 
     return $payload;
 }
+
+/**
+ * Token del programa local. Se acepta en "Authorization: Bearer ..." o en
+ * "X-Kaluz-Token" (algunos hostings con PHP-FPM eliminan Authorization).
+ */
+function apiDeviceToken(): string
+{
+    $custom = trim((string) ($_SERVER["HTTP_X_KALUZ_TOKEN"] ?? ""));
+
+    if ($custom !== "") {
+        return $custom;
+    }
+
+    $authorization = (string) (
+        $_SERVER["HTTP_AUTHORIZATION"]
+        ?? $_SERVER["REDIRECT_HTTP_AUTHORIZATION"]
+        ?? ""
+    );
+
+    if (preg_match('/^Bearer\s+(\S+)$/i', trim($authorization), $matches) === 1) {
+        return $matches[1];
+    }
+
+    return "";
+}
+
+/**
+ * Devuelve el dispositivo autenticado. Sin token devuelve null (solicitud desde
+ * el sitio web); con un token inválido o revocado responde 401.
+ */
+function apiOptionalDevice(): ?array
+{
+    $token = apiDeviceToken();
+
+    if ($token === "") {
+        return null;
+    }
+
+    try {
+        $device = (new DispositivoController())->authenticate($token);
+    } catch (Throwable $e) {
+        error_log($e->getMessage());
+        apiRespond(["error" => "No fue posible validar el dispositivo."], 503);
+    }
+
+    if ($device === null) {
+        apiRespond(["error" => "Dispositivo no autorizado."], 401);
+    }
+
+    return $device;
+}
+
+function apiRequireDevice(): array
+{
+    $device = apiOptionalDevice();
+
+    if ($device === null) {
+        apiRespond(["error" => "Falta el token del dispositivo."], 401);
+    }
+
+    return $device;
+}
+
+function apiClientIp(): ?string
+{
+    $ip = (string) ($_SERVER["REMOTE_ADDR"] ?? "");
+
+    return filter_var($ip, FILTER_VALIDATE_IP) !== false ? $ip : null;
+}
+
+/**
+ * Ejecuta la acción y convierte los errores en respuestas JSON.
+ */
+function apiHandle(callable $action, string $failureMessage): void
+{
+    try {
+        $action();
+    } catch (ValidationException $e) {
+        apiRespond(["error" => $e->getMessage()], 422);
+    } catch (Throwable $e) {
+        error_log($e->getMessage());
+        apiRespond(["error" => $failureMessage], 503);
+    }
+}

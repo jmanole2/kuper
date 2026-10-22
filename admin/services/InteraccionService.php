@@ -23,11 +23,11 @@ class InteraccionService
         return $this->model->getAll();
     }
 
-    public function start(): string
+    public function start(?int $dispositivoId = null): string
     {
         $this->finishInactive();
         $token = bin2hex(random_bytes(self::TOKEN_BYTES));
-        $this->model->start($this->hashToken($token));
+        $this->model->start($this->hashToken($token), $dispositivoId);
 
         return $token;
     }
@@ -56,6 +56,43 @@ class InteraccionService
         $this->finishInactive();
 
         return $this->model->finish($this->hashToken($token));
+    }
+
+    /**
+     * Guarda una interacción medida por el programa local (puede llegar tarde
+     * si el equipo estuvo sin internet).
+     */
+    public function sync(int $dispositivoId, array $payload): bool
+    {
+        $uuid = Input::uuid($payload, "interaction_uuid");
+        $inicioAt = Input::utcDateTime($payload, "inicio_at", true);
+        $finAt = Input::utcDateTime($payload, "fin_at");
+        $ultimaActividadAt = Input::utcDateTime($payload, "ultima_actividad_at")
+            ?? $finAt
+            ?? $inicioAt;
+        $duracion = null;
+
+        if ($finAt !== null) {
+            $duracion = $payload["duracion_segundos"] ?? null;
+
+            if (!is_int($duracion) || $duracion < 0 || $duracion > 86400) {
+                throw new ValidationException("La duración no es válida.");
+            }
+        }
+
+        if ($ultimaActividadAt < $inicioAt || ($finAt !== null && $finAt < $inicioAt)) {
+            throw new ValidationException("Las fechas de la interacción no son consistentes.");
+        }
+
+        return $this->model->upsertFromDevice(
+            $uuid,
+            $dispositivoId,
+            $inicioAt,
+            $ultimaActividadAt,
+            $finAt,
+            $duracion,
+            $finAt === null ? "activa" : "finalizada"
+        );
     }
 
     public function getSummary(): array

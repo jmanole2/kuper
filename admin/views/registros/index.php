@@ -1,3 +1,10 @@
+<?php
+$routeLabels = [
+    "roma-condesa" => "Roma - Condesa",
+    "centro" => "Centro",
+    "juarez" => "Juárez",
+];
+?>
 <!doctype html>
 <html lang="es">
 <head>
@@ -46,6 +53,8 @@
                             <th>ID</th>
                             <th>Nombre</th>
                             <th>Correo</th>
+                            <th>Recorridos</th>
+                            <th>Dispositivo</th>
                             <th>Fecha de registro</th>
                         </tr>
                     </thead>
@@ -59,6 +68,13 @@
                                     <?= adminEscape($registro["correo"] ?? "") ?>
                                 </a>
                             </td>
+                            <td>
+                                <?= adminEscape(implode(", ", array_map(
+                                    static fn (string $route): string => $routeLabels[$route] ?? $route,
+                                    array_filter(explode(",", (string) ($registro["recorridos"] ?? "")))
+                                )) ?: "—") ?>
+                            </td>
+                            <td><?= adminEscape($registro["dispositivo"] ?? "Sitio web") ?></td>
                             <td data-order="<?= adminEscape($registro["created_at"] ?? "") ?>">
                                 <?= adminFormatDate($registro["created_at"] ?? null) ?>
                             </td>
@@ -76,7 +92,7 @@
 <script>
 $(function () {
     $('#registros-table').DataTable({
-        order: [[3, 'desc']],
+        order: [[5, 'desc']],
         pageLength: 25,
         language: window.kaluzDataTableLanguage
     });

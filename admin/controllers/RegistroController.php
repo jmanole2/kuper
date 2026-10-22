@@ -20,4 +20,9 @@ class RegistroController
     {
         return $this->service->countRegistros();
     }
+
+    public function create(array $payload, ?int $dispositivoId): array
+    {
+        return $this->service->create($payload, $dispositivoId);
+    }
 }

@@ -15,13 +15,15 @@ class Interaccion
     {
         $result = $this->db->query(
             "SELECT
-                id,
-                inicio_at,
-                fin_at,
-                duracion_segundos,
-                estado
-             FROM interacciones
-             ORDER BY inicio_at DESC, id DESC"
+                i.id,
+                i.inicio_at,
+                i.fin_at,
+                i.duracion_segundos,
+                i.estado,
+                d.nombre AS dispositivo
+             FROM interacciones i
+             LEFT JOIN dispositivos d ON d.id = i.dispositivo_id
+             ORDER BY i.inicio_at DESC, i.id DESC"
         );
 
         if (!$result) {
@@ -33,17 +35,18 @@ class Interaccion
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function start(string $tokenHash): int
+    public function start(string $tokenHash, ?int $dispositivoId = null): int
     {
         $stmt = $this->db->prepare(
             "INSERT INTO interacciones (
                 token_hash,
+                dispositivo_id,
                 inicio_at,
                 ultima_actividad_at,
                 estado
-             ) VALUES (?, UTC_TIMESTAMP(), UTC_TIMESTAMP(), 'activa')"
+             ) VALUES (?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP(), 'activa')"
         );
-        $stmt->bind_param("s", $tokenHash);
+        $stmt->bind_param("si", $tokenHash, $dispositivoId);
         $stmt->execute();
         $interactionId = (int) $stmt->insert_id;
         $stmt->close();
@@ -162,6 +165,86 @@ class Interaccion
                 ? (int) $row["duracion_promedio_segundos"]
                 : null,
         ];
+    }
+
+    /**
+     * Crea o actualiza una interacción registrada por el programa local.
+     * Devuelve false si el UUID pertenece a otro dispositivo.
+     */
+    public function upsertFromDevice(
+        string $uuid,
+        int $dispositivoId,
+        string $inicioAt,
+        string $ultimaActividadAt,
+        ?string $finAt,
+        ?int $duracionSegundos,
+        string $estado
+    ): bool {
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $stmt = $this->db->prepare(
+                "SELECT id, dispositivo_id FROM interacciones WHERE interaction_uuid = ? LIMIT 1"
+            );
+            $stmt->bind_param("s", $uuid);
+            $stmt->execute();
+            $existing = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if ($existing) {
+                if ((int) $existing["dispositivo_id"] !== $dispositivoId) {
+                    return false;
+                }
+
+                // Una interacción finalizada no vuelve a quedar activa.
+                $stmt = $this->db->prepare(
+                    "UPDATE interacciones
+                     SET
+                        ultima_actividad_at = GREATEST(ultima_actividad_at, ?),
+                        fin_at = IF(estado = 'finalizada', fin_at, ?),
+                        duracion_segundos = IF(estado = 'finalizada', duracion_segundos, ?),
+                        estado = IF(estado = 'finalizada', 'finalizada', ?)
+                     WHERE id = ?"
+                );
+                $id = (int) $existing["id"];
+                $stmt->bind_param("ssisi", $ultimaActividadAt, $finAt, $duracionSegundos, $estado, $id);
+                $stmt->execute();
+                $stmt->close();
+
+                return true;
+            }
+
+            $stmt = $this->db->prepare(
+                "INSERT INTO interacciones (
+                    interaction_uuid, dispositivo_id, inicio_at, ultima_actividad_at,
+                    fin_at, duracion_segundos, estado
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->bind_param(
+                "sisssis",
+                $uuid,
+                $dispositivoId,
+                $inicioAt,
+                $ultimaActividadAt,
+                $finAt,
+                $duracionSegundos,
+                $estado
+            );
+
+            try {
+                $stmt->execute();
+                $stmt->close();
+
+                return true;
+            } catch (mysqli_sql_exception $e) {
+                $stmt->close();
+
+                // Otro envío simultáneo la creó primero: se actualiza en la siguiente vuelta.
+                if (!DuplicateKey::matches($e)) {
+                    throw $e;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function existsWithStatus(string $tokenHash, ?string $status = null): bool

@@ -66,7 +66,7 @@
                 </div>
                 <div class="admin-table-card__hint">
                     <i class="fa fa-search"></i>
-                    <span>Busca por fecha, estado o duración</span>
+                    <span>Busca por dispositivo, fecha o estado</span>
                 </div>
             </div>
 
@@ -75,6 +75,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Dispositivo</th>
                             <th>Inicio</th>
                             <th>Fin</th>
                             <th>Duración</th>
@@ -86,6 +87,7 @@
                         <?php $estado = $interaccion["estado"] ?? "activa"; ?>
                         <tr>
                             <td><?= (int) $interaccion["id"] ?></td>
+                            <td><?= adminEscape($interaccion["dispositivo"] ?? "Sitio web") ?></td>
                             <td data-order="<?= adminEscape($interaccion["inicio_at"] ?? "") ?>">
                                 <?= adminFormatDate($interaccion["inicio_at"] ?? null) ?>
                             </td>
@@ -118,7 +120,7 @@
 <script>
 $(function () {
     $('#interacciones-table').DataTable({
-        order: [[1, 'desc']],
+        order: [[2, 'desc']],
         pageLength: 25,
         language: window.kaluzDataTableLanguage
     });

@@ -66,6 +66,34 @@
                     <span><?= (int) $metrics["interacciones"]["finalizadas"] ?> recorridos finalizados</span>
                 </div>
             </a>
+
+            <a class="admin-metric-card admin-metric-card--light" href="/admin/opiniones/">
+                <div class="admin-metric-card__top">
+                    <div class="admin-metric-card__icon">
+                        <i class="fa fa-comments"></i>
+                    </div>
+                    <span class="admin-metric-card__link">Explorar <i class="fa fa-long-arrow-right"></i></span>
+                </div>
+                <div class="admin-metric-card__value"><?= (int) $metrics["opiniones"]["total"] ?></div>
+                <div class="admin-metric-card__label">
+                    <strong>Opiniones</strong>
+                    <span><?= (int) $metrics["opiniones"]["quejas"] ?> quejas · <?= (int) $metrics["opiniones"]["felicitaciones"] ?> felicitaciones</span>
+                </div>
+            </a>
+
+            <a class="admin-metric-card admin-metric-card--cream" href="/admin/dispositivos/">
+                <div class="admin-metric-card__top">
+                    <div class="admin-metric-card__icon">
+                        <i class="fa fa-desktop"></i>
+                    </div>
+                    <span class="admin-metric-card__link">Explorar <i class="fa fa-long-arrow-right"></i></span>
+                </div>
+                <div class="admin-metric-card__value"><?= (int) $metrics["dispositivos"]["conectados"] ?>/<?= (int) $metrics["dispositivos"]["activos"] ?></div>
+                <div class="admin-metric-card__label">
+                    <strong>Dispositivos</strong>
+                    <span>Computadoras conectadas ahora</span>
+                </div>
+            </a>
         </div>
 
         <section class="admin-insight-card">

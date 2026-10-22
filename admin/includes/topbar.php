@@ -85,7 +85,7 @@ $hasAdminShell = true;
         <div class="admin-sidebar__inner">
             <div class="admin-sidebar__intro">
                 <span class="admin-sidebar__eyebrow">Panel de control</span>
-                <p>Consulta la actividad y los registros del kiosco.</p>
+                <p>Consulta la actividad, los formularios y las computadoras del kiosco.</p>
             </div>
 
             <nav>
@@ -105,10 +105,24 @@ $hasAdminShell = true;
                             <i class="fa fa-chevron-right admin-nav__arrow"></i>
                         </a>
                     </li>
+                    <li class="<?= $currentSection === "opiniones" ? "active" : "" ?>">
+                        <a href="/admin/opiniones/">
+                            <span class="admin-nav__icon"><i class="fa fa-comments"></i></span>
+                            <span>Opiniones</span>
+                            <i class="fa fa-chevron-right admin-nav__arrow"></i>
+                        </a>
+                    </li>
                     <li class="<?= $currentSection === "interacciones" ? "active" : "" ?>">
                         <a href="/admin/interacciones/">
                             <span class="admin-nav__icon"><i class="fa fa-hand-o-up"></i></span>
                             <span>Interacciones</span>
+                            <i class="fa fa-chevron-right admin-nav__arrow"></i>
+                        </a>
+                    </li>
+                    <li class="<?= $currentSection === "dispositivos" ? "active" : "" ?>">
+                        <a href="/admin/dispositivos/">
+                            <span class="admin-nav__icon"><i class="fa fa-desktop"></i></span>
+                            <span>Dispositivos</span>
                             <i class="fa fa-chevron-right admin-nav__arrow"></i>
                         </a>
                     </li>

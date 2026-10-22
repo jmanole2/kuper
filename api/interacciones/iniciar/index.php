@@ -6,9 +6,10 @@ require_once dirname(__DIR__, 2) . "/bootstrap.php";
 
 apiRequirePost();
 apiRequireJson();
+$device = apiOptionalDevice();
 
 try {
-    $interaction = (new InteraccionController())->start();
+    $interaction = (new InteraccionController())->start($device["id"] ?? null);
     apiRespond($interaction, 201);
 } catch (Throwable $e) {
     error_log($e->getMessage());
