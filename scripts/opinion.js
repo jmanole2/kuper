@@ -635,9 +635,7 @@ opinionForm.addEventListener("submit", async (event) => {
 
   if (result.ok) {
     clearOpinionForm();
-    updateStatus(result.queued
-      ? "¡Gracias! Tu opinión quedó guardada y se enviará en unos momentos."
-      : "¡Gracias! Recibimos tu opinión.");
+    updateStatus("¡Gracias! Recibimos tu opinión.");
     return;
   }
 

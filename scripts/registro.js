@@ -271,9 +271,7 @@ registrationForm.addEventListener("submit", async (event) => {
 
   if (result.ok) {
     clearRegistrationForm();
-    updateStatus(result.queued
-      ? "¡Gracias! Tu registro quedó guardado y se enviará en unos momentos."
-      : "¡Gracias! Te enviaremos información de los recorridos.");
+    updateStatus("¡Gracias! Te enviaremos información de los recorridos.");
     return;
   }
 

@@ -26,7 +26,11 @@ class OpinionService
         return $this->model->countByType();
     }
 
-    public function create(array $payload, ?int $dispositivoId): array
+    /**
+     * Valida y normaliza el formulario. No usa la base de datos, por eso
+     * también lo usa el programa local del kiosco.
+     */
+    public static function validate(array $payload): array
     {
         $eventUuid = Input::uuid($payload, "event_uuid");
         $edad = $payload["edad"] ?? null;
@@ -43,7 +47,8 @@ class OpinionService
             throw new ValidationException("Es necesario aceptar el aviso de privacidad.");
         }
 
-        $data = [
+        return [
+            "event_uuid" => $eventUuid,
             "tipo" => Input::oneOf($payload, "tipo", self::TIPOS),
             "nombre" => Input::text($payload, "nombre", 80, true, 2),
             "apellido_paterno" => Input::text($payload, "apellido_paterno", 80, true, 2),
@@ -53,13 +58,20 @@ class OpinionService
             "edad" => $edad,
             "genero" => Input::oneOf($payload, "genero", self::GENEROS),
             "comentario" => Input::longText($payload, "comentario", 800, 5),
+            "privacidad" => true,
+            "capturado_at" => Input::utcDateTime($payload, "capturado_at"),
         ];
+    }
+
+    public function create(array $payload, ?int $dispositivoId): array
+    {
+        $data = self::validate($payload);
 
         return $this->model->create(
-            $eventUuid,
+            $data["event_uuid"],
             $dispositivoId,
             $data,
-            Input::utcDateTime($payload, "capturado_at")
+            $data["capturado_at"]
         );
     }
 }

@@ -25,11 +25,12 @@ class RegistroService
         return $this->model->count();
     }
 
-    public function create(array $payload, ?int $dispositivoId): array
+    /**
+     * Valida y normaliza el formulario. No usa la base de datos, por eso
+     * también lo usa el programa local del kiosco.
+     */
+    public static function validate(array $payload): array
     {
-        $eventUuid = Input::uuid($payload, "event_uuid");
-        $nombre = Input::text($payload, "nombre", 150, true, 2);
-        $correo = Input::email($payload, "correo");
         $recorridos = $payload["recorridos"] ?? null;
 
         if (!is_array($recorridos) || $recorridos === []) {
@@ -44,13 +45,26 @@ class RegistroService
             }
         }
 
+        return [
+            "event_uuid" => Input::uuid($payload, "event_uuid"),
+            "nombre" => Input::text($payload, "nombre", 150, true, 2),
+            "correo" => Input::email($payload, "correo"),
+            "recorridos" => $recorridos,
+            "capturado_at" => Input::utcDateTime($payload, "capturado_at"),
+        ];
+    }
+
+    public function create(array $payload, ?int $dispositivoId): array
+    {
+        $data = self::validate($payload);
+
         return $this->model->create(
-            $eventUuid,
+            $data["event_uuid"],
             $dispositivoId,
-            $nombre,
-            $correo,
-            implode(",", $recorridos),
-            Input::utcDateTime($payload, "capturado_at")
+            $data["nombre"],
+            $data["correo"],
+            implode(",", $data["recorridos"]),
+            $data["capturado_at"]
         );
     }
 }

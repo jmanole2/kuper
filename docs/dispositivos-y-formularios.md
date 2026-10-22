@@ -50,12 +50,8 @@ Todos son `POST` con cuerpo JSON. Errores de datos responden `422` con `{"error"
 Las fechas van en ISO 8601 (`2026-10-22T18:00:00Z`). Se rechazan fechas de hace
 más de un año o de más de un día en el futuro.
 
-## Lo que sigue: programa local
+## Programa local del kiosco
 
-El programa local servirá el interactivo en `http://127.0.0.1:PUERTO` y recibirá
-las mismas rutas `/api/...`. Para cada solicitud:
-
-1. Agrega el token del equipo.
-2. Intenta enviarla al servidor.
-3. Si no hay internet, la guarda en su cola y responde `{"queued": true}`;
-   el interactivo ya muestra "quedó guardado y se enviará en unos momentos".
+Está en `kiosco/` (PHP). Recibe las mismas rutas `/api/...` en la computadora,
+las guarda en SQLite y las envía con el token del equipo cuando hay internet.
+Ver `kiosco/README.md`.

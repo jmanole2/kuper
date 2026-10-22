@@ -6,3 +6,7 @@ node_modules/
 /vendor/
 .env
 .DS_Store
+/kiosco/config.local.php
+/kiosco/data/
+/kiosco/php/
+/kiosco/cacert.pem

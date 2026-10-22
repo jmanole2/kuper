@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  // Envía los formularios del kiosco a la API (/api/registros, /api/opiniones).
-  // Cuando el interactivo corra con el programa local, estas mismas rutas las
-  // recibirá el programa, que agrega el token del equipo y guarda en cola si no hay internet.
+  // Envía los formularios a /api/registros y /api/opiniones.
+  // En el sitio web llegan directo al servidor. En el kiosco las recibe el
+  // programa local (kiosco/router.php), que las guarda y las envía cuando hay internet.
 
   const REQUEST_TIMEOUT_MS = 10000;
   const script = document.currentScript
@@ -75,8 +75,7 @@
 
         if (response.ok) {
           reset();
-          // queued=true lo devolverá el programa local cuando guarde sin internet.
-          return { ok: true, queued: Boolean(data.queued) };
+          return { ok: true };
         }
 
         if (response.status === 422) {
