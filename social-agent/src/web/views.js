@@ -230,15 +230,20 @@ export function leadsSection(client, leads, chats, base) {
   </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram, le escribe al agente de WhatsApp o habla con el agente de llamadas.</div>`}`;
 }
 
-export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = false }) {
+export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = false, todo = false, url = '' }) {
+  // Por defecto solo las citas del agente o de la página de citas; "Todo el calendario" muestra también los demás eventos.
+  const delAgente = (citas || []).filter((e) => e.extendedProperties?.private?.kuper);
+  const lista = todo ? citas : delAgente;
+  const sep = url.includes('?') ? '&' : '?';
   return html`${citasError ? html`<div class="err">${citasError}</div>` : ''}
   ${agendaCfg && !agendaCfg.calendar_id ? (!admin ? html`<div class="card muted">La agenda todavía no está conectada. Kuper la activa por ti.</div>` : html`<div class="card"><strong>Conecta Google Calendar</strong><p class="muted small">1. Crea una cuenta de servicio en Google Cloud (Calendar API activada) y guarda su JSON en el servidor.<br>2. En Google Calendar, comparte tu calendario con ${saEmail ? html`<strong>${saEmail}</strong>` : 'el correo de la cuenta de servicio'} con permiso "Hacer cambios en eventos".<br>3. En Configuración agrega <code>"agenda": { "calendar_id": "tu-correo@gmail.com" }</code>.</p></div>`) : ''}
   ${citas ? html`<p class="muted small">Reglas: citas de ${agendaCfg.duracion_min} min, ${agendaCfg.margen_min} min de margen, con ${agendaCfg.anticipacion_horas} h de anticipación · ${Object.entries(agendaCfg.horario).map(([d, h]) => `${d} ${h[0]}–${h[1]}`).join(', ')}${agendaCfg.ultima_cita ? ` · última cita a las ${agendaCfg.ultima_cita}` : ''}.</p>
-    ${citas.length ? html`<div class="grid">${citas.map((e) => html`<div class="card"><div class="row spread"><strong>${e.summary || 'Cita'}</strong>${e.extendedProperties?.private?.kuper ? html`<span class="badge" style="color:#25d366">Agente</span>` : html`<span class="badge">Manual</span>`}</div>
-      <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">No hay citas próximas.</div>`}` : ''}`;
+    ${url ? html`<div class="pills"><a class="${todo ? '' : 'on'}" href="${url}">Del agente <em>${delAgente.length}</em></a><a class="${todo ? 'on' : ''}" href="${url}${sep}todo=1">Todo el calendario <em>${citas.length}</em></a></div>` : ''}
+    ${lista.length ? html`<div class="grid">${lista.map((e) => html`<div class="card"><div class="row spread"><strong>${e.summary || 'Cita'}</strong>${e.extendedProperties?.private?.kuper ? html`<span class="badge" style="color:#25d366">Agente</span>` : html`<span class="badge">Manual</span>`}</div>
+      <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">${todo ? 'No hay eventos próximos en el calendario.' : 'Todavía no hay citas agendadas por el agente. Las demás reuniones del calendario se respetan: el agente nunca ofrece esos horarios.'}</div>`}` : ''}`;
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, todo = false, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -289,7 +294,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
 
   ${!isNew && t === 'llamadas' ? llamadasSection(llamadas, llamadasMes, { admin: true }) : ''}
 
-  ${!isNew && t === 'citas' ? citasSection({ citas, citasError, agendaCfg, saEmail, admin: true }) : ''}
+  ${!isNew && t === 'citas' ? citasSection({ citas, citasError, agendaCfg, saEmail, admin: true, todo, url: `/admin/clientes/${client.id}?tab=citas` }) : ''}
 
   ${!isNew && t === 'competencia' ? html`<div style="margin-top:24px"></div>
   <div class="split"><div class="card">
@@ -725,7 +730,7 @@ export function appLeadsPage(client, leads, chats, posts = []) {
   return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app')}` });
 }
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
-  return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false })}` });
+  return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false, url: '/app/citas' })}` });
 }
 export function appChatPage(client, lead, mensajes, opts = {}) {
   return leadChatPage(client, lead, mensajes, { ...opts, back: '/app/leads', sideBar: sideApp('leads', client) });

@@ -311,7 +311,7 @@ export function createApp() {
   appR.use('/agente', servicio('chat'));
   conocimientoRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
-    const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg };
+    const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg, todo: req.query.todo === '1' };
     try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
     res.send(V.appCitasPage(req.client, view, appPosts(req.client), db.listLeads(req.client.id).length));
   });
@@ -488,7 +488,7 @@ export function createApp() {
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
       try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch (e) { view.citasError = e.message; }
-      view.agendaCfg = cfg; view.saEmail = agenda.serviceAccount()?.client_email || null;
+      view.agendaCfg = cfg; view.saEmail = agenda.serviceAccount()?.client_email || null; view.todo = req.query.todo === '1';
     }
     res.send(clientView(req.client, req.query.error ? String(req.query.error).slice(0, 300) : undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
   });
