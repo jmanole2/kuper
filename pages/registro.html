@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#241f21" />
+    <title>Registro para recorridos · SM Kaluz</title>
+    <link rel="preload" as="image" type="image/svg+xml" href="../assets/images/registration/letters-layout.svg" />
+    <link rel="preload" as="image" type="image/svg+xml" href="../assets/images/registration/letters-layout-es.svg" />
+    <link rel="preload" as="image" type="image/png" href="../assets/images/registration/globe.png" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../assets/vendor/simple-keyboard/index.css" />
+    <link rel="stylesheet" href="../styles/registro.css" />
+    <script src="../scripts/interaction.js" defer></script>
+    <script src="../scripts/app.js" defer></script>
+    <script src="../assets/vendor/simple-keyboard/index.js" defer></script>
+    <script src="../scripts/registro.js" defer></script>
+  </head>
+  <body class="registration-page" data-idle-return="../index.html" data-interaction="active">
+    <main class="stage" aria-label="Kiosco SM Kaluz">
+      <section class="screen registration-screen" aria-label="Registro para recorridos">
+        <a class="registration-back kiosk-back" href="./menu.html" data-transition>
+          <svg viewBox="0 0 54 54" fill="none" aria-hidden="true">
+            <circle cx="27" cy="27" r="26" stroke="currentColor" stroke-width="2" />
+            <path d="M34 27H18M24 21L18 27L24 33" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Regresar</span>
+        </a>
+
+        <h1 class="registration-intro">Compártenos tus datos<br />para recibir información<br />de los recorridos.</h1>
+        <p class="registration-notice">Al enviar tus datos aceptas compartirlos para recibir información sobre los recorridos seleccionados. Usaremos tu nombre y correo únicamente para este fin.</p>
+
+        <form class="registration-form" novalidate>
+          <label class="registration-field">
+            <span class="visually-hidden">Nombre completo</span>
+            <input id="registration-name" name="nombre" type="text" placeholder="Nombre Completo" autocomplete="off" autocapitalize="words" inputmode="none" maxlength="120" required />
+          </label>
+          <label class="registration-field">
+            <span class="visually-hidden">Correo electrónico</span>
+            <input id="registration-email" name="email" type="text" placeholder="email" autocomplete="off" autocapitalize="none" inputmode="none" spellcheck="false" maxlength="254" required />
+          </label>
+          <fieldset class="registration-routes">
+            <legend>¿De qué recorrido te gustaría recibir información?</legend>
+            <div class="registration-routes__options">
+              <label>
+                <input type="checkbox" name="recorridos" value="roma-condesa" />
+                <span>Roma -<br />Condesa</span>
+              </label>
+              <label>
+                <input type="checkbox" name="recorridos" value="centro" />
+                <span>Centro</span>
+              </label>
+              <label>
+                <input type="checkbox" name="recorridos" value="juarez" />
+                <span>Juárez</span>
+              </label>
+            </div>
+          </fieldset>
+          <button class="registration-submit" type="submit">Enviar</button>
+          <p class="registration-status" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="registration-keyboard" aria-label="Teclado en pantalla"></div>
+      </section>
+    </main>
+  </body>
+</html>

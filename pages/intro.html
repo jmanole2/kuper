@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Introducción · SM Kaluz</title>
+    <link rel="preload" href="../assets/images/intro/casa-art-nouveau.png" as="image" />
+    <link rel="preload" href="../assets/images/intro/fachada-prunes.png" as="image" />
+    <link rel="prefetch" href="../data/content.json" />
+    <link rel="prefetch" href="../assets/images/menu/roma-condesa.png" as="image" />
+    <link rel="prefetch" href="../assets/images/menu/centro.jpg" as="image" />
+    <link rel="prefetch" href="../assets/images/menu/juarez.jpg" as="image" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../styles/intro.css" />
+    <script src="../scripts/interaction.js" defer></script>
+    <script src="../scripts/app.js" defer></script>
+    <script src="../scripts/intro.js" defer></script>
+  </head>
+  <body class="intro-page" data-idle-return="../index.html" data-interaction="active">
+    <main class="stage" aria-label="Introducción al Art Nouveau en la Ciudad de México">
+      <div class="intro-carousel is-loading" aria-roledescription="carrusel" aria-label="Introducción al Art Nouveau">
+        <button class="intro-back" type="button" data-intro-back aria-label="Volver al inicio">
+          <svg viewBox="0 0 52 52" aria-hidden="true">
+            <circle cx="26" cy="26" r="24.5"></circle>
+            <path d="M42 26H10M16.5 19.5L10 26L16.5 32.5"></path>
+          </svg>
+          <span class="intro-back__label">INICIO</span>
+        </button>
+
+        <div class="intro-track">
+          <section class="intro-slide intro-slide--one is-active" aria-label="1 de 4">
+            <div class="intro-copy intro-copy--opening">
+              <h1>Art nouveau en la arquitectura</h1>
+              <p>Surgido como un estilo totalmente nuevo, sin referencias historicistas, el art nouveau, también conocido como “modernismo”, tuvo un profundo impacto. El arte, el diseño gráfico, la moda, la joyería, los textiles, la arquitectura, el interiorismo y el mobiliario: todos los elementos imaginables recibieron una influencia del nuevo lenguaje visual. Caracterizado por sus formas fluidas y sus líneas orgánicas y sinuosas, a menudo con motivos vegetales o elementos figurativos femeninos, el estilo suele adoptar principios estéticos asimétricos.</p>
+            </div>
+
+            <img class="intro-visual intro-visual--one-a" src="../assets/images/intro/casa-art-nouveau.png" alt="Modelo de una fachada Art Nouveau de la Ciudad de México" />
+
+            <button class="intro-next intro-next--one" type="button" data-carousel-next aria-label="Ir a la pantalla 2">
+              <svg viewBox="0 0 52 52" aria-hidden="true">
+                <circle cx="26" cy="26" r="24.5"></circle>
+                <path d="M10 26H42M35.5 19.5L42 26L35.5 32.5"></path>
+              </svg>
+            </button>
+          </section>
+
+          <section class="intro-slide intro-slide--two" aria-label="2 de 4">
+            <div class="intro-copy intro-copy--features">
+              <h2>Características principales de la arquitectura de estilo Art Nouveau:</h2>
+              <ul>
+                <li>Asimetría</li>
+                <li>Ondulaciones</li>
+                <li>Líneas serpentinas</li>
+                <li>Elementos orgánicos</li>
+                <li>Ornamentación sinuosa</li>
+                <li>Formas fluidas</li>
+              </ul>
+            </div>
+
+            <img class="intro-visual intro-visual--two-b" src="../assets/images/intro/fachada-prunes.png" alt="Modelo de la fachada de Casa Prunes" />
+
+            <div class="intro-copy intro-copy--arrival">
+              <p>El art nouveau llegó a México en las últimas décadas del porfiriato, cuando la élite buscaba alinear la imagen del país con las vanguardias europeas y convertir la capital en escaparate de modernidad ante el comercio extranjero. Se introdujo casi en paralelo a su auge en Europa, principalmente a través de las artes decorativas, el mobiliario y detalles arquitectónicos, más que como una corriente enseñada académicamente: de hecho no se impartía en las academias, en parte por ser una reacción contra el eclecticismo del siglo XIX.</p>
+            </div>
+
+            <button class="intro-next intro-next--corner" type="button" data-carousel-next aria-label="Ir a la pantalla 3">
+              <svg viewBox="0 0 52 52" aria-hidden="true">
+                <circle cx="26" cy="26" r="24.5"></circle>
+                <path d="M10 26H42M35.5 19.5L42 26L35.5 32.5"></path>
+              </svg>
+            </button>
+          </section>
+
+          <section class="intro-slide intro-slide--three" aria-label="3 de 4">
+            <div class="intro-copy intro-copy--manifestation">
+              <p>En la Ciudad de México se manifestó sobre todo como ornamentación —herrería, vitrales y curvas vegetales— aplicada a fachadas e interiores, rara vez como concepción total del edificio. El ejemplo más temprano y radical fue la Casa Requena, en la colonia Guerrero, reformada hacia 1895 con diseños del pintor catalán Ramón Casas; lo siguieron el interior del Centro Mercantil —hoy Gran Hotel Ciudad de México— y el proyecto original de Adamo Boari para el Teatro Nacional, que devendría en el Palacio de Bellas Artes. También aparece en el Edificio Esmeralda —hoy Museo del Estanquillo— y en El Palacio de Hierro antes de su incendio.</p>
+            </div>
+
+            <img class="intro-visual intro-visual--three-a" src="../assets/images/intro/palacio-hierro.png" alt="Edificio de El Palacio de Hierro" />
+            <img class="intro-visual intro-visual--three-b" src="../assets/images/intro/casa-roma.png" alt="Modelo de una fachada Art Nouveau de la colonia Roma" />
+
+            <div class="intro-copy intro-copy--survival">
+              <p>El estilo tuvo mayor fuerza fuera del Centro que dentro: colonias como la Roma concentran varios inmuebles habitacionales de entre 1916 y 1920, y el ejemplo más celebrado a nivel nacional está en Chihuahua, la Quinta Gameros, no en la capital. En la Ciudad de México casi no sobreviven obras completas del estilo: la Casa Requena se derrumbó en 2005, y lo que queda son fachadas o interiores parciales dentro de edificios de otros estilos dominantes.</p>
+            </div>
+
+            <button class="intro-next intro-next--corner" type="button" data-carousel-next aria-label="Ir a la pantalla 4">
+              <svg viewBox="0 0 52 52" aria-hidden="true">
+                <circle cx="26" cy="26" r="24.5"></circle>
+                <path d="M10 26H42M35.5 19.5L42 26L35.5 32.5"></path>
+              </svg>
+            </button>
+          </section>
+
+          <section class="intro-slide intro-slide--four" aria-label="4 de 4">
+            <img class="intro-visual intro-visual--four-a" src="../assets/images/intro/museo-estanquillo.png" alt="Modelo del Museo del Estanquillo" />
+
+            <a class="intro-discover" href="./menu.html" data-transition>
+              <span>Conoce más sobre los<br />edificios en las distintas<br />zonas de CDMX</span>
+              <svg viewBox="0 0 52 52" aria-hidden="true">
+                <circle cx="26" cy="26" r="24.5"></circle>
+                <path d="M10 26H42M35.5 19.5L42 26L35.5 32.5"></path>
+              </svg>
+            </a>
+          </section>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

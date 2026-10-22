@@ -1,0 +1,398 @@
+.registration-page,
+.registration-screen {
+  background: #241f21;
+  color: #fff;
+}
+
+.registration-back {
+  position: absolute;
+  top: 54px;
+  left: 80px;
+  width: 330px;
+  height: 54px;
+  gap: 22px;
+  color: #fff;
+  font-size: 35px;
+  font-weight: 300;
+  animation: registration-appear .65s ease both;
+}
+
+.registration-back svg {
+  width: 54px;
+  height: 54px;
+}
+
+.registration-intro {
+  position: absolute;
+  top: 158px;
+  left: 91px;
+  width: 650px;
+  margin: 0;
+  font-size: 50px;
+  font-weight: 300;
+  line-height: 1.14;
+  animation: registration-rise .8s .12s ease both;
+}
+
+.registration-form {
+  position: absolute;
+  top: 137px;
+  left: 914px;
+  width: 810px;
+  height: 480px;
+  animation: registration-rise .8s .22s ease both;
+}
+
+.registration-field {
+  display: block;
+  width: 100%;
+  height: 96px;
+}
+
+.registration-field input {
+  display: block;
+  width: 100%;
+  height: 61px;
+  border: 0;
+  border-bottom: 2px solid #9c9b97;
+  border-radius: 0;
+  padding: 0 0 7px;
+  background: transparent;
+  color: #fff;
+  font: 300 28px/1 Helvetica, Arial, sans-serif;
+  outline: 0;
+  transition: border-color .25s ease;
+}
+
+.registration-field input::placeholder {
+  color: #9c999b;
+  opacity: 1;
+}
+
+.registration-field input:focus {
+  border-color: #fff;
+}
+
+.registration-notice {
+  position: absolute;
+  top: 378px;
+  left: 95px;
+  width: 600px;
+  margin: 0;
+  color: #9c999b;
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.23;
+  animation: registration-rise .8s .2s ease both;
+}
+
+.registration-routes {
+  margin: 13px 0 0;
+  border: 0;
+  padding: 0;
+}
+
+.registration-routes legend {
+  margin: 0;
+  padding: 0;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.registration-routes__options {
+  display: grid;
+  margin-top: 34px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.registration-routes__options label {
+  display: flex;
+  min-height: 62px;
+  align-items: flex-start;
+  gap: 18px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1.08;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.registration-routes__options input {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  flex: none;
+  margin: 1px 0 0;
+  appearance: none;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.registration-routes__options input::after {
+  width: 15px;
+  height: 15px;
+  background: #fff;
+  content: "";
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.registration-routes__options input:checked::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.registration-routes__options input:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+}
+
+.registration-submit {
+  position: absolute;
+  top: 395px;
+  left: 0;
+  display: grid;
+  width: 198px;
+  height: 60px;
+  place-items: center;
+  border: 0;
+  border-radius: 30px;
+  background: #fff;
+  color: #181416;
+  font: 300 28px/1 Helvetica, Arial, sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .25s ease, background .25s ease, box-shadow .25s ease;
+}
+
+.registration-submit:hover,
+.registration-submit:focus-visible {
+  transform: translateY(-3px);
+  background: #e7e7e7;
+  box-shadow: 0 9px 18px rgb(0 0 0 / 25%);
+}
+
+.registration-submit:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 5px;
+}
+
+.registration-status {
+  position: absolute;
+  top: 465px;
+  left: 0;
+  width: 790px;
+  margin: 0;
+  color: #ffb8a8;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.registration-keyboard {
+  position: absolute;
+  top: 646px;
+  left: 230px;
+  width: 1454px;
+  height: 390px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: registration-keyboard-in .75s .3s cubic-bezier(.2,.7,.2,1) backwards;
+  transition: opacity .28s ease, transform .28s ease, visibility .28s ease;
+}
+
+.registration-keyboard.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(35px);
+  pointer-events: none;
+}
+
+.registration-keyboard.kaluz-keyboard.hg-theme-default {
+  font-family: Helvetica, Arial, sans-serif;
+  overflow: visible;
+}
+
+.registration-keyboard.is-reference-layout {
+  background: none;
+}
+
+.registration-keyboard.is-spanish-layout {
+  background-image: none;
+}
+
+.registration-keyboard .hg-row {
+  position: absolute;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 70.6133px;
+  margin: 0;
+}
+
+.registration-keyboard.hg-theme-default .hg-row:not(:last-child) {
+  margin-bottom: 0;
+}
+
+.registration-keyboard.hg-theme-default .hg-row .hg-button:not(:last-child) {
+  margin-right: 0;
+}
+
+.registration-keyboard.hg-theme-default .hg-button {
+  position: absolute;
+  top: 0;
+  display: flex;
+  height: 70.6133px;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 0 6px;
+  align-items: flex-end;
+  background: #5b5b5b;
+  color: #fff;
+  box-shadow: none;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1;
+  max-width: none;
+  touch-action: manipulation;
+  transition: background .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.registration-keyboard.hg-theme-default .hg-button:hover,
+.registration-keyboard.hg-theme-default .hg-button:focus-visible {
+  background: #707070;
+}
+
+.registration-keyboard.hg-theme-default .hg-button:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.registration-keyboard.hg-theme-default .hg-button:focus-visible {
+  outline: 3px solid #555;
+  outline-offset: -4px;
+}
+
+.registration-keyboard .hg-button svg {
+  width: 48px;
+  height: 48px;
+}
+
+.registration-keyboard .hg-button img {
+  width: 53px;
+  height: 53px;
+  filter: brightness(0) invert(1);
+  opacity: .9;
+  pointer-events: none;
+}
+
+.registration-keyboard .hg-button[data-alt]::after {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 100%;
+  color: #bbb;
+  content: attr(data-alt);
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{bksp}"],
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{shift}"],
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{enter}"],
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{globe}"],
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{microphone}"],
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{hide}"] {
+  align-items: center;
+  padding: 0;
+}
+
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{enter}"] {
+  background: #5b5b5b;
+  color: #fff;
+}
+
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{numbers}"],
+.registration-keyboard.hg-theme-default .hg-button[data-skbtn="{letters}"] {
+  align-items: center;
+  padding: 0;
+  font-size: 30px;
+}
+
+.registration-keyboard.is-reference-layout.hg-theme-default .hg-button {
+  background: #5b5b5b;
+  box-shadow: none;
+}
+
+.registration-keyboard.is-reference-layout.hg-theme-default .hg-button:hover,
+.registration-keyboard.is-reference-layout.hg-theme-default .hg-button:focus-visible {
+  background: #707070;
+}
+
+.registration-keyboard.is-reference-layout .hg-button span {
+  opacity: 1;
+}
+
+.registration-keyboard.is-reference-layout .hg-button[data-skbtn="{globe}"] span {
+  opacity: 1;
+}
+
+.registration-keyboard.is-shifted-layout .hg-button:not([data-skbtn^="{"]) span {
+  position: absolute;
+  inset: 29px 7px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #5b5b5b;
+  color: #fff;
+  font-size: 40px;
+  opacity: 1;
+}
+
+.registration-keyboard.is-reference-layout .hg-button[data-alt]::after {
+  content: attr(data-alt);
+}
+
+
+@keyframes registration-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes registration-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes registration-keyboard-in {
+  from { opacity: 0; transform: translateY(55px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registration-back,
+  .registration-intro,
+  .registration-notice,
+  .registration-form,
+  .registration-keyboard {
+    animation: none;
+  }
+
+  .registration-keyboard,
+  .registration-keyboard.hg-theme-default .hg-button,
+  .registration-submit,
+  .registration-field input,
+  .registration-routes__options input::after {
+    transition: none;
+  }
+}

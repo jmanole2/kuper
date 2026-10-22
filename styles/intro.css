@@ -1,0 +1,344 @@
+.intro-page {
+  background: #241f21;
+}
+
+.intro-page .stage {
+  background: #000;
+}
+
+.intro-carousel {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  cursor: grab;
+  touch-action: none;
+  transition: opacity .32s ease, filter .32s ease;
+}
+
+.intro-carousel.is-loading {
+  opacity: 0;
+  filter: blur(8px);
+}
+
+.intro-track {
+  display: flex;
+  width: 400%;
+  height: 100%;
+  transform: translate3d(0, 0, 0);
+  transition: transform .82s cubic-bezier(.76, 0, .24, 1);
+  will-change: transform;
+}
+
+.intro-carousel.is-panning .intro-track,
+.intro-carousel.is-positioning .intro-track {
+  transition: none;
+}
+
+.intro-carousel.is-panning {
+  cursor: grabbing;
+}
+
+.intro-slide {
+  position: relative;
+  width: 25%;
+  height: 100%;
+  flex: 0 0 25%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+.intro-slide + .intro-slide {
+  left: -270px;
+}
+
+.intro-back,
+.intro-next,
+.intro-discover {
+  position: absolute;
+  z-index: 5;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.intro-back {
+  top: 55px;
+  left: 80px;
+  display: flex;
+  height: 54px;
+  align-items: center;
+  gap: 18px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 35px;
+  font-weight: 300;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.intro-back__label {
+  display: block;
+  min-width: 110px;
+  opacity: 1;
+  text-align: left;
+  transform: translateY(0);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.intro-back.is-label-changing .intro-back__label {
+  opacity: 0;
+  transform: translateY(7px);
+}
+
+.intro-back svg,
+.intro-next svg,
+.intro-discover svg {
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition: transform .3s ease;
+}
+
+.intro-back svg {
+  width: 52px;
+  height: 52px;
+}
+
+.intro-next {
+  width: 58px;
+  height: 58px;
+  padding: 3px;
+}
+
+.intro-next svg {
+  width: 52px;
+  height: 52px;
+}
+
+.intro-back:hover svg,
+.intro-back:focus-visible svg {
+  transform: translateX(-8px);
+}
+
+.intro-next:hover svg,
+.intro-next:focus-visible svg,
+.intro-discover:hover svg,
+.intro-discover:focus-visible svg {
+  transform: translateX(8px);
+}
+
+.intro-next--one {
+  top: 405px;
+  left: 1375px;
+}
+
+.intro-next--corner {
+  right: 78px;
+  bottom: 72px;
+}
+
+.intro-back::after,
+.intro-next::after,
+.intro-discover::after {
+  position: absolute;
+  content: "";
+  border-radius: 50%;
+  background: rgb(255 255 255 / 12%);
+  opacity: 0;
+  transform: scale(.55);
+  transition: opacity .25s ease, transform .35s cubic-bezier(.22, 1, .36, 1);
+}
+
+.intro-back::after {
+  top: 1px;
+  left: 0;
+  width: 52px;
+  height: 52px;
+}
+
+.intro-next::after {
+  inset: 3px;
+}
+
+.intro-back:hover::after,
+.intro-back:focus-visible::after,
+.intro-next:hover::after,
+.intro-next:focus-visible::after,
+.intro-discover:hover::after,
+.intro-discover:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.intro-back:focus-visible,
+.intro-next:focus-visible,
+.intro-discover:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 8px;
+}
+
+.intro-copy {
+  position: absolute;
+  z-index: 2;
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.38;
+}
+
+.intro-copy h1,
+.intro-copy h2,
+.intro-copy p {
+  margin: 0;
+}
+
+.intro-copy h1 {
+  margin-bottom: 28px;
+  font-size: 49px;
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.intro-copy h2 {
+  margin-bottom: 28px;
+  font-size: 31px;
+  font-weight: 400;
+  line-height: 1.22;
+}
+
+.intro-copy ul {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.intro-copy--opening {
+  top: 186px;
+  left: 330px;
+  width: 875px;
+}
+
+.intro-copy--features {
+  top: 445px;
+  left: 100px;
+  width: 430px;
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.intro-copy--features h2 {
+  margin-bottom: 50px;
+  font-size: 40px;
+  line-height: 1.2;
+}
+
+.intro-copy--arrival {
+  top: 138px;
+  left: 1420px;
+  width: 420px;
+  font-size: 22px;
+  line-height: 1.42;
+}
+
+.intro-copy--manifestation {
+  top: 200px;
+  left: 86px;
+  width: 520px;
+}
+
+.intro-copy--survival {
+  top: 563px;
+  left: 1320px;
+  width: 490px;
+}
+
+.intro-visual {
+  position: absolute;
+  z-index: 1;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  opacity: 1;
+  transform: none;
+}
+
+.intro-visual--one-a {
+  top: 524px;
+  left: 695px;
+  width: 760px;
+}
+
+.intro-visual--two-b {
+  top: 230px;
+  left: 530px;
+  width: 820px;
+}
+
+.intro-visual--three-a {
+  top: 355px;
+  left: 368px;
+  width: 960px;
+}
+
+.intro-visual--three-b {
+  top: 48px;
+  left: 1030px;
+  width: 710px;
+}
+
+.intro-visual--four-a {
+  top: 40px;
+  left: 400px;
+  width: 770px;
+}
+
+.intro-slide--two .intro-next--corner {
+  right: 100px;
+  bottom: 112px;
+}
+
+.intro-discover {
+  top: 350px;
+  left: 1280px;
+  display: flex;
+  width: 470px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 36px;
+  font-size: 35px;
+  font-weight: 400;
+  line-height: 1.24;
+}
+
+.intro-discover svg {
+  width: 52px;
+  height: 52px;
+}
+
+.intro-discover::after {
+  bottom: -3px;
+  left: -3px;
+  width: 64px;
+  height: 64px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-track,
+  .intro-carousel,
+  .intro-visual,
+  .intro-back__label,
+  .intro-back svg,
+  .intro-next svg,
+  .intro-discover svg,
+  .intro-back::after,
+  .intro-next::after,
+  .intro-discover::after {
+    transition: none;
+  }
+}

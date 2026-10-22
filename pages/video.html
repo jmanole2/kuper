@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Video · SM Kaluz</title>
+    <link rel="stylesheet" href="../assets/vendor/plyr/plyr.css" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <script src="../scripts/interaction.js" defer></script>
+    <script src="../scripts/app.js" defer></script>
+    <script src="../assets/vendor/plyr/plyr.min.js" defer></script>
+    <script src="../scripts/video.js" defer></script>
+  </head>
+  <body class="video-page" data-interaction="active">
+    <main class="stage" aria-label="Kiosco SM Kaluz">
+      <section class="screen video-screen" aria-label="Video de introducción">
+        <video id="intro-video" class="video-screen__player" autoplay muted playsinline preload="auto" aria-label="Video de introducción">
+          <source src="../assets/videos/demo-video.mp4" type="video/mp4" />
+        </video>
+        <div class="video-screen__intro" aria-hidden="true">
+          <span class="video-screen__loader"></span>
+        </div>
+        <a class="video-screen__skip" href="./menu.html" data-transition aria-hidden="true" tabindex="-1">
+          <span class="video-screen__skip-label">Saltar video</span>
+          <svg class="video-screen__skip-arrow" viewBox="0 0 85 16" fill="none" aria-hidden="true">
+            <path d="M1 8H84M77 1.5L84 8L77 14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>

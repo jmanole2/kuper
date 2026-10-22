@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#241f21" />
+    <title>Explora las zonas · SM Kaluz</title>
+    <link rel="preload" href="../assets/fonts/rivanna/RivannaNF.otf" as="font" type="font/otf" crossorigin />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../styles/menu.css" />
+    <script src="../scripts/interaction.js" defer></script>
+    <script src="../scripts/app.js" defer></script>
+    <script src="../scripts/menu.js" defer></script>
+  </head>
+  <body class="menu-page" data-idle-return="../index.html" data-interaction="active">
+    <main class="stage" aria-label="Kiosco SM Kaluz">
+      <section class="screen menu-screen is-loading" aria-label="Menú de zonas">
+        <header class="menu-header">
+          <a class="menu-back kiosk-back" href="./intro.html?slide=4" data-transition>
+            <svg class="menu-back__line" viewBox="0 0 85 16" fill="none" aria-hidden="true">
+              <path d="M84 8H1M8 1.5L1 8L8 14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <svg class="menu-back__circle" viewBox="0 0 54 54" fill="none" aria-hidden="true">
+              <circle cx="27" cy="27" r="26" stroke="currentColor" stroke-width="2" />
+              <path d="M34 27H18M24 21L18 27L24 33" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Regresar</span>
+          </a>
+          <h1>Elige la zona que te gustaría explorar</h1>
+          <a class="menu-next" href="?zona=centro" hidden>
+            <span></span>
+            <svg viewBox="0 0 34 20" fill="none" aria-hidden="true">
+              <path d="M2 10H32M24 2L32 10L24 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        </header>
+
+        <div class="menu-zones" role="group" aria-label="Zonas para explorar" aria-busy="true"></div>
+
+        <nav class="place-list__zone-navigation" aria-label="Cambiar de zona" hidden>
+          <button class="place-list__zone-link place-list__zone-link--previous" type="button">
+            <span class="place-list__zone-arrow" aria-hidden="true">
+              <svg viewBox="0 0 54 54" fill="none">
+                <circle cx="27" cy="27" r="26"></circle>
+                <path d="M44 27H10M17 20L10 27L17 34"></path>
+              </svg>
+            </span>
+            <span class="place-list__zone-label"></span>
+          </button>
+          <button class="place-list__zone-link place-list__zone-link--next" type="button">
+            <span class="place-list__zone-label"></span>
+            <span class="place-list__zone-arrow" aria-hidden="true">
+              <svg viewBox="0 0 54 54" fill="none">
+                <circle cx="27" cy="27" r="26"></circle>
+                <path d="M10 27H44M37 20L44 27L37 34"></path>
+              </svg>
+            </span>
+          </button>
+        </nav>
+
+        <aside class="menu-actions" aria-label="Opciones adicionales" hidden>
+          <a class="menu-action menu-action--routes" href="./registro.html" data-transition>
+            <span class="menu-action__title">Ahora recorre la ciudad.<br />¿Deseas información<br />sobre nuestras rutas a<br />pie, en bicicleta y<br />experiencias especiales?</span>
+            <span class="menu-action__arrow" aria-hidden="true">
+              <svg viewBox="0 0 30 18" fill="none"><path d="M2 9H28M20 1L28 9L20 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+          </a>
+          <a class="menu-action menu-action--opinion" href="./opinion.html" data-transition>
+            <span class="menu-action__title">Nos interesa conocer<br />tu opinión</span>
+            <span class="menu-action__detail">Queremos mejorar tu experiencia. Compártenos tu opinión</span>
+            <span class="menu-action__arrow" aria-hidden="true">
+              <svg viewBox="0 0 30 18" fill="none"><path d="M2 9H28M20 1L28 9L20 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+          </a>
+          <button class="menu-action menu-action--agenda" type="button">
+            <span class="menu-action__title">Conoce<br />nuestra Agenda</span>
+            <span class="menu-action__detail">Explora todos los eventos que tendremos para ti.</span>
+            <span class="menu-action__arrow" aria-hidden="true">
+              <svg viewBox="0 0 30 18" fill="none"><path d="M2 9H28M20 1L28 9L20 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+          </button>
+        </aside>
+
+        <footer class="menu-register">
+          <p class="menu-register__question">¿Te gustaría recibir información<br /><span class="menu-register__question-end">sobre los recorridos de éstas zonas?</span></p>
+          <p class="menu-register__detail">Anótate y recibirás toda la información a tu correo</p>
+          <a class="menu-register__cta" href="./registro.html" data-transition>Sí, anótame ahora</a>
+        </footer>
+
+        <section class="zone-info" aria-label="Información de la zona" hidden>
+          <h2 class="zone-info__title"></h2>
+
+          <div class="zone-info__copy">
+            <div class="zone-info__description" tabindex="0" aria-label="Información histórica de la zona"></div>
+            <div class="zone-info__scroll" role="group" aria-label="Controles de desplazamiento">
+              <button class="zone-info__scroll-button zone-info__scroll-button--up" type="button" aria-label="Desplazar información hacia arriba">
+                <svg viewBox="0 0 42 42">
+                  <circle cx="21" cy="21" r="19.5"></circle>
+                  <path d="M21 29V13M15 19L21 13L27 19"></path>
+                </svg>
+              </button>
+              <span class="zone-info__scroll-track"><span class="zone-info__scroll-thumb"></span></span>
+              <button class="zone-info__scroll-button zone-info__scroll-button--down" type="button" aria-label="Desplazar información hacia abajo">
+                <svg viewBox="0 0 42 42">
+                  <circle cx="21" cy="21" r="19.5"></circle>
+                  <path d="M21 13V29M15 23L21 29L27 23"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <video class="zone-info__video" autoplay muted loop playsinline preload="auto" aria-label="Video de la zona"></video>
+
+          <button class="zone-info__places" type="button">
+            <span>Conoce más sobre los edificios de la zona</span>
+            <span class="zone-info__places-arrow" aria-hidden="true">
+              <svg viewBox="0 0 54 54" fill="none">
+                <circle cx="27" cy="27" r="26"></circle>
+                <path d="M10 27H44M37 20L44 27L37 34"></path>
+              </svg>
+            </span>
+          </button>
+        </section>
+
+        <section class="place-detail" role="dialog" aria-modal="true" aria-label="Detalle del lugar" hidden>
+          <div class="place-detail__body">
+            <a class="place-detail__back kiosk-back" href="?zona=roma-condesa">
+              <svg viewBox="0 0 54 54" fill="none" aria-hidden="true">
+                <circle cx="27" cy="27" r="26" stroke="currentColor" stroke-width="2" />
+                <path d="M34 27H18M24 21L18 27L24 33" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span>Regresar</span>
+            </a>
+
+            <div class="place-detail__panel">
+              <img class="place-detail__image" alt="" draggable="false" />
+              <article class="place-detail__article">
+                <h2 class="place-detail__title"></h2>
+                <p class="place-detail__state"></p>
+                <div class="place-detail__description" tabindex="0" aria-label="Descripción del lugar"></div>
+              </article>
+            </div>
+
+            <nav class="place-detail__navigation" aria-label="Navegar entre lugares">
+              <button class="place-detail__previous" type="button">
+                <svg viewBox="0 0 54 54" fill="none" aria-hidden="true">
+                  <circle cx="27" cy="27" r="26" stroke="currentColor" stroke-width="2" />
+                  <path d="M44 27H10M17 20L10 27L17 34" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span></span>
+              </button>
+              <button class="place-detail__next" type="button">
+                <span></span>
+                <svg viewBox="0 0 54 54" fill="none" aria-hidden="true">
+                  <circle cx="27" cy="27" r="26" stroke="currentColor" stroke-width="2" />
+                  <path d="M10 27H44M37 20L44 27L37 34" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </nav>
+          </div>
+
+          <div class="glossary-overlay" hidden>
+            <span class="glossary-cutout" aria-hidden="true"></span>
+            <div class="glossary-popup" role="dialog" aria-modal="true" aria-labelledby="glossary-title" aria-describedby="glossary-definition">
+              <button class="glossary-popup__close" type="button" aria-label="Cerrar definición">cerrar<span aria-hidden="true">X</span></button>
+              <h3 id="glossary-title"></h3>
+              <p id="glossary-definition"></p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

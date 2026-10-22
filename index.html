@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Inicio · SM Kaluz</title>
+    <link rel="preload" href="./assets/images/standby-map.png" as="image" />
+    <link rel="prefetch" href="./pages/intro.html" />
+    <link rel="prefetch" href="./assets/images/intro/casa-art-nouveau.png" as="image" />
+    <link rel="prefetch" href="./assets/images/intro/edificio-esquina.png" as="image" />
+    <link rel="stylesheet" href="./styles/styles.css" />
+    <script src="./scripts/interaction.js" defer></script>
+    <script src="./scripts/app.js" defer></script>
+  </head>
+  <body data-interaction="standby">
+    <main class="stage" aria-label="Kiosco SM Kaluz">
+      <section class="screen standby is-loading" aria-label="Pantalla de inicio">
+        <img class="standby__image" src="./assets/images/standby-map.png" alt="" />
+        <div class="standby__shade" aria-hidden="true"></div>
+        <a class="standby__start" href="./pages/intro.html" data-transition data-interaction-start>
+          <span class="standby__label">Toca la pantalla para comenzar</span>
+        </a>
+        <div class="standby__info">
+          <button
+            class="standby__info-trigger"
+            type="button"
+            aria-expanded="false"
+            aria-controls="standby-story"
+          >
+            <span>Saber más</span>
+            <span class="standby__info-symbol" aria-hidden="true"></span>
+          </button>
+          <div class="standby__story" id="standby-story" role="tooltip" aria-hidden="true">
+            <strong>Mapa de 1906.</strong>
+            <span>Henry Wellge mira la Ciudad de México a vista de pájaro: 400 mil habitantes, canales aún vivos y, en primer plano, las colonias recién trazadas. Este plano nació como anuncio inmobiliario; hoy es el retrato del escenario donde el art nouveau se volvió ciudad.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

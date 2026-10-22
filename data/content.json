@@ -1,0 +1,298 @@
+{
+  "version": 1,
+  "zonas": [
+    {
+      "id": "roma-condesa",
+      "nombre": "Roma - Condesa",
+      "orden": 10,
+      "imagen": "assets/images/menu/roma-condesa.png",
+      "nombreInformacion": "Roma-Condesa",
+      "video": "assets/videos/demo-video.mp4",
+      "videoPoster": "assets/images/standby-map.png",
+      "informacion": [
+        "La Colonia Roma acoge al pueblo de la Romita, antiguamente de Aztacalco, nombrada así por los romeros que iban a la iglesia de La Piedad. La “Romita” se ubica entre las calles Puebla, Durango, Morelia y la calzada de La piedad, hoy Cuauhtemoc. Su origen se remonta a los años posteriores al sitio de Tenochtitlan, cuando los indígenas comenzaron a asentarse en las orillas de la capital. La ermita original, a la que se le otorgó la advocación de Santa Maria de la Navidad de Aztacalco fue construida en 1530.",
+        "La colonia comenzó a poblarse desde la segunda mitad del siglo XIX. La autorización para su urbanización fue otorgada por el ayuntamiento a Eduardo Orrin, dueño del predio y del famoso circo Orrín, hacia 1902. Fue entonces cuándo oficialmente se le conoció como colonia Roma. Los ejidos donde se erigió correspondían a los ejidos de Ahuehuetlan, Teplatzinco y Tlacoquemecan.",
+        "Hacia 1910 la colonia se encontraba poblada en su zona norte, hasta que poco a poco fue creciendo hacia el sur y para 1930 el área quedó ocupada por completo. Es esa la razón por la cuál esta colonia conserva interesantes casas de estilo afrancesado, algunas veces neoclásico, art nouveau y art déco. Ese sutil tono parisino alterna con la presencia de mansiones revestida de fachadas nacionalistas, palacetes con estructuras platerescas, árabes, románicas y góticas isabelinas; también se adoptaron los criterios de los cottages ingleses o chalets suizos, notables por su sencillez y confort, y, para no quedarse atrás en lo moderno, algunos colonos edificaron sus casas a la usanza de las quintas o villas estadounidenses.",
+        "Existe el conocido mito de que los nombres de las calles de la colonia Roma fueron asignados según el éxito de las presentaciones del circo Orrín, sin posibilidad aún de demostrarse."
+      ]
+    },
+    {
+      "id": "centro",
+      "nombre": "Centro",
+      "orden": 20,
+      "imagen": "assets/images/menu/centro.jpg",
+      "nombreInformacion": "Centro",
+      "video": "assets/videos/demo-video.mp4",
+      "videoPoster": "assets/images/standby-map.png",
+      "informacion": [
+        "Para entender el art nouveau en el centro histórico de la ciudad, revisemos tres ejemplos centrales de esta tendencia: El Palacio de Bellas Artes, el edificio que alberga el Estanquillo y la Casa Requena. El Palacio de Bellas Artes nació como Teatro Nacional bajo el proyecto de Adamo Boari, concebido en art nouveau y modificado tras la Revolución hacia un lenguaje más art decó; su fachada exterior conserva ese carácter de transición. El Museo del Estanquillo, antes Edificio Esmeralda, inaugurado en 1892 para albergar la joyería La Esmeralda: por fuera mezcla neoclásico con toques del barroco francés, pero por dentro despliega el art nouveau que buscaba imitar el gusto europeo de la élite porfiriana. La Casa Requena, en Santa Veracruz 43, colonia Guerrero, fue el ejemplo más completo y radical del estilo en México descrita como \"un sueño a la Gaudí\" con interiores diseñados por el pintor catalán Ramón Cantó; se derrumbó en 2005 y hoy solo queda su historia y el mobiliario rescatado, hoy en Chihuahua"
+      ]
+    },
+    {
+      "id": "juarez",
+      "nombre": "Juárez",
+      "orden": 30,
+      "imagen": "assets/images/menu/juarez.jpg",
+      "nombreInformacion": "Juárez",
+      "video": "assets/videos/demo-video.mp4",
+      "videoPoster": "assets/images/standby-map.png",
+      "informacion": [
+        "La colonia Juárez surgió como una de las principales zonas de residencia para la burguesía durante tiempos de Porfirio Díaz. Se conformó con partes de diversas colonias: Arquitectos, Bucareli, Francesa y de la teja, que limitaban con dos paseos de suma relevancia histórica: al norte, el Paseo de la Reforma y al este el Paseo de Bucareli. En el lado sur colinda con Av. Chapultepec. El nombre de colonia se desprende de la aparición de varias casas en el rumbo, que fueron compradas por la comunidad francesa en México (en otras ciudades se llaman ensanches)",
+        "En 1875 se presentaron los planos preliminares para el fraccionamiento de la colonia del Paseo, pero se modificaron con base en algunas exigencias del Ayuntamiento entre las que se incluyeron la creación de una plaza ( que después sería la glorieta washington) y la anchura de las calles, que debía ser de veinte metros: estos planos finales se mostraron un año después. Los lotes resultantes fueron adquiridos en su mayoría por la Chapultepec Land Improvment Company, que modificó el trazado original en 1897, además del Banco de Londres y de México. En 1898 se conformó de manera definitiva la actual colonia Juárez.",
+        "En principio se llamó colonia Americana, y en 1906, en el aniversario del nacimiento de Benito Juárez, el gobierno le otorgó el nombre con el que se conoce hoy. Paradójicamente, sus calles tienen los nombres de varias ciudades europeas.",
+        "La colonia Juárez fue el reflejo de la ansiada búsqueda de modernidad durante el porfiriato, además del avance del capitalismo y de la inversión urbana, que iban de la mano con el fortalecimiento de la burguesía, clase social identificada con zonas geográficas específicas de la ciudad. Este pequeño sector pobló la naciente colonia, donde se edificaron grandes residencias, algunas de ellas desde luego estilo art nouveau, además de modelos arquitectónicos importados de Francia, Inglaterra y Estados Unidos, países que fueron una referencia cultural y con una fuerte presencia en el ramo económico durante el periodo porfiriano."
+      ]
+    }
+  ],
+  "ubicaciones": [
+    {
+      "id": "roma-condesa-guanajuato-54",
+      "zonaId": "roma-condesa",
+      "orden": 10,
+      "nombre": "Guanajuato 54",
+      "nombreLineas": ["Guanajuato", "54"],
+      "estado": "existente",
+      "imagen": "assets/images/places/roma-condesa/guanajuato-54.png",
+      "imagenDetalle": "assets/images/places/guanajuato-54.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Construído por el arquitecto- ingeniero Bertrán de Quintana ( Barcelona 1878- Ciudad de México 1951) También diseñó el edificio que representó a España en la Exposición de México de 1910, ya no existe el edificio, pero. hay fotografías)" },
+        { "texto": "El edificio Guanajuato 54 hoy en estado ruinoso se conocía como el edificio azul por su policromía/ presenta en su fachada totalmente Art Nouveau elementos vegetales; muestra un original ", "nuevoParrafo": true },
+        { "texto": "pretil", "terminoId": "pretil" },
+        { "texto": " con gruesos tallos y flores ondulados entrelazados, que parecieran que están \"bailando\" o que se mueven al viento." },
+        { "texto": "Las molduras también sinuosas, enmarcan casi totalmente las ventanas del primer piso con látigos serpenteantes a manera de pesados cortinajes que terminan en una flor de cinco pétalos/ muestra una serie de lazos y flor que unen la parte superior de las ventanas a manera de clave con los balcones del segundo piso. Unos balcones son de hierro con arabesco y pequeñas flores, otros de argamasa, cal y arena gruesa de mármol formando una serie de látigos unidos y entrelazados (algunos se han perdido) y la planta baja decorada con una línea en movimiento que rodea todo el edificio.", "nuevoParrafo": true }
+      ]
+    },
+    {
+      "id": "roma-condesa-zacatecas-94",
+      "zonaId": "roma-condesa",
+      "orden": 20,
+      "nombre": "Zacatecas 94",
+      "nombreLineas": ["Zacatecas", "94"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/roma-condesa/zacatecas-94.jpg",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Descripción provisional de Zacatecas 94. Aquí se documentarán los " },
+        { "texto": "ornamentos", "terminoId": "ornamento" },
+        { "texto": " y el contexto del " },
+        { "texto": "recorrido", "terminoId": "recorrido" },
+        { "texto": " cuando exista información validada." }
+      ]
+    },
+    {
+      "id": "roma-condesa-casa-prunes-chihuahua-78",
+      "zonaId": "roma-condesa",
+      "orden": 30,
+      "nombre": "Casa Prunes Chihuahua 78",
+      "nombreLineas": ["Casa Prunes", "Chihuahua", "78"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/roma-condesa/casa-prunes-chihuahua-78.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Texto de ejemplo para Casa Prunes, Chihuahua 78. Este apartado podrá presentar su " },
+        { "texto": "arquitectura", "terminoId": "arquitectura" },
+        { "texto": " y las acciones de " },
+        { "texto": "conservación", "terminoId": "conservacion" },
+        { "texto": " relacionadas con el inmueble." }
+      ]
+    },
+    {
+      "id": "roma-condesa-colima-115",
+      "zonaId": "roma-condesa",
+      "orden": 40,
+      "nombre": "Colima 115",
+      "nombreLineas": ["Colima", "115"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/roma-condesa/colima-115.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha provisional de Colima 115. La información histórica y arquitectónica de este inmueble se incorporará cuando haya sido validada." }
+      ]
+    },
+    {
+      "id": "roma-condesa-guanajuato-63",
+      "zonaId": "roma-condesa",
+      "orden": 50,
+      "nombre": "Guanajuato 63",
+      "nombreLineas": ["Guanajuato", "63"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/roma-condesa/guanajuato-63.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha demo para Guanajuato 63. Se podrá detallar su " },
+        { "texto": "fachada", "terminoId": "fachada" },
+        { "texto": ", su posible " },
+        { "texto": "estilo", "terminoId": "estilo" },
+        { "texto": " y la historia del lugar una vez verificada." }
+      ]
+    },
+    {
+      "id": "centro-casa-requena",
+      "zonaId": "centro",
+      "orden": 10,
+      "nombre": "Casa Requena",
+      "nombreLineas": ["Casa", "Requena"],
+      "estado": "existente",
+      "imagen": "assets/images/places/centro/casa-requena.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ejemplo de ficha para la zona Centro. La descripción real podrá incorporar su " },
+        { "texto": "patrimonio", "terminoId": "patrimonio" },
+        { "texto": " y la secuencia del " },
+        { "texto": "recorrido", "terminoId": "recorrido" },
+        { "texto": "." }
+      ]
+    },
+    {
+      "id": "centro-museo-estanquillo",
+      "zonaId": "centro",
+      "orden": 20,
+      "nombre": "Museo del Estanquillo",
+      "nombreLineas": ["Museo del", "Estanquillo"],
+      "estado": "existente",
+      "imagen": "assets/images/places/centro/museo-estanquillo.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Texto de muestra para probar el estado desaparecido. Aquí se explicaría cómo se documentan los " },
+        { "texto": "ornamentos", "terminoId": "ornamento" },
+        { "texto": " de un inmueble." }
+      ]
+    },
+    {
+      "id": "centro-palacio-hierro",
+      "zonaId": "centro",
+      "orden": 30,
+      "nombre": "Palacio de Hierro",
+      "nombreLineas": ["Palacio de", "Hierro"],
+      "estado": "existente",
+      "imagen": "assets/images/places/centro/palacio-hierro.jpg",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Descripción pendiente de verificación. Esta ficha de ejemplo permite probar un término sobre " },
+        { "texto": "arquitectura", "terminoId": "arquitectura" },
+        { "texto": "." }
+      ]
+    },
+    {
+      "id": "centro-edificio-04",
+      "zonaId": "centro",
+      "orden": 40,
+      "nombre": "Edificio Centro 4",
+      "nombreLineas": ["Edificio", "Centro 4"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/centro/edificio-centro.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha provisional de este inmueble del Centro Histórico. Su nombre y la información detallada se actualizarán cuando el contenido sea validado." }
+      ]
+    },
+    {
+      "id": "juarez-demo-01",
+      "zonaId": "juarez",
+      "orden": 10,
+      "nombre": "Ubicación demo Juárez 1",
+      "nombreLineas": ["Ubicación", "Juárez 1"],
+      "estado": "existente",
+      "imagen": "assets/images/places/juarez/juarez-01.jpg",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Texto de prueba para la zona Juárez. La ficha final podrá describir la " },
+        { "texto": "fachada", "terminoId": "fachada" },
+        { "texto": " y el " },
+        { "texto": "estilo", "terminoId": "estilo" },
+        { "texto": " del lugar." }
+      ]
+    },
+    {
+      "id": "juarez-demo-02",
+      "zonaId": "juarez",
+      "orden": 20,
+      "nombre": "Ubicación demo Juárez 2",
+      "nombreLineas": ["Ubicación", "Juárez 2"],
+      "estado": "desaparecido",
+      "imagen": "assets/images/places/juarez/juarez-02.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha de muestra para un lugar desaparecido. La información final podrá explicar su valor de " },
+        { "texto": "patrimonio", "terminoId": "patrimonio" },
+        { "texto": " y su " },
+        { "texto": "conservación", "terminoId": "conservacion" },
+        { "texto": " documental." }
+      ]
+    },
+    {
+      "id": "juarez-demo-03",
+      "zonaId": "juarez",
+      "orden": 30,
+      "nombre": "Ubicación demo Juárez 3",
+      "nombreLineas": ["Ubicación", "Juárez 3"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/juarez/juarez-03.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha provisional para esta ubicación de la colonia Juárez. El contenido se incorporará cuando haya sido validado." }
+      ]
+    },
+    {
+      "id": "juarez-demo-04",
+      "zonaId": "juarez",
+      "orden": 40,
+      "nombre": "Ubicación demo Juárez 4",
+      "nombreLineas": ["Ubicación", "Juárez 4"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/juarez/juarez-04.jpg",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha provisional para esta ubicación de la colonia Juárez. El contenido se incorporará cuando haya sido validado." }
+      ]
+    },
+    {
+      "id": "juarez-demo-05",
+      "zonaId": "juarez",
+      "orden": 50,
+      "nombre": "Ubicación demo Juárez 5",
+      "nombreLineas": ["Ubicación", "Juárez 5"],
+      "estado": "sin_confirmar",
+      "imagen": "assets/images/places/juarez/juarez-05.png",
+      "demo": true,
+      "descripcion": [
+        { "texto": "Ficha provisional para esta ubicación de la colonia Juárez. El contenido se incorporará cuando haya sido validado." }
+      ]
+    }
+  ],
+  "glosario": {
+    "pretil": {
+      "titulo": "pretil",
+      "significado": "Murete o barda pequeña de seguridad que se construye en el perímetro de una azotea, puente o balcón para evitar caídas y canalizar el agua de lluvia."
+    },
+    "fachada": {
+      "titulo": "Fachada",
+      "significado": "Cara exterior de un edificio, especialmente la principal."
+    },
+    "patrimonio": {
+      "titulo": "Patrimonio",
+      "significado": "Conjunto de bienes que una comunidad reconoce por su valor cultural o histórico."
+    },
+    "ornamento": {
+      "titulo": "Ornamento",
+      "significado": "Elemento decorativo añadido a una construcción."
+    },
+    "recorrido": {
+      "titulo": "Recorrido",
+      "significado": "Trayecto organizado para visitar varios puntos de interés."
+    },
+    "arquitectura": {
+      "titulo": "Arquitectura",
+      "significado": "Disciplina dedicada a proyectar y construir edificios y espacios."
+    },
+    "conservacion": {
+      "titulo": "Conservación",
+      "significado": "Acciones destinadas a cuidar y mantener un bien para preservar su valor."
+    },
+    "estilo": {
+      "titulo": "Estilo",
+      "significado": "Conjunto de rasgos que caracteriza una obra o una época."
+    }
+  }
+}
