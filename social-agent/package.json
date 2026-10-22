@@ -17,7 +17,8 @@
     "actualizar-kuper": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/actualizar-kuper.js",
     "competencia-kuper": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/competencia-kuper.js",
     "probar-agenda": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/probar-agenda.js",
-    "respaldo": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/respaldo.js"
+    "respaldo": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/respaldo.js",
+    "alta-cliente-agente": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/alta-cliente-agente.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
