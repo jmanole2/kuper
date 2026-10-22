@@ -3,7 +3,7 @@
 // y se conecta al panel con la llave de la API.
 //
 //   SLUG=red-one NOMBRE="Red One" CORREO=provoc@redone.agency AGENTE_URL=https://ai.redone.agency \
-//   CALENDAR_ID=correo@empresa.com MEET=https://meet.google.com/xxx-xxxx-xxx \
+//   CALENDAR_ID=correo@empresa.com MEET=https://meet.google.com/xxx-xxxx-xxx HORARIO_VIE=09:00-14:30 \
 //   AGENTE_ENV=/opt/redone-agent/.env npm run alta-cliente-agente
 //
 // AGENTE_ENV (opcional): escribe PANEL_URL y PANEL_API_KEY en el .env del agente, sin mostrar la llave.
@@ -30,7 +30,8 @@ const config = {
     ...(base.agenda || {}),
     calendar_id: cleanCalendarId(E.CALENDAR_ID) || base.agenda?.calendar_id || '',
     duracion_min: dur, margen_min: Number(E.MARGEN || 0), anticipacion_horas: Number(E.ANTICIPACION || 3), paso_min: dur,
-    horario: Object.fromEntries(dias.map((d) => [d, [ini, fin]])),
+    // HORARIO_VIE=09:00-14:30 (o HORARIO_LUN, HORARIO_MAR…) cambia el horario de ese día.
+    horario: Object.fromEntries(dias.map((d) => [d, (E[`HORARIO_${d.toUpperCase()}`] || `${ini}-${fin}`).split('-')])),
     ...(E.MEET ? { link_reunion: E.MEET.trim() } : {}),
     titulo: E.TITULO || `${E.NOMBRE} · {nombre}`,
   },
@@ -47,7 +48,7 @@ if (previo) {
   c = db.createClient({ slug, nombre: E.NOMBRE.trim(), perfil: { cliente: E.NOMBRE.trim(), pilares_de_contenido: [] }, config, credentials });
 }
 console.log(`${previo ? 'Actualizado' : 'Creado'}: ${c.nombre} (${slug}) · chat y agenda, sin publicaciones.`);
-console.log(`  Agenda: ${config.agenda.calendar_id || 'FALTA el calendario (CALENDAR_ID=...)'} · ${dur} min · ${dias.join(', ')} ${ini}-${fin}${config.agenda.link_reunion ? ` · ${config.agenda.link_reunion}` : ' · sin link fijo de Meet'}`);
+console.log(`  Agenda: ${config.agenda.calendar_id || 'FALTA el calendario (CALENDAR_ID=...)'} · ${dur} min · ${Object.entries(config.agenda.horario).map(([d, h]) => `${d} ${h.join('-')}`).join(', ')}${config.agenda.link_reunion ? ` · ${config.agenda.link_reunion}` : ' · sin link fijo de Meet'}`);
 console.log(`  Avisos y reporte mensual a: ${config.notificaciones.email || 'FALTA (CORREO=...)'}`);
 console.log(`  Página para agendar: ${appConfig.publicBaseUrl}/agendar/${slug}`);
 
