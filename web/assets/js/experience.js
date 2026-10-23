@@ -46,9 +46,9 @@
   const count = document.getElementById('expCount');
   const dots = Array.from(document.querySelectorAll('#expDots .exp-dot'));
   const SLIDES = [
-    { src: 'assets/images/novaplastica_2.jpeg', alt: 'Colaborador operando equipo de impresión en Novaplastica' },
-    { src: 'assets/images/novaplastica_1.jpeg', alt: 'Colaborador de Novaplástica supervisando la producción' },
-    { src: 'assets/images/experience/catalog/novaplastica_3.jpeg', alt: 'Proceso de impresión en la planta de Novaplástica' }
+    { src: 'assets/images/novaplastica_1.jpg', alt: 'Colaborador operando equipo de impresión en Novaplastica' },
+    { src: 'assets/images/novaplastica_2.jpg', alt: 'Colaborador de Novaplástica supervisando la producción' },
+    { src: 'assets/images/novaplastica_3.jpg', alt: 'Proceso de impresión en la planta de Novaplástica' }
   ];
   if (!img || !dots.length) return;
 
