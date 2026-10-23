@@ -52,7 +52,7 @@ export const BUCKET_DIMS = {
 /* ---------- utilidades ---------- */
 
 // Redondea esquinas de un perfil [[r, y, radio?], ...] con curvas cuadráticas.
-function rounded(points, seg = 6) {
+export function rounded(points, seg = 6) {
   const out = [];
   for (let i = 0; i < points.length; i++) {
     const [x, y, rad = 0] = points[i];

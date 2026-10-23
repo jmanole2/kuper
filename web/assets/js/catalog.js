@@ -1,11 +1,12 @@
 // ==========================================
 // SECCIÓN 07: PRODUCTOS — carrusel 3D
-// Cada producto se muestra con la cubeta 3D (bucket-model.js). Por ahora todas
-// usan el mismo modelo; los envases sin asa se dibujan sin ella. Cuando existan
-// modelos propios por producto se asignan en `model` de cada item.
+// Cada producto se muestra en 3D. `model` elige el modelo (product-models.js:
+// cubeta19, cubeta5, envase1); sin `model` se usa la cubeta del hero (4 L,
+// bucket-model.js), dibujada sin asa cuando handle es false.
 // ==========================================
 import * as THREE from 'three';
 import { createBucket } from '../../bucket-model.js';
+import { createProduct } from '../../product-models.js';
 
 const FOOD_LEGAL = 'Estos materiales cumplen con la regulación FDA Título 21 CFR 177.1520 y con las directivas europeas 2002/72/EC, 85/572/EC y 97/48/EC, que permiten su uso en artículos y componentes en contacto con alimentos.';
 
@@ -18,11 +19,11 @@ const categories = [
     legal: FOOD_LEGAL,
     items: [
       // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
-      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', handle: true, scale: 1 },
+      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', handle: true, scale: 1 },
       { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', handle: true, scale: 0.95 },
-      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', handle: true, scale: 0.92 },
+      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', handle: true, scale: 0.88 },
-      { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', handle: false, scale: 0.8 }
+      { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', model: 'envase1', handle: false, scale: 0.8 }
     ]
   },
   {
@@ -31,8 +32,8 @@ const categories = [
     accessories: 'Tapas, tapones, asas, opciones de impresión con selección de tintas, variedad de colores y entrega a domicilio.',
     legal: '',
     items: [
-      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', note: 'Asa de metal', handle: true, scale: 1 },
-      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', note: 'Asa de plástico o metal', handle: true, scale: 0.92 },
+      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', note: 'Asa de metal', handle: true, scale: 1 },
+      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: 'Asa de plástico o metal', handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: 'Asa de plástico o metal', handle: true, scale: 0.88 },
       { kind: 'Cubeta de', size: '3 L', line: 'Cubetas', note: 'Asa de plástico o metal', handle: true, scale: 0.85 },
       { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', handle: false, scale: 0.78 },
@@ -250,7 +251,9 @@ function buildBuckets() {
   if (!renderer) return;
   buckets.forEach(disposeBucket);
   buckets = (categories[cat].items || []).map((item) => {
-    const model = createBucket({ height: BUCKET_H, origin: 'bottom', withHandle: item.handle, handleAngle: -0.55 });
+    const model = item.model
+      ? createProduct(item.model, { height: BUCKET_H, origin: 'bottom', withHandle: item.handle })
+      : createBucket({ height: BUCKET_H, origin: 'bottom', withHandle: item.handle, handleAngle: -0.55 });
     model.position.y = -BUCKET_H / 2;          // pivote en el centro de la cubeta
     const spin = new THREE.Group();
     spin.rotation.order = 'XYZ';
