@@ -31,6 +31,8 @@ billing.hooks.fetch = async (url, opt) => {
   const ok = (j) => ({ ok: true, status: 200, json: async () => j });
   if (u.pathname === '/v1/customers' && opt.method === 'POST') return ok({ id: 'cus_1' });
   if (u.pathname === '/v1/checkout/sessions') return ok({ url: 'https://checkout.stripe.test/s1' });
+  if (u.pathname === '/v1/tax_rates' && opt.method === 'GET') return ok({ data: [] });
+  if (u.pathname === '/v1/tax_rates') return ok({ id: body.inclusive === 'true' ? 'txr_inc' : 'txr_mas' });
   if (u.pathname === '/v1/invoiceitems') return ok({ id: 'ii_1' });
   if (u.pathname === '/v1/invoices' && opt.method === 'POST') return ok({ id: 'in_1' });
   if (u.pathname === '/v1/invoices/in_1/pay') return pagoFalla ? { ok: false, status: 402, json: async () => ({ error: { message: 'Tarjeta rechazada' } }) } : ok({ status: 'paid' });
@@ -177,4 +179,58 @@ test('cortesía, pago por fuera y prueba gratis', async () => {
   const s = llamadas.filter((l) => l.p === '/v1/checkout/sessions').at(-1).body;
   assert.ok(Number(s['subscription_data[trial_end]']) > Date.now() / 1000 + 9 * 86400);
   assert.doesNotMatch(await (await get('/app', ana)).text(), /rechazó el último cobro/, 'en prueba no hay avisos de cobro');
+});
+
+test('IVA: desglose y opciones por cliente', () => {
+  assert.deepEqual(plan.desglose(1000, 'mas'), { subtotal: 1000, iva: 160, total: 1160 });
+  assert.deepEqual(plan.desglose(1160, 'incluido'), { subtotal: 1000, iva: 160, total: 1160 });
+  assert.deepEqual(plan.desglose(500, 'exento'), { subtotal: 500, iva: 0, total: 500 });
+  assert.equal(plan.ivaDe(db.getClient(sabor.id)), 'incluido', 'los clientes de antes no cambian de precio');
+});
+
+test('IVA "más IVA": Stripe recibe la tasa del 16 % en la mensualidad y en los extras', async () => {
+  const admin = await login('', 'maestra-123');
+  db.setBilling(chatOnly.id, { subscription_id: null });
+  await post(`/admin/clientes/${chatOnly.id}/plan`, admin, { servicio_chat: '1', conceptos: 'Agente IA | 1000 | mensual', cobro: 'stripe', iva: 'mas' });
+  const c = db.getClient(chatOnly.id);
+  assert.equal(plan.ivaDe(c), 'mas');
+  assert.equal(plan.mensualidadTotal(c), 1160);
+  billing._resetTasas();
+  const ana = await login('ana@clinica.mx', 'ClaveAna2030!');
+  await post('/app/pagos/domiciliar', ana, {});
+  const s = llamadas.filter((l) => l.p === '/v1/checkout/sessions').at(-1).body;
+  assert.equal(s['line_items[0][price_data][unit_amount]'], '100000', 'el precio va sin IVA…');
+  assert.equal(s['line_items[0][tax_rates][0]'], 'txr_mas', '…y Stripe le suma el IVA');
+  const tasa = llamadas.filter((l) => l.p === '/v1/tax_rates' && l.m === 'POST').at(-1).body;
+  assert.equal(tasa.percentage, '16'); assert.equal(tasa.inclusive, 'false'); assert.equal(tasa.display_name, 'IVA');
+  const pagos = await (await get('/app/pagos', ana)).text();
+  assert.match(pagos, /\$1,000 \+ IVA \$160 = \$1,160/);
+  assert.match(pagos, /\$1,160 al mes/);
+  // extra con IVA incluido: invoice item con la tasa "incluida"
+  await post(`/admin/clientes/${sabor.id}/plan`, admin, { servicio_redes: '1', posts_semana: '3', extra_gratis_mes: '0', precio_extra: '150', cobro: 'stripe', iva: 'incluido' });
+  db.setBilling(sabor.id, { stripe_customer: 'cus_1', tarjeta: 'visa •••• 4242', estado: 'al_corriente' });
+  const luis = await login('luis@buensabor.mx', 'ClaveLuis2030!');
+  assert.match(await (await get('/app/extra?red=instagram', luis)).text(), /Cuesta \$150/);
+  await post('/app/extra', luis, { red: 'instagram', monto: '150' });
+  const item = llamadas.filter((l) => l.p === '/v1/invoiceitems').at(-1).body;
+  assert.equal(item.amount, '15000'); assert.equal(item['tax_rates[0]'], 'txr_inc');
+  // sin IVA: no manda tasa
+  await post(`/admin/clientes/${sabor.id}/plan`, admin, { servicio_redes: '1', posts_semana: '3', extra_gratis_mes: '0', precio_extra: '150', cobro: 'stripe', iva: 'exento' });
+  await post('/app/extra', luis, { red: 'facebook', monto: '150' });
+  assert.equal(llamadas.filter((l) => l.p === '/v1/invoiceitems').at(-1).body['tax_rates[0]'], undefined);
+});
+
+test('datos para factura: el cliente los captura y el admin los ve', async () => {
+  const ana = await login('ana@clinica.mx', 'ClaveAna2030!');
+  let r = await post('/app/pagos/fiscal', ana, { rfc: 'ABC12', razon_social: 'Clínica Sol', cp: '06600', regimen: '601' });
+  assert.equal(r.status, 400); assert.match(await r.text(), /RFC no es válido/);
+  r = await post('/app/pagos/fiscal', ana, { rfc: 'csl-010203-ab1', razon_social: 'Clínica Sol SA de CV', cp: '06600', regimen: '601', uso: 'G03', correo: 'conta@clinica.mx' });
+  assert.equal(r.status, 303);
+  const f = plan.fiscalDe(db.getClient(chatOnly.id));
+  assert.equal(f.rfc, 'CSL010203AB1'); assert.equal(f.razon_social, 'CLÍNICA SOL SA DE CV');
+  const cus = llamadas.filter((l) => /^\/v1\/customers\/cus_/.test(l.p) && l.m === 'POST').at(-1);
+  assert.equal(cus.body['metadata[rfc]'], 'CSL010203AB1', 'el RFC también queda en Stripe');
+  assert.match(await (await get('/app/pagos?fiscal=1', ana)).text(), /guardamos tus datos para la factura/);
+  const admin = await login('', 'maestra-123');
+  assert.match(await (await get(`/admin/clientes/${chatOnly.id}?tab=config`, admin)).text(), /RFC CSL010203AB1/);
 });

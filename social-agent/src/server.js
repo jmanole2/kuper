@@ -283,11 +283,22 @@ export function createApp() {
   appR.get('/pagos', async (req, res) => {
     let r = { ...db.getBilling(req.client.id), facturas: [] }, error = '';
     try { r = await billing.resumen(req.client); } catch (e) { console.error('[pagos]', e.message); error = 'No pudimos consultar tus pagos en este momento.'; }
-    res.send(V.appPagosPage(req.client, r, { error, ok: req.query.ok ? 'Listo, tu tarjeta quedó domiciliada.' : '', stripeOn: billing.stripeOn() }));
+    res.send(V.appPagosPage(req.client, r, { error, ok: req.query.ok ? 'Listo, tu tarjeta quedó domiciliada.' : req.query.fiscal ? 'Listo, guardamos tus datos para la factura.' : '', stripeOn: billing.stripeOn() }));
   });
   appR.post('/pagos/domiciliar', async (req, res) => {
     try { res.redirect(303, await billing.checkoutUrl(req.client, { email: req.sesion.user?.email })); }
     catch (e) { console.error('[pagos]', e.message); res.status(500).send(V.appPagosPage(req.client, { ...db.getBilling(req.client.id), facturas: [] }, { error: 'No pudimos abrir la página de pago. Intenta de nuevo.', stripeOn: billing.stripeOn() })); }
+  });
+  appR.post('/pagos/fiscal', async (req, res) => {
+    try {
+      const fiscal = plan.parseFiscal(req.body || {});
+      db.updateClient(req.client.id, { config: { ...req.client.config, fiscal } });
+      seg.auditar(req, 'datos_fiscales', fiscal.rfc);
+      await billing.actualizarFiscal(req.client, fiscal);
+      res.redirect(303, '/app/pagos?fiscal=1#factura');
+    } catch (e) {
+      res.status(400).send(V.appPagosPage(req.client, { ...db.getBilling(req.client.id), facturas: [] }, { fiscalError: e.message, stripeOn: billing.stripeOn() }));
+    }
   });
   appR.post('/pagos/portal', async (req, res) => {
     try { res.redirect(303, await billing.portalUrl(req.client)); }
@@ -549,6 +560,7 @@ export function createApp() {
         conceptos: plan.parseConceptos(b.conceptos),
         cobro: plan.COBROS[b.cobro] ? b.cobro : 'stripe',
         prueba_hasta: /^\d{4}-\d{2}-\d{2}$/.test(b.prueba_hasta || '') ? b.prueba_hasta : '',
+        iva: plan.IVAS[b.iva] ? b.iva : plan.ivaDe(req.client),
       };
       db.updateClient(req.client.id, { config: { ...req.client.config, plan: nuevo } });
       seg.auditar(req, 'plan_actualizado', req.client.nombre);

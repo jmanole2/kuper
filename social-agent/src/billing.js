@@ -4,7 +4,7 @@
 import crypto from 'node:crypto';
 import { config } from './config.js';
 import * as db from './db.js';
-import { planDe } from './plan.js';
+import { planDe, ivaDe, TASA_IVA } from './plan.js';
 
 const KEY = () => process.env.STRIPE_SECRET_KEY || '';
 export const stripeOn = () => !!KEY();
@@ -45,6 +45,21 @@ async function cliente(client, email) {
   return c.id;
 }
 
+// Tasa de IVA en Stripe (16 %): "inclusive" cuando el precio ya trae IVA. Se crea una sola vez y se reutiliza;
+// así cada factura de Stripe muestra subtotal, IVA y total.
+const tasas = new Map();
+export const _resetTasas = () => tasas.clear(); // pruebas
+export async function tasaIva(modo) {
+  if (modo !== 'mas' && modo !== 'incluido') return null; // sin IVA
+  const inclusive = modo === 'incluido';
+  if (tasas.has(inclusive)) return tasas.get(inclusive);
+  const lista = await stripe('GET', '/tax_rates', { active: true, limit: 100 });
+  let t = (lista.data || []).find((x) => x.display_name === 'IVA' && Number(x.percentage) === TASA_IVA * 100 && !!x.inclusive === inclusive && (x.country || 'MX') === 'MX');
+  if (!t) t = await stripe('POST', '/tax_rates', { display_name: 'IVA', description: `IVA 16 %${inclusive ? ' incluido' : ''}`, percentage: TASA_IVA * 100, inclusive, country: 'MX', jurisdiction: 'MX', tax_type: 'vat' }, { idem: `iva16-${inclusive ? 'inc' : 'mas'}` });
+  tasas.set(inclusive, t.id);
+  return t.id;
+}
+
 // Si está en prueba gratis, la mensualidad empieza a cobrarse al terminar la prueba.
 function trial(plan) {
   if (!plan.prueba_hasta) return {};
@@ -63,13 +78,23 @@ export async function checkoutUrl(client, { email } = {}) {
     const s = await stripe('POST', '/checkout/sessions', { ...base, mode: 'setup', currency: 'mxn', payment_method_types: ['card'] });
     return s.url;
   }
-  const line = (c, recurring) => ({ quantity: 1, price_data: { currency: 'mxn', unit_amount: cents(c.monto), product_data: { name: c.nombre }, ...(recurring ? { recurring: { interval: 'month' } } : {}) } });
+  const tasa = await tasaIva(ivaDe(client));
+  const line = (c, recurring) => ({ quantity: 1, ...(tasa ? { tax_rates: [tasa] } : {}), price_data: { currency: 'mxn', unit_amount: cents(c.monto), product_data: { name: c.nombre }, ...(recurring ? { recurring: { interval: 'month' } } : {}) } });
   const s = await stripe('POST', '/checkout/sessions', {
     ...base, mode: 'subscription', payment_method_types: ['card'],
     line_items: [...mensual.map((c) => line(c, true)), ...unico.map((c) => line(c, false))],
     subscription_data: { metadata: { client_id: client.id }, ...trial(plan) },
   });
   return s.url;
+}
+
+/** Pone el nombre fiscal y el RFC en el cliente de Stripe (para que salgan en sus recibos). Nunca lanza. */
+export async function actualizarFiscal(client, fiscal) {
+  const b = db.getBilling(client.id);
+  if (!stripeOn() || !b.stripe_customer || !fiscal) return;
+  try {
+    await stripe('POST', `/customers/${b.stripe_customer}`, { name: fiscal.razon_social, ...(fiscal.correo ? { email: fiscal.correo } : {}), address: { postal_code: fiscal.cp, country: 'MX' }, metadata: { rfc: fiscal.rfc, regimen: fiscal.regimen, uso_cfdi: fiscal.uso } });
+  } catch (e) { console.error('[pagos] datos fiscales en Stripe:', e.message); }
 }
 
 /** Portal de Stripe: cambiar tarjeta, ver y descargar facturas. */
@@ -101,7 +126,8 @@ export async function resumen(client) {
 export async function cobrarExtra(client, { monto, concepto, idem }) {
   const b = db.getBilling(client.id);
   if (!b.stripe_customer || !b.tarjeta) return { ok: false, error: 'sin_tarjeta' };
-  await stripe('POST', '/invoiceitems', { customer: b.stripe_customer, amount: cents(monto), currency: 'mxn', description: concepto }, { idem: `ii-${idem}` });
+  const tasa = await tasaIva(ivaDe(client));
+  await stripe('POST', '/invoiceitems', { customer: b.stripe_customer, amount: cents(monto), currency: 'mxn', description: concepto, ...(tasa ? { tax_rates: [tasa] } : {}) }, { idem: `ii-${idem}` });
   const inv = await stripe('POST', '/invoices', { customer: b.stripe_customer, collection_method: 'charge_automatically', pending_invoice_items_behavior: 'include', auto_advance: true, description: concepto, metadata: { client_id: client.id } }, { idem: `inv-${idem}` });
   try {
     const paid = await stripe('POST', `/invoices/${inv.id}/pay`, {});

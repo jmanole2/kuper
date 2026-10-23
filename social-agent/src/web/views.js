@@ -8,7 +8,9 @@ import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
 import * as CONOC from '../conocimiento.js';
 import { ESTADOS as PROS_ESTADOS, REGLAS as PROS_REGLAS } from '../prospeccion.js';
-import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro } from '../plan.js';
+import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro, IVAS, ivaDe, desglose, mensualidadTotal, etiquetaIva, fiscalDe, REGIMENES, USOS_CFDI } from '../plan.js';
+// Precio con IVA según cómo se le cobra a ese cliente (para mostrar lo que de verdad paga).
+const conIva = (client, monto) => desglose(monto, ivaDe(client)).total;
 
 const PLAT = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
 const reusa = (c, p) => p === 'tiktok' || !!c.config[p]?.reusar_instagram;
@@ -177,14 +179,14 @@ export function codigoPage(error = '') {
 }
 
 export function dashboardPage(clients, counts, pulso, billings = {}) {
-  const mrr = clients.filter((c) => c.activo && !['cortesia', 'prueba'].includes(modoCobro(c))).reduce((n, c) => n + mensualidad(c), 0);
+  const mrr = clients.filter((c) => c.activo && !['cortesia', 'prueba'].includes(modoCobro(c))).reduce((n, c) => n + mensualidadTotal(c), 0);
   const fallidos = clients.filter((c) => billings[c.id]?.estado === 'pago_fallido');
   const body = html`${controlCenter(pulso, clients)}
   ${fallidos.length ? html`<div class="err">Pago rechazado: ${fallidos.map((c) => c.nombre).join(', ')}.</div>` : ''}
   <div class="row spread"><div><h2 style="margin:0">Marcas</h2><p class="muted small" style="margin:6px 0 0">Ingreso mensual de los planes: <b style="color:var(--ink)">${mxn(mrr)}</b></p></div><div class="row"><a class="btn btn-warn" href="/admin/usuarios">Usuarios</a><a class="btn btn-warn" href="/admin/clientes/nuevo">+ Nueva marca</a></div></div>
   <div class="grid" style="margin-top:16px">${clients.map((c) => html`<a class="card" href="/admin/clientes/${c.id}" style="text-decoration:none">
     <div class="row spread"><div class="row"><div class="avatar">${c.logo_path ? html`<img src="${mediaSrc(c.logo_path)}" alt="">` : c.nombre.slice(0, 1)}</div>
-      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}${mensualidad(c) ? ` · ${mxn(mensualidad(c))}/mes` : ''}</div></div></div>${c.activo ? (planDe(c).conceptos.length || modoCobro(c) !== 'stripe' ? (([t, col]) => html`<span class="badge" style="color:${col}">${t}</span>`)(estadoCobro(c, billings[c.id])) : '') : badge('rechazado')}</div>
+      <div><strong style="font-size:17px">${c.nombre}</strong><div class="muted small">${c.activo ? 'Activo' : 'En pausa'}${mensualidad(c) ? ` · ${mxn(mensualidadTotal(c))}/mes` : ''}</div></div></div>${c.activo ? (planDe(c).conceptos.length || modoCobro(c) !== 'stripe' ? (([t, col]) => html`<span class="badge" style="color:${col}">${t}</span>`)(estadoCobro(c, billings[c.id])) : '') : badge('rechazado')}</div>
     <div class="muted small" style="margin-top:10px">${Object.entries(SERVICIOS).filter(([k]) => planDe(c).servicios[k]).map(([, v]) => v.nombre).join(' · ')}</div>
     <div class="row" style="margin:16px 0 12px">${PLATFORMS.filter((p) => c.config[p]?.activo).map((p) => html`<span class="badge" style="color:${PCOL[p]}">${PLAT[p]}</span>`)}</div>
     <div class="row">${Object.entries(counts[c.id] || {}).map(([st, n]) => html`<span class="small muted">${badge(st)} ${n}</span>`)}</div></a>`)}
@@ -208,13 +210,30 @@ function planCard(client, billing) {
     <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
       <div><label>Cómo paga</label><select name="cobro">${Object.entries(COBROS).map(([k, l]) => html`<option value="${k}" ${raw(plan.cobro === k ? 'selected' : '')}>${l}</option>`)}</select></div>
       <div><label>Prueba gratis hasta (opcional)</label><input type="date" name="prueba_hasta" value="${plan.prueba_hasta || ''}"></div>
+      <div><label>IVA</label><select name="iva">${Object.entries(IVAS).map(([k, l]) => html`<option value="${k}" ${raw(ivaDe(client) === k ? 'selected' : '')}>${l}</option>`)}</select></div>
     </div>
     <p class="muted small" style="margin:6px 0 0">Cortesía: no se le cobra nada y sus extras son gratis. Paga por fuera: ve su plan, pero no se le pide tarjeta y sus extras quedan "por cobrar". Durante la prueba todo es gratis; si domicilia en ese tiempo, el primer cobro llega al terminar la prueba.</p>
     <label>Conceptos a cobrar (uno por línea: Nombre | monto | mensual o único)</label>
     <textarea name="conceptos" style="min-height:96px" placeholder="Agente de IA WhatsApp | 499 | mensual&#10;Configuración inicial | 5499 | único">${conceptosTexto(plan)}</textarea>
-    <p class="muted small">Mensualidad: <b>${mxn(mensualidad(client))}</b>. Al domiciliar su tarjeta, el cliente paga lo único en el primer cobro y la mensualidad cada mes. Si cambias los montos después, la suscripción ya creada no cambia (se ajusta en Stripe).</p>
+    <p class="muted small">Mensualidad: ${raw(resumenIva(client, mensualidad(client)))}. Al domiciliar su tarjeta, el cliente paga lo único en el primer cobro y la mensualidad cada mes. Si cambias los montos después, la suscripción ya creada no cambia (se ajusta en Stripe).</p>
     <button class="btn-accent">Guardar plan</button>
+    ${fiscalAdmin(client)}
   </form>`;
+}
+// "$1,000 + IVA = $1,160" / "$1,160 con IVA incluido (IVA $160)" / "$500 sin IVA"
+function resumenIva(client, monto) {
+  const modo = ivaDe(client), d = desglose(monto, modo);
+  if (!monto) return '<b>$0</b>';
+  if (modo === 'mas') return `<b>${mxn(d.subtotal)} + IVA ${mxn(d.iva)} = ${mxn(d.total)}</b>`;
+  if (modo === 'exento') return `<b>${mxn(d.total)}</b> sin IVA`;
+  return `<b>${mxn(d.total)}</b> con IVA incluido (subtotal ${mxn(d.subtotal)} + IVA ${mxn(d.iva)})`;
+}
+// Datos fiscales que capturó el cliente, para pasárselos al contador.
+function fiscalAdmin(client) {
+  const f = fiscalDe(client);
+  if (!f) return html`<p class="muted small" style="margin-top:14px">Datos para factura: el cliente todavía no los captura (los llena en su panel, en Pagos).</p>`;
+  return html`<div class="card" style="margin-top:14px;padding:14px 16px"><span class="mono">Datos para factura</span>
+    <p class="small" style="margin:8px 0 0;line-height:1.7"><b>${f.razon_social}</b><br>RFC ${f.rfc} · CP ${f.cp}<br>Régimen ${f.regimen} ${REGIMENES[f.regimen] || ''}<br>Uso CFDI ${f.uso} ${USOS_CFDI[f.uso] || ''}${f.correo ? html`<br>Enviar a ${f.correo}` : ''}</p></div>`;
 }
 
 const ORIGEN_COL = { instagram: '#e1306c', whatsapp: '#25d366', llamada: '#c9f53a', web: '#93b4ff' };
@@ -585,7 +604,7 @@ export function appPostsPage(client, posts, tab = '', leadsN = 0, cuota = null, 
       <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><b style="font-size:40px;font-weight:300;letter-spacing:-.04em">${cuota.semana}</b><span class="muted">de ${plan.posts_semana} publicaciones</span></div>
       <div style="height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:10px;overflow:hidden"><div style="height:100%;width:${Math.min(100, Math.round((cuota.semana / Math.max(1, plan.posts_semana)) * 100))}%;background:#c9f53a;border-radius:99px"></div></div></div>
     <div><span class="mono">Publicaciones extra este mes</span>
-      <p style="margin:8px 0 0">${['cortesia', 'prueba'].includes(cuota.costo.modo) ? raw('Tus publicaciones extra son <b>gratis</b>.') : cuota.costo.gratisRestantes ? raw(cuota.costo.gratisRestantes === 1 ? 'Te queda <b>1 gratis</b>.' : `Te quedan <b>${cuota.costo.gratisRestantes} gratis</b>.`) : html`Ya usaste tu extra gratis. Cada extra cuesta <b>${mxn(plan.precio_extra)}</b>.`}</p>
+      <p style="margin:8px 0 0">${['cortesia', 'prueba'].includes(cuota.costo.modo) ? raw('Tus publicaciones extra son <b>gratis</b>.') : cuota.costo.gratisRestantes ? raw(cuota.costo.gratisRestantes === 1 ? 'Te queda <b>1 gratis</b>.' : `Te quedan <b>${cuota.costo.gratisRestantes} gratis</b>.`) : html`Ya usaste tu extra gratis. Cada extra cuesta <b>${mxn(conIva(client, plan.precio_extra))}</b>.`}</p>
       <p class="muted small" style="margin:4px 0 0">${cuota.extras} ${cuota.extras === 1 ? 'extra pedida' : 'extras pedidas'} este mes.</p></div>
     <div><span class="mono">¿Quieres una más?</span><div class="row" style="margin-top:10px">${redesExtra.map((p) => html`<a class="btn btn-accent" href="/app/extra?red=${p}" style="padding:9px 16px">+ ${PLAT[p]}</a>`)}</div></div>
   </div>` : ''}
@@ -599,12 +618,12 @@ export function appExtraPage(client, { red, costo, tarjeta, error = '' }) {
   const body = html`${appHero(client, 'posts')}
   <div class="card" style="max-width:560px">
     <span class="mono">Publicación extra · ${PLAT[red]}</span>
-    <h1 style="font-size:32px;margin:12px 0 6px">${costo.monto ? `Cuesta ${mxn(costo.monto)}` : 'Esta va gratis'}</h1>
+    <h1 style="font-size:32px;margin:12px 0 6px">${costo.monto ? `Cuesta ${mxn(conIva(client, costo.monto))}` : 'Esta va gratis'}</h1>
     <p class="muted">${costo.monto ? html`Tu plan incluye ${plan.posts_semana} publicaciones por semana y ${plan.extra_gratis_mes} extra gratis al mes, que ya usaste. ${costo.modo === 'externo' ? 'Se suma a tu próximo pago con Kuper.' : tarjeta ? html`Se cobra a tu tarjeta <b>${tarjeta}</b>.` : ''}` : ['cortesia', 'prueba'].includes(costo.modo) ? 'Con tu plan actual, las publicaciones extra no tienen costo.' : html`Tu plan incluye ${plan.extra_gratis_mes} publicación extra gratis al mes. Después, cada una cuesta ${mxn(plan.precio_extra)}.`}</p>
     <p class="muted small">El agente la crea en unos minutos y te llega a "Por revisar" para que la apruebes antes de publicarse.</p>
     ${error ? html`<div class="err">${error}</div>` : ''}
     ${costo.monto && costo.modo === 'stripe' && !tarjeta ? html`<p><a class="btn btn-accent" href="/app/pagos">Primero domicilia tu tarjeta</a></p>` : html`<form method="post" action="/app/extra" class="row" style="margin-top:14px"><input type="hidden" name="red" value="${red}"><input type="hidden" name="monto" value="${costo.monto}">
-      <button class="btn-accent">${!costo.monto ? 'Crear publicación gratis' : costo.modo === 'externo' ? `Crear (se suma ${mxn(costo.monto)} a tu pago)` : `Pagar ${mxn(costo.monto)} y crear`}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></form>`}
+      <button class="btn-accent">${!costo.monto ? 'Crear publicación gratis' : costo.modo === 'externo' ? `Crear (se suma ${mxn(conIva(client, costo.monto))} a tu pago)` : `Pagar ${mxn(conIva(client, costo.monto))} y crear`}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></form>`}
   </div>`;
   return page({ title: `Publicación extra · ${client.nombre}`, side: sideApp('posts', client), body });
 }
@@ -618,9 +637,28 @@ function estadoCobro(client, billing) {
   return ESTADO_PAGO[billing?.estado] || ESTADO_PAGO.sin_tarjeta;
 }
 const ESTADO_PAGO = { al_corriente: ['Al corriente', '#4ade80'], sin_tarjeta: ['Sin tarjeta domiciliada', '#fbbf24'], pago_fallido: ['Pago rechazado', '#f87171'], cancelado: ['Suscripción cancelada', '#f87171'] };
-export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true } = {}) {
-  const plan = planDe(client), est = estadoCobro(client, r), mensual = mensualidad(client), modo = modoCobro(client);
-  const body = html`${appHero(client, 'pagos', [], 0, { note: ['Mensualidad', mensual ? `${mxn(mensual)} al mes` : 'Sin mensualidad'] })}
+// El cliente captura sus datos fiscales para que Kuper le haga su factura (CFDI).
+function fiscalForm(client, error = '') {
+  const f = fiscalDe(client) || {};
+  const opt = (obj, sel) => Object.entries(obj).map(([k, l]) => html`<option value="${k}" ${raw(String(sel) === k ? 'selected' : '')}>${k} · ${l}</option>`);
+  return html`<form class="card" method="post" action="/app/pagos/fiscal" style="margin-top:18px" id="factura">
+    <div class="row spread"><span class="mono">Datos para tu factura</span>${f.rfc ? html`<span class="badge" style="color:#4ade80">Guardados</span>` : html`<span class="badge" style="color:#fbbf24">Faltan</span>`}</div>
+    <p class="muted small" style="margin:6px 0 12px">Tal como aparecen en tu constancia de situación fiscal. Con esto te mandamos tu factura cada mes.</p>
+    ${error ? html`<div class="err">${error}</div>` : ''}
+    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div><label>RFC</label><input name="rfc" required maxlength="13" value="${f.rfc || ''}" style="text-transform:uppercase" autocomplete="off"></div>
+      <div><label>Nombre o razón social</label><input name="razon_social" required maxlength="200" value="${f.razon_social || ''}"></div>
+      <div><label>Código postal fiscal</label><input name="cp" required inputmode="numeric" maxlength="5" value="${f.cp || ''}"></div>
+      <div><label>Régimen fiscal</label><select name="regimen" required><option value="">Elige…</option>${opt(REGIMENES, f.regimen)}</select></div>
+      <div><label>Uso del CFDI</label><select name="uso">${opt(USOS_CFDI, f.uso || 'G03')}</select></div>
+      <div><label>Correo para recibir la factura (opcional)</label><input type="email" name="correo" maxlength="120" value="${f.correo || ''}"></div>
+    </div>
+    <button class="btn-accent" style="margin-top:12px">Guardar datos de factura</button>
+  </form>`;
+}
+export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true, fiscalError = '' } = {}) {
+  const plan = planDe(client), est = estadoCobro(client, r), mensual = mensualidad(client), modo = modoCobro(client), iva = ivaDe(client);
+  const body = html`${appHero(client, 'pagos', [], 0, { note: ['Mensualidad', mensual ? `${mxn(mensualidadTotal(client))} al mes` : 'Sin mensualidad'] })}
   ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
   ${modo === 'cortesia' ? html`<div class="okmsg">Tu plan es cortesía de Kuper: no se te cobra nada.</div>` : ''}
   ${modo === 'prueba' ? html`<div class="okmsg">Estás en tu prueba gratis hasta el ${fmtDia(plan.prueba_hasta + 'T18:00:00Z').toLowerCase()}. Si domicilias tu tarjeta ahora, el primer cobro llega al terminar la prueba.</div>` : ''}
@@ -636,11 +674,13 @@ export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true }
       <p class="muted small" style="margin-top:12px">🔒 Tu tarjeta se guarda en Stripe, el procesador de pagos. Kuper nunca ve ni guarda sus números.</p>`}
     </div>
     <div class="card"><span class="mono">Tu plan</span>
-      <table style="margin-top:8px">${plan.conceptos.map((c) => html`<tr><td>${c.nombre}</td><td class="muted small">${c.tipo === 'unico' ? 'pago único' : 'al mes'}</td><td style="text-align:right">${mxn(c.monto)}</td></tr>`)}
+      <table style="margin-top:8px">${plan.conceptos.map((c) => html`<tr><td>${c.nombre}</td><td class="muted small">${c.tipo === 'unico' ? 'pago único' : 'al mes'}</td><td style="text-align:right">${mxn(c.monto)} <span class="muted small">${etiquetaIva(iva)}</span></td></tr>`)}
       ${plan.conceptos.length ? '' : html`<tr><td class="muted">Kuper todavía no carga tu plan.</td></tr>`}</table>
+      ${mensual ? html`<p class="small" style="margin-top:10px">Al mes: ${raw(resumenIva(client, mensual))}.</p>` : ''}
       <p class="muted small" style="margin-top:10px">Incluye: ${Object.entries(SERVICIOS).filter(([k]) => plan.servicios[k]).map(([, v]) => v.nombre).join(', ') || '—'}${plan.servicios.redes ? ` · ${plan.posts_semana} publicaciones por semana · ${plan.extra_gratis_mes} extra gratis al mes (después ${mxn(plan.precio_extra)} c/u)` : ''}.</p>
     </div>
   </div>
+  ${fiscalForm(client, fiscalError)}
   <h2>Facturas y cobros</h2>
   ${r.facturas?.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Fecha</th><th>Concepto</th><th>Estado</th><th style="text-align:right">Total</th><th></th></tr>
     ${r.facturas.map((f) => html`<tr><td class="small">${fmtDate(f.fecha)}</td><td class="small">${f.concepto || f.numero || ''}</td><td><span class="badge" style="color:${f.estado === 'paid' ? '#4ade80' : f.estado === 'open' ? '#fbbf24' : '#a39d93'}">${{ paid: 'Pagada', open: 'Pendiente', void: 'Anulada', draft: 'Borrador', uncollectible: 'No cobrada' }[f.estado] || f.estado}</span></td>

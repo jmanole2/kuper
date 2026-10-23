@@ -20,7 +20,26 @@ const DEFAULT = {
   conceptos: [], // [{ nombre, monto, tipo: 'mensual' | 'unico' }] en MXN
   cobro: 'stripe', // 'stripe' (tarjeta domiciliada) | 'cortesia' (gratis) | 'externo' (transferencia, efectivo…)
   prueba_hasta: '', // 'YYYY-MM-DD': prueba gratis hasta ese día (inclusive)
+  iva: 'incluido', // 'mas' (precio + 16 %) | 'incluido' (el precio ya trae IVA) | 'exento' (cliente en el extranjero)
 };
+// IVA: cada cliente puede tener el precio "más IVA" o "con IVA incluido". Los clientes de antes quedan
+// en "incluido" para que su cobro no cambie solo.
+export const TASA_IVA = 0.16;
+export const IVAS = { mas: 'Precio + IVA (se suma el 16 % al cobrar)', incluido: 'Precio con IVA incluido', exento: 'Sin IVA (cliente en el extranjero)' };
+export const ivaDe = (client) => (IVAS[planDe(client).iva] ? planDe(client).iva : 'incluido');
+const r2 = (n) => Math.round(n * 100) / 100;
+/** Subtotal, IVA y total de un monto según cómo se cobra el IVA a ese cliente. */
+export function desglose(monto, modo = 'incluido') {
+  const m = Number(monto) || 0;
+  if (modo === 'mas') return { subtotal: r2(m), iva: r2(m * TASA_IVA), total: r2(m * (1 + TASA_IVA)) };
+  if (modo === 'exento') return { subtotal: r2(m), iva: 0, total: r2(m) };
+  const subtotal = r2(m / (1 + TASA_IVA));
+  return { subtotal, iva: r2(m - subtotal), total: r2(m) };
+}
+/** Lo que paga de verdad al mes (con IVA). */
+export const mensualidadTotal = (client) => desglose(mensualidad(client), ivaDe(client)).total;
+export const etiquetaIva = (modo) => ({ mas: '+ IVA', incluido: 'IVA incluido', exento: 'sin IVA' }[modo] || '');
+
 export const COBROS = { stripe: 'Tarjeta domiciliada (Stripe)', cortesia: 'Cortesía: gratis', externo: 'Paga por fuera (transferencia, efectivo…)' };
 
 export function planDe(client) {
@@ -42,7 +61,31 @@ export function modoCobro(client, now = new Date()) {
 }
 export const sinCosto = (client, now) => ['cortesia', 'prueba'].includes(modoCobro(client, now));
 export const mensualidad = (client) => planDe(client).conceptos.filter((c) => c.tipo !== 'unico').reduce((n, c) => n + (Number(c.monto) || 0), 0);
-export const mxn = (n) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n || 0);
+export const mxn = (n) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0, maximumFractionDigits: Number.isInteger(Number(n) || 0) ? 0 : 2 }).format(n || 0);
+
+// ------------------------------------------------------------ datos para la factura (CFDI)
+export const REGIMENES = {
+  601: 'General de Ley Personas Morales', 603: 'Personas Morales con Fines no Lucrativos', 605: 'Sueldos y Salarios',
+  606: 'Arrendamiento', 612: 'Personas Físicas con Actividades Empresariales y Profesionales', 616: 'Sin obligaciones fiscales',
+  621: 'Incorporación Fiscal', 625: 'Actividades Empresariales con ingresos a través de Plataformas Tecnológicas', 626: 'Régimen Simplificado de Confianza (RESICO)',
+};
+export const USOS_CFDI = { G03: 'Gastos en general', G01: 'Adquisición de mercancías', I08: 'Otra maquinaria y equipo', S01: 'Sin efectos fiscales', CP01: 'Pagos' };
+export const fiscalDe = (client) => client?.config?.fiscal || null;
+/** Valida y normaliza los datos fiscales que escribe el cliente. Lanza Error con un mensaje claro. */
+export function parseFiscal(b) {
+  const rfc = String(b.rfc || '').toUpperCase().replace(/[\s-]/g, '');
+  if (!/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc)) throw new Error('El RFC no es válido (12 caracteres para empresa, 13 para persona física).');
+  const razon = String(b.razon_social || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  if (razon.length < 3) throw new Error('Escribe tu nombre o razón social tal como aparece en tu constancia de situación fiscal.');
+  const cp = String(b.cp || '').trim();
+  if (!/^\d{5}$/.test(cp)) throw new Error('El código postal fiscal debe tener 5 números.');
+  const regimen = String(b.regimen || '');
+  if (!REGIMENES[regimen]) throw new Error('Elige tu régimen fiscal.');
+  const uso = USOS_CFDI[b.uso] ? String(b.uso) : 'G03';
+  const correo = String(b.correo || '').trim().toLowerCase();
+  if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) throw new Error('El correo para la factura no es válido.');
+  return { rfc, razon_social: razon.slice(0, 200), cp, regimen, uso, correo: correo.slice(0, 120), actualizado: new Date().toISOString() };
+}
 
 /** "Nombre | 499 | mensual" por línea -> conceptos. */
 export function parseConceptos(text) {
