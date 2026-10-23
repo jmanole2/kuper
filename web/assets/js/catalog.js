@@ -17,15 +17,12 @@ const categories = [
     accessories: 'Envases y tapas con o sin impresión, selección de tintas, variedad de colores, tapones, asas de plástico o metal y entrega a domicilio.',
     legal: FOOD_LEGAL,
     items: [
+      // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
       { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', handle: true, scale: 1 },
+      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', handle: true, scale: 0.95 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', handle: true, scale: 0.88 },
-      { kind: 'Cubeta de', size: '3 L', line: 'Cubetas', handle: true, scale: 0.85 },
-      { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', handle: false, scale: 0.8 },
-      { kind: 'Envase de', size: '500 ml', line: 'Envases de pared delgada', handle: false, scale: 0.75 },
-      { kind: 'Envase de', size: '380 ml', line: 'Envases de pared delgada', handle: false, scale: 0.72 },
-      { kind: 'Envase de', size: '250 ml', line: 'Envases de pared delgada', handle: false, scale: 0.68 },
-      { kind: 'Envase cuadrado', size: '4 L', line: 'Envase cuadrado', handle: false, scale: 0.88 }
+      { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', handle: false, scale: 0.8 }
     ]
   },
   {

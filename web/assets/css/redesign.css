@@ -1489,3 +1489,53 @@ html.is-bucket-dragging * {
 @media (min-width: 821px) {
   .values-section { height: 560vh; }
 }
+
+/* ==========================================================
+   OBSERVACIONES DEL CLIENTE (23 oct)
+   ========================================================== */
+
+/* "01" y "AÑOS DE EXPERIENCIA": misma familia que el resto del sitio
+   (Montserrat), con el mismo estilo que los números de sección. */
+.np-hero-index {
+  font-family: var(--np-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.np-hero-stat > span {
+  font-family: var(--np-sans);
+  font-weight: 600;
+  letter-spacing: 0.24em;
+}
+
+/* Indicador de scroll: más arriba para que nunca quede recortado
+   por el borde redondeado del hero ni por la barra del navegador. */
+.np-hero-scroll { bottom: clamp(44px, 7cqh, 80px); }
+
+/* WhatsApp: siempre completo, dentro del marco de 18px del sitio
+   y respetando el área segura de iPhone. */
+.wa-float {
+  right: calc(36px + env(safe-area-inset-right, 0px));
+  bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 575px) {
+  .wa-float {
+    right: calc(28px + env(safe-area-inset-right, 0px));
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Cobertura: texto alineado a la izquierda y sin cortar palabras con guion. */
+.coverage-copy > .coverage-phase > p {
+  text-align: left;
+  text-align-last: auto;
+  -webkit-hyphens: manual;
+  hyphens: manual;
+}
+
+/* Cobertura (escritorio): la simbología y el aviso del mapa dejan libre
+   la esquina del botón de WhatsApp para que no se encimen. */
+@media (min-width: 821px) {
+  .coverage-legend { right: calc(var(--section-content-edge, 36px) + 84px); }
+  .coverage-map-hint { right: 96px !important; }
+}

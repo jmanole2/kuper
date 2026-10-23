@@ -117,11 +117,11 @@ const bodyTopR = bucketDims.bodyTopR;
 const bodyTopY = bucketDims.E - bucketDims.H - bucketDims.neckH - bucketDims.bevelH - bucketDims.collarH;
 const bodyRadiusAt = (y) => bodyBaseR + (bodyTopR - bodyBaseR) * (y / bodyTopY);
 
-const LOGO_Y_MM = 44;          // altura del centro del logo sobre la base
+const LOGO_Y_MM = 68;          // altura del centro del logo: a media altura del cuerpo
 const LOGO_HEIGHT_MM = 30;     // alto del logo
 const LOGO_LIFT_MM = 0.4;      // despegue mínimo del cuerpo (evita z-fighting)
 const logoThetaLength = 0.82;
-const logoAngle = -Math.PI / 7; // centra el logo de frente a la cámara
+const logoAngle = 0;           // logo centrado de frente a la cámara (cubeta en reposo)
 
 const curvedGeo = new THREE.CylinderGeometry(
   bodyRadiusAt(LOGO_Y_MM + LOGO_HEIGHT_MM / 2) + LOGO_LIFT_MM,
@@ -156,18 +156,19 @@ function contactShadowTexture() {
   const c = document.createElement('canvas'); c.width = c.height = s;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
-  g.addColorStop(0, 'rgba(0,0,0,0.45)');
-  g.addColorStop(0.6, 'rgba(0,0,0,0.18)');
+  g.addColorStop(0, 'rgba(0,0,0,0.5)');
+  g.addColorStop(0.45, 'rgba(0,0,0,0.3)');
+  g.addColorStop(0.75, 'rgba(0,0,0,0.1)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
   return new THREE.CanvasTexture(c);
 }
 const contactShadow = new THREE.Mesh(
-  new THREE.PlaneGeometry(2.6, 1.6),
+  new THREE.PlaneGeometry(1.02, 0.46),   // apenas más ancha que la base: la cubeta "se apoya"
   new THREE.MeshBasicMaterial({ map: contactShadowTexture(), transparent: true, depthWrite: false })
 );
 contactShadow.rotation.x = -Math.PI / 2;
-contactShadow.position.set(-0.4, -0.129, 0.1);
+contactShadow.position.set(0, -0.129, 0.12);   // un poco al frente: oscurece el borde de apoyo
 scene.add(contactShadow);
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.4));
@@ -711,7 +712,9 @@ renderer.setAnimationLoop(() => {
   bucket.position.x += (targetBucketX - bucket.position.x) * 0.07;
   floorY += (targetBucketY - floorY) * (inHeroState ? 0.5 : 0.07);
   bucket.position.y += (targetBucketY + tiltLift - bucket.position.y) * (inHeroState ? 0.5 : 0.07);
-  contactShadow.position.x = -0.4 + bucket.position.x;
+  contactShadow.position.x = bucket.position.x;   // sombra centrada bajo la base
+  // La sombra crece y se reduce con la cubeta (en móvil la cubeta es más chica).
+  contactShadow.scale.setScalar(bucket.scale.x / BUCKET_BASE_SCALE);
   contactShadow.position.y = 0.001 + floorY;
 
   // El asa conserva siempre su tamaño real y aparece en el hero y Valores.
