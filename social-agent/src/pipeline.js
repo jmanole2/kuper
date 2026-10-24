@@ -121,6 +121,7 @@ async function produceMedia(client, post, out, { feedback } = {}) {
     brand: brandOf(client),
     plataforma: post.plataforma,
     ideaVisual: out.idea_visual,
+    anteriores: feedback ? [] : db.recentVisuals(client.id, { excludeId: post.id }),
     feedback,
   }, base, { log: (m) => db.logEvent({ postId: post.id, clientId: client.id, tipo: 'animador', detalle: m }) });
   return {

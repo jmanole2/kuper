@@ -42,6 +42,7 @@ function briefText(job) {
     `Estilo visual de la marca: ${job.brand.style || 'sin indicaciones; propone uno coherente con la paleta'}.`,
     job.ideaVisual ? `Idea visual sugerida por el redactor (puedes mejorarla): ${job.ideaVisual}` : '',
     job.feedback ? `Comentarios del cliente sobre la versión anterior: ${job.feedback}` : '',
+    job.anteriores?.length ? `## PIEZAS ANTERIORES DE ESTA MARCA (no las repitas)\nAsí se diseñaron las últimas. Mantén colores, tipografía y estilo de la marca, pero usa una composición, un recurso visual y una animación DISTINTOS a estos:\n${job.anteriores.map((a, i) => `${i + 1}. (${a.formato || 'pieza'}) ${a.concepto}`).join('\n')}` : '',
     `## K.content`,
     '```json', JSON.stringify(job.content, null, 2), '```',
   ].filter(Boolean).join('\n');

@@ -59,3 +59,12 @@ test('ciclo con Claude: corrige errores, revisa la hoja de contacto y aprueba', 
   assert.ok(Array.isArray(seen[2].content) && seen[2].content[0].type === 'image', 'le manda la hoja de contacto');
   assert.ok(fs.statSync(r.video).size > 10_000);
 });
+
+test('el animador recibe sus diseños anteriores para no repetirlos', { timeout: 60_000 }, async () => {
+  let brief = '';
+  const askFn = async (messages) => { brief = String(messages[0].content); throw new Error('alto'); };
+  const job = { kind: 'imagen', formato: '1:1', brand, content: { titular: 'Hola', apoyo: 'x' }, anteriores: [{ formato: 'video_animado', concepto: 'Reloj gigante que se derrite' }] };
+  const r = await createVisual(job, path.join(dir, 'ant'), { useClaude: true, askFn });
+  assert.match(brief, /PIEZAS ANTERIORES/); assert.match(brief, /Reloj gigante que se derrite/);
+  assert.equal(r.respaldo, true);
+});
