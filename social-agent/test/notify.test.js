@@ -43,6 +43,8 @@ test('una pieza al día: la más próxima primero', () => {
   assert.equal(cands.length, 2);
   assert.ok(cands[0].scheduledAt <= cands[1].scheduledAt);
   assert.equal(pipe.piecesLeftToday(now), 1);
+  db.createPost({ client_id: client.id, plataforma: 'linkedin', status: 'error_generacion' });
+  assert.equal(pipe.piecesLeftToday(now), 1, 'un intento fallido no se come el cupo del día');
   db.createPost({ client_id: client.id, plataforma: 'instagram', status: 'pendiente', scheduled_at: cands[0].scheduledAt });
   assert.equal(pipe.piecesLeftToday(now), 0, 'ya se generó la de hoy');
   assert.equal(pipe.generationCandidates(now).length, 1, 'instagram ya tiene post abierto');

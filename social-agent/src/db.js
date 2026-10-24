@@ -468,8 +468,9 @@ export const keywordReplies = (clientId, limit = 20) =>
 export const kvGet = (k) => getDb().prepare('SELECT v FROM kv WHERE k = ?').get(k)?.v ?? null;
 export const kvSet = (k, v) => getDb().prepare('INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)').run(k, String(v));
 /** Posts creados por el programador desde un instante (ISO UTC), para el límite diario. */
+// Los intentos fallidos no cuentan: si no, un cliente con error se come el cupo del día de todos.
 export const generatedSince = (iso) => getDb().prepare(
-  "SELECT COUNT(*) AS n FROM posts WHERE created_at >= datetime(?)").get(iso).n;
+  "SELECT COUNT(*) AS n FROM posts WHERE created_at >= datetime(?) AND status != 'error_generacion'").get(iso).n;
 /** Posts que esperan al cliente (revisar o subir foto) cambiados después de un instante. */
 export const waitingSince = (clientId, iso) => getDb().prepare(
   `SELECT * FROM posts WHERE client_id = ? AND status IN ('pendiente','necesita_asset') AND updated_at > datetime(?) ORDER BY scheduled_at`,
