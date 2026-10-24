@@ -49,6 +49,14 @@ export function slotFor(client, plataforma, now = new Date()) {
   });
 }
 
+// Pilares activos ordenados del menos al más usado en lo reciente (para que no hable siempre de lo mismo).
+function menosUsados(client, historial) {
+  const activos = (client.perfil?.pilares_de_contenido || []).filter((p) => p.activo !== false).map((p) => p.nombre);
+  const usos = new Map(activos.map((n) => [n, 0]));
+  for (const h of historial) if (usos.has(h.pilar)) usos.set(h.pilar, usos.get(h.pilar) + 1);
+  return [...usos.entries()].sort((a, b) => a[1] - b[1]).slice(0, 5).map(([n]) => n);
+}
+
 function buildInput(client, plataforma, { feedback, postId, tema } = {}) {
   const slot = slotFor(client, plataforma);
   const historial = db.recentHistory(client.id, { excludeId: postId }).map((h) => ({
@@ -59,7 +67,7 @@ function buildInput(client, plataforma, { feedback, postId, tema } = {}) {
     plataforma,
     perfil: client.perfil,
     config: client.config,
-    historial: { ultimas_publicaciones: historial, fecha_calculada: slot.fecha, sin_publicaciones_previas: slot.sinHistorial },
+    historial: { ultimas_publicaciones: historial, fecha_calculada: slot.fecha, sin_publicaciones_previas: slot.sinHistorial, pilares_menos_usados: menosUsados(client, historial) },
     competencia: report ? { ...report.data, fecha_analisis: report.created_at } : null,
     fechaCalculada: slot.fecha,
     scheduledAt: slot.scheduledAt,

@@ -117,7 +117,7 @@ export function portalPage(client, posts, token, tab = '') {
     note: pend.length ? ['Pendiente', `${pend.length} ${pend.length === 1 ? 'publicación espera' : 'publicaciones esperan'} tu visto bueno`] : ['Al día', 'No tienes nada pendiente'],
   })}
   ${sel[2].length ? html`<div class="grid">${sel[2].map((p) => postCard(p, { base: base(p) }))}</div>` : html`<div class="card muted">${sel[3]}</div>`}
-  ${pend.some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
+  ${pend.some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? vigilar(firmaPosts(posts)) : ''}`;
   return page({ title: `Publicaciones · ${client.nombre}`, body });
 }
 
@@ -399,20 +399,32 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   return page({ title: isNew ? 'Nuevo cliente' : client.nombre, side: side(isNew ? 'nuevo' : 'clientes'), body });
 }
 
+// Actualiza la página solo cuando algo cambió (antes se recargaba entera cada pocos segundos y parpadeaba).
+// Pide la misma página en segundo plano y compara una "firma" del estado.
+const firmaPosts = (posts) => posts.map((p) => `${p.id}:${p.status}`).join(',');
+function vigilar(firma) {
+  const f = JSON.stringify(String(firma));
+  return raw(`<span data-firma="${esc(String(firma))}" hidden></span><script>(()=>{const F=${f.replace(/</g, '\\u003c')};let n=0;const t=setInterval(async()=>{if(++n>120)return clearInterval(t);try{const r=await fetch(location.href,{credentials:'same-origin'});const m=(await r.text()).match(/data-firma="([^"]*)"/);const v=m?m[1].replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'"):'';if(v!==F)location.reload()}catch(e){}},10000)})()</script>`);
+}
 // Estado de la historia de Instagram de un post publicado, con botón para subirla o reintentar.
 function historiaCard(post, events) {
+  if (post.status === 'error' && /interrumpi/i.test(post.error || '')) {
+    return html`<div class="card" style="margin-bottom:14px"><strong>Se interrumpió mientras publicaba.</strong>
+      <p class="muted small" style="margin:6px 0 10px">Revisa en ${post.plataforma === 'facebook' ? 'Facebook' : 'Instagram'} si ya salió. Si sí, márcalo como publicado (así no se duplica y puedes subir la historia). Si no salió, usa "Publicar".</p>
+      <form method="post" action="/admin/posts/${post.id}/marcar-publicado" class="inline"><button class="btn-accent">Ya salió: marcar como publicado</button></form></div>`;
+  }
   if (post.plataforma !== 'instagram' || post.status !== 'publicado') return '';
   const ult = events.find((e) => ['historia_publicada', 'historia_error', 'historia_subiendo'].includes(e.tipo));
   const subiendo = ult?.tipo === 'historia_subiendo' && Date.now() - new Date(ult.created_at.replace(' ', 'T') + 'Z') < 10 * 60_000;
   const texto = !ult ? 'Este post todavía no se subió a historias.' : ult.tipo === 'historia_publicada' ? 'Ya está en historias.'
     : subiendo ? 'Subiendo a historias… Instagram puede tardar unos minutos.' : ult.tipo === 'historia_error' ? `No se pudo subir a historias: ${ult.detalle}` : 'La subida a historias se interrumpió.';
-  return html`<div class="card row spread" style="margin-bottom:14px"><span>${texto}</span>${subiendo ? raw('<script>setTimeout(()=>location.reload(),8000)</script>')
+  return html`<div class="card row spread" style="margin-bottom:14px"><span>${texto}</span>${subiendo ? vigilar(`${post.status}|${events[0]?.id}`)
     : ult?.tipo === 'historia_publicada' ? '' : html`<form method="post" action="/admin/posts/${post.id}/historia" class="inline"><button class="btn-accent">${ult ? 'Reintentar historia' : 'Subir a historia'}</button></form>`}</div>`;
 }
 export function postAdminPage(post, client, events) {
   const body = html`<p><a href="/admin/clientes/${client.id}">← ${client.nombre}</a></p>
   ${historiaCard(post, events)}
-  ${post.status === 'publicando' ? html`<div class="okmsg">Publicando… Instagram puede tardar unos minutos en procesar el video. Esta página se actualiza sola.</div>${raw('<script>setTimeout(()=>location.reload(),8000)</script>')}` : ''}
+  ${post.status === 'publicando' ? html`<div class="okmsg">Publicando… Instagram puede tardar unos minutos en procesar el video. Esta página se actualiza sola.</div>${vigilar(`${post.status}|${events[0]?.id}`)}` : ''}
   <div class="split"><div>${postCard(post, { base: `/admin/posts/${post.id}`, admin: true })}</div>
   <div><div class="card"><strong>Bitácora</strong><table>${events.map((e) => html`<tr><td class="muted small">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td>${e.tipo}</td><td class="small">${e.detalle}</td></tr>`)}</table></div>
   ${post.salida?.visual?.codigo ? html`<details class="card" style="margin-top:16px"><summary>Animador: ${post.salida.visual.respaldo ? 'diseño de respaldo' : `${post.salida.visual.rondas} rondas`}</summary>
@@ -644,7 +656,7 @@ export function appPostsPage(client, posts, tab = '', leadsN = 0, cuota = null, 
   ${temasCard(client, '/app/temas')}
   <div class="pills">${T.map(([k, l, list]) => html`<a class="${k === sel[0] ? 'on' : ''}" href="/app/posts?t=${k}">${l} <em>${list.length}</em></a>`)}</div>
   ${sel[2].length ? html`<div class="grid">${sel[2].map((p) => postCard(p, { base: `/app/posts/${p.id}` }))}</div>` : html`<div class="card muted">${sel[3]}</div>`}
-  ${sel[2].some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
+  ${sel[2].some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? vigilar(firmaPosts(posts)) : ''}`;
   return page({ title: `Publicaciones · ${client.nombre}`, side: sideApp('posts', client), body });
 }
 export function appExtraPage(client, { red, costo, tarjeta, error = '', tema = '' }) {

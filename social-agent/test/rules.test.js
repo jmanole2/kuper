@@ -79,3 +79,12 @@ test('rota pilar, tipo de post y estructura', () => {
   assert.match(errs, /tipo de post/);
   assert.match(errs, /estructura/);
 });
+
+test('con muchos pilares no repite ninguno de los últimos 3', () => {
+  const muchos = { ...perfil, pilares_de_contenido: ['a', 'b', 'c', 'd', 'e', 'tips'].map((nombre) => ({ nombre, requiere_imagen_real: false })) };
+  const out = { ...make('instagram'), pilar_de_contenido: 'tips' };
+  const hist = [{ plataforma: 'instagram', pilar: 'a' }, { plataforma: 'instagram', pilar: 'b' }, { plataforma: 'instagram', pilar: 'tips' }];
+  assert.ok(validatePost(out, ctx('instagram', { perfil: muchos, historial: hist })).some((e) => /últimas 3 publicaciones/.test(e)));
+  const viejo = [...hist.slice(0, 2), { plataforma: 'instagram', pilar: 'c' }, { plataforma: 'instagram', pilar: 'tips' }];
+  assert.ok(!validatePost(out, ctx('instagram', { perfil: muchos, historial: viejo })).some((e) => /pilar/.test(e)), 'hace 4 sí se puede');
+});

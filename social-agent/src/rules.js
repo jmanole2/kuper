@@ -111,7 +111,9 @@ export function validatePost(out, { perfil, plataforma, modo, historial = [], fe
 
   // ---- rotación e historial
   const previas = historial.filter((h) => h.plataforma === plataforma);
-  if (previas[0] && pilares.length > 1 && norm(previas[0].pilar) === norm(out.pilar_de_contenido)) errs.push(`El pilar "${out.pilar_de_contenido}" ya se usó en la publicación anterior de ${plataforma}; elige otro.`);
+  // Pilar: no repetir el de las últimas publicaciones (3 si hay pilares de sobra, si no la anterior).
+  const ventana = pilares.length >= 6 ? 3 : pilares.length > 1 ? 1 : 0;
+  if (previas.slice(0, ventana).some((h) => norm(h.pilar) === norm(out.pilar_de_contenido))) errs.push(`El pilar "${out.pilar_de_contenido}" ya se usó en ${ventana === 1 ? 'la publicación anterior' : `las últimas ${ventana} publicaciones`} de ${plataforma}; elige otro (de preferencia uno de "pilares_menos_usados").`);
   if (previas[0]?.tipo_post && previas[0].tipo_post === out.tipo_post) errs.push(`El tipo de post "${out.tipo_post}" ya se usó en la publicación anterior de ${plataforma}; elige otro.`);
   if (historial.some((h) => h.tema && norm(h.tema) === norm(out.tema))) errs.push(`El tema "${out.tema}" ya se publicó recientemente.`);
   if (previas.slice(0, 2).map((h) => h.estructura).includes(out.estructura)) errs.push(`La estructura "${out.estructura}" se usó en las 2 publicaciones anteriores de ${plataforma}; elige otra.`);

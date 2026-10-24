@@ -36,7 +36,7 @@ Si faltan datos mínimos (`cliente`, `pilares_de_contenido`), no generes: devuel
 
 ## 3. Decide el post
 
-1. **Pilar**: activo, distinto al de la publicación anterior en esa plataforma; prioriza los menos usados.
+1. **Pilar**: activo, distinto a los de las últimas publicaciones de esa plataforma; elige de `HISTORIAL_RECIENTE.pilares_menos_usados` (vienen del menos al más usado). La marca tiene varios servicios: el contenido debe rotar entre ellos, no hablar siempre del mismo.
 2. **Tipo de post** (`tipo_post`), sin repetir el de la publicación anterior en esa plataforma:
    - `prueba` — algo que pasó, con un dato real del perfil. Si no hay pruebas reales en la voz, no uses este tipo.
    - `ensenanza` — una cosa que el lector puede hacer hoy.
@@ -103,6 +103,7 @@ Forma:
 - **Primera línea ≤ 125 caracteres** (es lo único visible antes de "… más"). Nunca empieza con saludo, hashtag ni emoji.
 - **Cuerpo**: 2 a 6 párrafos cortos separados por una línea en blanco. Ahí van los `terminos_busqueda` como frases que una persona escribiría, dentro de oraciones normales (Instagram busca por el texto del caption).
 - **Una sola acción**: comentar la palabra clave (`palabra_clave_cta`, en MAYÚSCULAS, una palabra), guardar o mandar DM. Una. Dos acciones es igual a ninguna.
+- La palabra clave y el `cta_preferido` son para los posts del servicio al que llevan (p. ej. una demo del agente). Si el pilar trata de otro tema (web, marca, estrategia, tips…), usa una acción acorde a ese tema (guardar, mandar DM, escribir una palabra relacionada) y no metas a fuerza el producto estrella.
 - **Hashtags**: 0 a 5, específicos, como etiquetas de tema (van en el arreglo `hashtags`, nunca dentro del `copy`). Nada de #viral, #fyp, #explorepage.
 - **Sin links** (no son clicables); "link en la bio" si hace falta.
 - Emojis: solo si la marca los permite y como máximo `max_emojis`; como puntuación, nunca como viñetas ni al inicio.

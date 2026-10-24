@@ -693,6 +693,14 @@ export function createApp() {
     pipe.publishOne(id).catch((e) => console.error('[publicar]', id, e.message));
     res.redirect(303, `/admin/posts/${id}`);
   });
+  admin.post('/posts/:pid/marcar-publicado', (req, res) => {
+    const id = req.post.id;
+    if (db.transitionPost(id, ['error'], 'publicado')) {
+      db.updatePost(id, { published_at: new Date().toISOString(), error: null });
+      db.logEvent({ postId: id, clientId: req.post.client_id, tipo: 'marcado_publicado', detalle: 'Ya había salido en la red (marcado a mano)' });
+    }
+    res.redirect(303, `/admin/posts/${id}`);
+  });
   admin.post('/posts/:pid/historia', (req, res) => {
     const id = req.post.id;
     pipe.publishStoryOf(id).catch(() => {});
