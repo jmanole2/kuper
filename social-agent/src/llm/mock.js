@@ -30,7 +30,7 @@ function caption({ plataforma, perfil, v, kw, trabajo }) {
   return [first, ...body].join('\n\n');
 }
 
-export function mockPost({ plataforma, perfil, config, historial, fechaCalculada, feedback }) {
+export function mockPost({ plataforma, perfil, config, historial, fechaCalculada, feedback, solicitud }) {
   const rules = PLATFORM_RULES[plataforma];
   const prevs = historial.ultimas_publicaciones.filter((h) => h.plataforma === plataforma);
   const pilares = perfil.pilares_de_contenido.filter(pilarActivo).filter((p) => !p.requiere_fuente_real);
@@ -61,7 +61,7 @@ export function mockPost({ plataforma, perfil, config, historial, fechaCalculada
     pilar_de_contenido: pilar.nombre,
     tipo_post,
     estructura,
-    tema: `Tema de prueba ${stamp}${feedback ? ' (corregido)' : ''}`,
+    tema: solicitud ? `Sobre: ${solicitud}` : `Tema de prueba ${stamp}${feedback ? ' (corregido)' : ''}`,
     formato_contenido: formato,
     ganchos,
     gancho_elegido: formato === 'carrusel' ? 1 : 0,

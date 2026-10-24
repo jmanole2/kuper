@@ -234,3 +234,17 @@ test('datos para factura: el cliente los captura y el admin los ve', async () =>
   const admin = await login('', 'maestra-123');
   assert.match(await (await get(`/admin/clientes/${chatOnly.id}?tab=config`, admin)).text(), /RFC CSL010203AB1/);
 });
+
+test('el cliente deja una idea de tema desde su panel', async () => {
+  const luis = await login('luis@buensabor.mx', 'ClaveLuis2030!');
+  let r = await post('/app/temas', luis, { tema: 'Tacos al pastor 2x1 los martes', accion: 'cola' });
+  assert.equal(r.headers.get('location'), '/app/posts?ok=tema');
+  assert.equal(db.getClient(sabor.id).config.temas_pendientes[0].texto, 'Tacos al pastor 2x1 los martes');
+  const pagina = await (await get('/app/posts?ok=tema', luis)).text();
+  assert.match(pagina, /Ideas en espera \(1\)/); assert.match(pagina, /tu idea quedó en la lista/);
+  r = await post('/app/temas', luis, { tema: 'Algo urgente', accion: 'extra' });
+  assert.match(r.headers.get('location'), /^\/app\/extra\?red=\w+&tema=Algo%20urgente$/);
+  assert.match(await (await get(r.headers.get('location'), luis)).text(), /Algo urgente<\/textarea>/);
+  await post('/app/temas/0/quitar', luis, {});
+  assert.equal(db.getClient(sabor.id).config.temas_pendientes.length, 0);
+});

@@ -241,7 +241,7 @@ export function createApp() {
   const appPosts = (c) => db.listPosts({ clientId: c.id, limit: 400 }).filter((p) => !['rechazado', 'error_generacion'].includes(p.status));
   // Cada sección solo existe si el cliente la contrató.
   const servicio = (srv) => (req, res, next) => (plan.tiene(req.client, srv) ? next() : res.redirect('/app'));
-  appR.use(['/posts', '/extra'], servicio('redes'));
+  appR.use(['/posts', '/extra', '/temas'], servicio('redes'));
   appR.use('/leads', servicio('chat'));
   appR.use('/citas', servicio('agenda'));
   appR.get('/llamadas', servicio('llamadas'), (req, res) => res.send(V.appLlamadasPage(req.client, llamadas.listar(req.client.id), llamadas.delMes(req.client.id, metricas.mesActual()))));
@@ -251,8 +251,19 @@ export function createApp() {
   appR.get('/extra', (req, res) => {
     const red = String(req.query.red || '');
     if (!redExtra(req.client, red)) return res.redirect('/app/posts');
-    res.send(V.appExtraPage(req.client, { red, costo: plan.costoExtra(req.client), tarjeta: db.getBilling(req.client.id).tarjeta }));
+    res.send(V.appExtraPage(req.client, { red, costo: plan.costoExtra(req.client), tarjeta: db.getBilling(req.client.id).tarjeta, tema: String(req.query.tema || '').slice(0, 400) }));
   });
+  // Ideas de temas: a la lista de espera (gratis, entra en su plan) o directo a una publicación extra.
+  appR.post('/temas', (req, res) => {
+    const tema = String(req.body.tema || '').trim().slice(0, 400);
+    if (req.body.accion === 'extra') {
+      const red = db.PLATFORMS.find((p) => redExtra(req.client, p));
+      return res.redirect(red ? `/app/extra?red=${red}&tema=${encodeURIComponent(tema)}` : '/app/posts');
+    }
+    try { pipe.agregarTema(req.client.id, tema); res.redirect(303, '/app/posts?ok=tema'); }
+    catch (e) { res.redirect(303, `/app/posts?error=${encodeURIComponent(e.message)}`); }
+  });
+  appR.post('/temas/:i/quitar', (req, res) => { pipe.quitarTema(req.client.id, Number(req.params.i)); res.redirect(303, '/app/posts'); });
   const extrasEnCurso = new Set();
   appR.post('/extra', async (req, res) => {
     const c = req.client, red = String(req.body.red || '');
@@ -261,7 +272,8 @@ export function createApp() {
     extrasEnCurso.add(c.id);
     try {
       const costo = plan.costoExtra(c), tarjeta = db.getBilling(c.id).tarjeta;
-      const vista = (error) => V.appExtraPage(c, { red, costo, tarjeta, error });
+      const tema = String(req.body.tema || '').trim().slice(0, 400);
+      const vista = (error) => V.appExtraPage(c, { red, costo, tarjeta, error, tema });
       if (Number(req.body.monto) !== costo.monto) return res.status(409).send(vista('El precio cambió desde que abriste esta página. Revísalo y confirma de nuevo.'));
       let estado = 'gratis', factura = null;
       if (costo.monto > 0 && costo.modo === 'externo') estado = 'por_cobrar'; // lo cobra Kuper por fuera
@@ -272,8 +284,8 @@ export function createApp() {
         estado = 'pagado'; factura = r.factura;
       }
       plan.registrarExtra(c.id, { plataforma: red, monto: costo.monto, estado, factura });
-      db.logEvent({ clientId: c.id, tipo: 'post_extra', detalle: `${red} · ${costo.monto ? plan.mxn(costo.monto) : 'gratis'}` });
-      pipe.enqueue(`extra-${c.id}-${red}-${Date.now()}`, () => pipe.generateForPlatform(c.id, red, { force: true }).catch(() => {}));
+      db.logEvent({ clientId: c.id, tipo: 'post_extra', detalle: `${red} · ${costo.monto ? plan.mxn(costo.monto) : 'gratis'}${tema ? ` · ${tema}` : ''}` });
+      pipe.enqueue(`extra-${c.id}-${red}-${Date.now()}`, () => pipe.generateForPlatform(c.id, red, { force: true, tema }).catch(() => {}));
       res.redirect('/app/posts?ok=extra');
     } catch (e) {
       console.error('[extra]', e.message);
@@ -310,7 +322,8 @@ export function createApp() {
     res.json({ ...p, feedHtml: feedHtml(p.feed) });
   });
   appR.get('/posts', async (req, res) => res.send(V.appPostsPage(req.client, await withTikTokInfo(req.client, appPosts(req.client)), String(req.query.t || ''), db.listLeads(req.client.id).length,
-    cuota(req.client), req.query.ok === 'extra' ? 'Listo, el agente ya está creando tu publicación extra. En unos minutos aparece en "Por revisar".' : '')));
+    cuota(req.client), req.query.ok === 'extra' ? 'Listo, el agente ya está creando tu publicación extra. En unos minutos aparece en "Por revisar".'
+      : req.query.ok === 'tema' ? 'Listo, tu idea quedó en la lista: la usamos en tu próxima publicación.' : String(req.query.error || '').slice(0, 200))));
   appR.param('pid', (req, res, next, id) => {
     req.post = db.getPost(Number(id));
     return req.post && req.post.client_id === req.client.id ? next() : res.status(404).send('Post no encontrado');
@@ -656,11 +669,13 @@ export function createApp() {
     }
   });
   admin.post('/clientes/:cid/generar', (req, res) => {
-    const plataforma = req.body.plataforma;
+    const plataforma = req.body.plataforma, tema = String(req.body.tema || '').trim().slice(0, 400);
     pipe.enqueue(`gen-${req.client.id}-${plataforma}-${Date.now()}`, () =>
-      pipe.generateForPlatform(req.client.id, plataforma, { force: true }).catch(() => {}));
+      pipe.generateForPlatform(req.client.id, plataforma, { force: true, tema }).catch(() => {}));
     res.redirect(`/admin/clientes/${req.client.id}`);
   });
+
+  admin.post('/clientes/:cid/temas/:i/quitar', (req, res) => { pipe.quitarTema(req.client.id, Number(req.params.i)); res.redirect(`/admin/clientes/${req.client.id}`); });
 
   admin.param('pid', (req, res, next, id) => {
     req.post = db.getPost(Number(id));

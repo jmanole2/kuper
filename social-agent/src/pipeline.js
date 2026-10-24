@@ -49,7 +49,7 @@ export function slotFor(client, plataforma, now = new Date()) {
   });
 }
 
-function buildInput(client, plataforma, { feedback, postId } = {}) {
+function buildInput(client, plataforma, { feedback, postId, tema } = {}) {
   const slot = slotFor(client, plataforma);
   const historial = db.recentHistory(client.id, { excludeId: postId }).map((h) => ({
     plataforma: h.plataforma, pilar: h.pilar, tipo_post: h.tipo_post, estructura: h.estructura, formato: h.formato, tema: h.tema, fecha: h.fecha?.slice(0, 10),
@@ -64,6 +64,7 @@ function buildInput(client, plataforma, { feedback, postId } = {}) {
     fechaCalculada: slot.fecha,
     scheduledAt: slot.scheduledAt,
     feedback,
+    ...(tema ? { solicitud: tema } : {}),
   };
 }
 
@@ -131,11 +132,11 @@ async function produceMedia(client, post, out, { feedback } = {}) {
 }
 
 /** Genera (o regenera con feedback) el contenido de un post existente. */
-async function fillPost(postId, { feedback } = {}) {
+async function fillPost(postId, { feedback, tema } = {}) {
   db.logEvent({ postId, tipo: 'generando', detalle: feedback ? 'Aplicando cambios del cliente' : 'Claude está escribiendo el post' });
   let post = db.getPost(postId);
   const client = db.getClient(post.client_id);
-  const input = buildInput(client, post.plataforma, { feedback, postId });
+  const input = buildInput(client, post.plataforma, { feedback, postId, tema });
   // Al regenerar se respeta la fecha que ya tenía el post.
   if (feedback && post.scheduled_at) input.fechaCalculada = input.historial.fecha_calculada = localDate(post.scheduled_at, config.timezone);
   const modo = modoDe(client, post.plataforma);
@@ -173,15 +174,43 @@ async function fillPost(postId, { feedback } = {}) {
   return post;
 }
 
-export async function generateForPlatform(clientId, plataforma, { force = false } = {}) {
+// ------------------------------------------------------------ temas que pide el cliente
+// El cliente puede dejar ideas ("un post sobre nuestra promoción de diciembre"): la siguiente
+// publicación automática usa la primera de la lista y la quita cuando sale bien.
+export const temasPendientes = (client) => (Array.isArray(client?.config?.temas_pendientes) ? client.config.temas_pendientes : []);
+export function agregarTema(clientId, texto) {
+  const t = String(texto || '').trim().replace(/\s+/g, ' ').slice(0, 400);
+  if (t.length < 3) throw new Error('Escribe de qué quieres que trate la publicación.');
+  const client = db.getClient(clientId);
+  const lista = temasPendientes(client);
+  if (lista.length >= 10) throw new Error('Ya tienes 10 ideas en espera. Espera a que salgan algunas o borra una.');
+  db.updateClient(clientId, { config: { ...client.config, temas_pendientes: [...lista, { texto: t, fecha: new Date().toISOString() }] } });
+  db.logEvent({ clientId, tipo: 'tema_pedido', detalle: t });
+}
+export function quitarTema(clientId, indice) {
+  const client = db.getClient(clientId);
+  const lista = temasPendientes(client).filter((_, i) => i !== Number(indice));
+  db.updateClient(clientId, { config: { ...client.config, temas_pendientes: lista } });
+}
+function usarTema(clientId, texto) {
+  const client = db.getClient(clientId);
+  const lista = temasPendientes(client), i = lista.findIndex((t) => t.texto === texto);
+  if (i >= 0) db.updateClient(clientId, { config: { ...client.config, temas_pendientes: lista.filter((_, j) => j !== i) } });
+}
+
+/** tema: lo que pidió el cliente para ESTA publicación. Sin tema, la automática toma la primera idea en espera. */
+export async function generateForPlatform(clientId, plataforma, { force = false, tema = '' } = {}) {
   const client = db.getClient(clientId);
   if (!client) throw new Error('Cliente no existe');
   if (plataforma === 'tiktok') throw new Error('TikTok publica los videos de Instagram: se crea solo cuando apruebas un Reel.');
   if (!PLATFORM_RULES[plataforma]) throw new Error(`Plataforma no soportada: ${plataforma}`);
   if (!force && db.openPostFor(clientId, plataforma)) return null;
+  const deLaLista = !tema && temasPendientes(client)[0]?.texto;
   const post = db.createPost({ client_id: clientId, plataforma, status: 'generando' });
   try {
-    return await fillPost(post.id);
+    const r = await fillPost(post.id, { tema: tema || deLaLista || '' });
+    if (deLaLista && r?.status !== 'error_generacion') usarTema(clientId, deLaLista);
+    return r;
   } catch (e) {
     db.updatePost(post.id, { status: 'error_generacion', error: e.message });
     db.logEvent({ postId: post.id, clientId, tipo: 'error_generacion', detalle: e.message });

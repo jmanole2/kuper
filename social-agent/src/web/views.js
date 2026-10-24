@@ -299,7 +299,10 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
 
   ${!isNew && t === 'posts' ? html`
   <h2 style="margin-top:24px">Generar ahora</h2>
-  <div class="row">${PLATFORMS.filter((p) => client.config[p]?.activo && !reusa(client, p)).map((p) => html`<form method="post" action="/admin/clientes/${client.id}/generar" class="inline"><input type="hidden" name="plataforma" value="${p}"><button class="btn-accent">Post para ${PLAT[p]}</button></form>`)}</div>
+  <form method="post" action="/admin/clientes/${client.id}/generar" class="row" style="align-items:flex-end;flex-wrap:wrap;gap:10px">
+    <div style="flex:1;min-width:240px"><label>Tema (opcional)</label><input name="tema" maxlength="400" placeholder="Ej. promoción de diciembre, nuevo servicio…"></div>
+    ${PLATFORMS.filter((p) => client.config[p]?.activo && !reusa(client, p)).map((p) => html`<button class="btn-accent" name="plataforma" value="${p}">Post para ${PLAT[p]}</button>`)}</form>
+  ${temasCard(client, `/admin/clientes/${client.id}/temas`)}
   <div class="pills">${FILTROS.map(([k, l, sts]) => html`<a class="${k === fSel[0] ? 'on' : ''}" href="${url({ f: k })}">${l} <em>${count(sts)}</em></a>`)}
     <span style="flex:1"></span>
     <a class="${!red ? 'on' : ''}" href="${url({ red: '' })}">Todas</a>${PLATFORMS.filter((p) => client.config[p]?.activo).map((p) => html`<a class="${red === p ? 'on' : ''}" href="${url({ red: p })}"><i style="width:8px;height:8px;border-radius:50%;background:${PCOL[p]}"></i>${PLAT[p]}</a>`)}</div>
@@ -590,6 +593,15 @@ const appHero = (client, t, posts = [], leadsN = 0, extra = {}) => hero({
     ...(tiene(client, 'agenda') ? [['/app/citas', 'Citas', t === 'citas']] : []), ['/app/pagos', 'Pagos', t === 'pagos']],
   note: extra.note || null,
 });
+// Ideas de temas que dejó el cliente: la siguiente publicación automática usa la primera.
+function temasCard(client, base) {
+  const lista = Array.isArray(client.config?.temas_pendientes) ? client.config.temas_pendientes : [];
+  if (!lista.length) return '';
+  return html`<div class="card" style="margin:14px 0"><span class="mono">Ideas en espera (${lista.length})</span>
+    <p class="muted small" style="margin:6px 0 10px">La próxima publicación automática usa la primera.</p>
+    ${lista.map((t, i) => html`<div class="row spread" style="padding:8px 0;border-top:1px solid rgba(255,255,255,.06)"><span>${i + 1}. ${t.texto}</span>
+      <form method="post" action="${base}/${i}/quitar" class="inline"><button class="btn-warn" style="padding:6px 12px">Quitar</button></form></div>`)}</div>`;
+}
 export function appPostsPage(client, posts, tab = '', leadsN = 0, cuota = null, aviso = '') {
   const by = (sts) => posts.filter((p) => sts.includes(p.status));
   const T = [['revisar', 'Por revisar', by(['pendiente', 'necesita_asset', 'cambios_solicitados', 'generando']), 'No tienes nada pendiente.'],
@@ -608,12 +620,22 @@ export function appPostsPage(client, posts, tab = '', leadsN = 0, cuota = null, 
       <p class="muted small" style="margin:4px 0 0">${cuota.extras} ${cuota.extras === 1 ? 'extra pedida' : 'extras pedidas'} este mes.</p></div>
     <div><span class="mono">¿Quieres una más?</span><div class="row" style="margin-top:10px">${redesExtra.map((p) => html`<a class="btn btn-accent" href="/app/extra?red=${p}" style="padding:9px 16px">+ ${PLAT[p]}</a>`)}</div></div>
   </div>` : ''}
+  <form class="card" method="post" action="/app/temas" style="margin-bottom:18px">
+    <span class="mono">¿Quieres un post sobre algo?</span>
+    <div class="row" style="margin-top:10px;align-items:flex-end;flex-wrap:wrap;gap:10px">
+      <div style="flex:1;min-width:240px"><input name="tema" required maxlength="400" placeholder="Ej. nuestra promoción de diciembre, el nuevo horario, un cliente feliz…"></div>
+      <button class="btn-accent" name="accion" value="cola">Usarlo en mi próxima publicación</button>
+      ${redesExtra.length ? html`<button class="btn-warn" name="accion" value="extra">Lo quiero ya (publicación extra)</button>` : ''}
+    </div>
+    <p class="muted small" style="margin:8px 0 0">"Próxima publicación" no cuesta nada: entra en las de tu plan. "Lo quiero ya" crea una publicación extra en este momento.</p>
+  </form>
+  ${temasCard(client, '/app/temas')}
   <div class="pills">${T.map(([k, l, list]) => html`<a class="${k === sel[0] ? 'on' : ''}" href="/app/posts?t=${k}">${l} <em>${list.length}</em></a>`)}</div>
   ${sel[2].length ? html`<div class="grid">${sel[2].map((p) => postCard(p, { base: `/app/posts/${p.id}` }))}</div>` : html`<div class="card muted">${sel[3]}</div>`}
   ${sel[2].some((p) => ['generando', 'cambios_solicitados'].includes(p.status)) ? raw('<script>setTimeout(()=>location.reload(),15000)</script>') : ''}`;
   return page({ title: `Publicaciones · ${client.nombre}`, side: sideApp('posts', client), body });
 }
-export function appExtraPage(client, { red, costo, tarjeta, error = '' }) {
+export function appExtraPage(client, { red, costo, tarjeta, error = '', tema = '' }) {
   const plan = planDe(client);
   const body = html`${appHero(client, 'posts')}
   <div class="card" style="max-width:560px">
@@ -622,8 +644,9 @@ export function appExtraPage(client, { red, costo, tarjeta, error = '' }) {
     <p class="muted">${costo.monto ? html`Tu plan incluye ${plan.posts_semana} publicaciones por semana y ${plan.extra_gratis_mes} extra gratis al mes, que ya usaste. ${costo.modo === 'externo' ? 'Se suma a tu próximo pago con Kuper.' : tarjeta ? html`Se cobra a tu tarjeta <b>${tarjeta}</b>.` : ''}` : ['cortesia', 'prueba'].includes(costo.modo) ? 'Con tu plan actual, las publicaciones extra no tienen costo.' : html`Tu plan incluye ${plan.extra_gratis_mes} publicación extra gratis al mes. Después, cada una cuesta ${mxn(plan.precio_extra)}.`}</p>
     <p class="muted small">El agente la crea en unos minutos y te llega a "Por revisar" para que la apruebes antes de publicarse.</p>
     ${error ? html`<div class="err">${error}</div>` : ''}
-    ${costo.monto && costo.modo === 'stripe' && !tarjeta ? html`<p><a class="btn btn-accent" href="/app/pagos">Primero domicilia tu tarjeta</a></p>` : html`<form method="post" action="/app/extra" class="row" style="margin-top:14px"><input type="hidden" name="red" value="${red}"><input type="hidden" name="monto" value="${costo.monto}">
-      <button class="btn-accent">${!costo.monto ? 'Crear publicación gratis' : costo.modo === 'externo' ? `Crear (se suma ${mxn(conIva(client, costo.monto))} a tu pago)` : `Pagar ${mxn(conIva(client, costo.monto))} y crear`}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></form>`}
+    ${costo.monto && costo.modo === 'stripe' && !tarjeta ? html`<p><a class="btn btn-accent" href="/app/pagos">Primero domicilia tu tarjeta</a></p>` : html`<form method="post" action="/app/extra" style="margin-top:14px"><input type="hidden" name="red" value="${red}"><input type="hidden" name="monto" value="${costo.monto}">
+      <label>¿Sobre qué quieres que trate? (opcional)</label><textarea name="tema" maxlength="400" style="min-height:70px" placeholder="Si lo dejas vacío, el agente elige el tema según tu estrategia.">${tema}</textarea><div class="row" style="margin-top:10px">
+      <button class="btn-accent">${!costo.monto ? 'Crear publicación gratis' : costo.modo === 'externo' ? `Crear (se suma ${mxn(conIva(client, costo.monto))} a tu pago)` : `Pagar ${mxn(conIva(client, costo.monto))} y crear`}</button><a class="btn btn-warn" href="/app/posts">Cancelar</a></div></form>`}
   </div>`;
   return page({ title: `Publicación extra · ${client.nombre}`, side: sideApp('posts', client), body });
 }

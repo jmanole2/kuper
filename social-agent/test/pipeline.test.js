@@ -72,3 +72,18 @@ test('subir el asset real pasa el post a aprobación', () => {
   pipe.attachAsset(p.id, f, 'image/jpeg');
   assert.equal(db.getPost(p.id).status, 'pendiente');
 });
+
+test('temas que pide el cliente: la siguiente publicación usa la primera idea y la quita', { timeout: 60_000 }, async () => {
+  pipe.agregarTema(client.id, 'Nuestra promoción de diciembre');
+  pipe.agregarTema(client.id, 'El nuevo horario');
+  assert.throws(() => pipe.agregarTema(client.id, ' '), /Escribe de qué/);
+  const p = await pipe.generateForPlatform(client.id, 'facebook', { force: true });
+  assert.equal(p.tema, 'Sobre: Nuestra promoción de diciembre');
+  assert.deepEqual(pipe.temasPendientes(db.getClient(client.id)).map((t) => t.texto), ['El nuevo horario']);
+  // con tema explícito (publicación extra) no toca la lista
+  const q = await pipe.generateForPlatform(client.id, 'facebook', { force: true, tema: 'Un cliente feliz' });
+  assert.equal(q.tema, 'Sobre: Un cliente feliz');
+  assert.equal(pipe.temasPendientes(db.getClient(client.id)).length, 1);
+  pipe.quitarTema(client.id, 0);
+  assert.equal(pipe.temasPendientes(db.getClient(client.id)).length, 0);
+});
