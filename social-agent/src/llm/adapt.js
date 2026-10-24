@@ -80,7 +80,11 @@ HASHTAGS_INSTAGRAM: ${(post.hashtags || []).join(' ')}`;
   const messages = [{ role: 'user', content: input }];
   let out, errs = [];
   for (let round = 0; round < 3; round++) {
-    const res = await callClaude({ system: SYSTEM, messages, schema: SCHEMA, maxTokens: 8000 });
+    let res;
+    try { res = await callClaude({ system: SYSTEM, messages, schema: SCHEMA, maxTokens: 8000 }); } catch (e) {
+      if (out) break; // falló una corrección: se queda la versión anterior con sus avisos
+      throw e;
+    }
     out = clean(res.data);
     errs = adaptIssues(plataforma, out, client.perfil, link);
     if (!errs.length) break;

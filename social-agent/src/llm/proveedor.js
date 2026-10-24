@@ -70,17 +70,26 @@ async function gemini({ system, messages, schema, maxTokens }) {
   const cuerpo = (conEsquema) => ({
     systemInstruction: { parts: [{ text: conEsquema ? system : `${system}\n\nResponde SOLO con un objeto JSON que cumpla este esquema:\n${JSON.stringify(schema)}` }] },
     contents: aGemini(messages),
-    generationConfig: { responseMimeType: 'application/json', ...(conEsquema ? { responseJsonSchema: schema } : {}), maxOutputTokens: Math.min(maxTokens, 65536), temperature: 0.8 },
+    generationConfig: {
+      responseMimeType: 'application/json', ...(conEsquema ? { responseJsonSchema: schema } : {}), maxOutputTokens: Math.min(maxTokens, 65536), temperature: 0.8,
+      // Pensar poco: es más rápido y el pensamiento cuenta como texto de salida.
+      ...(conPensamiento && config.geminiThinking !== 'default' ? { thinkingConfig: { thinkingLevel: config.geminiThinking } } : {}),
+    },
   });
-  let conEsquema = true, intento = 0;
+  let conEsquema = true, conPensamiento = true, intento = 0;
   for (;;) {
     intento++;
     const res = await hooks.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.geminiTextApiKey },
       body: JSON.stringify(cuerpo(conEsquema)),
-      signal: AbortSignal.timeout(240_000),
+      signal: AbortSignal.timeout(config.geminiTimeoutMs),
+    }).catch((e) => {
+      // Se tardó demasiado: se reintenta una vez antes de pasar al siguiente proveedor.
+      if (intento < 2 && /abort|timeout/i.test(e.message)) return null;
+      throw e;
     });
+    if (!res) { console.error('[ia] Gemini tardó demasiado, reintento una vez'); continue; }
     const j = await res.json().catch(() => ({}));
     if (res.ok) {
       const cand = j.candidates?.[0];
@@ -96,6 +105,7 @@ async function gemini({ system, messages, schema, maxTokens }) {
     const msg = j.error?.message || `HTTP ${res.status}`;
     // El esquema tiene algo que Gemini no acepta: se pide el JSON con el esquema en las instrucciones.
     if (res.status === 400 && conEsquema && /schema|responseJsonSchema/i.test(msg)) { conEsquema = false; continue; }
+    if (res.status === 400 && conPensamiento && /think/i.test(msg)) { conPensamiento = false; continue; }
     const e = new Error(`Gemini ${res.status}: ${msg}`);
     if (res.status === 429) { e.cupo = true; throw e; } // límite gratis del día o del minuto
     if ([500, 502, 503, 504].includes(res.status) && intento < 2) { await sleep(3000); continue; }

@@ -33,6 +33,8 @@ export const config = {
   geminiTextApiKey: env('GEMINI_TEXT_API_KEY', ''),
   geminiTextModel: env('GEMINI_TEXT_MODEL', 'gemini-3.8-flash'),
   postsLlmOrden: env('POSTS_LLM_ORDEN', ''),
+  geminiThinking: env('GEMINI_THINKING', 'low'), // low | high | default (lo que decida el modelo)
+  geminiTimeoutMs: Number(env('GEMINI_TIMEOUT_SEG', 600)) * 1000,
 
   // App de TikTok de la agencia (Content Posting API). Cada cliente la autoriza desde el panel.
   tiktok: { clientKey: env('TIKTOK_CLIENT_KEY', ''), clientSecret: env('TIKTOK_CLIENT_SECRET', '') },

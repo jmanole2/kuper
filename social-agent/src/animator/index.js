@@ -78,7 +78,12 @@ async function designLoop(stage, job, log, askFn) {
 
   while (rounds < MAX_ROUNDS) {
     rounds++;
-    const { data, content } = await askFn(messages);
+    let data, content;
+    try { ({ data, content } = await askFn(messages)); } catch (e) {
+      // Si la IA falla a media revisión, se usa el último código que ya pasó la prueba técnica.
+      if (good) { log(`Animador: ${e.message}. Se usa la última versión que funcionaba.`); return { concepto, codigo: good, rondas: rounds }; }
+      throw e;
+    }
     messages.push({ role: 'assistant', content });
     if (data.concepto) concepto = data.concepto;
     const nuevo = data.codigo?.trim() ? data.codigo : null;

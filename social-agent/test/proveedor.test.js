@@ -71,3 +71,28 @@ test('se acaba el cupo gratis: contesta Claude y Gemini se salta un rato', async
   assert.equal(aClaude.length, 2);
   ia._reset();
 });
+
+test('si Gemini tarda demasiado, reintenta una vez antes de rendirse', async () => {
+  let n = 0;
+  const antes = ia.hooks.fetch;
+  ia.hooks.fetch = async (url, opt) => { if (n++ === 0) throw new Error('The operation was aborted due to timeout'); return antes(url, opt); };
+  respuestaGemini = () => ({ status: 200, body: { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"ok":"gemini"}' }] } }] } });
+  const fin = silencio();
+  const r = await ia.pedirJSON({ system: 's', messages: [{ role: 'user', content: 'x' }], schema });
+  fin();
+  ia.hooks.fetch = antes;
+  assert.equal(r.proveedor, 'gemini'); assert.equal(n, 2);
+  assert.equal(pedidos.at(-1).body.generationConfig.thinkingConfig.thinkingLevel, 'low', 'Gemini piensa poco');
+});
+
+test('si falla una corrección, el post se queda con la versión anterior (para revisión)', async () => {
+  const { generatePost } = await import('../src/llm/claude.js');
+  respuestaGemini = (() => { let k = 0; return () => (k++ === 0 ? { status: 200, body: { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"tema":"v1"}' }] } }] } } : { status: 400, body: { error: { message: 'bad' } } }); })();
+  const claudeAntes = ia.hooks.anthropic;
+  ia.hooks.anthropic = { beta: { messages: { stream: () => ({ finalMessage: async () => { throw new Error('sin crédito'); } }) } } };
+  const fin = silencio();
+  const r = await generatePost({ plataforma: 'instagram', perfil: {}, config: {}, historial: {}, competencia: null }, (out) => (out.tema === 'v1' ? ['falta algo'] : []));
+  fin();
+  ia.hooks.anthropic = claudeAntes; ia._reset();
+  assert.deepEqual(r.out, { tema: 'v1' }); assert.deepEqual(r.errors, ['falta algo']);
+});

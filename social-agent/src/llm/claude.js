@@ -43,7 +43,12 @@ export async function generatePost(input, validate, { maxRounds = 2 } = {}) {
   const messages = [{ role: 'user', content: renderInput(input) }];
   let out, errors = [];
   for (let round = 0; round <= maxRounds; round++) {
-    const res = await callClaude({ system: MAESTRO, messages, schema: POST_SCHEMA });
+    let res;
+    try { res = await callClaude({ system: MAESTRO, messages, schema: POST_SCHEMA }); } catch (e) {
+      // Si falla una corrección, se entrega la versión anterior con sus avisos (queda para revisión, no se publica sola).
+      if (out) return { out, errors, rounds: round };
+      throw e;
+    }
     out = res.data;
     errors = validate(out);
     if (!errors.length || round === maxRounds) return { out, errors, rounds: round };
