@@ -693,6 +693,11 @@ export function createApp() {
     pipe.publishOne(id).catch((e) => console.error('[publicar]', id, e.message));
     res.redirect(303, `/admin/posts/${id}`);
   });
+  admin.post('/posts/:pid/historia', (req, res) => {
+    const id = req.post.id;
+    pipe.publishStoryOf(id).catch(() => {});
+    res.redirect(303, `/admin/posts/${id}`);
+  });
   admin.post('/posts/:pid/eliminar', (req, res) => {
     const cid = req.post.client_id;
     pipe.deletePost(req.post.id);

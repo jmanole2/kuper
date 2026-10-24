@@ -87,3 +87,12 @@ test('temas que pide el cliente: la siguiente publicación usa la primera idea y
   pipe.quitarTema(client.id, 0);
   assert.equal(pipe.temasPendientes(db.getClient(client.id)).length, 0);
 });
+
+test('se puede subir (o reintentar) la historia de un post ya publicado', async () => {
+  const p = db.createPost({ client_id: client.id, plataforma: 'instagram', status: 'generando' });
+  db.updatePost(p.id, { status: 'publicado' });
+  assert.equal(await pipe.publishStoryOf(p.id), true);
+  assert.deepEqual(db.postEvents(p.id).map((e) => e.tipo).slice(0, 2), ['historia_publicada', 'historia_subiendo']);
+  const fb = db.createPost({ client_id: client.id, plataforma: 'facebook', status: 'generando' });
+  assert.equal(await pipe.publishStoryOf(fb.id), false, 'solo Instagram tiene historias');
+});

@@ -399,8 +399,19 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   return page({ title: isNew ? 'Nuevo cliente' : client.nombre, side: side(isNew ? 'nuevo' : 'clientes'), body });
 }
 
+// Estado de la historia de Instagram de un post publicado, con botón para subirla o reintentar.
+function historiaCard(post, events) {
+  if (post.plataforma !== 'instagram' || post.status !== 'publicado') return '';
+  const ult = events.find((e) => ['historia_publicada', 'historia_error', 'historia_subiendo'].includes(e.tipo));
+  const subiendo = ult?.tipo === 'historia_subiendo' && Date.now() - new Date(ult.created_at.replace(' ', 'T') + 'Z') < 10 * 60_000;
+  const texto = !ult ? 'Este post todavía no se subió a historias.' : ult.tipo === 'historia_publicada' ? 'Ya está en historias.'
+    : subiendo ? 'Subiendo a historias… Instagram puede tardar unos minutos.' : ult.tipo === 'historia_error' ? `No se pudo subir a historias: ${ult.detalle}` : 'La subida a historias se interrumpió.';
+  return html`<div class="card row spread" style="margin-bottom:14px"><span>${texto}</span>${subiendo ? raw('<script>setTimeout(()=>location.reload(),8000)</script>')
+    : ult?.tipo === 'historia_publicada' ? '' : html`<form method="post" action="/admin/posts/${post.id}/historia" class="inline"><button class="btn-accent">${ult ? 'Reintentar historia' : 'Subir a historia'}</button></form>`}</div>`;
+}
 export function postAdminPage(post, client, events) {
   const body = html`<p><a href="/admin/clientes/${client.id}">← ${client.nombre}</a></p>
+  ${historiaCard(post, events)}
   ${post.status === 'publicando' ? html`<div class="okmsg">Publicando… Instagram puede tardar unos minutos en procesar el video. Esta página se actualiza sola.</div>${raw('<script>setTimeout(()=>location.reload(),8000)</script>')}` : ''}
   <div class="split"><div>${postCard(post, { base: `/admin/posts/${post.id}`, admin: true })}</div>
   <div><div class="card"><strong>Bitácora</strong><table>${events.map((e) => html`<tr><td class="muted small">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td>${e.tipo}</td><td class="small">${e.detalle}</td></tr>`)}</table></div>

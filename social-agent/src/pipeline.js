@@ -360,19 +360,30 @@ export async function publishOne(postId) {
     db.updatePost(postId, { status: 'publicado', published_at: new Date().toISOString(), external_id: res.id, external_url: res.url, error: null });
     db.logEvent({ postId, clientId: client.id, tipo: 'publicado', detalle: `${post.plataforma}${res.dryRun ? ' (simulado)' : ''} ${res.url || res.id}` });
     // También a historias de Instagram (se apaga con "historias": false en la config de instagram).
-    if (post.plataforma === 'instagram' && platformCfg(client, 'instagram').historias !== false) {
-      try {
-        const st = await publishStory(db.getPost(postId), client);
-        db.logEvent({ postId, clientId: client.id, tipo: 'historia_publicada', detalle: st.dryRun ? '(simulada)' : st.id });
-      } catch (e) {
-        db.logEvent({ postId, clientId: client.id, tipo: 'historia_error', detalle: e.message });
-      }
-    }
+    if (post.plataforma === 'instagram' && platformCfg(client, 'instagram').historias !== false) await publishStoryOf(postId);
   } catch (e) {
     db.updatePost(postId, { status: 'error', error: e.message });
     db.logEvent({ postId, clientId: client.id, tipo: 'error_publicacion', detalle: e.message });
   }
   return db.getPost(postId);
+}
+
+/** Sube a historias de Instagram un post ya publicado (también sirve para reintentar). Nunca lanza. */
+const historiasEnCurso = new Set();
+export async function publishStoryOf(postId) {
+  const post = db.getPost(postId);
+  if (!post || post.plataforma !== 'instagram' || historiasEnCurso.has(postId)) return false;
+  historiasEnCurso.add(postId);
+  const client = db.getClient(post.client_id);
+  db.logEvent({ postId, clientId: client.id, tipo: 'historia_subiendo', detalle: 'Subiendo a historias' });
+  try {
+    const st = await publishStory(post, client);
+    db.logEvent({ postId, clientId: client.id, tipo: 'historia_publicada', detalle: st.dryRun ? '(simulada)' : st.id });
+    return true;
+  } catch (e) {
+    db.logEvent({ postId, clientId: client.id, tipo: 'historia_error', detalle: e.message });
+    return false;
+  } finally { historiasEnCurso.delete(postId); }
 }
 
 export async function publishDue(now = new Date()) {
