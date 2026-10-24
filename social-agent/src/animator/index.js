@@ -1,6 +1,6 @@
 // Animador: Claude escribe el código de cada pieza visual, el motor la prueba,
 // Claude revisa una hoja de contacto como director de arte y corrige. Al final se renderiza.
-import Anthropic from '@anthropic-ai/sdk';
+import { pedirJSON } from '../llm/proveedor.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, ROOT } from '../config.js';
@@ -25,24 +25,10 @@ const SCHEMA = {
 // Código que nunca debe aparecer: el motor ya bloquea la red, esto da un error claro antes.
 const FORBIDDEN = [/\bfetch\s*\(/, /XMLHttpRequest/, /\bimport\s*[({]/, /\bimport\s+\w/, /\beval\s*\(/, /WebSocket/, /document\.(cookie|write)/, /localStorage/];
 
-let client;
-const anthropic = () => (client ??= new Anthropic());
-
+// Gemini gratis primero y Claude de respaldo (ver llm/proveedor.js).
 async function ask(messages) {
-  const msg = await anthropic().beta.messages.stream({
-    model: config.anthropicModel,
-    max_tokens: 64000,
-    thinking: { type: 'adaptive' },
-    output_config: { effort: config.animatorEffort, format: { type: 'json_schema', schema: SCHEMA } },
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-    messages,
-  }).finalMessage();
-  if (msg.stop_reason === 'refusal') throw new Error('Claude declinó la solicitud del animador.');
-  if (msg.stop_reason === 'max_tokens') throw new Error('La respuesta del animador se cortó por max_tokens.');
-  const text = msg.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-  return { data: JSON.parse(text), content: msg.content };
+  const { data, content } = await pedirJSON({ system: SYSTEM, messages, schema: SCHEMA, maxTokens: 64000, effort: config.animatorEffort, etiqueta: 'animador' });
+  return { data, content };
 }
 
 function briefText(job) {

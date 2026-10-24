@@ -1,5 +1,5 @@
 // Llamadas a Claude: generación de posts y análisis de competencia.
-import Anthropic from '@anthropic-ai/sdk';
+import { pedirJSON, RefusalError } from './proveedor.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, ROOT } from '../config.js';
@@ -26,30 +26,9 @@ Reglas:
 - "posts_destacados": máximo 5, con el permalink tal cual viene en los datos.
 - Escribe en español (México), concreto y accionable.`;
 
-let client;
-const anthropic = () => (client ??= new Anthropic());
-
-class RefusalError extends Error {}
-
+// Ahora pasa por proveedor.js: Gemini gratis primero y Claude de respaldo.
 export async function callClaude({ system, messages, schema, maxTokens = 32000 }) {
-  const stream = anthropic().beta.messages.stream({
-    model: config.anthropicModel,
-    max_tokens: maxTokens,
-    thinking: { type: 'adaptive' },
-    output_config: { effort: config.anthropicEffort, format: { type: 'json_schema', schema } },
-    // Si el modelo declina por política, el servidor reintenta con el modelo de respaldo recomendado.
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-    system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
-    messages,
-  });
-  const msg = await stream.finalMessage();
-  if (msg.stop_reason === 'refusal') {
-    throw new RefusalError(`Claude declinó la solicitud (${msg.stop_details?.category ?? 'sin categoría'}).`);
-  }
-  if (msg.stop_reason === 'max_tokens') throw new Error('La respuesta se cortó por max_tokens.');
-  const text = msg.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-  return { data: JSON.parse(text), content: msg.content, usage: msg.usage };
+  return pedirJSON({ system, messages, schema, maxTokens, etiqueta: schema === COMPETITOR_SCHEMA ? 'competencia' : 'texto' });
 }
 
 /**

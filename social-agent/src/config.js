@@ -28,6 +28,11 @@ export const config = {
 
   geminiApiKey: env('GEMINI_API_KEY', ''),
   geminiImageModel: env('GEMINI_IMAGE_MODEL', 'gemini-2.5-flash-image'),
+  // Clave de Gemini para escribir posts y animaciones (la gratis de Google AI Studio). Va primero;
+  // si falla o se acaba su cupo del día, entra Claude. POSTS_LLM_ORDEN cambia el orden.
+  geminiTextApiKey: env('GEMINI_TEXT_API_KEY', ''),
+  geminiTextModel: env('GEMINI_TEXT_MODEL', 'gemini-3.8-flash'),
+  postsLlmOrden: env('POSTS_LLM_ORDEN', ''),
 
   // App de TikTok de la agencia (Content Posting API). Cada cliente la autoriza desde el panel.
   tiktok: { clientKey: env('TIKTOK_CLIENT_KEY', ''), clientSecret: env('TIKTOK_CLIENT_SECRET', '') },

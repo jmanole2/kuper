@@ -16,7 +16,9 @@ const FREQ = { diario: 'diario', '3_por_semana': '3 por semana (cada 2 días)', 
 console.log('\n== Generales');
 console.log(`Programador: ${config.schedulerEnabled ? 'encendido' : 'APAGADO (SCHEDULER=0 en .env)'}`);
 console.log(`Genera solo de ${config.horasGeneracion} h (hora de ${tz}), máximo ${config.maxPiezasDia} pieza(s) al día entre TODOS los clientes, hasta ${config.leadDays} días antes de su fecha.`);
-console.log(`Modelo: ${config.mockLlm ? 'FALSO (MOCK_LLM=1)' : config.anthropicModel} · clave de Anthropic: ${process.env.ANTHROPIC_API_KEY ? 'sí' : 'NO HAY'}`);
+const ordenIa = (config.postsLlmOrden || 'gemini,anthropic').split(',').map((x) => x.trim());
+const ias = ordenIa.map((p) => (p === 'gemini' ? `Gemini ${config.geminiTextModel} (${config.geminiTextApiKey ? 'clave sí' : 'SIN CLAVE: se salta'})` : `Claude ${config.anthropicModel} (${process.env.ANTHROPIC_API_KEY ? 'clave sí' : 'SIN CLAVE'})`));
+console.log(`IA, en orden: ${config.mockLlm ? 'FALSA (MOCK_LLM=1)' : ias.join(' → ')}`);
 const hoy = db.prepare("SELECT COUNT(*) n FROM events WHERE tipo = 'generado' AND created_at >= datetime('now','-1 day')").get().n;
 console.log(`Generadas en las últimas 24 h: ${hoy}`);
 
@@ -37,6 +39,7 @@ for (const c of db.prepare('SELECT * FROM clients WHERE activo = 1').all()) {
     console.log(`    Último publicado: ${f(ultimo)}`);
     if (abierto) console.log(`    DETENIDO: el post #${abierto.id} está ${NOMBRE[abierto.status] || abierto.status} (fecha ${f(abierto.scheduled_at)}). No se genera el siguiente hasta que se resuelva.`);
     if (err) console.log(`    Último error al generar (${f(err.updated_at)}): ${String(err.error || '').slice(0, 300)}`);
+    if (err && /credit balance/i.test(err.error || '')) console.log('    → Sin crédito en Anthropic: recarga en console.anthropic.com o guarda la clave gratis de Gemini (GEMINI_TEXT_API_KEY).');
     if (!abierto && !err && !reusa) console.log('    Sin bloqueos: el siguiente se genera en la próxima ventana de madrugada.');
   }
 }
