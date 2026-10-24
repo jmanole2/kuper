@@ -401,6 +401,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
 
 export function postAdminPage(post, client, events) {
   const body = html`<p><a href="/admin/clientes/${client.id}">← ${client.nombre}</a></p>
+  ${post.status === 'publicando' ? html`<div class="okmsg">Publicando… Instagram puede tardar unos minutos en procesar el video. Esta página se actualiza sola.</div>${raw('<script>setTimeout(()=>location.reload(),8000)</script>')}` : ''}
   <div class="split"><div>${postCard(post, { base: `/admin/posts/${post.id}`, admin: true })}</div>
   <div><div class="card"><strong>Bitácora</strong><table>${events.map((e) => html`<tr><td class="muted small">${fmtDate(e.created_at.replace(' ', 'T') + 'Z')}</td><td>${e.tipo}</td><td class="small">${e.detalle}</td></tr>`)}</table></div>
   ${post.salida?.visual?.codigo ? html`<details class="card" style="margin-top:16px"><summary>Animador: ${post.salida.visual.respaldo ? 'diseño de respaldo' : `${post.salida.visual.rondas} rondas`}</summary>

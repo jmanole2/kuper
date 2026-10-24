@@ -686,9 +686,12 @@ export function createApp() {
     await withTikTokInfo(client, [req.post]);
     res.send(V.postAdminPage(req.post, client, db.postEvents(req.post.id)));
   });
-  admin.post('/posts/:pid/publicar', async (req, res) => {
-    await pipe.publishOne(req.post.id);
-    res.redirect(`/admin/posts/${req.post.id}`);
+  // Publicar puede tardar minutos (Instagram procesa el video): se hace en segundo plano y la página
+  // se recarga sola mientras dice "Publicando". Si no, el proxy corta la espera y muestra 502.
+  admin.post('/posts/:pid/publicar', (req, res) => {
+    const id = req.post.id;
+    pipe.publishOne(id).catch((e) => console.error('[publicar]', id, e.message));
+    res.redirect(303, `/admin/posts/${id}`);
   });
   admin.post('/posts/:pid/eliminar', (req, res) => {
     const cid = req.post.client_id;
