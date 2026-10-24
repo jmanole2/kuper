@@ -693,18 +693,20 @@ export function createApp() {
     pipe.publishOne(id).catch((e) => console.error('[publicar]', id, e.message));
     res.redirect(303, `/admin/posts/${id}`);
   });
+  // Regresa a la página desde donde se picó el botón (solo rutas del admin de este mismo sitio).
+  const volverA = (req, otro) => { try { const u = new URL(req.get('referer') || ''); return u.host === req.get('host') && u.pathname.startsWith('/admin/') ? u.pathname + u.search : otro; } catch { return otro; } };
   admin.post('/posts/:pid/marcar-publicado', (req, res) => {
     const id = req.post.id;
     if (db.transitionPost(id, ['error'], 'publicado')) {
       db.updatePost(id, { published_at: new Date().toISOString(), error: null });
       db.logEvent({ postId: id, clientId: req.post.client_id, tipo: 'marcado_publicado', detalle: 'Ya había salido en la red (marcado a mano)' });
     }
-    res.redirect(303, `/admin/posts/${id}`);
+    res.redirect(303, volverA(req, `/admin/posts/${id}`));
   });
   admin.post('/posts/:pid/historia', (req, res) => {
     const id = req.post.id;
     pipe.publishStoryOf(id).catch(() => {});
-    res.redirect(303, `/admin/posts/${id}`);
+    res.redirect(303, volverA(req, `/admin/posts/${id}`));
   });
   admin.post('/posts/:pid/eliminar', (req, res) => {
     const cid = req.post.client_id;

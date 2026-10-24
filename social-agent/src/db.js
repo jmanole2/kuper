@@ -329,6 +329,9 @@ export function lastGenerationErrorAt(clientId, plataforma) {
 
 // Publicaciones recientes (publicadas o ya programadas) para rotación de pilares y fechas.
 /** Conceptos visuales de las últimas piezas del cliente (sin las de respaldo), para que el animador no se repita. */
+/** Último intento de subir a historias de un post (o null). */
+export const ultimaHistoria = (postId) => getDb().prepare(
+  "SELECT tipo, detalle, created_at FROM events WHERE post_id = ? AND tipo IN ('historia_publicada','historia_error','historia_subiendo') ORDER BY id DESC LIMIT 1").get(postId) || null;
 export function recentVisuals(clientId, { limit = 6, excludeId = 0 } = {}) {
   return getDb().prepare(
     `SELECT formato, salida_json FROM posts WHERE client_id = ? AND id != ? AND salida_json IS NOT NULL

@@ -1,7 +1,7 @@
 // Vistas: tarjeta de post (compartida), portal del cliente y panel de admin.
 import path from 'node:path';
 import { html, raw, esc, page } from './html.js';
-import { STATUS, PLATFORMS, LEAD_ESTADOS } from '../db.js';
+import { STATUS, PLATFORMS, LEAD_ESTADOS, ultimaHistoria } from '../db.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
@@ -56,6 +56,18 @@ function tiktokFields(p) {
 }
 
 /** base: URL base para las acciones del post (portal: /p/:token/posts/:id, admin: /admin/posts/:id) */
+// En la tarjeta del admin: estado de la historia (Instagram) y arreglo de publicaciones interrumpidas.
+function historiaEnTarjeta(p, base) {
+  if (p.status === 'error' && /interrumpi/i.test(p.error || '')) {
+    return html`<form method="post" action="${base}/marcar-publicado" class="inline"><p class="small muted" style="margin:8px 0 6px">Se cortó mientras publicaba. Si ya salió en la red, márcalo (no lo publiques otra vez):</p><button class="btn-accent">Ya salió: marcar como publicado</button></form>`;
+  }
+  if (p.plataforma !== 'instagram' || p.status !== 'publicado') return '';
+  const h = ultimaHistoria(p.id);
+  if (h?.tipo === 'historia_publicada') return html`<p class="small" style="color:#4ade80;margin:8px 0">✓ También en historias</p>`;
+  const subiendo = h?.tipo === 'historia_subiendo' && Date.now() - new Date(h.created_at.replace(' ', 'T') + 'Z') < 10 * 60_000;
+  if (subiendo) return html`<p class="small muted" style="margin:8px 0">Subiendo a historias…</p>`;
+  return html`<form method="post" action="${base}/historia" class="inline"><p class="small muted" style="margin:8px 0 6px">${h?.tipo === 'historia_error' ? `No se pudo subir a historias: ${h.detalle}` : 'Todavía no está en historias.'}</p><button class="btn-accent">${h ? 'Reintentar historia' : 'Subir a historia'}</button></form>`;
+}
 export function postCard(p, { base, admin = false }) {
   const s = p.salida;
   const editable = p.status === 'pendiente';
@@ -92,6 +104,7 @@ export function postCard(p, { base, admin = false }) {
       <form method="post" action="${base}/rechazar" onsubmit="return confirm('¿Rechazar este post? No se publicará.')"><button class="btn-bad">Rechazar</button></form>
     </details>` : ''}
   ${p.status === 'error' ? html`<form method="post" action="${base}/revisar" class="inline"><p><button class="btn-warn">Regresar a aprobación</button></p></form>` : ''}
+  ${admin ? historiaEnTarjeta(p, base) : ''}
   ${admin && ['aprobado', 'error'].includes(p.status) ? html`<form method="post" action="${base}/publicar" class="inline"><p><button class="btn-accent">Publicar ahora</button></p></form>` : ''}
   ${admin && p.status === 'aprobado' ? html`<form method="post" action="${base}/rechazar" class="inline" onsubmit="return confirm('¿Cancelar?')"><button class="btn-bad">Cancelar</button></form>` : ''}
   ${admin && ['error', 'error_generacion', 'rechazado'].includes(p.status) ? html`<form method="post" action="${base}/eliminar" class="inline" onsubmit="return confirm('¿Eliminar este post? No se puede deshacer.')"><p><button class="btn-bad">Eliminar</button></p></form>` : ''}
