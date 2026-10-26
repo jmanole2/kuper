@@ -6,113 +6,106 @@ const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const range = (a, b, v) => clamp((v - a) / (b - a));
 
 const hero = $('.hero');
-const heroTitle = $('#heroTitle');
-const heroFoot = $('#heroFoot');
-const wa = $('.wa-float');
-const nav = $('#nav');
-const loader = $('#loader');
-$('#loaderBar').style.transform = 'scaleX(0.35)';
+const bar = $('#bar');
+const holdLine = $('#holdLine');
+const holdTexts = holdLine.dataset.lines.split('|');
+const brandInput = $('#brand');
+const form = $('#tryForm');
 
+// Avance del hero: 0 al inicio, 1 al soltar el espectacular
 function heroProgress() {
   return clamp(window.scrollY / (hero.offsetHeight - window.innerHeight));
 }
+// El acercamiento ocurre durante la primera pantalla de scroll
+const ZOOM_END = 1 / 3;
+const getZoom = () => range(0, ZOOM_END, heroProgress());
 
 // ------------------------------------------------------------------ escena 3D
 let scene = null;
-let isReady = false;
-function ready() {
-  if (isReady) return;
-  isReady = true;
-  $('#loaderBar').style.transform = 'scaleX(1)';
-  setTimeout(() => {
-    document.body.classList.add('is-ready');
-    loader.classList.add('is-done');
-  }, 250);
-}
-startScene({ canvas: $('#scene'), getProgress: heroProgress, onReady: ready })
-  .then((s) => { scene = s; })
-  .catch((err) => {
-    console.error(err);
-    $('#scene').style.background = 'center / cover no-repeat url(assets/photos/cdmx-reforma.jpg)';
-    ready();
-  });
+startScene({ canvas: $('#scene'), getZoom, brand: brandInput.value })
+  .then((s) => { scene = s; onScroll(); })
+  .catch((err) => { console.error(err); });
+
+// Lo vivo: la marca que escribe el visitante aparece en el espectacular
+let typing;
+brandInput.addEventListener('input', () => {
+  clearTimeout(typing);
+  typing = setTimeout(() => scene && scene.setBrand(brandInput.value), 120);
+});
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = brandInput.value.trim();
+  const text = name ? `Hola, quiero anunciar ${name} con Grupo De Haro.` : 'Hola, quiero cotizar una campaña con Grupo De Haro.';
+  window.open(`https://wa.me/525514753620?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+});
 
 // ------------------------------------------------------------------ scroll
-const slides = $$('.slide');
-const gallery = $('.gallery');
-const track = $('#galleryTrack');
+const zoomables = $$('.frame-bg, .visit-bg');
+let activeCover = -1;
+let lastY = window.scrollY;
 
 function onScroll() {
-  const y = window.scrollY;
   const vh = window.innerHeight;
   const p = heroProgress();
 
-  const out = range(0.02, 0.25, p);
-  heroTitle.style.opacity = 1 - out;
-  heroTitle.style.transform = `translateY(${-out * 50}px)`;
-  heroFoot.style.opacity = isReady ? 1 - range(0.0, 0.12, p) : '';
+  // portada del espectacular según el tramo del scroll
+  const hold = range(ZOOM_END, 1, p);
+  const idx = p < ZOOM_END * 0.6 ? 0 : Math.min(2, Math.floor(hold * 3));
+  if (idx !== activeCover) {
+    activeCover = idx;
+    if (scene) scene.showCover(idx);
+    holdLine.classList.remove('is-on');
+    clearTimeout(holdLine._t);
+    holdLine._t = setTimeout(() => {
+      holdLine.textContent = holdTexts[idx];
+      holdLine.classList.toggle('is-on', heroProgress() > ZOOM_END * 0.85);
+    }, 220);
+  } else {
+    holdLine.classList.toggle('is-on', p > ZOOM_END * 0.85);
+  }
 
+  // la escena se detiene cuando el hero ya pasó
   const heroEnd = hero.offsetTop + hero.offsetHeight;
-  // menú blanco cuando debajo hay foto, oscuro sobre fondos claros
-  const under = document.elementsFromPoint(window.innerWidth / 2, 40).find((el) => el.closest('.slide, .contact, .numbers, .gallery, .clients, .hero'));
-  const zone = under ? under.closest('.slide, .contact, .numbers, .gallery, .clients, .hero') : null;
-  nav.classList.toggle('on-dark', !!zone && (zone.classList.contains('slide') || zone.classList.contains('contact') || (zone.classList.contains('hero') && p > 0.75)));
-  wa.classList.toggle('is-visible', y > heroEnd - vh * 0.5);
   if (scene) {
-    const visible = y < heroEnd;
+    const visible = window.scrollY < heroEnd;
     if (!visible && scene.running) scene.pause();
     if (visible && !scene.running) scene.resume();
   }
 
-  // fotos de medios: zoom suave al entrar
-  slides.forEach((s) => {
-    const r = s.getBoundingClientRect();
-    const k = range(vh, 0, r.top); // 0 al asomarse, 1 cuando ya cubre la pantalla
-    s.style.setProperty('--zoom', (1.18 - 0.18 * k).toFixed(4));
-    s.querySelector('.slide-card').style.setProperty('--card', `${((1 - k) * 120).toFixed(1)}px`);
-  });
+  // la barra se esconde al bajar y vuelve al subir (pasado el hero)
+  const y = window.scrollY;
+  bar.classList.toggle('is-away', y > heroEnd - vh && y > lastY + 2);
+  if (y < lastY - 2 || y < heroEnd - vh) bar.classList.remove('is-away');
+  lastY = y;
 
-  // galería horizontal guiada por el scroll vertical
-  const gr = gallery.getBoundingClientRect();
-  const gp = range(0, -(gr.height - vh), gr.top);
-  const max = track.scrollWidth - window.innerWidth;
-  track.style.transform = `translateX(${-gp * Math.max(0, max)}px)`;
+  // barra en blanco sobre fotografías
+  const probe = document.elementsFromPoint(window.innerWidth / 2, 36).find((el) => el.closest('.frame, .visit, .figure, .lineup, .band, .hero, .foot'));
+  const zone = probe && probe.closest('.frame, .visit, .figure, .lineup, .band, .hero, .foot');
+  bar.classList.toggle('on-photo', !!zone && (zone.matches('.frame, .visit, .figure')));
+
+  // movimiento lento de las fotografías a sangre
+  zoomables.forEach((img) => {
+    const r = img.parentElement.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > vh) return;
+    const k = range(vh, -r.height, r.top);
+    img.style.setProperty('--zoom', (1.12 - 0.1 * k).toFixed(4));
+  });
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', onScroll);
 onScroll();
 
-// ------------------------------------------------------------------ reveals y contadores
-function countUp(el) {
-  const target = +el.dataset.count;
-  const suffix = el.dataset.suffix || '';
-  const t0 = performance.now();
-  const tick = (t) => {
-    const k = clamp((t - t0) / 1800);
-    el.textContent = Math.round(target * (1 - Math.pow(1 - k, 4))) + (k === 1 ? suffix : '');
-    if (k < 1) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
+// ------------------------------------------------------------------ entradas escalonadas
 const io = new IntersectionObserver((entries) => {
   entries.forEach((e) => {
     if (!e.isIntersecting) return;
     e.target.classList.add('is-in');
-    $$('[data-count]', e.target).forEach(countUp);
     io.unobserve(e.target);
   });
-}, { threshold: 0.2 });
-$$('.reveal').forEach((el) => io.observe(el));
-
-// ------------------------------------------------------------------ menú móvil
-const toggle = $('#navToggle');
-const menu = $('#mobileMenu');
-toggle.addEventListener('click', () => {
-  const open = toggle.getAttribute('aria-expanded') !== 'true';
-  toggle.setAttribute('aria-expanded', open);
-  menu.classList.toggle('is-open', open);
+}, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
+$$('section').forEach((sec) => {
+  $$('[data-reveal]', sec).forEach((el, i) => {
+    el.style.setProperty('--stagger', `${i * 80}ms`);
+    io.observe(el);
+  });
 });
-$$('a', menu).forEach((a) => a.addEventListener('click', () => {
-  toggle.setAttribute('aria-expanded', 'false');
-  menu.classList.remove('is-open');
-}));

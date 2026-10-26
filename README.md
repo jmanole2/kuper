@@ -40,14 +40,16 @@ node render.mjs --page src/agent.html --config agent.config.json --out out/kuper
 
 # Grupo De Haro — rediseño web con Three.js (`grupodeharo/`)
 
-Propuesta de home para grupodeharo.com.mx (v2: clara, fotográfica, poco texto). Sitio estático: HTML + CSS + Three.js (r170, local en `assets/vendor/three`).
+Propuesta de home para grupodeharo.com.mx (v3, hecha con la skill `design-taste-frontend`, dirección "El póster fijo"). Sitio estático: HTML + CSS + Three.js (r170, local en `assets/vendor/three`).
 
-- **Hero 3D** (`assets/js/scene.js`): muro de concreto aparente a pleno día con un espectacular tipo caja de luz. Texturas PBR fotográficas y cielo HDRI de Poly Haven (CC0, `assets/tex/`). Un árbol fuera de cuadro proyecta sombras de hojas que se mueven con el viento. El anuncio cambia como un espectacular "scroll" (el póster rueda hacia arriba); los anuncios se componen en `assets/js/ads.js`.
-- **Scroll**: la cámara se acerca hasta que el anuncio llena la pantalla y de ahí entran los medios como fotos a pantalla completa.
-- Tipografías de la marca: Barlow Condensed (títulos) y DM Sans (texto).
-- Fotos de CDMX y retratos: Unsplash (licencia libre, `assets/photos/`). Fotos de medios y logos de clientes: sitio actual del cliente (600 px; conviene pedir versiones en alta).
+- **Hero 3D** (`assets/js/scene.js`): muro de concreto aparente con un espectacular (caja de luz) a la sombra de una jacaranda que queda fuera de cuadro; sus sombras se mueven con el viento y sus flores caen en la banqueta. Texturas y cielo HDRI de Poly Haven (CC0).
+- **Lo vivo**: el visitante escribe su marca y aparece en el espectacular; "Cotizar" la manda por WhatsApp.
+- **Scroll**: la cámara se acerca y el espectacular queda fijo mientras cambia de portada (`assets/js/ads.js`), con una línea de texto por pantalla.
+- Secciones: medios (foto a sangre + tarjeta con la foto real del medio), tabla de medios y ciudades, 25 % programático, franja de marcas, contacto sobre Reforma y pie con menú.
+- Tipografías de la marca: Barlow Condensed y DM Sans. Acento: morado De Haro.
+- Créditos de fotos en el pie de página y en `assets/credits.json` (Wikimedia Commons CC BY / CC BY-SA, Unsplash).
 
 ```bash
 cd grupodeharo && python3 -m http.server 8765   # abrir http://localhost:8765
 ```
-Necesita servirse por http (no `file://`).
+Necesita servirse por http (no `file://`). `assets/img/hero-poster.jpg` es el primer cuadro mientras carga la escena.
