@@ -87,6 +87,9 @@ function setYear(i) {
   const it = tlItems[i];
   tlYear.textContent = it.dataset.year;
   tlName.textContent = $('span', it).textContent;
+  const logo = it.dataset.logo;
+  $('#tlLogo').classList.toggle('is-empty', !logo);
+  if (logo) { $('#tlLogoImg').src = logo; $('#tlLogoImg').alt = `Logotipo de ${$('span', it).textContent}`; }
   tlIndex.textContent = String(i + 1).padStart(2, '0');
   tlItems.forEach((li, j) => li.classList.toggle('is-on', j === i));
   tlYear.classList.remove('flip'); void tlYear.offsetWidth; tlYear.classList.add('flip');
@@ -167,7 +170,7 @@ $$('section').forEach((sec) => $$('.reveal', sec).forEach((el, i) => { el.style.
 
 // ------------------------------------------------------------------ panel DOOH
 const bars = $('#bars');
-for (let i = 0; i < 32; i++) bars.appendChild(document.createElement('i'));
+if (bars) for (let i = 0; i < 32; i++) bars.appendChild(document.createElement('i'));
 function updateBars() {
   [...bars.children].forEach((b, i) => {
     const h = (i / 32) * 24;

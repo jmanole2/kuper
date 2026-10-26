@@ -48,7 +48,6 @@
     <a href="#medios">Medios</a>
     <a href="#proceso">Cómo trabajamos</a>
     <a href="#cobertura">Cobertura</a>
-    <a href="#programatica">Programática</a>
   </nav>
   <a class="btn btn-solid nav-cta" href="#contacto">Hablemos <span class="arrow" aria-hidden="true">→</span></a>
   <button class="nav-toggle" id="navToggle" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
@@ -57,7 +56,6 @@
   <a href="#medios">Medios</a>
   <a href="#proceso">Cómo trabajamos</a>
   <a href="#cobertura">Cobertura</a>
-  <a href="#programatica">Programática</a>
   <a href="#contacto">Contacto</a>
 </div>
 
@@ -159,7 +157,7 @@
     </div>
   </section>
 
-  <section class="dooh" id="programatica" aria-labelledby="dooh-title">
+  <section class="dooh" id="programatica" hidden aria-labelledby="dooh-title">
     <div class="dooh-copy reveal">
       <h2 id="dooh-title">Compra pantallas<br>como compras clics</h2>
       <p>El 25% de nuestro inventario en CDMX y Estado de México está disponible en venta programática, con medición de audiencia en tiempo real. Activa, ajusta y optimiza tu campaña sin esperar al cierre del mes.</p>
@@ -207,22 +205,25 @@
       <div class="tl-copy">
         <h2 id="historia-title">Nuestra historia</h2>
         <p class="tl-count"><span id="tlIndex">01</span> / 12</p>
-        <p class="tl-name" id="tlName" aria-live="polite">Artículos promocionales y agendas ejecutivas</p>
+        <figure class="tl-logo" id="tlLogo"><img id="tlLogoImg" src="" alt="" width="300" height="200"></figure>
       </div>
-      <p class="tl-year" id="tlYear" aria-hidden="true">1978</p>
+      <div class="tl-right">
+        <p class="tl-name" id="tlName" aria-live="polite">Artículos promocionales y agendas ejecutivas</p>
+        <p class="tl-year" id="tlYear" aria-hidden="true">1978</p>
+      </div>
       <ol class="tl-list" id="tlList">
           <li data-year="1978"><b>1978</b><span>Artículos promocionales y agendas ejecutivas</span></li>
-          <li data-year="1987"><b>1987</b><span>Publimóvil</span></li>
-          <li data-year="1996"><b>1996</b><span>Megatop</span></li>
-          <li data-year="2002"><b>2002</b><span>Kazeta de periódicos</span></li>
-          <li data-year="2005"><b>2005</b><span>Kazeta de bolero</span></li>
-          <li data-year="2006"><b>2006</b><span>Torre informativa y cultural</span></li>
-          <li data-year="2010"><b>2010</b><span>Ezkaparate De Haro</span></li>
-          <li data-year="2012"><b>2012</b><span>Alcolab</span></li>
-          <li data-year="2014"><b>2014</b><span>Kazeta digital</span></li>
-          <li data-year="2015"><b>2015</b><span>Kazeta de flores</span></li>
-          <li data-year="2018"><b>2018</b><span>Publipantalla</span></li>
-          <li data-year="2023"><b>2023</b><span>Parabús</span></li>
+          <li data-year="1987" data-logo="assets/img/historia/1987.png"><b>1987</b><span>Publimóvil</span></li>
+          <li data-year="1996" data-logo="assets/img/historia/1996.png"><b>1996</b><span>Megatop</span></li>
+          <li data-year="2002" data-logo="assets/img/historia/2002.png"><b>2002</b><span>Kazeta de periódicos</span></li>
+          <li data-year="2005" data-logo="assets/img/historia/2005.png"><b>2005</b><span>Kazeta de bolero</span></li>
+          <li data-year="2006" data-logo="assets/img/historia/2006.png"><b>2006</b><span>Torre informativa y cultural</span></li>
+          <li data-year="2010" data-logo="assets/img/historia/2010.png"><b>2010</b><span>Ezkaparate De Haro</span></li>
+          <li data-year="2012" data-logo="assets/img/historia/2012.png"><b>2012</b><span>Alcolab</span></li>
+          <li data-year="2014" data-logo="assets/img/historia/2014.png"><b>2014</b><span>Kazeta digital</span></li>
+          <li data-year="2015" data-logo="assets/img/historia/2015.png"><b>2015</b><span>Kazeta de flores</span></li>
+          <li data-year="2018" data-logo="assets/img/historia/2018.png"><b>2018</b><span>Publipantalla</span></li>
+          <li data-year="2023" data-logo="assets/img/historia/2023.png"><b>2023</b><span>Parabús</span></li>
       </ol>
     </div>
   </section>
