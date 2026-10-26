@@ -400,3 +400,14 @@ section:not(.hero) { position: relative; background: var(--bg); padding: clamp(9
   .marquee-track { animation: none; }
   .reveal { transition: none; opacity: 1; transform: none; }
 }
+
+/* aviso cuando se abre con doble clic (file://) */
+.file-warning { display: none; }
+.is-file .file-warning {
+  display: grid; gap: 10px;
+  position: fixed; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); z-index: 200;
+  max-width: 560px; margin: 0 auto; padding: 24px;
+  background: #fff; color: #111; border-radius: 8px; font-size: 15px; line-height: 1.5;
+}
+.is-file .file-warning code { background: #f0eaf2; padding: 1px 6px; border-radius: 4px; }
+.is-file .loader { opacity: 0; visibility: hidden; }

@@ -23,6 +23,12 @@
 <link rel="modulepreload" href="assets/vendor/three/three.module.min.js">
 <link rel="stylesheet" href="assets/css/site.css">
 <script type="module" src="assets/js/site.js"></script>
+<script>
+  // Abierto con doble clic (file://) el navegador bloquea los módulos JS: avisar cómo correrlo.
+  if (location.protocol === 'file:') document.documentElement.classList.add('is-file');
+  // Si algo falla, nunca dejar la pantalla de carga colgada.
+  setTimeout(function () { var l = document.getElementById('loader'); if (l) l.classList.add('is-done'); }, 9000);
+</script>
 </head>
 <body>
 
@@ -31,6 +37,11 @@
   <span class="loader-bar"><i></i></span>
 </div>
 
+<div class="file-warning" role="alert">
+  <b>Este sitio necesita abrirse con un servidor local.</b>
+  <span>En VS Code: clic derecho en <code>index.html</code> → <em>Open with Live Server</em>.<br>
+  O en una terminal dentro de la carpeta <code>grupodeharo</code>: <code>python3 -m http.server 8765</code> y abre <code>http://localhost:8765</code>.</span>
+</div>
 <canvas id="scene" aria-hidden="true"></canvas>
 
 <header class="nav" id="nav">
