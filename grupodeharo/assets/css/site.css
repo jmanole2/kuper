@@ -362,3 +362,17 @@ section:not(.hero) { position: relative; background: var(--bg); padding: clamp(1
   .tl-list b { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .tl-year.flip { animation: none; } }
+
+/* línea del tiempo en morado; la rueda termina arriba de las fechas */
+.timeline { background: var(--purple) !important; color: #fff; }
+.tl-dial { top: 42%; width: 78vh; height: 78vh; left: -26vh; }
+.tl-dial .ring, .tl-dial line { stroke: #fff; }
+.tl-count { color: #e6b6e0; }
+.tl-year { color: #fff; }
+.tl-list li { border-top-color: rgba(255, 255, 255, 0.22); }
+.tl-list li.is-on { border-top-color: #fff; }
+.tl-list span { color: rgba(255, 255, 255, 0.78); }
+.timeline :focus-visible { outline-color: #fff; }
+@media (max-width: 760px) {
+  .tl-dial { top: 30%; width: 70vh; height: 70vh; left: -52vh; }
+}
