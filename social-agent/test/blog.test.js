@@ -9,7 +9,10 @@ Object.assign(process.env, { DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'bl
 const db = await import('../src/db.js');
 const blog = await import('../src/blog.js');
 db.openDb(':memory:');
-const cliente = db.createClient({ slug: 'k', nombre: 'Kuper', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, credentials: {}, config: {} });
+const cliente = db.createClient({ slug: 'k', nombre: 'Kuper', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, credentials: {}, config: { notificaciones: { email: 'yo@kuper.media' } } });
+const correos = [];
+blog.hooks.mail = async (m) => { correos.push(m); };
+blog.hooks.smtp = () => true;
 
 const RSS = `<rss><channel>
 <item><title><![CDATA[La IA llega a las pymes mexicanas - El Economista]]></title><link>https://news.google.com/a1</link><pubDate>Mon, 26 Oct 2026 10:00:00 GMT</pubDate><source url="https://eleconomista.com.mx">El Economista</source><description>&lt;a&gt;Más negocios usan IA&lt;/a&gt;</description></item>
@@ -36,7 +39,7 @@ const bueno = (extra = {}) => ({
 let sitio;
 test('alta de sitio con categorías', () => {
   assert.throws(() => blog.parseSitio({ nombre: 'Mi blog', categorias: '' }), /al menos una categoría/);
-  sitio = blog.guardarSitio(cliente.id, blog.parseSitio({ nombre: 'Blog Kuper', dominio: 'https://kuper.media', categorias: 'IA | inteligencia artificial pymes\nMarketing digital', frecuencia: '3_por_semana', activo: '1', palabras: '600' }));
+  sitio = blog.guardarSitio(cliente.id, blog.parseSitio({ nombre: 'Blog Kuper', dominio: 'https://kuper.media', categorias: 'IA | inteligencia artificial pymes\nMarketing digital', frecuencia: '3_por_semana', modo: 'aprobacion', activo: '1', palabras: '600' }));
   assert.equal(sitio.slug, 'blog-kuper');
   assert.deepEqual(sitio.config.categorias.map((c) => c.slug), ['ia', 'marketing-digital']);
   assert.throws(() => blog.guardarSitio(cliente.id, blog.parseSitio({ nombre: 'Blog Kuper', categorias: 'X' })), /Ya existe/);
@@ -137,4 +140,22 @@ test('panel: alta de sitio, escribir, revisar y publicar; el JSON público solo 
     assert.equal(d.articulo.contenido_html, '<p>Hola</p>');
     assert.equal((await fetch(`${base}/blog/blog-recetas/articulo/no-existe.json`)).status, 404);
   } finally { server.close(); }
+});
+
+test('modo automático: se publica solo y llega el correo de aviso', async () => {
+  const s = blog.guardarSitio(cliente.id, blog.parseSitio({ nombre: 'Blog Auto', dominio: 'https://auto.mx', categorias: 'IA | inteligencia artificial', activo: '1', palabras: '600' }));
+  assert.equal(s.config.modo, 'auto', 'por defecto se publica solo');
+  blog.hooks.pedir = async () => { const data = bueno({ slug: 'ia-auto' }); return { data, content: '' }; };
+  const antes = correos.length;
+  const a = await blog.generarArticulo(s.id);
+  assert.equal(a.status, 'publicado');
+  const m = correos[antes];
+  assert.equal(m.to, 'yo@kuper.media');
+  assert.match(m.subject, /Nuevo artículo publicado en Blog Auto/);
+  assert.match(m.html, /https:\/\/auto\.mx\/blog\/ia-auto/); assert.match(m.html, /\/admin\/blog\/articulos\//);
+  // con errores que no se corrigieron, queda por revisar y el correo lo dice
+  blog.hooks.pedir = async () => { const data = bueno({ slug: 'ia-auto-2', meta_description: 'corta' }); return { data, content: '' }; };
+  const b = await blog.generarArticulo(s.id);
+  assert.equal(b.status, 'borrador');
+  assert.match(correos.at(-1).subject, /para revisar/);
 });

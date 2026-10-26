@@ -11,8 +11,9 @@ import { pedirJSON } from './llm/proveedor.js';
 import { freqDays } from './schedule.js';
 import { randomToken } from './crypto.js';
 import { generateImage, ensureJpeg } from './media/image.js';
+import { sendMail, smtpConfigured } from './notify.js';
 
-export const hooks = { fetch: (...a) => fetch(...a), pedir: (...a) => pedirJSON(...a) }; // pruebas
+export const hooks = { fetch: (...a) => fetch(...a), pedir: (...a) => pedirJSON(...a), mail: (m) => sendMail(m), smtp: () => smtpConfigured() }; // pruebas
 const db = () => getDb();
 const J = (s, d) => { try { return s ? JSON.parse(s) : d; } catch { return d; } };
 
@@ -27,7 +28,7 @@ const DEFAULT_CFG = {
   descripcion: '', // de qué trata el sitio y para quién escribe
   categorias: [], // [{ nombre, slug, busqueda }]
   frecuencia: '3_por_semana',
-  modo: 'aprobacion', // 'aprobacion' | 'auto'
+  modo: 'auto', // 'auto' (se publica solo y avisa por correo) | 'aprobacion'
   tono: 'cercano, claro y profesional',
   autor: '',
   palabras: 900,
@@ -63,7 +64,7 @@ export function parseSitio(b) {
       descripcion: String(b.descripcion || '').trim().slice(0, 1500),
       categorias,
       frecuencia: FRECUENCIAS[b.frecuencia] ? b.frecuencia : '3_por_semana',
-      modo: b.modo === 'auto' ? 'auto' : 'aprobacion',
+      modo: b.modo === 'aprobacion' ? 'aprobacion' : 'auto',
       tono: String(b.tono || DEFAULT_CFG.tono).trim().slice(0, 200),
       autor: String(b.autor || '').trim().slice(0, 80),
       palabras: Math.min(2500, Math.max(500, Number(b.palabras) || 900)),
@@ -361,12 +362,48 @@ export async function generarArticulo(sitioId, { tema = '', categoria: catSlug =
     });
     if (deLista) quitarPrimerTema(sitioId, deLista);
     logEvent({ clientId: sitio.client_id, tipo: 'blog_generado', detalle: `${sitio.nombre}: ${out.titulo} → ${auto ? 'publicado' : 'por revisar'}` });
+    await avisarPorCorreo(sitio, getArticulo(id));
     return getArticulo(id);
   } catch (e) {
     actualizar(id, { status: 'error', error: e.message });
     logEvent({ clientId: sitio.client_id, tipo: 'blog_error', detalle: `${sitio.nombre}: ${e.message}` });
     throw e;
   } finally { enCurso.delete(sitioId); }
+}
+
+// ------------------------------------------------------------ aviso por correo
+const escM = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+/** Correo de "nuevo artículo" (al correo de avisos del cliente, el mismo de las redes). */
+export function correoArticulo(sitio, a) {
+  const publicado = a.status === 'publicado';
+  const enSitio = publicado && sitio.dominio ? `${sitio.dominio}/blog/${a.slug}` : '';
+  const panel = `${config.publicBaseUrl}/admin/blog/articulos/${a.id}`;
+  const subject = publicado ? `Nuevo artículo publicado en ${sitio.nombre}: ${a.titulo}` : `Nuevo artículo para revisar en ${sitio.nombre}: ${a.titulo}`;
+  const img = a.imagen_path ? `${config.publicBaseUrl}/media/${path.basename(a.imagen_path)}` : '';
+  const cat = sitio.config.categorias.find((c) => c.slug === a.categoria)?.nombre || a.categoria;
+  const text = `${publicado ? 'Se publicó un artículo nuevo' : 'Hay un artículo nuevo listo para revisar'} en ${sitio.nombre}:\n\n${a.titulo}\n${a.extracto || ''}\n\n${enSitio ? `Verlo en el sitio: ${enSitio}\n` : ''}Verlo en el panel: ${panel}\n${a.advertencias?.length ? `\nRevisa: ${a.advertencias.join(' · ')}\n` : ''}`;
+  const boton = (href, t, claro) => `<a href="${escM(href)}" style="display:inline-block;margin:0 8px 8px 0;padding:12px 20px;border-radius:99px;font-weight:600;font-size:14px;text-decoration:none;${claro ? 'background:#d7ff3f;color:#0b0d06' : 'background:#23262e;color:#f2f4f8'}">${t}</a>`;
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escM(subject)}</title></head>
+<body style="margin:0;padding:0;background:#08090c"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#08090c"><tr><td align="center" style="padding:28px 14px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#15171c;border:1px solid #23262e;border-radius:22px;overflow:hidden">
+${img ? `<tr><td><img src="${escM(img)}" width="560" alt="" style="display:block;width:100%;height:auto"></td></tr>` : ''}
+<tr><td style="padding:22px 24px 8px"><div style="font-size:12px;font-weight:600;color:${publicado ? '#4ade80' : '#fcd34d'};letter-spacing:.04em">${publicado ? '&#9679; PUBLICADO' : '&#9679; POR REVISAR'} · ${escM(sitio.nombre)} · ${escM(cat)}</div>
+<div style="font-size:21px;line-height:1.3;font-weight:700;color:#f2f4f8;margin:10px 0 8px">${escM(a.titulo)}</div>
+<div style="font-size:15px;line-height:1.5;color:#9097a6">${escM(a.extracto || '')}</div>
+${a.advertencias?.length ? `<div style="margin-top:12px;font-size:13px;color:#fcd34d">Revisa: ${escM(a.advertencias.join(' · '))}</div>` : ''}</td></tr>
+<tr><td style="padding:14px 24px 22px">${enSitio ? boton(enSitio, 'Verlo en el sitio', true) : ''}${boton(panel, publicado ? 'Abrir en el panel' : 'Revisar y publicar', !enSitio)}</td></tr>
+</table><div style="font-family:-apple-system,Arial,sans-serif;font-size:12px;color:#5d6270;margin-top:14px">Agente de blog · Kuper</div></td></tr></table></body></html>`;
+  return { subject, text, html };
+}
+async function avisarPorCorreo(sitio, a) {
+  const client = getDb().prepare('SELECT config_json FROM clients WHERE id = ?').get(sitio.client_id);
+  const to = String(J(client?.config_json, {})?.notificaciones?.email || '').trim();
+  if (!to) return logEvent({ clientId: sitio.client_id, tipo: 'blog_aviso_omitido', detalle: 'Sin correo de avisos (Configuración → Notificaciones)' });
+  if (!hooks.smtp()) return logEvent({ clientId: sitio.client_id, tipo: 'aviso_error', detalle: 'Falta configurar SMTP para el aviso del blog' });
+  try {
+    await hooks.mail({ to, ...correoArticulo(sitio, a) });
+    logEvent({ clientId: sitio.client_id, tipo: 'blog_aviso', detalle: `${a.titulo} → ${to}` });
+  } catch (e) { logEvent({ clientId: sitio.client_id, tipo: 'aviso_error', detalle: `Correo del blog: ${e.message}` }); }
 }
 
 /** La categoría menos usada en los últimos artículos (para que el blog no hable siempre de lo mismo). */

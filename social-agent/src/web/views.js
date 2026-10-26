@@ -913,7 +913,7 @@ function sitioForm(client, s = null) {
       <div><label>Dominio</label><input name="dominio" value="${s?.dominio || ''}" placeholder="https://misitio.com"></div>
       <div><label>Identificador (va en la conexión PHP)</label><input name="slug" value="${s?.slug || ''}" placeholder="se crea solo"></div>
       <div><label>Frecuencia</label><select name="frecuencia">${opt(FREQ_TXT, c.frecuencia || '3_por_semana')}</select></div>
-      <div><label>Al terminar un artículo</label><select name="modo">${opt({ aprobacion: 'Lo reviso antes de publicar', auto: 'Se publica solo' }, c.modo || 'aprobacion')}</select></div>
+      <div><label>Al terminar un artículo</label><select name="modo">${opt({ auto: 'Se publica solo y me avisa por correo', aprobacion: 'Lo reviso antes de publicar' }, c.modo || 'auto')}</select></div>
       <div><label>Imagen</label><select name="imagen">${opt({ pexels: 'Foto de Pexels (gratis)', ia: 'Imagen con IA', ninguna: 'Sin imagen' }, c.imagen || 'pexels')}</select></div>
       <div><label>Noticias de</label><select name="pais">${opt({ MX: 'México', ES: 'España', US: 'Estados Unidos (español)', AR: 'Argentina', CO: 'Colombia', CL: 'Chile', PE: 'Perú' }, c.pais || 'MX')}</select></div>
       <div><label>Largo (palabras)</label><input type="number" name="palabras" min="500" max="2500" step="100" value="${c.palabras || 900}"></div>
@@ -948,7 +948,8 @@ export function blogSection(client, { sitios = [], sel = null, articulos = [], p
         <p style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-accent" name="accion" value="ya">Escribir ahora</button><button class="btn-warn" name="accion" value="cola">Dejarlo para el siguiente</button></p>
       </form>
       ${s.config.temas_pendientes.length ? html`<p class="small muted">Temas en espera: ${s.config.temas_pendientes.map((t) => t.texto).join(' · ')}</p>` : ''}
-      <p class="small muted">Escribe solo ${FREQ_TXT[s.config.frecuencia].toLowerCase()}, de madrugada. Tarda de 1 a 3 minutos.</p>
+      <p class="small muted">Escribe solo ${FREQ_TXT[s.config.frecuencia].toLowerCase()}, de madrugada, y ${s.config.modo === 'auto' ? 'lo publica solo' : 'lo deja para que lo revises'}. Tarda de 1 a 3 minutos.</p>
+      <p class="small muted">Aviso de cada artículo nuevo: ${client.config.notificaciones?.email ? `correo a ${client.config.notificaciones.email}` : 'sin correo (ponlo en Configuración → notificaciones)'}.</p>
     </div>
     <div class="card"><span class="mono">Conexión con tu sitio PHP</span>
       <p class="small" style="margin-top:8px">En <code>blog/config.php</code> de tu sitio pon:</p>

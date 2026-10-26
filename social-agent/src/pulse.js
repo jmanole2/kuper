@@ -61,7 +61,7 @@ export async function pulse(clients, { now = new Date(), conCitas = true, client
   const desde = new Date(now.getTime() - 15 * DAY).toISOString().replace('T', ' ').slice(0, 19);
   const nombres = Object.fromEntries(clients.map((c) => [c.id, c.nombre]));
   const events = db.prepare(`SELECT id, client_id, tipo, detalle, created_at FROM events WHERE created_at >= ?${f} ORDER BY id DESC`).all(desde);
-  const msgs = db.prepare(`SELECT m.id, m.rol, m.texto, m.created_at, l.nombre, l.telefono, l.usuario, l.client_id FROM lead_mensajes m
+  const msgs = db.prepare(`SELECT m.id, m.rol, m.texto, m.created_at, m.lead_id, l.nombre, l.telefono, l.usuario, l.client_id FROM lead_mensajes m
     JOIN leads l ON l.id = m.lead_id WHERE m.created_at >= ?${clientId ? ' AND l.client_id = ' + Number(clientId) : ''} ORDER BY m.id DESC`).all(desde);
   const leads = db.prepare(`SELECT estado, origen, created_at FROM leads WHERE 1=1${f}`).all();
   const posts = db.prepare(`SELECT status, COUNT(*) n FROM posts WHERE 1=1${f} GROUP BY status`).all();
@@ -107,6 +107,7 @@ export async function pulse(clients, { now = new Date(), conCitas = true, client
   const vivo = ult ? {
     nombre: ult.nombre || ult.telefono || 'Lead', canal: 'WhatsApp', t: utc(ult.created_at).toISOString(),
     texto: String(ult.texto).replace(/^\[bot[oó]n [^\]]+\]\s*/i, '').slice(0, 160), activo: now - utc(ult.created_at) < 10 * 60_000,
+    lead_id: ult.lead_id, client_id: ult.client_id,
   } : feed[0] ? { nombre: feed[0].titulo, canal: 'Agente social', t: feed[0].t, texto: feed[0].detalle, activo: now - new Date(feed[0].t) < 10 * 60_000 } : null;
 
   const sem = dias.slice(-7).map((d) => serie[d]);

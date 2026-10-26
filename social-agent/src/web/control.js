@@ -11,12 +11,13 @@ const ICO = {
   users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 6M21 20c0-2.6-1.5-4.5-3.8-5.2"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
-  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>', mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
   alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.1"/>', card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>', arrow: '<path d="M7 17L17 7M9 7h8v8"/>',
 };
 const svgI = (k, s = 16) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICO[k] || ''}</svg>`;
 
 const CSS = `
+.cc-ver{display:inline-block;margin-top:14px;font-size:14px;font-weight:600;color:#d7ff3f;text-decoration:none}.cc-ver:hover{text-decoration:underline}
 .cc{display:grid;grid-template-columns:minmax(300px,.85fr) 1.7fr;border-radius:32px;overflow:hidden;border:1px solid rgba(255,240,220,.08);box-shadow:0 40px 120px rgba(0,0,0,.55);margin:6px 0 34px;min-height:780px}
 .cc-light{background:linear-gradient(160deg,#f3f0ea,#e7e3db);color:#1d1b18;padding:30px 28px;display:flex;flex-direction:column;gap:16px}
 .cc-brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#3b3833}.cc-brand i{width:26px;height:26px;border-radius:8px;background:#1d1b18;color:#d7ff3f;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:13px}
@@ -149,12 +150,15 @@ export function controlCenter(p, clients, { cliente = null } = {}) {
     ...(ok('redes') ? [{ label: 'Posts', icon: 'post', href: tab('posts') }] : []),
     ...(cliente ? [{ label: 'Pagos', icon: 'card', href: '/app/pagos' }] : []),
     cliente ? { label: 'Mi cuenta', icon: 'check', href: '/app/cuenta' } : { label: 'Competencia', icon: 'eye', href: tab('competencia') },
+    // Blog: va al primer cliente que tenga el agente de blog contratado.
+    ...(!cliente && clients.some((c) => tiene(c, 'blog')) ? [{ label: 'Blog', icon: 'doc', href: `/admin/clientes/${clients.find((c) => tiene(c, 'blog')).id}/blog` }] : []),
   ];
   const delta = p.tareasHoy - p.tareasAyer;
   const errores = p.feed.filter((f) => f.error).length;
   const ci = p.citas;
   const v = p.vivo;
-  const data = JSON.stringify({ tz: config.timezone, activo: !!v?.activo, url: cliente ? '/app/pulso.json' : '/admin/pulso.json' }).replace(/</g, '\\u003c');
+  const data = JSON.stringify({ tz: config.timezone, activo: !!v?.activo, url: cliente ? '/app/pulso.json' : '/admin/pulso.json', app: !!cliente }).replace(/</g, '\\u003c');
+  const chatUrl = (x) => (x?.lead_id ? (cliente ? `/app/leads/${x.lead_id}/chat` : `/admin/clientes/${x.client_id}/leads/${x.lead_id}/chat`) : '');
   return html`<style>${raw(CSS)}</style>
 <section class="cc" id="cc">
   <div class="cc-light">
@@ -189,6 +193,7 @@ export function controlCenter(p, clients, { cliente = null } = {}) {
         <h3 id="cc-live-n">${v?.nombre || 'Todo tranquilo'}</h3><div class="sub" id="cc-live-c">${v ? `${v.canal} · ${hora(v.t)}` : 'Sin actividad reciente'}</div>
         <canvas id="cc-wave"></canvas>
         <q id="cc-live-q">${v?.texto || 'Cuando el agente conteste o publique algo, lo verás aquí.'}</q>
+        <a id="cc-live-ver" class="cc-ver" href="${chatUrl(v) || '#'}" style="${chatUrl(v) ? '' : 'display:none'}">Ver conversación →</a>
       </div>
     </div>
     <div class="cc-row">
@@ -270,6 +275,8 @@ function clientScript(cfg) {
         document.getElementById('cc-live-n').textContent = v.nombre;
         document.getElementById('cc-live-c').textContent = `${v.canal} · ${hora(v.t)}`;
         document.getElementById('cc-live-q').textContent = v.texto;
+        const ver = document.getElementById('cc-live-ver'), u = v.lead_id ? (cfg.app ? `/app/leads/${v.lead_id}/chat` : `/admin/clientes/${v.client_id}/leads/${v.lead_id}/chat`) : '';
+        if (ver) { ver.href = u || '#'; ver.style.display = u ? '' : 'none'; }
       }
       if (p.feedHtml) document.getElementById('cc-feed').innerHTML = p.feedHtml;
     } catch { /* sin conexión: se intenta otra vez */ }
