@@ -3,42 +3,37 @@
     "main": {
       "type": "yh-main-product",
       "settings": {
-        "title_size": 48
+        "title_size": 48,
+        "rating_text": "",
+        "price_note": "Your good hair days start here.",
+        "perks": "Color safe | pH balanceado | 100 g"
       },
       "blocks": {
-        "main-0": {
+        "b0": {
           "type": "attribute",
           "settings": {
             "label": "Para",
-            "value": "Elige según tu tipo de cabello",
+            "value": "",
             "metafield": "custom.hair_type"
           }
         },
-        "main-1": {
+        "b1": {
           "type": "attribute",
           "settings": {
             "label": "Ingredientes",
-            "value": "Ver abajo",
+            "value": "",
             "metafield": "custom.key_ingredients"
           }
         },
-        "main-2": {
+        "b2": {
           "type": "attribute",
           "settings": {
             "label": "Contenido",
-            "value": "100 g",
+            "value": "",
             "metafield": "custom.net_content"
           }
         },
-        "main-3": {
-          "type": "attribute",
-          "settings": {
-            "label": "Rinde",
-            "value": "Hasta 2 meses de uso regular",
-            "metafield": "custom.duration"
-          }
-        },
-        "main-4": {
+        "b3": {
           "type": "accordion",
           "settings": {
             "title": "Descripción",
@@ -48,46 +43,45 @@
             "open": true
           }
         },
-        "main-5": {
+        "b4": {
           "type": "accordion",
           "settings": {
             "title": "Modo de uso",
             "source": "metafield",
-            "content": "<p>Moja tu cabello, frota la barra entre tus manos o directo en la raíz, masajea y enjuaga.</p>",
+            "content": "<p>Humedece tu cabello y la barra. Frota la barra entre tus manos hasta formar espuma, distribúyela en el cuero cabelludo y masajea de 30 a 60 segundos con las yemas de los dedos. Enjuaga y deja secar la barra en una jabonera con drenaje.</p>",
             "metafield": "custom.how_to_use",
             "open": false
           }
         },
-        "main-6": {
+        "b5": {
           "type": "accordion",
           "settings": {
             "title": "Ingredientes",
             "source": "metafield",
-            "content": "<p>Lista completa de ingredientes (INCI) en el empaque.</p>",
+            "content": "<p>Consulta la lista completa de ingredientes en el empaque.</p>",
             "metafield": "custom.ingredients",
             "open": false
           }
         },
-        "main-7": {
+        "b6": {
           "type": "accordion",
           "settings": {
             "title": "Envíos y devoluciones",
             "source": "custom",
-            "content": "<p>Envío gratis desde $899 a todo México. Entrega de 2 a 5 días hábiles. Tienes 30 días para cambios si el producto está sin usar.</p>",
+            "content": "<p>Consulta nuestra <a href=\"/pages/envios-y-devoluciones\">política de envíos y devoluciones</a>.</p>",
             "metafield": "",
             "open": false
           }
         }
       },
       "block_order": [
-        "main-0",
-        "main-1",
-        "main-2",
-        "main-3",
-        "main-4",
-        "main-5",
-        "main-6",
-        "main-7"
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6"
       ]
     },
     "howto": {
@@ -95,61 +89,67 @@
       "settings": {
         "title_upper": false,
         "title_font_mode": "sans",
-        "title_size": 56
+        "title_size": 56,
+        "kicker": "Tu ritual",
+        "heading": "Así se usa. <em>Así rinde.</em>",
+        "text": "<p>Un ritual de un minuto en la regadera para cuidar tu cuero cabelludo y, como consecuencia, tu cabello.</p>"
       },
       "blocks": {
-        "howto-0": {
+        "b0": {
           "type": "step",
           "settings": {
             "icon": "drop",
-            "title": "Con el cabello mojado",
-            "text": "Moja bien tu cabello y tu barra."
+            "title": "Moja",
+            "text": "Humedece completamente tu cabello y la barra."
           }
         },
-        "howto-1": {
+        "b1": {
           "type": "step",
           "settings": {
             "icon": "faucet",
-            "title": "Activa la barra",
-            "text": "Unos segundos bajo el agua, hasta que haga espuma."
+            "title": "Activa",
+            "text": "Frota la barra entre tus manos hasta formar espuma o deslízala suavemente sobre el cabello húmedo."
           }
         },
-        "howto-2": {
+        "b2": {
           "type": "step",
           "settings": {
             "icon": "waves",
-            "title": "De la raíz a las puntas, 30 segundos o más",
-            "text": "Pásala varias veces hasta sentir que actúa, sobre todo si tu cabello es largo, abundante o seco."
+            "title": "Masajea",
+            "text": "Distribuye la espuma en el cuero cabelludo y masajea con las yemas de los dedos de 30 a 60 segundos."
           }
         },
-        "howto-3": {
+        "b3": {
           "type": "step",
           "settings": {
             "icon": "clock",
-            "title": "Deja actuar y enjuaga",
-            "text": "Masajea el cuero cabelludo un minuto y enjuaga con agua tibia."
+            "title": "Enjuaga",
+            "text": "Retira completamente el producto con agua tibia."
           }
         },
-        "howto-4": {
+        "b4": {
           "type": "step",
           "settings": {
             "icon": "dry",
             "title": "Guárdala seca",
-            "text": "Ponla en su jabonera, lejos del chorro de agua, para que dure más."
+            "text": "Déjala secar en una jabonera con drenaje para que dure más."
           }
         }
       },
       "block_order": [
-        "howto-0",
-        "howto-1",
-        "howto-2",
-        "howto-3",
-        "howto-4"
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
       ]
     },
     "related": {
       "type": "yh-related",
-      "settings": {}
+      "settings": {
+        "kicker": "Complete your ritual",
+        "heading": "El siguiente paso de tu rutina"
+      }
     },
     "reviews": {
       "type": "yh-reviews",
@@ -198,7 +198,8 @@
         "reviews-0",
         "reviews-1",
         "reviews-2"
-      ]
+      ],
+      "disabled": true
     },
     "wa": {
       "type": "yh-whatsapp",

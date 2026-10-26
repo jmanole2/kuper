@@ -4,7 +4,12 @@
       "type": "yh-hero",
       "settings": {
         "btn1_link": "#encuentra-tu-barra",
-        "btn2_link": "/collections/all"
+        "btn2_link": "/collections/all",
+        "kicker": "YOUR HAIR by Yucatán Herbal",
+        "heading": "Good hair,<br><em>good days</em>",
+        "text": "24 años de experiencia convertidos en rituales para tu cuero cabelludo y tu cabello. Encuentra el tuyo.",
+        "btn1_label": "Encuentra tu ritual",
+        "btn2_label": "Ver tienda"
       },
       "blocks": {
         "yh_hero-0": {
@@ -76,232 +81,214 @@
       "type": "yh-stats",
       "settings": {},
       "blocks": {
-        "yh_stats-0": {
+        "b0": {
+          "type": "stat",
+          "settings": {
+            "value": "24",
+            "label": "años de experiencia"
+          }
+        },
+        "b1": {
+          "type": "stat",
+          "settings": {
+            "value": "+10 M",
+            "label": "personas lo han probado"
+          }
+        },
+        "b2": {
           "type": "stat",
           "settings": {
             "value": "7",
             "label": "shampoos sólidos"
           }
         },
-        "yh_stats-1": {
+        "b3": {
           "type": "stat",
           "settings": {
-            "value": "5",
+            "value": "4",
             "label": "acondicionadores"
           }
         },
-        "yh_stats-2": {
+        "b4": {
           "type": "stat",
           "settings": {
             "value": "100 g",
             "label": "por barra"
           }
-        },
-        "yh_stats-3": {
-          "type": "stat",
-          "settings": {
-            "value": "pH",
-            "label": "balanceado"
-          }
-        },
-        "yh_stats-4": {
-          "type": "stat",
-          "settings": {
-            "value": "0",
-            "label": "botellas de plástico"
-          }
         }
       },
       "block_order": [
-        "yh_stats-0",
-        "yh_stats-1",
-        "yh_stats-2",
-        "yh_stats-3",
-        "yh_stats-4"
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
       ]
     },
     "yh_finder": {
       "type": "yh-hair-finder",
-      "settings": {},
+      "settings": {
+        "kicker": "Find your ritual",
+        "heading": "¿Cómo es <em>tu</em> cabello?",
+        "text": "Cada cabello es diferente. Encuentra el cuidado que va contigo: todas nuestras barras son color safe y con pH balanceado.",
+        "note": "¿Raíz grasa y puntas secas? Usa el shampoo de tu raíz y el acondicionador de tus puntas.",
+        "link_label": "Ver todas las barras",
+        "link": "/collections/all"
+      },
       "blocks": {
-        "yh_finder-0": {
+        "b0": {
           "type": "type",
           "settings": {
             "number": "01",
-            "title": "Seco",
-            "need": "Nutre y humecta",
+            "title": "Normal o seco",
+            "need": "Suavidad y brillo cada día",
             "color": "#F6C54C",
             "fallback": "yh-sh-01.png",
-            "shampoo": "Shampoo 01 · Miel",
-            "pair": "+ Acondicionador 01",
+            "shampoo": "Daily Honey Bliss · Miel maya",
+            "pair": "+ Acondicionador Daily Honey Bliss",
             "pair_color": "#F6C54C"
           }
         },
-        "yh_finder-1": {
+        "b1": {
           "type": "type",
           "settings": {
             "number": "02",
-            "title": "Con caída",
-            "need": "Fortalece y estimula el crecimiento",
+            "title": "Cuero cabelludo y raíces",
+            "need": "Un ritual enfocado en la raíz",
             "color": "#BEC58B",
             "fallback": "yh-sh-02.png",
-            "shampoo": "Shampoo 02 · Romero, matcha y cafeína",
-            "pair": "+ Acondicionador 02",
-            "pair_color": "#BEC58B"
+            "shampoo": "Root & Scalp · Romero, matcha, cafeína y zinc",
+            "pair": "+ Root & Scalp Tonic",
+            "pair_color": ""
           }
         },
-        "yh_finder-2": {
+        "b2": {
           "type": "type",
           "settings": {
             "number": "03",
             "title": "Graso",
-            "need": "Limpia el exceso de grasa",
+            "need": "Frescura y ligereza",
             "color": "#B9AFD2",
             "fallback": "yh-sh-03.png",
-            "shampoo": "Shampoo 03 · Carbón activado",
-            "pair": "Solo shampoo",
+            "shampoo": "Detox Clean · Carbón activado",
+            "pair": "Alterna con Daily Honey Bliss",
             "pair_color": ""
           }
         },
-        "yh_finder-3": {
+        "b3": {
           "type": "type",
           "settings": {
             "number": "04",
-            "title": "Dañado y con frizz",
-            "need": "Repara y controla el frizz",
+            "title": "Seco y con frizz",
+            "need": "Suavidad y control del frizz",
             "color": "#F7864C",
             "fallback": "yh-sh-04.png",
-            "shampoo": "Shampoo 04 · Calabaza y mango",
-            "pair": "+ Acondicionador 04",
+            "shampoo": "Pumpkin Repair · Calabaza y manteca de mango",
+            "pair": "+ Acondicionador Pumpkin Repair",
             "pair_color": "#F7864C"
           }
         },
-        "yh_finder-4": {
+        "b4": {
           "type": "type",
           "settings": {
             "number": "05",
             "title": "Fino, sin volumen",
-            "need": "Da cuerpo y volumen",
+            "need": "Cuerpo y ligereza",
             "color": "#F6DEC2",
             "fallback": "yh-sh-05.png",
-            "shampoo": "Shampoo 05 · Proteína de arroz y avena",
-            "pair": "+ Acondicionador 05",
+            "shampoo": "Balance · Proteína de arroz y avena",
+            "pair": "+ Acondicionador Balance",
             "pair_color": "#F6DEC2"
           }
         },
-        "yh_finder-5": {
+        "b5": {
           "type": "type",
           "settings": {
             "number": "06",
-            "title": "Rizado",
-            "need": "Define y suaviza los rizos",
+            "title": "Ondas y rizos",
+            "need": "Definición y suavidad",
             "color": "#F6B537",
             "fallback": "yh-sh-06.png",
-            "shampoo": "Shampoo 06 · Papaya y argán",
-            "pair": "+ Acondicionador 06",
+            "shampoo": "Curly Love · Papaya y argán",
+            "pair": "+ Acondicionador Curly Love",
             "pair_color": "#FB7A64"
           }
         },
-        "yh_finder-6": {
+        "b6": {
           "type": "type",
           "settings": {
             "number": "07",
-            "title": "Con caspa",
-            "need": "Calma y limpia el cuero cabelludo",
+            "title": "Cuero cabelludo sensible",
+            "need": "Frescura sin fragancia añadida",
             "color": "#9DDBB7",
             "fallback": "yh-sh-07.png",
-            "shampoo": "Shampoo 07 · Árbol de té y menta",
-            "pair": "Solo shampoo",
+            "shampoo": "Pure Scalp · Árbol de té, centella y menta",
+            "pair": "Sin fragancia añadida",
             "pair_color": ""
           }
         }
       },
       "block_order": [
-        "yh_finder-0",
-        "yh_finder-1",
-        "yh_finder-2",
-        "yh_finder-3",
-        "yh_finder-4",
-        "yh_finder-5",
-        "yh_finder-6"
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6"
       ]
     },
     "yh_treat": {
       "type": "yh-product-tiles",
       "settings": {
-        "kicker": "Tratamientos",
-        "heading": "Completa tu rutina",
+        "kicker": "Complete your ritual",
+        "heading": "Tratamientos",
         "link_label": "Ver tratamientos",
-        "ratio": "3/4"
+        "ratio": "3/4",
+        "link": "/collections/tratamientos"
       },
       "blocks": {
-        "yh_treat-0": {
+        "b0": {
           "type": "item",
           "settings": {
             "fallback": "yh-leavein.png",
             "height": 230,
-            "color": "#F8D58A",
-            "title": "Leave in",
-            "subtitle": "Root & scalp serum · 120 ml",
-            "price": "$329",
-            "badge": "Más vendido"
+            "color": "#CFE6CF",
+            "title": "Root & Scalp Tonic",
+            "subtitle": "Cafeína, niacinamida y zinc PCA",
+            "price": "",
+            "badge": "Para la raíz"
           }
         },
-        "yh_treat-1": {
-          "type": "item",
-          "settings": {
-            "fallback": "yh-aceite.png",
-            "height": 200,
-            "color": "#E9DDF0",
-            "title": "Aceite capilar",
-            "subtitle": "Repara puntas · 100 ml",
-            "price": "$299",
-            "badge": ""
-          }
-        },
-        "yh_treat-2": {
+        "b1": {
           "type": "item",
           "settings": {
             "fallback": "yh-suero.png",
             "height": 220,
-            "color": "#CFE6CF",
-            "title": "Suero reparador",
-            "subtitle": "Cuero cabelludo · 100 ml",
-            "price": "$349",
-            "badge": "Nuevo"
-          }
-        },
-        "yh_treat-3": {
-          "type": "item",
-          "settings": {
-            "fallback": "yh-perfume.png",
-            "height": 195,
-            "color": "#F9D3CF",
-            "title": "Perfume de cabello",
-            "subtitle": "Proteína de arroz · 50 ml",
-            "price": "$279",
+            "color": "#F7C9A6",
+            "title": "Root & Scalp Oil",
+            "subtitle": "Aceite de semilla de calabaza y romero",
+            "price": "",
             "badge": ""
           }
         },
-        "yh_treat-4": {
+        "b2": {
           "type": "item",
           "settings": {
             "fallback": "yh-ducha.png",
-            "height": 200,
+            "height": 210,
             "color": "#F4E2C8",
-            "title": "Aceite de ducha",
-            "subtitle": "Coco y miel · 120 ml",
-            "price": "$289",
+            "title": "Honey Shower Oil",
+            "subtitle": "Miel y coco para tu piel",
+            "price": "",
             "badge": ""
           }
         }
       },
       "block_order": [
-        "yh_treat-0",
-        "yh_treat-1",
-        "yh_treat-2",
-        "yh_treat-3",
-        "yh_treat-4"
+        "b0",
+        "b1",
+        "b2"
       ]
     },
     "yh_acc": {
@@ -358,37 +345,45 @@
     },
     "yh_about": {
       "type": "yh-about",
-      "settings": {},
+      "settings": {
+        "kicker": "Nosotros · 24 años de experiencia",
+        "heading": "Todo comienza <em>desde la raíz</em>",
+        "text": "<p>Hace 24 años nació Yucatán Herbal con una idea sencilla: transformar los ingredientes de la naturaleza en productos de cuidado personal para la vida diaria. Más de 10 millones de personas ya confían en nuestras fórmulas.</p><p>Hoy esa historia evoluciona en YOUR HAIR: shampoos y acondicionadores sólidos que mejoramos con toda nuestra experiencia, con activos botánicos, vitaminas y biotina, y un cuero cabelludo sano en el centro de todo.</p>",
+        "quote": "Good hair, good days.",
+        "sign": "YOUR HAIR by Yucatán Herbal",
+        "tag_title": "Nuestra colección completa",
+        "tag_text": "7 shampoos, 4 acondicionadores y tratamientos"
+      },
       "blocks": {
-        "yh_about-0": {
+        "b0": {
           "type": "pillar",
           "settings": {
             "icon": "target",
-            "title": "Una fórmula por tipo de cabello",
-            "text": "Siete problemas, siete barras."
+            "title": "24 años de experiencia",
+            "text": "Expertos en cuidado personal."
           }
         },
-        "yh_about-1": {
+        "b1": {
+          "type": "pillar",
+          "settings": {
+            "icon": "heart",
+            "title": "+10 M de personas",
+            "text": "Ya probaron nuestras fórmulas."
+          }
+        },
+        "b2": {
           "type": "pillar",
           "settings": {
             "icon": "leaf",
-            "title": "Ingredientes que reconoces",
-            "text": "Miel, romero, avena, argán."
-          }
-        },
-        "yh_about-2": {
-          "type": "pillar",
-          "settings": {
-            "icon": "no-bottle",
-            "title": "Cero botellas",
-            "text": "Barras sólidas de 100 g."
+            "title": "Activos botánicos",
+            "text": "Vitaminas y biotina con propósito."
           }
         }
       },
       "block_order": [
-        "yh_about-0",
-        "yh_about-1",
-        "yh_about-2"
+        "b0",
+        "b1",
+        "b2"
       ]
     },
     "yh_compare": {
@@ -437,39 +432,52 @@
     },
     "yh_routine": {
       "type": "yh-routine",
-      "settings": {},
+      "settings": {
+        "kicker": "The Root Ritual",
+        "heading": "Healthy scalp, <em>good hair days</em>",
+        "step_1": "Limpia con Root & Scalp",
+        "step_2": "Aplica el tónico en la raíz",
+        "step_3": "Masajea 2 a 3 minutos",
+        "text": "Shampoo, tónico y masajeador de silicón: el ritual completo para darle a tu cuero cabelludo la atención que merece.",
+        "btn_label": "Ver The Root Ritual",
+        "btn_link": "/collections/rituales"
+      },
       "blocks": {
-        "yh_routine-0": {
+        "b0": {
           "type": "image",
           "settings": {
-            "fallback": "yh-sh-06.png",
+            "fallback": "yh-sh-02.png",
             "height": 120
           }
         },
-        "yh_routine-1": {
+        "b1": {
           "type": "image",
           "settings": {
             "fallback": "yh-masajeador.png",
             "height": 180
           }
         },
-        "yh_routine-2": {
+        "b2": {
           "type": "image",
           "settings": {
-            "fallback": "yh-co-06.png",
-            "height": 116
+            "fallback": "yh-leavein.png",
+            "height": 200
           }
         }
       },
       "block_order": [
-        "yh_routine-0",
-        "yh_routine-1",
-        "yh_routine-2"
+        "b0",
+        "b1",
+        "b2"
       ]
     },
     "yh_reviews": {
       "type": "yh-reviews",
-      "settings": {},
+      "settings": {
+        "kicker": "Reseñas",
+        "heading": "How's your hair day?",
+        "score": ""
+      },
       "blocks": {
         "yh_reviews-0": {
           "type": "review",
@@ -512,23 +520,82 @@
         "yh_reviews-0",
         "yh_reviews-1",
         "yh_reviews-2"
-      ]
+      ],
+      "disabled": true
     },
     "yh_news": {
       "type": "yh-newsletter",
-      "settings": {}
+      "settings": {
+        "kicker": "Comunidad YOUR HAIR",
+        "heading": "Good things are coming",
+        "text": "Recibe rituales por tipo de cabello y lanzamientos antes que nadie."
+      }
     },
     "yh_wa": {
       "type": "yh-whatsapp",
       "settings": {
         "phone": ""
       }
+    },
+    "yh_rituals": {
+      "type": "yh-product-tiles",
+      "settings": {
+        "kicker": "Your hair rituals",
+        "heading": "Menos pasos, <em>más cuidado</em>",
+        "link_label": "Ver rituales",
+        "link": "/collections/rituales",
+        "ratio": "4/3"
+      },
+      "blocks": {
+        "b0": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-sh-02.png",
+            "height": 150,
+            "color": "#BEC58B",
+            "title": "The Root Ritual",
+            "subtitle": "Root & Scalp Shampoo + Tonic + masajeador",
+            "price": "",
+            "badge": "Healthy scalp"
+          }
+        },
+        "b1": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-sh-04.png",
+            "height": 150,
+            "color": "#F7864C",
+            "title": "The Nourish Ritual",
+            "subtitle": "Pumpkin Repair Shampoo + Acondicionador + Root & Scalp Oil",
+            "price": "",
+            "badge": "Less frizz"
+          }
+        },
+        "b2": {
+          "type": "item",
+          "settings": {
+            "fallback": "yh-sh-01.png",
+            "height": 150,
+            "color": "#F6C54C",
+            "title": "The Daily Ritual",
+            "subtitle": "Daily Honey Bliss Shampoo + Acondicionador",
+            "price": "",
+            "badge": "Every day"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
     }
   },
   "order": [
     "yh_hero",
     "yh_stats",
     "yh_finder",
+    "yh_rituals",
     "yh_treat",
     "yh_acc",
     "yh_about",

@@ -3,10 +3,11 @@
     "main": {
       "type": "yh-main-collection",
       "settings": {
-        "title_size": 64
+        "title_size": 64,
+        "kicker": "Find your ritual"
       },
       "blocks": {
-        "c0": {
+        "b0": {
           "type": "chip",
           "settings": {
             "label": "Todo",
@@ -14,7 +15,7 @@
             "color": ""
           }
         },
-        "c1": {
+        "b1": {
           "type": "chip",
           "settings": {
             "label": "Shampoo sólido",
@@ -22,37 +23,37 @@
             "color": "#F6C54C"
           }
         },
-        "c2": {
+        "b2": {
           "type": "chip",
           "settings": {
-            "label": "Acondicionador",
+            "label": "Acondicionador sólido",
             "link": "/collections/acondicionador",
-            "color": "#BEC58B"
+            "color": "#F7864C"
           }
         },
-        "c3": {
+        "b3": {
           "type": "chip",
           "settings": {
             "label": "Tratamientos",
             "link": "/collections/tratamientos",
-            "color": "#F7864C"
+            "color": "#BEC58B"
           }
         },
-        "c4": {
+        "b4": {
           "type": "chip",
           "settings": {
-            "label": "Accesorios",
-            "link": "/collections/accesorios",
+            "label": "Rituales",
+            "link": "/collections/rituales",
             "color": "#B9AFD2"
           }
         }
       },
       "block_order": [
-        "c0",
-        "c1",
-        "c2",
-        "c3",
-        "c4"
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
       ]
     },
     "news": {

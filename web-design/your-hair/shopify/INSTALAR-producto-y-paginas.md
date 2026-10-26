@@ -50,7 +50,7 @@ Configuración → Datos personalizados → Productos → Agregar definición:
 | Ingredientes clave | `custom.key_ingredients` | Texto de una línea | Fila "Ingredientes" |
 | Contenido | `custom.net_content` | Texto de una línea | Fila "Contenido" |
 | Rendimiento | `custom.duration` | Texto de una línea | Fila "Rinde" |
-| Modo de uso | `custom.how_to_use` | Texto enriquecido | Desplegable "Modo de uso" |
+| Modo de uso | `custom.how_to_use` | Texto de varias líneas | Desplegable "Modo de uso" |
 | Ingredientes INCI | `custom.ingredients` | Texto enriquecido | Desplegable "Ingredientes" |
 
 Si un producto no tiene el metafield, se usa el texto que pongas en el personalizador.
