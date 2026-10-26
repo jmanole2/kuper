@@ -62,12 +62,40 @@ function setMedia(i) {
 setMedia(0);
 
 // ------------------------------------------------------------------ manifiesto: palabras que se encienden
-const words = [];
-$$('[data-words]').forEach((el) => {
-  el.innerHTML = el.textContent.trim().split(/\s+/).map((w) => `<span class="w">${w}</span>`).join(' ');
-  words.push(...$$('.w', el));
-});
-const manifesto = $('.manifesto');
+// línea del tiempo: un hito por tramo de scroll, el dial gira
+const tl = $('.timeline');
+const tlItems = $$('#tlList li');
+const tlYear = $('#tlYear'), tlName = $('#tlName'), tlIndex = $('#tlIndex'), dial = $('#tlDial');
+(() => {
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('id', 'tlTicks');
+  for (let i = 0; i < 120; i++) {
+    const l = document.createElementNS(ns, 'line');
+    const a = (i / 120) * Math.PI * 2, r1 = i % 10 === 0 ? 395 : 420;
+    l.setAttribute('x1', Math.cos(a) * r1); l.setAttribute('y1', Math.sin(a) * r1);
+    l.setAttribute('x2', Math.cos(a) * 470); l.setAttribute('y2', Math.sin(a) * 470);
+    g.appendChild(l);
+  }
+  dial.innerHTML = '<circle r="480" class="ring"/><circle r="380" class="ring"/>';
+  dial.appendChild(g);
+})();
+let tlActive = -1;
+function setYear(i) {
+  if (i === tlActive) return;
+  tlActive = i;
+  const it = tlItems[i];
+  tlYear.textContent = it.dataset.year;
+  tlName.textContent = $('span', it).textContent;
+  tlIndex.textContent = String(i + 1).padStart(2, '0');
+  tlItems.forEach((li, j) => li.classList.toggle('is-on', j === i));
+  tlYear.classList.remove('flip'); void tlYear.offsetWidth; tlYear.classList.add('flip');
+}
+tlItems.forEach((li, i) => li.addEventListener('click', () => {
+  const r = tl.getBoundingClientRect();
+  window.scrollTo({ top: window.scrollY + r.top + ((i + 0.5) / tlItems.length) * (tl.offsetHeight - window.innerHeight), behavior: 'smooth' });
+}));
+setYear(0);
 
 // ------------------------------------------------------------------ scroll
 function onScroll() {
@@ -98,9 +126,10 @@ function onScroll() {
     if (r.top < vh && r.bottom > 0) globe.play(); else globe.stop();
   }
 
-  const mr = manifesto.getBoundingClientRect();
-  const on = Math.round(range(vh * 0.85, vh * 0.3, mr.top) * words.length);
-  words.forEach((w, i) => w.classList.toggle('on', i < on));
+  const tr = tl.getBoundingClientRect();
+  const tp = clamp(-tr.top / (tr.height - vh));
+  setYear(Math.min(tlItems.length - 1, Math.floor(tp * tlItems.length)));
+  $('#tlTicks').style.transform = `rotate(${-tp * 160}deg)`;
 
   let best = 0, bestD = Infinity;
   media.forEach((li, i) => {
