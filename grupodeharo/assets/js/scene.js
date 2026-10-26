@@ -1,24 +1,24 @@
-// Hero 3D: un muro de concreto aparente sobre Reforma, a la sombra de una jacaranda,
-// con un espectacular (caja de luz) de Grupo De Haro.
-// - Materiales PBR con texturas fotográficas y cielo HDRI (Poly Haven, CC0).
-// - La jacaranda queda fuera de cuadro: solo se ven sus sombras, que se mueven con el viento,
-//   y sus flores caídas en la banqueta.
-// - Con el scroll la cámara se acerca y el espectacular se queda fijo mientras cambia de portada.
+// Hero 3D: un espectacular unipolar de Grupo De Haro en una avenida real.
+// - La avenida es una fotografía 360° (Poly Haven, CC0) proyectada sobre el suelo (GroundedSkybox),
+//   y su HDR ilumina el espectacular, así que la luz y los reflejos son los de la foto.
+// - La cara es un trivision: prismas que giran para cambiar de anuncio.
+// - La luz pasa suavemente de mediodía a tarde dorada y regresa (nunca oscurece).
+// - Con el scroll la cámara sube hacia el anuncio y la calle se desvanece al color de la página.
 
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { createCovers, coverBrand } from './ads.js';
+import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
+import { createAds } from './ads.js';
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
-const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-const FACE_W = 7.2;
-const FACE_H = 3.6;
-const FACE_Y = 3.35;
-const FACE_Z = 0.2;
+const PAGE = new THREE.Color('#efece6');
 
-export async function startScene({ canvas, getZoom, brand, onReady }) {
+export async function startScene({ canvas, getProgress, onReady }) {
+  const params = new URLSearchParams(location.search);
   const small = window.matchMedia('(max-width: 760px)').matches;
   const lowPower = small || window.matchMedia('(pointer: coarse)').matches;
 
@@ -26,242 +26,204 @@ export async function startScene({ canvas, getZoom, brand, onReady }) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1.5 : 2));
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.shadowMap.enabled = true;
-  // PCF: sombras estables en todas las GPU (VSM daba un patrón de cuadros en Mac)
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#e4e3df');
-  const camera = new THREE.PerspectiveCamera(34, 1, 0.05, 200);
+  scene.fog = new THREE.FogExp2(PAGE.clone(), 0);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
 
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
-  const loader = new THREE.TextureLoader();
-  const tex = (url, rep, srgb = false) => loader.loadAsync(url).then((t) => {
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(rep[0], rep[1]);
-    t.anisotropy = maxAniso;
-    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-  });
-
-  // cielo HDRI: luz ambiente y reflejos
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const hdr = await new RGBELoader().loadAsync('assets/tex/sky.hdr');
-  scene.environment = pmrem.fromEquirectangular(hdr).texture;
-  scene.environmentIntensity = 0.62;
-  hdr.dispose();
-  pmrem.dispose();
-
-  const WALL_W = 60, WALL_H = 22, TILE = 3.2;
-  const wr = [WALL_W / TILE, WALL_H / TILE], sr = [WALL_W / 2.5, 5.2 / 2.5], rr = [WALL_W / 4, 30 / 4];
-  const [wallD, wallN, wallR, sideD, sideN, sideR, roadD, roadN, roadR] = await Promise.all([
-    tex('assets/tex/wall_diff.jpg', wr, true), tex('assets/tex/wall_nor.jpg', wr), tex('assets/tex/wall_rough.jpg', wr),
-    tex('assets/tex/side_diff.jpg', sr, true), tex('assets/tex/side_nor.jpg', sr), tex('assets/tex/side_rough.jpg', sr),
-    tex('assets/tex/road_diff.jpg', rr, true), tex('assets/tex/road_nor.jpg', rr), tex('assets/tex/road_rough.jpg', rr),
+  // --- la avenida (foto 360°) y su luz
+  const [hdr, photo] = await Promise.all([
+    new RGBELoader().loadAsync('assets/tex/street.hdr'),
+    new THREE.TextureLoader().loadAsync(lowPower ? 'assets/tex/street_bg_4k.jpg' : 'assets/tex/street_bg.jpg'),
   ]);
+  hdr.mapping = THREE.EquirectangularReflectionMapping;
+  scene.environment = hdr;
+  scene.environmentIntensity = 0.9;
+  photo.mapping = THREE.EquirectangularReflectionMapping;
+  photo.colorSpace = THREE.SRGBColorSpace;
+  photo.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(WALL_W, WALL_H),
-    new THREE.MeshStandardMaterial({ map: wallD, normalMap: wallN, roughnessMap: wallR, color: new THREE.Color(1.12, 1.12, 1.12), normalScale: new THREE.Vector2(0.9, 0.9) }));
-  wall.position.set(0, WALL_H / 2, 0);
-  wall.receiveShadow = true;
-  scene.add(wall);
+  const CAM_H = 1.7;
+  const sky = new GroundedSkybox(photo, CAM_H, 140, 96);
+  sky.position.y = CAM_H - 0.01;
+  sky.rotation.y = params.has('yaw') ? parseFloat(params.get('yaw')) : 3.14;
+  sky.material.toneMapped = false;
+  sky.material.fog = true;
+  scene.add(sky);
 
-  const sideMat = new THREE.MeshStandardMaterial({ map: sideD, normalMap: sideN, roughnessMap: sideR, color: '#f2f1ee' });
-  const side = new THREE.Mesh(new THREE.PlaneGeometry(WALL_W, 5.2), sideMat);
-  side.rotation.x = -Math.PI / 2;
-  side.position.set(0, 0, 2.6);
-  side.receiveShadow = true;
-  scene.add(side);
+  // sombra del espectacular sobre el asfalto de la foto
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), new THREE.ShadowMaterial({ opacity: 0.42 }));
+  catcher.rotation.x = -Math.PI / 2;
+  catcher.position.y = 0.01;
+  catcher.receiveShadow = true;
+  scene.add(catcher);
 
-  const curb = new THREE.Mesh(new THREE.BoxGeometry(WALL_W, 0.16, 0.28), sideMat);
-  curb.position.set(0, -0.08, 5.34);
-  curb.receiveShadow = true;
-  scene.add(curb);
+  // sol: misma dirección que el de la fotografía
+  const sunDir = new THREE.Vector3(
+    params.has('sx') ? parseFloat(params.get('sx')) : 0.92,
+    params.has('sy') ? parseFloat(params.get('sy')) : 0.38,
+    params.has('sz') ? parseFloat(params.get('sz')) : 0.1,
+  ).normalize();
+  const sun = new THREE.DirectionalLight('#fff4e6', 2.6);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(lowPower ? 1024 : 2048, lowPower ? 1024 : 2048);
+  Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 140 });
+  sun.shadow.bias = -0.0005;
+  sun.shadow.normalBias = 0.05;
+  scene.add(sun, sun.target);
 
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(WALL_W, 30),
-    new THREE.MeshStandardMaterial({ map: roadD, normalMap: roadN, roughnessMap: roadR, color: '#b9b7b4' }));
-  road.rotation.x = -Math.PI / 2;
-  road.position.set(0, -0.16, 20.48);
-  road.receiveShadow = true;
-  scene.add(road);
+  // --- espectacular unipolar
+  const B = new THREE.Vector3(
+    params.has('bx') ? parseFloat(params.get('bx')) : 4,
+    0,
+    params.has('bz') ? parseFloat(params.get('bz')) : -34,
+  );
+  const FACE_W = 14, FACE_H = 7, FACE_Y = 15.5;
+  const board = new THREE.Group();
+  board.position.copy(B);
+  scene.add(board);
+  sun.target.position.copy(B);
+  sun.position.copy(B).addScaledVector(sunDir, 80);
 
-  // oclusión de contacto donde el muro toca la banqueta
-  const aoCanvas = document.createElement('canvas');
-  aoCanvas.width = 4; aoCanvas.height = 256;
-  const aoCtx = aoCanvas.getContext('2d');
-  const aoGrad = aoCtx.createLinearGradient(0, 0, 0, 256);
-  aoGrad.addColorStop(0, 'rgba(0,0,0,0.55)');
-  aoGrad.addColorStop(0.35, 'rgba(0,0,0,0.16)');
-  aoGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  aoCtx.fillStyle = aoGrad;
-  aoCtx.fillRect(0, 0, 4, 256);
-  const aoTex = new THREE.CanvasTexture(aoCanvas);
-  const aoFloor = new THREE.Mesh(new THREE.PlaneGeometry(WALL_W, 0.9),
-    new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false, opacity: 0.5 }));
-  aoFloor.rotation.x = -Math.PI / 2;
-  aoFloor.position.set(0, 0.002, 0.45);
-  scene.add(aoFloor);
+  const steel = new THREE.MeshStandardMaterial({ color: '#8d9196', roughness: 0.42, metalness: 0.75, fog: false });
+  const darkSteel = new THREE.MeshStandardMaterial({ color: '#2b2e33', roughness: 0.5, metalness: 0.6, fog: false });
+  const concrete = new THREE.MeshStandardMaterial({ color: '#b9b6ae', roughness: 0.92, fog: false });
+  const add = (m, parent = board) => { m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
 
-  // --- flores de jacaranda caídas en la banqueta
-  const petalGeo = new THREE.CircleGeometry(0.03, 7);
-  const petals = new THREE.InstancedMesh(petalGeo, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.7, side: THREE.DoubleSide }), lowPower ? 260 : 420);
-  let seed = 7;
-  const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  const tmp = new THREE.Object3D();
-  for (let i = 0; i < petals.count; i++) {
-    // más densas pegadas al muro y bajo la copa (a la izquierda)
-    const x = -12 + Math.pow(rand(), 1.6) * 17;
-    const z = 0.06 + Math.pow(rand(), 2.4) * 4.8;
-    tmp.position.set(x, 0.004 + rand() * 0.003, z);
-    tmp.rotation.set(-Math.PI / 2 + (rand() - 0.5) * 0.3, 0, rand() * Math.PI);
-    const s = 0.7 + rand() * 0.9;
-    tmp.scale.set(s, s * (0.6 + rand() * 0.5), s);
-    tmp.updateMatrix();
-    petals.setMatrixAt(i, tmp.matrix);
-    petals.setColorAt(i, new THREE.Color().setHSL(0.74 + rand() * 0.04, 0.3 + rand() * 0.12, 0.6 + rand() * 0.1));
-  }
-  petals.receiveShadow = true;
-  scene.add(petals);
-
-  // --- espectacular (caja de luz)
-  const frameMat = new THREE.MeshPhysicalMaterial({ color: '#1b1c22', metalness: 0.75, roughness: 0.32, clearcoat: 0.4, clearcoatRoughness: 0.3 });
-  const FR = 0.13, DEPTH = 0.26;
+  const poleH = FACE_Y - FACE_H / 2 + 0.6;
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.68, poleH, 32), steel)).position.y = poleH / 2;
+  add(new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.35, 0.45, 32), concrete)).position.y = 0.22;
+  const back = add(new THREE.Mesh(new THREE.BoxGeometry(FACE_W + 0.7, FACE_H + 0.7, 0.45), darkSteel));
+  back.position.set(0, FACE_Y, -0.85);
+  const FR = 0.24;
   [
     [0, FACE_Y + FACE_H / 2 + FR / 2, FACE_W + FR * 2, FR],
     [0, FACE_Y - FACE_H / 2 - FR / 2, FACE_W + FR * 2, FR],
     [-FACE_W / 2 - FR / 2, FACE_Y, FR, FACE_H],
     [FACE_W / 2 + FR / 2, FACE_Y, FR, FACE_H],
   ].forEach(([x, y, w, h]) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, DEPTH), frameMat);
-    m.position.set(x, y, DEPTH / 2);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    scene.add(m);
+    const f = add(new THREE.Mesh(new THREE.BoxGeometry(w, h, 1.0), darkSteel));
+    f.position.set(x, y, -0.3);
   });
-  // la caja trasera termina 2 cm detrás de la cara del anuncio (si coinciden en el mismo plano, salen rayas)
-  const BACK_D = FACE_Z - 0.02;
-  const backBox = new THREE.Mesh(new THREE.BoxGeometry(FACE_W, FACE_H, BACK_D), frameMat);
-  backBox.position.set(0, FACE_Y, BACK_D / 2);
-  backBox.castShadow = true;
-  scene.add(backBox);
-  [-FACE_W * 0.32, FACE_W * 0.32].forEach((x) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.3), frameMat);
-    b.position.set(x, FACE_Y - FACE_H / 2 - FR - 0.05, 0.15);
-    b.castShadow = true;
-    scene.add(b);
+  [-4.5, 0, 4.5].forEach((x) => {
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.26, FACE_H + 0.9, 0.26), steel)).position.set(x, FACE_Y, -1.25);
+  });
+  const catY = FACE_Y - FACE_H / 2 - 0.5;
+  add(new THREE.Mesh(new THREE.BoxGeometry(FACE_W + 0.9, 0.1, 1.3), steel)).position.set(0, catY, 0.35);
+  add(new THREE.Mesh(new THREE.BoxGeometry(FACE_W + 0.9, 0.05, 0.05), steel)).position.set(0, catY + 1.0, 0.98);
+  for (let i = 0; i <= 12; i++) {
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.045, 1.0, 0.045), steel)).position.set(-FACE_W / 2 - 0.45 + (i * (FACE_W + 0.9)) / 12, catY + 0.5, 0.98);
+  }
+  [-5.2, -1.75, 1.75, 5.2].forEach((x) => {
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 1.4), steel)).position.set(x, catY - 0.05, 1.3);
+    const head = add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.16, 0.36), darkSteel));
+    head.position.set(x, catY + 0.04, 2.0);
+    head.rotation.x = 0.6;
   });
 
-  const covers = await createCovers(brand);
-  const faceCanvas = document.createElement('canvas');
-  faceCanvas.width = 2048;
-  faceCanvas.height = 1024;
-  const fctx = faceCanvas.getContext('2d');
-  fctx.drawImage(covers[0], 0, 0);
-  const faceTex = new THREE.CanvasTexture(faceCanvas);
-  faceTex.colorSpace = THREE.SRGBColorSpace;
-  faceTex.anisotropy = maxAniso;
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(FACE_W, FACE_H), new THREE.MeshPhysicalMaterial({
-    map: faceTex, emissive: '#ffffff', emissiveMap: faceTex, emissiveIntensity: 0.42,
-    roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08,
+  // --- trivision
+  const ads = await createAds();
+  const toTex = (c) => {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return t;
+  };
+  const rotationTex = ads.rotation.map(toTex);
+  const brandTex = toTex(ads.brand);
+  const N = lowPower ? 16 : 22;
+  const sW = FACE_W / N;
+  const R = sW / Math.sqrt(3);
+  const inR = R / 2;
+  const faceMats = [0, 1, 2].map((k) => new THREE.MeshStandardMaterial({
+    map: rotationTex[k], emissive: 0xffffff, emissiveMap: rotationTex[k], emissiveIntensity: 0.35,
+    roughness: 0.6, metalness: 0, fog: false,
   }));
-  face.position.set(0, FACE_Y, FACE_Z);
-  // la cara es una caja de luz: no recibe sombra (evita rayas de "shadow acne" en algunas GPU)
-  face.receiveShadow = false;
-  scene.add(face);
 
-  // --- sol y jacaranda fuera de cuadro (solo proyecta sombra)
-  const SUN_DIR = new THREE.Vector3(-0.58, 0.6, 0.55).normalize();
-  const sun = new THREE.DirectionalLight('#fff1dc', 3.9);
-  sun.position.set(0, 3, 0).addScaledVector(SUN_DIR, 30);
-  sun.target.position.set(0, 3, 0);
-  sun.castShadow = true;
-  const SM = lowPower ? 1536 : 2048;
-  sun.shadow.mapSize.set(SM, SM);
-  Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 10, bottom: -6, near: 5, far: 60 });
-  sun.shadow.bias = -0.0006;
-  sun.shadow.normalBias = 0.04;
-  scene.add(sun, sun.target);
-
-  // folíolos pequeños y finos, como los de la jacaranda
-  const leafShape = new THREE.Shape();
-  leafShape.moveTo(0, 0);
-  leafShape.quadraticCurveTo(0.05, 0.06, 0, 0.16);
-  leafShape.quadraticCurveTo(-0.05, 0.06, 0, 0);
-  const leafGeo = new THREE.ShapeGeometry(leafShape, 2);
-  // invisibles para la cámara (no escriben color ni profundidad) pero sí proyectan sombra
-  const hidden = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, colorWrite: false, depthWrite: false });
-  const shadowOn = (wx, wy, dist) => new THREE.Vector3(wx, wy, 0).addScaledVector(SUN_DIR, dist);
-  // copa sobre la esquina superior izquierda; deja la derecha y la banqueta al sol
-  const CLUSTERS = [
-    [-6.2, 7.0, 4.4, 1.5], [-4.4, 7.6, 4.0, 1.3], [-2.4, 7.4, 4.8, 1.2], [-0.4, 7.9, 5.2, 1.0],
-    [-6.8, 5.0, 3.4, 1.3], [-5.0, 5.6, 3.0, 1.1], [-3.1, 5.9, 3.6, 0.9], [-7.4, 3.0, 3.0, 1.1],
-    [-1.6, 6.0, 4.0, 0.7], [1.6, 8.2, 5.6, 0.8],
-  ];
-  const per = lowPower ? 520 : 900;
-  const clusters = CLUSTERS.map(([wx, wy, dist, r]) => {
-    const g = new THREE.Group();
-    g.position.copy(shadowOn(wx, wy, dist));
-    const leaves = new THREE.InstancedMesh(leafGeo, hidden, per);
-    // los folíolos van en pares a lo largo de raquis (hojas compuestas)
-    let i = 0;
-    while (i < per) {
-      const u = rand() * Math.PI * 2, v = Math.acos(2 * rand() - 1), rad = r * Math.cbrt(rand());
-      const base = new THREE.Vector3(Math.sin(v) * Math.cos(u) * rad, Math.cos(v) * rad * 0.75, Math.sin(v) * Math.sin(u) * rad * 0.6);
-      const dir = new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize();
-      const n = 5 + Math.floor(rand() * 6);
-      for (let k = 0; k < n && i < per; k++) {
-        for (const sideSign of [-1, 1]) {
-          if (i >= per) break;
-          tmp.position.copy(base).addScaledVector(dir, k * 0.1);
-          tmp.rotation.set(rand() * 0.6, rand() * Math.PI, Math.atan2(dir.y, dir.x) + sideSign * 1.1);
-          const s = 0.8 + rand() * 0.5;
-          tmp.scale.set(s, s, s);
-          tmp.updateMatrix();
-          leaves.setMatrixAt(i++, tmp.matrix);
-        }
-      }
+  function prismGeometry(i) {
+    const pos = [], uv = [], nor = [], idx = [];
+    const g = new THREE.BufferGeometry();
+    const u0 = i / N, u1 = (i + 1) / N;
+    for (let k = 0; k < 3; k++) {
+      const a0 = THREE.MathUtils.degToRad(120 * k - 60);
+      const a1 = THREE.MathUtils.degToRad(120 * k + 60);
+      const nA = THREE.MathUtils.degToRad(120 * k);
+      const base = pos.length / 3;
+      pos.push(R * Math.sin(a0), -FACE_H / 2, R * Math.cos(a0), R * Math.sin(a1), -FACE_H / 2, R * Math.cos(a1),
+        R * Math.sin(a1), FACE_H / 2, R * Math.cos(a1), R * Math.sin(a0), FACE_H / 2, R * Math.cos(a0));
+      uv.push(u0, 0, u1, 0, u1, 1, u0, 1);
+      for (let j = 0; j < 4; j++) nor.push(Math.sin(nA), 0, Math.cos(nA));
+      idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      g.addGroup(k * 6, 6, k);
     }
-    leaves.castShadow = true;
-    g.add(leaves);
-    g.userData = { base: g.position.clone(), phase: rand() * 10, freq: 0.5 + rand() * 0.5, amp: 0.05 + rand() * 0.05 };
-    scene.add(g);
+    const capBase = pos.length / 3;
+    [-1, 1].forEach((s) => {
+      for (let k = 0; k < 3; k++) {
+        const a = THREE.MathUtils.degToRad(120 * k + 60);
+        pos.push(R * Math.sin(a), (s * FACE_H) / 2, R * Math.cos(a));
+        uv.push(0, 0);
+        nor.push(0, s, 0);
+      }
+    });
+    idx.push(capBase, capBase + 2, capBase + 1, capBase + 3, capBase + 4, capBase + 5);
+    g.addGroup(18, 6, 3);
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx);
     return g;
-  });
-
-  // --- portadas: el póster rueda hacia arriba al cambiar
-  const roll = { from: 0, to: 0, start: -1 };
-  let current = 0, wanted = 0;
-  const ROLL = 1.1;
-  function draw(k) {
-    const off = Math.round(ease(k) * 1024);
-    fctx.drawImage(covers[roll.from], 0, -off);
-    fctx.drawImage(covers[roll.to], 0, 1024 - off);
-    faceTex.needsUpdate = true;
+  }
+  const prisms = [];
+  for (let i = 0; i < N; i++) {
+    const m = new THREE.Mesh(prismGeometry(i), [...faceMats, darkSteel]);
+    m.position.set(-FACE_W / 2 + sW * (i + 0.5), FACE_Y, -inR + 0.02);
+    m.castShadow = true;
+    board.add(m);
+    prisms.push(m);
+  }
+  const tv = { front: 0, step: 0, rotating: false, start: 0, queue: [], index: 0, mode: 'rotation', last: 0, next: 0 };
+  const STAGGER = lowPower ? 0.045 : 0.034;
+  const SPIN = 0.95;
+  function updateTrivision(t) {
+    if (!tv.rotating && tv.queue.length) {
+      const tex = tv.queue.shift();
+      tv.next = (tv.front + 1) % 3;
+      faceMats[tv.next].map = tex;
+      faceMats[tv.next].emissiveMap = tex;
+      tv.rotating = true;
+      tv.start = t;
+    }
+    if (!tv.rotating) return;
+    let done = true;
+    for (let i = 0; i < N; i++) {
+      const local = clamp((t - tv.start - i * STAGGER) / SPIN);
+      if (local < 1) done = false;
+      prisms[i].rotation.y = -(2 * Math.PI / 3) * (tv.step + easeInOut(local));
+    }
+    if (done) { tv.rotating = false; tv.step += 1; tv.front = tv.next; tv.last = t; }
   }
 
-  // --- cámara
+  // --- cámara: de la banqueta hasta el anuncio
   const size = new THREE.Vector2();
-  const camStart = new THREE.Vector3(), camEnd = new THREE.Vector3();
+  const camStart = new THREE.Vector3(), camMid = new THREE.Vector3(), camEnd = new THREE.Vector3();
   const lookStart = new THREE.Vector3(), lookEnd = new THREE.Vector3();
+  const curve = new THREE.CatmullRomCurve3([camStart, camMid, camEnd]);
   function layout() {
     const aspect = size.x / size.y;
     const portrait = aspect < 0.9;
-    camera.fov = portrait ? 48 : 34;
+    camera.fov = portrait ? 62 : 40;
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    if (portrait) {
-      const fit = (FACE_W / 2 + 0.45) / (tanV * aspect);
-      camStart.set(0, 1.7, FACE_Z + fit);
-      lookStart.set(0, 4.0, 0);
-    } else {
-      camStart.set(0, 1.6, 15);
-      lookStart.set(0, 3.15, 0);
-    }
-    // al final el anuncio ocupa ~80% del ancho (92% en teléfono) y deja aire abajo para el texto
-    const share = portrait ? 0.92 : 0.8;
-    const d = Math.max((FACE_W / 2) / (share * tanV * aspect), (FACE_H / 2) / (0.6 * tanV));
-    camEnd.set(0, FACE_Y - 0.15 * (FACE_H / 0.6) * 0.25, FACE_Z + d);
-    lookEnd.set(0, FACE_Y - (portrait ? 0.25 : 0.55), FACE_Z);
+    camStart.set(0, CAM_H, 0);
+    // a la derecha del texto en escritorio, centrado en teléfono
+    lookStart.set(portrait ? B.x - 1 : B.x - 12, portrait ? 23 : 9.5, B.z);
+    const d = Math.max((FACE_W * (portrait ? 0.56 : 0.66)) / (tanV * aspect), (FACE_H * 0.9) / tanV);
+    camEnd.set(B.x, FACE_Y - 1.2, B.z + d);
+    camMid.set(lerp(0, B.x, 0.5), 7, lerp(0, camEnd.z, 0.55));
+    lookEnd.set(B.x, FACE_Y - 1.2, B.z);
+    curve.updateArcLengths();
   }
   function resize() {
     size.set(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight);
@@ -276,48 +238,55 @@ export async function startScene({ canvas, getZoom, brand, onReady }) {
     pointer.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
   }, { passive: true });
 
+  // --- bucle
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clock = new THREE.Clock();
-  let t = 0, running = true, first = true, zs = 0;
   const look = new THREE.Vector3();
+  const warm = new THREE.Color(1.0, 0.9, 0.78);
+  const white = new THREE.Color(1, 1, 1);
+  const sunDay = new THREE.Color('#fff4e6'), sunGold = new THREE.Color('#ffc58a');
+  let t = 0, sp = 0, running = true, first = true;
 
   function frame() {
     if (!running) return;
     requestAnimationFrame(frame);
     const dt = Math.min(clock.getDelta(), 0.05);
     t += dt;
-    const zRaw = clamp(getZoom());
-    zs = lerp(zs, zRaw, 1 - Math.exp(-dt * 8));
-    const z = Math.abs(zs - zRaw) < 0.0005 ? zRaw : zs;
+    const raw = clamp(getProgress());
+    sp = lerp(sp, raw, 1 - Math.exp(-dt * 6));
+    const p = Math.abs(sp - raw) < 0.0005 ? raw : sp;
 
-    // viento
-    const w = reduce ? 0.25 : 1;
-    const gust = 0.6 + 0.4 * Math.sin(t * 0.23) * Math.sin(t * 0.61 + 1.3);
-    clusters.forEach((g) => {
-      const { base, phase, freq, amp } = g.userData;
-      const s = Math.sin(t * freq + phase) + 0.35 * Math.sin(t * freq * 2.7 + phase * 1.7);
-      g.position.set(base.x + s * amp * 2.2 * gust * w, base.y + Math.sin(t * freq * 1.3 + phase) * amp * 0.6 * w, base.z);
-      g.rotation.set(Math.sin(t * 0.9 + phase) * 0.04 * gust * w, Math.sin(t * 0.7 + phase) * 0.05 * w, s * 0.05 * gust * w);
-    });
+    // de mediodía a tarde dorada y de regreso (periodo de 36 s)
+    const gold = reduce ? 0.25 : (0.5 - 0.5 * Math.cos((t / 36) * Math.PI * 2)) * 0.85;
+    sky.material.color.copy(white).lerp(warm, gold);
+    sun.color.copy(sunDay).lerp(sunGold, gold);
+    sun.intensity = lerp(2.6, 2.1, gold);
+    renderer.toneMappingExposure = lerp(1.0, 0.95, gold);
 
-    // cambio de portada
-    if (roll.start < 0 && wanted !== current) {
-      roll.from = current; roll.to = wanted; roll.start = t;
-      if (reduce) { draw(1); current = wanted; roll.start = -1; }
+    // la calle se desvanece al color de la página mientras la cámara sube
+    const fade = smooth(0.12, 0.62, p);
+    scene.fog.density = fade * fade * 0.06;
+    catcher.material.opacity = 0.42 * (1 - fade);
+
+    // anuncios: cada 5 s; al acercarse queda la marca
+    if (p > 0.45 && tv.mode !== 'brand') {
+      tv.mode = 'brand'; tv.queue.length = 0; tv.queue.push(brandTex);
+    } else if (p < 0.3 && tv.mode === 'brand') {
+      tv.mode = 'rotation'; tv.queue.length = 0;
+      tv.index = (tv.index + 1) % rotationTex.length; tv.queue.push(rotationTex[tv.index]);
+    } else if (tv.mode === 'rotation' && !tv.rotating && !tv.queue.length && t - tv.last > 5) {
+      tv.index = (tv.index + 1) % rotationTex.length;
+      tv.queue.push(rotationTex[tv.index]);
     }
-    if (roll.start >= 0) {
-      const k = clamp((t - roll.start) / ROLL);
-      draw(k);
-      if (k >= 1) { current = roll.to; roll.start = -1; }
-    }
+    updateTrivision(t);
 
-    const cp = ease(z);
-    camera.position.lerpVectors(camStart, camEnd, cp);
-    look.lerpVectors(lookStart, lookEnd, cp);
+    const cp = easeInOut(smooth(0.02, 0.9, p));
+    curve.getPoint(cp, camera.position);
+    look.lerpVectors(lookStart, lookEnd, easeInOut(smooth(0, 0.85, p)));
     ps.lerp(pointer, 1 - Math.exp(-dt * 2.5));
     const par = (1 - cp) * (reduce ? 0 : 1);
-    camera.position.x += ps.x * 0.4 * par;
-    camera.position.y += -ps.y * 0.16 * par;
+    look.x += ps.x * 1.2 * par;
+    look.y += -ps.y * 0.6 * par;
     camera.lookAt(look);
 
     renderer.render(scene, camera);
@@ -326,11 +295,6 @@ export async function startScene({ canvas, getZoom, brand, onReady }) {
   frame();
 
   return {
-    showCover(i) { wanted = i; },
-    setBrand(name) {
-      covers[0] = coverBrand(name);
-      if (current === 0 && roll.start < 0) { fctx.drawImage(covers[0], 0, 0); faceTex.needsUpdate = true; }
-    },
     pause() { running = false; },
     resume() { if (!running) { running = true; clock.getDelta(); frame(); } },
     get running() { return running; },

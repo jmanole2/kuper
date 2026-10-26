@@ -1,5 +1,5 @@
-// Portadas del espectacular (canvas 2048×1024, proporción 2:1).
-// Fotos de Unsplash (licencia libre) + tipografía de marca.
+// Anuncios del espectacular (canvas 2048×1024, proporción 2:1).
+// Fotos de Unsplash (licencia libre) + tipografía de marca (Barlow Condensed).
 
 const W = 2048;
 const H = 1024;
@@ -32,20 +32,82 @@ function logo(ctx, img, x, y, w) {
   if (img) ctx.drawImage(img, x, y, w, w * (img.height / img.width));
 }
 
-// Texto que se ajusta al ancho disponible (para la marca que escribe el visitante)
-function fitText(ctx, text, maxW, maxSize, weight = 600) {
-  let size = maxSize;
-  do {
-    ctx.font = `${weight} ${size}px ${DISPLAY}`;
-    if (ctx.measureText(text).width <= maxW) break;
-    size -= 6;
-  } while (size > 60);
-  return size;
+function tinted(img, color) {
+  if (!img) return null;
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const x = c.getContext('2d');
+  x.drawImage(img, 0, 0);
+  x.globalCompositeOperation = 'source-in';
+  x.fillStyle = color;
+  x.fillRect(0, 0, c.width, c.height);
+  return c;
 }
 
-let assets = null;
-async function load() {
-  if (assets) return assets;
+// 1 · Te voltearán a ver: Reforma a sangre
+function adLook(a) {
+  const c = canvas();
+  const ctx = c.getContext('2d');
+  cover(ctx, a.reforma, 0, 0, W, H, 0.5, 0.6);
+  ctx.fillStyle = 'rgba(10,8,12,0.25)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  ctx.font = `600 236px ${DISPLAY}`;
+  ctx.fillText('TE VOLTEARÁN A VER.', 104, H - 140);
+  logo(ctx, a.logo, W - 104 - 420, 92, 420);
+  return c;
+}
+
+// 2 · 750 espacios: campo claro + foto
+function adNumbers(a) {
+  const c = canvas();
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#efece6';
+  ctx.fillRect(0, 0, W, H);
+  cover(ctx, a.skyline, 1020, 0, W - 1020, H, 0.5, 0.5);
+  ctx.fillStyle = PURPLE;
+  ctx.font = `600 430px ${DISPLAY}`;
+  ctx.fillText('750', 96, 520);
+  ctx.font = `600 124px ${DISPLAY}`;
+  ctx.fillText('ESPACIOS EN', 104, 690);
+  ctx.fillText('SEIS CIUDADES', 104, 812);
+  logo(ctx, tinted(a.logo, PURPLE), 108, 884, 330);
+  return c;
+}
+
+// 3 · Este espacio es tuyo: foto + campo morado
+function adYours(a) {
+  const c = canvas();
+  const ctx = c.getContext('2d');
+  cover(ctx, a.gente, 0, 0, 1060, H, 0.5, 0.45);
+  ctx.fillStyle = PURPLE;
+  ctx.fillRect(1060, 0, W - 1060, H);
+  ctx.fillStyle = '#fff';
+  ctx.font = `600 190px ${DISPLAY}`;
+  ctx.fillText('ESTE ESPACIO', 1140, 380);
+  ctx.fillText('ES TUYO.', 1140, 560);
+  ctx.font = `500 76px ${DISPLAY}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.86)';
+  ctx.fillText('LLAMA AL 55 5241 6999', 1144, 700);
+  logo(ctx, a.logo, 1144, H - 190, 400);
+  return c;
+}
+
+// 4 · Marca (cuando la cámara llega al espectacular)
+function adBrand(a) {
+  const c = canvas();
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = PURPLE;
+  ctx.fillRect(0, 0, W, H);
+  logo(ctx, a.logo, W / 2 - 620, H / 2 - 150, 1240);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = `500 72px ${DISPLAY}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('LÍDERES EN PUBLICIDAD EXTERIOR', W / 2, H - 150);
+  return c;
+}
+
+export async function createAds() {
   try { await document.fonts.load(`600 140px ${DISPLAY}`); } catch (e) { /* respaldo */ }
   const [lg, reforma, gente, skyline] = await Promise.all([
     loadImage('assets/img/logo-horizontal-white-header.png'),
@@ -53,75 +115,9 @@ async function load() {
     loadImage('assets/photos/cdmx-gente.jpg'),
     loadImage('assets/photos/cdmx-skyline.jpg'),
   ]);
-  assets = { lg, reforma, gente, skyline };
-  return assets;
-}
-
-// A · La marca del visitante: foto de Reforma + campo morado con su nombre
-export function coverBrand(name) {
-  const { lg, gente } = assets;
-  const c = canvas();
-  const ctx = c.getContext('2d');
-  cover(ctx, gente, 0, 0, 1060, H, 0.5, 0.45);
-  ctx.fillStyle = PURPLE;
-  ctx.fillRect(1060, 0, W - 1060, H);
-  const text = (name || 'Tu marca').trim().toUpperCase() || 'TU MARCA';
-  ctx.fillStyle = '#fff';
-  ctx.textBaseline = 'alphabetic';
-  const size = fitText(ctx, text, W - 1060 - 180, 260);
-  ctx.fillText(text, 1150, 470 + size * 0.35);
-  ctx.font = `500 64px ${DISPLAY}`;
-  ctx.fillStyle = 'rgba(255,255,255,0.82)';
-  ctx.fillText('AQUÍ, EN PASEO DE LA REFORMA', 1150, 640);
-  logo(ctx, lg, 1150, H - 190, 400);
-  return c;
-}
-
-// B · Te voltearán a ver
-function coverLook() {
-  const { lg, reforma } = assets;
-  const c = canvas();
-  const ctx = c.getContext('2d');
-  cover(ctx, reforma, 0, 0, W, H, 0.5, 0.6);
-  ctx.fillStyle = 'rgba(10,8,12,0.28)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#fff';
-  ctx.font = `600 230px ${DISPLAY}`;
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('TE VOLTEARÁN A VER.', 110, H - 150);
-  logo(ctx, lg, W - 110 - 400, 90, 400);
-  return c;
-}
-
-// C · 750 espacios
-function coverNumbers() {
-  const { lg, skyline } = assets;
-  const c = canvas();
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#ececea';
-  ctx.fillRect(0, 0, W, H);
-  cover(ctx, skyline, 1000, 0, W - 1000, H, 0.5, 0.5);
-  ctx.fillStyle = PURPLE;
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = `600 420px ${DISPLAY}`;
-  ctx.fillText('750', 100, 520);
-  ctx.font = `600 120px ${DISPLAY}`;
-  ctx.fillText('ESPACIOS EN', 110, 690);
-  ctx.fillText('SEIS CIUDADES', 110, 810);
-  const dark = document.createElement('canvas');
-  if (lg) {
-    dark.width = lg.width; dark.height = lg.height;
-    const d = dark.getContext('2d');
-    d.drawImage(lg, 0, 0);
-    d.globalCompositeOperation = 'source-in';
-    d.fillStyle = PURPLE;
-    d.fillRect(0, 0, dark.width, dark.height);
-    logo(ctx, dark, 112, 880, 330);
-  }
-  return c;
-}
-
-export async function createCovers(brandName) {
-  await load();
-  return [coverBrand(brandName), coverLook(), coverNumbers()];
+  const a = { logo: lg, reforma, gente, skyline };
+  return {
+    rotation: [adLook(a), adNumbers(a), adYours(a)],
+    brand: adBrand(a),
+  };
 }

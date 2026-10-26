@@ -40,16 +40,14 @@ node render.mjs --page src/agent.html --config agent.config.json --out out/kuper
 
 # Grupo De Haro — rediseño web con Three.js (`grupodeharo/`)
 
-Propuesta de home para grupodeharo.com.mx (v3, hecha con la skill `design-taste-frontend`, dirección "El póster fijo"). Sitio estático: HTML + CSS + Three.js (r170, local en `assets/vendor/three`).
+Propuesta de home para grupodeharo.com.mx (v4: base de la v1, en claro). Sitio estático: HTML + CSS + Three.js (r170, local en `assets/vendor/three`).
 
-- **Hero 3D** (`assets/js/scene.js`): muro de concreto aparente con un espectacular (caja de luz) a la sombra de una jacaranda que queda fuera de cuadro; sus sombras se mueven con el viento y sus flores caen en la banqueta. Texturas y cielo HDRI de Poly Haven (CC0).
-- **Lo vivo**: el visitante escribe su marca y aparece en el espectacular; "Cotizar" la manda por WhatsApp.
-- **Scroll**: la cámara se acerca y el espectacular queda fijo mientras cambia de portada (`assets/js/ads.js`), con una línea de texto por pantalla.
-- Secciones: medios (foto a sangre + tarjeta con la foto real del medio), tabla de medios y ciudades, 25 % programático, franja de marcas, contacto sobre Reforma y pie con menú.
-- Tipografías de la marca: Barlow Condensed y DM Sans. Acento: morado De Haro.
-- Créditos de fotos en el pie de página y en `assets/credits.json` (Wikimedia Commons CC BY / CC BY-SA, Unsplash).
+- **Hero 3D** (`assets/js/scene.js`): espectacular unipolar con trivision (prismas que giran) dentro de una avenida fotográfica 360° (Poly Haven `wide_street_02`, CC0) proyectada sobre el suelo; su HDR ilumina el espectacular. La luz pasa de mediodía a tarde dorada y regresa, nunca oscurece. Con el scroll la cámara sube al anuncio y la calle se desvanece al color de la página.
+- **Cobertura** (`assets/js/globe.js`): globo 3D claro con continentes de puntos, México en morado, las seis ciudades con etiquetas y arcos desde la CDMX; el scroll gira el globo hasta México. Datos precalculados en `assets/data/globe.json` (Natural Earth + estados de México).
+- Toda la página en fondo `#efece6`; títulos en Barlow Condensed y texto en DM Sans (las fuentes de la marca).
+- Créditos de fotos en el pie de página y en `assets/credits.json`.
 
 ```bash
 cd grupodeharo && python3 -m http.server 8765   # abrir http://localhost:8765
 ```
-Necesita servirse por http (no `file://`). `assets/img/hero-poster.jpg` es el primer cuadro mientras carga la escena.
+Necesita servirse por http (no `file://`). `assets/img/hero-poster.jpg` es el primer cuadro mientras carga la escena. Para calibrar la foto 360°: `?yaw=3.14` (giro) y `?bx=4&bz=-34` (posición del espectacular).

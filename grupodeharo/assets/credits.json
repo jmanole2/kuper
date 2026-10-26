@@ -96,25 +96,16 @@
   "saved": "2026-10-26T20:05:11.919Z"
  },
  {
-  "file": "assets/photos/puesto-periodicos-aztecas.jpg",
-  "media": "image",
-  "ref": "commons:147973381",
-  "title": "Puesto de periódicos en Avenida Aztecas",
-  "creator": "Ehécatl Cabrera",
-  "creatorUrl": null,
-  "date": "2023-06-02",
-  "license": "CC BY 4.0",
-  "licenseCode": "by",
-  "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-  "creditRequired": true,
-  "page": "https://commons.wikimedia.org/wiki/File:Puesto_de_peri%C3%B3dicos_en_Avenida_Aztecas.jpg",
-  "via": "Wikimedia Commons",
-  "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Puesto_de_peri%C3%B3dicos_en_Avenida_Aztecas.jpg/1920px-Puesto_de_peri%C3%B3dicos_en_Avenida_Aztecas.jpg",
-  "width": 1920,
-  "height": 1280,
-  "bytes": 849030,
-  "credit": "\"Puesto de periódicos en Avenida Aztecas\" by Ehécatl Cabrera, CC BY 4.0, via Wikimedia Commons",
-  "notes": [],
-  "saved": "2026-10-26T20:05:31.572Z"
+  "file": "assets/tex/street_bg.jpg",
+  "title": "Wide Street 02",
+  "creator": "Poly Haven",
+  "license": "CC0",
+  "page": "https://polyhaven.com/a/wide_street_02"
+ },
+ {
+  "file": "assets/data/globe.json",
+  "title": "Natural Earth (world-atlas) y estados de México (angelnmara/geojson)",
+  "license": "dominio público / ver fuente",
+  "page": "https://www.naturalearthdata.com/"
  }
 ]

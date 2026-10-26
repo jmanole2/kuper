@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Grupo De Haro · Publicidad exterior en México</title>
-<meta name="description" content="Publicidad exterior en las calles de México desde hace casi 50 años: kioscos, parabuses, puentes y pantallas. 750 espacios en CDMX, Estado de México, Monterrey, Guadalajara, Puebla y Aguascalientes.">
-<meta name="theme-color" content="#e4e3df">
+<title>Grupo De Haro · Líderes en publicidad exterior en México</title>
+<meta name="description" content="Casi 50 años de publicidad exterior en México. Más de 750 espacios en CDMX, Estado de México, Monterrey, Guadalajara, Puebla y Aguascalientes: KZ, KZ Digital, Megatop, Parabús, Publipantalla y DOOH programático.">
+<meta name="theme-color" content="#efece6">
 <link rel="icon" href="assets/img/logo-square-white-footer.png">
 <script>document.documentElement.classList.replace('no-js', 'js');</script>
 
@@ -38,149 +38,190 @@
   O en una terminal dentro de la carpeta <code>grupodeharo</code>: <code>python3 -m http.server 8765</code> y abre <code>http://localhost:8765</code>.</span>
 </div>
 
-<canvas id="scene" role="img" aria-label="Un espectacular de Grupo De Haro sobre un muro de concreto, a la sombra de una jacaranda"></canvas>
+<canvas id="scene" role="img" aria-label="Un espectacular de Grupo De Haro sobre una avenida arbolada"></canvas>
 
-<header class="bar" id="bar">
-  <a class="bar-logo" href="#inicio" aria-label="Grupo De Haro, inicio">
+<header class="nav on-photo" id="nav">
+  <a class="nav-logo" href="#inicio" aria-label="Grupo De Haro, inicio">
     <img src="assets/img/logo-horizontal-white-header.png" alt="Grupo De Haro Publicidad" width="952" height="177">
   </a>
-  <nav class="bar-links" aria-label="Principal">
+  <nav class="nav-links" aria-label="Principal">
     <a href="#medios">Medios</a>
+    <a href="#proceso">Cómo trabajamos</a>
     <a href="#cobertura">Cobertura</a>
     <a href="#programatica">Programática</a>
-    <a href="#contacto">Contacto</a>
   </nav>
-  <a class="button bar-action" href="https://wa.me/525514753620?text=Hola%2C%20quiero%20cotizar%20una%20campa%C3%B1a" target="_blank" rel="noopener">Cotiza</a>
+  <a class="btn btn-solid nav-cta" href="#contacto">Hablemos <span class="arrow" aria-hidden="true">→</span></a>
+  <button class="nav-toggle" id="navToggle" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
 </header>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#medios">Medios</a>
+  <a href="#proceso">Cómo trabajamos</a>
+  <a href="#cobertura">Cobertura</a>
+  <a href="#programatica">Programática</a>
+  <a href="#contacto">Contacto</a>
+</div>
 
 <main>
-  <!-- Hero: la escena 3D vive en el canvas fijo; esta sección da el recorrido del acercamiento -->
-  <section class="hero" id="inicio" aria-labelledby="titulo">
-    <div class="hero-intro">
-      <h1 class="title" id="titulo"><span class="line"><span data-line>Grupo De Haro</span></span></h1>
-      <div class="intro-foot">
-      <p class="lead" data-load style="--d:380ms">Publicidad exterior en las calles de México desde hace casi 50 años: kioscos, parabuses, puentes y pantallas en seis ciudades.</p>
-      <form class="try" id="tryForm" data-load style="--d:460ms" action="https://wa.me/525514753620" target="_blank">
-        <label for="brand">Escribe tu marca y mírala en el espectacular</label>
-        <div class="try-row">
-          <input id="brand" name="brand" type="text" maxlength="20" autocomplete="organization" placeholder="Tu marca">
-          <button class="button" type="submit">Cotizar</button>
+  <!-- HERO: la escena 3D vive en el canvas fijo; esta sección solo da el recorrido de scroll -->
+  <section class="hero" id="inicio" aria-labelledby="hero-title">
+    <div class="hero-sticky">
+      <div class="hero-copy" id="heroCopy">
+        <h1 id="hero-title"><span class="line"><span data-line>Líderes en</span></span><span class="line"><span data-line style="--i:1">publicidad exterior</span></span></h1>
+        <p class="lead" data-load style="--d:420ms">Casi 50 años poniendo marcas donde México mira: más de 750 espacios en seis ciudades, del parabús a la pantalla digital.</p>
+        <div class="hero-actions" data-load style="--d:500ms">
+          <a class="btn btn-solid" href="#contacto">Cotiza tu campaña</a>
+          <a class="btn btn-ghost" href="#medios">Ver medios <span class="arrow" aria-hidden="true">↓</span></a>
         </div>
-      </form>
       </div>
-    </div>
-    <div class="hero-hold">
-      <div class="hold-stage">
-        <p class="hold-line" id="holdLine" aria-live="polite"
-           data-lines="Tu marca, frente a millones de personas cada mes.|Ubicaciones de alto impacto, con todos los permisos en regla.|750 espacios en CDMX, Edomex, Monterrey, Guadalajara, Puebla y Aguascalientes.">Tu marca, frente a millones de personas cada mes.</p>
+      <div class="hero-final" id="heroFinal">
+        <h2>Te voltearán a ver.</h2>
       </div>
     </div>
   </section>
 
-  <!-- Medios: un acercamiento por medio, la tarjeta avanza una columna cada vez -->
-  <section class="showcase" id="medios" aria-labelledby="medio-kz">
-    <article class="frame" style="--col:2">
-      <img class="frame-bg" src="assets/photos/puesto-periodicos-aztecas.jpg" alt="Puesto de periódicos en la avenida Aztecas, Ciudad de México" width="1920" height="1280" loading="lazy">
-      <div class="card" data-reveal>
-        <h2 id="medio-kz">KZ</h2>
-        <p>Kioscos de periódicos y de bolero, a pie de calle</p>
-        <p class="card-fact">CDMX · Edomex · Puebla · Monterrey</p>
-        <img src="assets/img/kz_header.jpg" alt="Kiosco KZ con publicidad junto al letrero de México" width="600" height="450" loading="lazy">
-        <a class="button button-block" href="https://wa.me/525514753620?text=Quiero%20cotizar%20KZ" target="_blank" rel="noopener">Cotizar KZ</a>
-      </div>
-    </article>
-    <article class="frame" style="--col:3">
-      <img class="frame-bg" src="assets/photos/reforma-hidalgo.jpg" alt="Paseo de la Reforma en su cruce con Avenida Hidalgo" width="1920" height="910" loading="lazy">
-      <div class="card" data-reveal>
-        <h3>Megatop</h3>
-        <p>Gran formato sobre puentes y vialidades primarias</p>
-        <p class="card-fact">Estado de México · Guadalajara</p>
-        <img src="assets/img/megatop_header.jpg" alt="Megatop sobre un puente peatonal en una autopista" width="600" height="450" loading="lazy">
-        <a class="button button-block" href="https://wa.me/525514753620?text=Quiero%20cotizar%20Megatop" target="_blank" rel="noopener">Cotizar Megatop</a>
-      </div>
-    </article>
-    <article class="frame" style="--col:4">
-      <img class="frame-bg" src="assets/photos/jacaranda-condesa-calle.jpg" alt="Calle de la colonia Condesa con jacarandas en flor" width="1920" height="1440" loading="lazy">
-      <div class="card" data-reveal>
-        <h3>Parabús</h3>
-        <p>Mobiliario urbano en paradas de transporte</p>
-        <p class="card-fact">Aguascalientes</p>
-        <img src="assets/img/parabus_header.jpg" alt="Parabús con un anuncio de pizza" width="600" height="450" loading="lazy">
-        <a class="button button-block" href="https://wa.me/525514753620?text=Quiero%20cotizar%20Parab%C3%BAs" target="_blank" rel="noopener">Cotizar Parabús</a>
-      </div>
-    </article>
+  <section class="stats" aria-labelledby="stats-title">
+    <h2 class="sr-only" id="stats-title">Grupo De Haro en cifras</h2>
+    <div class="stat reveal"><span class="stat-num"><b data-count="50">50</b></span><span class="stat-label">años de trayectoria en publicidad exterior</span></div>
+    <div class="stat reveal"><span class="stat-num"><b data-count="750">750</b><small>+</small></span><span class="stat-label">espacios publicitarios a nivel nacional</span></div>
+    <div class="stat reveal"><span class="stat-num"><b data-count="6">6</b></span><span class="stat-label">ciudades en cinco estados y la capital</span></div>
+    <div class="stat reveal"><span class="stat-num"><b data-count="25">25</b><small>%</small></span><span class="stat-label">del inventario en venta programática</span></div>
   </section>
 
-  <section class="lineup" id="cobertura" aria-labelledby="cobertura-titulo">
-    <h2 id="cobertura-titulo" data-reveal>Medios y ciudades</h2>
-    <table data-reveal>
-      <caption class="sr-only">Medios de Grupo De Haro, su formato y las ciudades donde están</caption>
-      <thead class="sr-only"><tr><th scope="col">Medio</th><th scope="col">Formato</th><th scope="col">Ciudades</th><th scope="col">Cotizar</th></tr></thead>
-      <tbody>
-        <tr><th scope="row">KZ de periódicos</th><td>Kiosco a pie de calle</td><td>CDMX, Edomex, Puebla</td><td><a href="https://wa.me/525514753620?text=Quiero%20cotizar%20KZ%20de%20peri%C3%B3dicos" target="_blank" rel="noopener">Cotizar</a></td></tr>
-        <tr><th scope="row">KZ de bolero</th><td>Kiosco a pie de calle</td><td>Monterrey</td><td><a href="https://wa.me/525514753620?text=Quiero%20cotizar%20KZ%20de%20bolero" target="_blank" rel="noopener">Cotizar</a></td></tr>
-        <tr><th scope="row">KZ Digital</th><td>Pantalla digital</td><td>CDMX</td><td><a href="https://wa.me/525514753620?text=Quiero%20cotizar%20KZ%20Digital" target="_blank" rel="noopener">Cotizar</a></td></tr>
-        <tr><th scope="row">Megatop</th><td>Gran formato</td><td>Edomex, Guadalajara</td><td><a href="https://wa.me/525514753620?text=Quiero%20cotizar%20Megatop" target="_blank" rel="noopener">Cotizar</a></td></tr>
-        <tr><th scope="row">Parabús</th><td>Mobiliario urbano</td><td>Aguascalientes</td><td><a href="https://wa.me/525514753620?text=Quiero%20cotizar%20Parab%C3%BAs" target="_blank" rel="noopener">Cotizar</a></td></tr>
-        <tr><th scope="row">Publipantalla</th><td>Cartelera iluminada</td><td>Edomex</td><td><a href="https://wa.me/525514753620?text=Quiero%20cotizar%20Publipantalla" target="_blank" rel="noopener">Cotizar</a></td></tr>
-        <tr><th scope="row">Producciones especiales</th><td>A la medida</td><td>Según la campaña</td><td><a href="https://wa.me/525514753620?text=Quiero%20una%20producci%C3%B3n%20especial" target="_blank" rel="noopener">Cotizar</a></td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section class="figure" id="programatica" aria-labelledby="programatica-titulo">
-    <h2 id="programatica-titulo" data-reveal>Compra pantallas como clics</h2>
-    <div class="figure-body">
-      <p class="figure-num" data-reveal><span data-count="25">25</span><sup>%</sup></p>
-      <p class="figure-caption" data-reveal>de nuestro inventario en CDMX y Estado de México se compra por venta programática DOOH, con medición de audiencia en tiempo real.</p>
-    </div>
-    <img class="figure-pic" src="assets/img/kz_digital_header.jpg" alt="Kiosco KZ Digital con pantallas encendidas en una banqueta" width="600" height="450" loading="lazy" data-reveal>
-  </section>
-
-  <section class="band" aria-labelledby="marcas-titulo">
-    <div class="band-field" aria-hidden="true">
-      <div class="band-track">
-        <span>Amazon</span><span>AT&amp;T</span><span>Banamex</span><span>BBVA</span><span>Diageo</span><span>DiDi</span><span>Liverpool</span><span>Mercado Pago</span><span>Mitsubishi</span><span>Grupo Modelo</span><span>Nestlé</span><span>Nike</span><span>Nissan</span><span>Poett</span><span>Price Shoes</span><span>Santander</span><span>Telcel</span><span>Uber</span><span>Viva</span>
-        <span>Amazon</span><span>AT&amp;T</span><span>Banamex</span><span>BBVA</span><span>Diageo</span><span>DiDi</span><span>Liverpool</span><span>Mercado Pago</span><span>Mitsubishi</span><span>Grupo Modelo</span><span>Nestlé</span><span>Nike</span><span>Nissan</span><span>Poett</span><span>Price Shoes</span><span>Santander</span><span>Telcel</span><span>Uber</span><span>Viva</span>
+  <section class="media" id="medios" aria-labelledby="medios-title">
+    <header class="section-head reveal">
+      <h2 id="medios-title">Seis formatos en la calle</h2>
+    </header>
+    <div class="media-grid">
+      <ol class="media-list" id="mediaList">
+        <li data-img="assets/img/kz_header.jpg"><div><h3>KZ</h3><p>Kioscos a pie de calle en esquinas de alto tráfico peatonal. La marca a la altura de los ojos, todos los días.</p></div></li>
+        <li data-img="assets/img/kz_digital_header.jpg"><div><h3>KZ Digital</h3><p>Kioscos con pantallas digitales: creatividades que cambian por horario, zona o audiencia.</p></div></li>
+        <li data-img="assets/img/megatop_header.jpg"><div><h3>Megatop</h3><p>Gran formato sobre vialidades primarias y puentes. Imposible de ignorar para miles de conductores.</p></div></li>
+        <li data-img="assets/img/parabus_header.jpg"><div><h3>Parabús</h3><p>Mobiliario urbano en paradas de transporte, con tiempos de exposición largos frente a pasajeros y peatones.</p></div></li>
+        <li data-img="assets/img/publipantalla_header.jpg"><div><h3>Publipantalla</h3><p>Carteleras iluminadas en avenidas y camellones, visibles de día y de noche.</p></div></li>
+        <li data-img="assets/img/prod_esp_header.jpg"><div><h3>Producciones especiales</h3><p>Intervenciones fuera de formato: forrados, extensiones y piezas 3D que se vuelven noticia.</p></div></li>
+      </ol>
+      <div class="media-visual" aria-hidden="true">
+        <div class="media-frame" id="mediaFrame">
+          <img src="assets/img/kz_header.jpg" alt="" class="is-active" width="600" height="450">
+        </div>
+        <span class="media-caption" id="mediaCaption">KZ</span>
       </div>
     </div>
-    <h2 id="marcas-titulo" class="band-note" data-reveal>Marcas que han anunciado con nosotros: Amazon, AT&amp;T, Banamex, BBVA, Diageo, DiDi, Liverpool, Mercado Pago, Nike, Telcel y más.</h2>
   </section>
 
-  <section class="visit" id="contacto" aria-labelledby="contacto-titulo">
-    <img class="visit-bg" src="assets/photos/reforma-camellon.jpg" alt="Camellón de Paseo de la Reforma con flores de cempasúchil" width="1920" height="1441" loading="lazy">
-    <div class="visit-card" data-reveal>
-      <h2 id="contacto-titulo">Visítanos en Reforma</h2>
-      <address>Paseo de la Reforma 300, piso 8<br>Col. Juárez, Cuauhtémoc, CDMX</address>
-      <dl>
-        <div><dt>Teléfono</dt><dd><a href="tel:+525552416999">55 5241 6999</a></dd></div>
-        <div><dt>WhatsApp</dt><dd><a href="https://wa.me/525514753620" target="_blank" rel="noopener">55 1475 3620</a></dd></div>
-        <div><dt>Correo</dt><dd><a href="mailto:info@deharo.com.mx">info@deharo.com.mx</a></dd></div>
-      </dl>
-      <a class="button button-block" href="https://wa.me/525514753620?text=Hola%2C%20quiero%20cotizar%20una%20campa%C3%B1a" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+  <section class="process" id="proceso" aria-labelledby="proceso-title">
+    <header class="section-head reveal">
+      <h2 id="proceso-title">De la idea a la calle</h2>
+    </header>
+    <div class="steps">
+      <article class="step reveal">
+        <img src="assets/photos/reforma-camellon.jpg" alt="Camellón de Paseo de la Reforma" width="1920" height="1441" loading="lazy">
+        <h3>Entendemos tu objetivo</h3>
+        <p>Qué quieres lograr, a quién le hablas y dónde está esa audiencia. Antes de proponer un espacio, entendemos el negocio.</p>
+      </article>
+      <article class="step reveal">
+        <img src="assets/photos/reforma-hidalgo.jpg" alt="Cruce de Paseo de la Reforma y Avenida Hidalgo" width="1920" height="910" loading="lazy">
+        <h3>Diseñamos la estrategia</h3>
+        <p>Combinamos formatos, ubicaciones y tiempos para que tu marca aparezca en el recorrido diario de tu cliente.</p>
+      </article>
+      <article class="step reveal">
+        <img src="assets/photos/jacaranda-condesa-calle.jpg" alt="Calle de la Condesa con jacarandas en flor" width="1920" height="1440" loading="lazy">
+        <h3>Activamos y medimos</h3>
+        <p>Instalamos con permisos en regla, damos seguimiento de principio a fin y te entregamos resultados medibles.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Cobertura: globo 3D que gira hasta México -->
+  <section class="coverage" id="cobertura" aria-labelledby="cobertura-title">
+    <div class="coverage-sticky">
+      <canvas id="globe" role="img" aria-label="Globo terráqueo con las seis ciudades de Grupo De Haro marcadas en México"></canvas>
+      <div class="globe-labels" id="globeLabels" aria-hidden="true"></div>
+      <div class="coverage-copy">
+        <h2 id="cobertura-title" class="reveal">Seis ciudades,<br>un solo equipo</h2>
+        <ul class="cities" id="cityList">
+          <li data-city="0"><b>Ciudad de México</b><span>KZ de periódicos · KZ Digital</span></li>
+          <li data-city="1"><b>Estado de México</b><span>Megatop · KZ de periódicos · Publipantallas</span></li>
+          <li data-city="2"><b>Monterrey</b><span>KZ de bolero</span></li>
+          <li data-city="3"><b>Guadalajara</b><span>Megatop</span></li>
+          <li data-city="4"><b>Puebla</b><span>KZ de periódicos</span></li>
+          <li data-city="5"><b>Aguascalientes</b><span>Parabuses</span></li>
+        </ul>
+      </div>
+      <div class="coverage-stats">
+        <p><b>750+</b><span>espacios publicitarios</span></p>
+        <p><b>25%</b><span>en venta programática</span></p>
+      </div>
+      <div class="ticker" aria-hidden="true"><div class="ticker-track">
+        <span>CDMX · KZ Digital con contenido por horario</span><span>Monterrey · KZ de bolero</span><span>Guadalajara · Megatop sobre vialidades primarias</span><span>Puebla · KZ de periódicos</span><span>Aguascalientes · Parabuses</span><span>Estado de México · Megatop, KZ y Publipantallas</span>
+        <span>CDMX · KZ Digital con contenido por horario</span><span>Monterrey · KZ de bolero</span><span>Guadalajara · Megatop sobre vialidades primarias</span><span>Puebla · KZ de periódicos</span><span>Aguascalientes · Parabuses</span><span>Estado de México · Megatop, KZ y Publipantallas</span>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="dooh" id="programatica" aria-labelledby="dooh-title">
+    <div class="dooh-copy reveal">
+      <h2 id="dooh-title">Compra pantallas<br>como compras clics</h2>
+      <p>El 25% de nuestro inventario en CDMX y Estado de México está disponible en venta programática, con medición de audiencia en tiempo real. Activa, ajusta y optimiza tu campaña sin esperar al cierre del mes.</p>
+      <a class="btn btn-solid" href="#contacto">Quiero activar DOOH</a>
+    </div>
+    <figure class="dooh-panel reveal">
+      <img src="assets/img/kz_digital_header.jpg" alt="Kiosco KZ Digital con pantallas encendidas" width="600" height="450" loading="lazy">
+      <figcaption>
+        <span class="live"><i></i>En vivo · impactos estimados por hora</span>
+        <span class="bars" id="bars" aria-hidden="true"></span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="clients" aria-labelledby="clients-title">
+    <h2 class="clients-title reveal" id="clients-title">Marcas que han confiado en nosotros</h2>
+    <div class="marquee" aria-hidden="true"><div class="marquee-track">
+      <span>Amazon</span><span>AT&amp;T</span><span>Banamex</span><span>BBVA</span><span>Diageo</span><span>DiDi</span><span>Liverpool</span><span>Mercado Pago</span><span>Mitsubishi</span><span>Modelo</span><span>Nestlé</span>
+      <span>Amazon</span><span>AT&amp;T</span><span>Banamex</span><span>BBVA</span><span>Diageo</span><span>DiDi</span><span>Liverpool</span><span>Mercado Pago</span><span>Mitsubishi</span><span>Modelo</span><span>Nestlé</span>
+    </div></div>
+    <div class="marquee reverse" aria-hidden="true"><div class="marquee-track">
+      <span>Nike</span><span>Nissan</span><span>Poett</span><span>Price Shoes</span><span>Santander</span><span>Telcel</span><span>Uber</span><span>Uber Eats</span><span>Viva</span><span>CDMX</span>
+      <span>Nike</span><span>Nissan</span><span>Poett</span><span>Price Shoes</span><span>Santander</span><span>Telcel</span><span>Uber</span><span>Uber Eats</span><span>Viva</span><span>CDMX</span>
+    </div></div>
+    <p class="sr-only">Amazon, AT&amp;T, Banamex, BBVA, Diageo, DiDi, Liverpool, Mercado Pago, Mitsubishi, Modelo, Nestlé, Nike, Nissan, Poett, Price Shoes, Santander, Telcel, Uber, Uber Eats, Viva y Gobierno de la Ciudad de México.</p>
+  </section>
+
+  <section class="manifesto" id="nosotros" aria-labelledby="nosotros-title">
+    <h2 class="sr-only" id="nosotros-title">Nosotros</h2>
+    <p class="manifesto-text" data-words>Desde hace casi cincuenta años ponemos marcas en el lugar exacto: donde la gente camina, espera, maneja y voltea.</p>
+    <img class="manifesto-pic" src="assets/photos/jacaranda-condesa-avenida.jpg" alt="Avenida de la Condesa con jacarandas en flor" width="1920" height="1440" loading="lazy">
+  </section>
+
+  <section class="contact" id="contacto" aria-labelledby="contact-title">
+    <h2 class="contact-title reveal" id="contact-title">Hablemos</h2>
+    <div class="contact-grid">
+      <a class="contact-card reveal" href="tel:+525552416999"><span>Teléfono</span><b>55 5241 6999</b></a>
+      <a class="contact-card reveal" href="https://wa.me/525514753620" target="_blank" rel="noopener"><span>WhatsApp</span><b>55 1475 3620</b></a>
+      <a class="contact-card reveal" href="mailto:info@deharo.com.mx"><span>Correo</span><b>info@deharo.com.mx</b></a>
+      <a class="contact-card reveal" href="https://maps.google.com/?q=Paseo+de+la+Reforma+300,+Juárez,+Cuauhtémoc,+CDMX" target="_blank" rel="noopener"><span>Oficinas</span><b>Paseo de la Reforma 300, piso 8, Col. Juárez, CDMX</b></a>
     </div>
   </section>
 </main>
 
-<footer class="foot">
-  <img class="foot-pic" src="assets/photos/jacaranda-condesa-avenida.jpg" alt="Jacarandas en flor sobre una avenida de la colonia Condesa" width="1920" height="1440" loading="lazy">
-  <div class="foot-side">
-    <img class="foot-logo" src="assets/img/logo-horizontal-white-header.png" alt="Grupo De Haro Publicidad" width="952" height="177" loading="lazy">
-    <nav class="foot-menu" aria-label="Pie de página">
-      <a href="#inicio">Inicio</a>
-      <a href="#medios">Medios</a>
-      <a href="#cobertura">Cobertura</a>
-      <a href="#programatica">Programática</a>
-      <a href="#contacto">Contacto</a>
-    </nav>
-    <div class="foot-blocks">
-      <p>Paseo de la Reforma 300, piso 8<br><a href="tel:+525552416999">55 5241 6999</a><br><a href="mailto:info@deharo.com.mx">info@deharo.com.mx</a></p>
-      <p><a href="https://www.facebook.com/deharopublicidad" target="_blank" rel="noopener">Facebook</a><br><a href="https://www.instagram.com/grupodeharopublicidad" target="_blank" rel="noopener">Instagram</a><br><a href="https://www.linkedin.com/company/deharopulicidad" target="_blank" rel="noopener">LinkedIn</a></p>
-    </div>
-    <p class="foot-legal">© 2026 Grupo De Haro · <a href="https://grupodeharo.com.mx/aviso-de-privacidad-integral.html">Aviso de privacidad</a> · <a href="https://grupodeharo.com.mx/aviso-legal-terminos-de-uso.html">Términos</a></p>
-    <p class="foot-credits">Fotografías: puesto de periódicos por Ehécatl Cabrera (CC BY 4.0); Reforma e Hidalgo por José Luiz, camellón de Reforma por Juan Carlos Fonseca Mata y jacarandas de la Condesa por Lazjak (CC BY-SA 4.0), vía Wikimedia Commons. Anuncios del espectacular con fotos de Unsplash (Tomas Martinez, Irving Trejo, Carl Campbell). Texturas y cielo: Poly Haven (CC0).</p>
+<footer class="footer">
+  <img src="assets/img/logo-horizontal-white-header.png" alt="Grupo De Haro Publicidad" width="952" height="177" class="footer-logo" loading="lazy">
+  <div class="footer-links">
+    <a href="https://www.facebook.com/deharopublicidad" target="_blank" rel="noopener">Facebook</a>
+    <a href="https://www.instagram.com/grupodeharopublicidad" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://www.linkedin.com/company/deharopulicidad" target="_blank" rel="noopener">LinkedIn</a>
   </div>
+  <div class="footer-legal">
+    <span>© 2026 Grupo De Haro. Todos los derechos reservados.</span>
+    <a href="https://grupodeharo.com.mx/aviso-legal-terminos-de-uso.html">Términos y condiciones</a>
+    <a href="https://grupodeharo.com.mx/aviso-de-privacidad-integral.html">Aviso de privacidad</a>
+  </div>
+  <p class="footer-credits">Fotografías: camellón de Reforma por Juan Carlos Fonseca Mata, Reforma e Hidalgo por José Luiz y jacarandas de la Condesa por Lazjak (CC BY-SA 4.0, Wikimedia Commons). Anuncios con fotos de Unsplash (Tomas Martinez, Irving Trejo, Carl Campbell). Avenida 360° y su luz: Poly Haven (CC0). Mapa: Natural Earth.</p>
 </footer>
+
+<a class="wa-float" href="https://wa.me/525514753620" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+</a>
 
 </body>
 </html>

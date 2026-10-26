@@ -1,4 +1,5 @@
 import { startScene } from './scene.js';
+import { startGlobe } from './globe.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -6,106 +7,160 @@ const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const range = (a, b, v) => clamp((v - a) / (b - a));
 
 const hero = $('.hero');
-const bar = $('#bar');
-const holdLine = $('#holdLine');
-const holdTexts = holdLine.dataset.lines.split('|');
-const brandInput = $('#brand');
-const form = $('#tryForm');
+const heroCopy = $('#heroCopy');
+const heroFinal = $('#heroFinal');
+const nav = $('#nav');
+const wa = $('.wa-float');
+const coverage = $('.coverage');
+const heroSticky = $('.hero-sticky');
 
-// Avance del hero: 0 al inicio, 1 al soltar el espectacular
-function heroProgress() {
-  return clamp(window.scrollY / (hero.offsetHeight - window.innerHeight));
-}
-// El acercamiento ocurre durante la primera pantalla de scroll
-const ZOOM_END = 1 / 3;
-const getZoom = () => range(0, ZOOM_END, heroProgress());
+const heroProgress = () => clamp(window.scrollY / (hero.offsetHeight - window.innerHeight));
+const coverageProgress = () => {
+  const r = coverage.getBoundingClientRect();
+  return clamp(-r.top / (r.height - window.innerHeight));
+};
 
-// ------------------------------------------------------------------ escena 3D
+// ------------------------------------------------------------------ escena 3D del hero
 let scene = null;
-startScene({ canvas: $('#scene'), getZoom, brand: brandInput.value })
+startScene({ canvas: $('#scene'), getProgress: heroProgress, onReady: () => document.body.classList.add('scene-ready') })
   .then((s) => { scene = s; onScroll(); })
-  .catch((err) => { console.error(err); });
+  .catch((err) => console.error(err));
 
-// Lo vivo: la marca que escribe el visitante aparece en el espectacular
-let typing;
-brandInput.addEventListener('input', () => {
-  clearTimeout(typing);
-  typing = setTimeout(() => scene && scene.setBrand(brandInput.value), 120);
+// ------------------------------------------------------------------ globo de cobertura
+const cityItems = $$('#cityList li');
+let globe = null;
+startGlobe({
+  canvas: $('#globe'),
+  labels: $('#globeLabels'),
+  getProgress: coverageProgress,
+  onActive: (i) => cityItems.forEach((li, j) => li.classList.toggle('is-on', j <= i)),
+}).then((g) => { globe = g; onScroll(); }).catch((err) => console.error(err));
+
+// ------------------------------------------------------------------ medios
+const media = $$('#mediaList li');
+const frame = $('#mediaFrame');
+const caption = $('#mediaCaption');
+const imgs = media.map((li) => {
+  let img = frame.querySelector(`img[src="${li.dataset.img}"]`);
+  if (!img) {
+    img = new Image(600, 450);
+    img.src = li.dataset.img;
+    img.alt = '';
+    img.loading = 'lazy';
+    frame.appendChild(img);
+  }
+  return img;
 });
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const name = brandInput.value.trim();
-  const text = name ? `Hola, quiero anunciar ${name} con Grupo De Haro.` : 'Hola, quiero cotizar una campaña con Grupo De Haro.';
-  window.open(`https://wa.me/525514753620?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+let activeMedia = -1;
+function setMedia(i) {
+  if (i === activeMedia) return;
+  activeMedia = i;
+  media.forEach((li, j) => li.classList.toggle('is-active', j === i));
+  imgs.forEach((img, j) => { img.classList.toggle('is-active', j === i); img.style.zIndex = j === i ? 1 : 0; });
+  caption.textContent = $('h3', media[i]).textContent;
+}
+setMedia(0);
+
+// ------------------------------------------------------------------ manifiesto: palabras que se encienden
+const words = [];
+$$('[data-words]').forEach((el) => {
+  el.innerHTML = el.textContent.trim().split(/\s+/).map((w) => `<span class="w">${w}</span>`).join(' ');
+  words.push(...$$('.w', el));
 });
+const manifesto = $('.manifesto');
 
 // ------------------------------------------------------------------ scroll
-const zoomables = $$('.frame-bg, .visit-bg');
-let activeCover = -1;
-let lastY = window.scrollY;
-
 function onScroll() {
+  const y = window.scrollY;
   const vh = window.innerHeight;
   const p = heroProgress();
 
-  // portada del espectacular según el tramo del scroll
-  const hold = range(ZOOM_END, 1, p);
-  const idx = p < ZOOM_END * 0.6 ? 0 : Math.min(2, Math.floor(hold * 3));
-  if (idx !== activeCover) {
-    activeCover = idx;
-    if (scene) scene.showCover(idx);
-    holdLine.classList.remove('is-on');
-    clearTimeout(holdLine._t);
-    holdLine._t = setTimeout(() => {
-      holdLine.textContent = holdTexts[idx];
-      holdLine.classList.toggle('is-on', heroProgress() > ZOOM_END * 0.85);
-    }, 220);
-  } else {
-    holdLine.classList.toggle('is-on', p > ZOOM_END * 0.85);
-  }
+  const out = range(0.03, 0.16, p);
+  heroCopy.style.opacity = 1 - out;
+  heroCopy.style.transform = `translateY(${-out * 50}px)`;
+  heroCopy.style.pointerEvents = out > 0.5 ? 'none' : '';
+  heroSticky.style.setProperty('--scrim', (1 - range(0.05, 0.4, p)).toFixed(3));
+  const fin = range(0.78, 0.92, p);
+  heroFinal.style.opacity = fin;
+  heroFinal.style.transform = `translateY(${(1 - fin) * 30}px)`;
 
-  // la escena se detiene cuando el hero ya pasó
   const heroEnd = hero.offsetTop + hero.offsetHeight;
+  nav.classList.toggle('on-photo', p < 0.3);
+  wa.classList.toggle('is-visible', y > heroEnd - vh * 0.5);
+
   if (scene) {
-    const visible = window.scrollY < heroEnd;
+    const visible = y < heroEnd;
     if (!visible && scene.running) scene.pause();
     if (visible && !scene.running) scene.resume();
   }
+  if (globe) {
+    const r = coverage.getBoundingClientRect();
+    if (r.top < vh && r.bottom > 0) globe.play(); else globe.stop();
+  }
 
-  // la barra se esconde al bajar y vuelve al subir (pasado el hero)
-  const y = window.scrollY;
-  bar.classList.toggle('is-away', y > heroEnd - vh && y > lastY + 2);
-  if (y < lastY - 2 || y < heroEnd - vh) bar.classList.remove('is-away');
-  lastY = y;
+  const mr = manifesto.getBoundingClientRect();
+  const on = Math.round(range(vh * 0.85, vh * 0.3, mr.top) * words.length);
+  words.forEach((w, i) => w.classList.toggle('on', i < on));
 
-  // barra en blanco sobre fotografías
-  const probe = document.elementsFromPoint(window.innerWidth / 2, 36).find((el) => el.closest('.frame, .visit, .figure, .lineup, .band, .hero, .foot'));
-  const zone = probe && probe.closest('.frame, .visit, .figure, .lineup, .band, .hero, .foot');
-  bar.classList.toggle('on-photo', !!zone && (zone.matches('.frame, .visit, .figure')));
-
-  // movimiento lento de las fotografías a sangre
-  zoomables.forEach((img) => {
-    const r = img.parentElement.getBoundingClientRect();
-    if (r.bottom < 0 || r.top > vh) return;
-    const k = range(vh, -r.height, r.top);
-    img.style.setProperty('--zoom', (1.12 - 0.1 * k).toFixed(4));
+  let best = 0, bestD = Infinity;
+  media.forEach((li, i) => {
+    const b = li.getBoundingClientRect();
+    const d = Math.abs(b.top + b.height * 0.35 - vh * 0.5);
+    if (d < bestD) { bestD = d; best = i; }
   });
+  setMedia(best);
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', onScroll);
 onScroll();
 
-// ------------------------------------------------------------------ entradas escalonadas
+// ------------------------------------------------------------------ entradas y contadores
+function countUp(el) {
+  const target = +el.dataset.count;
+  const t0 = performance.now();
+  const tick = (t) => {
+    const k = clamp((t - t0) / 1600);
+    el.textContent = Math.round(target * (1 - Math.pow(1 - k, 4)));
+    if (k < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const io = new IntersectionObserver((entries) => {
   entries.forEach((e) => {
     if (!e.isIntersecting) return;
     e.target.classList.add('is-in');
+    if (!reduce) $$('[data-count]', e.target).forEach(countUp);
     io.unobserve(e.target);
   });
-}, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
-$$('section').forEach((sec) => {
-  $$('[data-reveal]', sec).forEach((el, i) => {
-    el.style.setProperty('--stagger', `${i * 80}ms`);
-    io.observe(el);
+}, { threshold: 0.18 });
+$$('section').forEach((sec) => $$('.reveal', sec).forEach((el, i) => { el.style.setProperty('--stagger', `${i * 80}ms`); io.observe(el); }));
+
+// ------------------------------------------------------------------ panel DOOH
+const bars = $('#bars');
+for (let i = 0; i < 32; i++) bars.appendChild(document.createElement('i'));
+function updateBars() {
+  [...bars.children].forEach((b, i) => {
+    const h = (i / 32) * 24;
+    const g = (c, w) => Math.exp(-Math.pow((h - c) / w, 2));
+    const v = 0.08 + g(8.5, 2.2) * 0.85 + g(19, 2.6) + g(14, 5) * 0.5;
+    b.style.transform = `scaleY(${clamp(v + (Math.random() - 0.5) * 0.15, 0.05, 1)})`;
   });
+}
+updateBars();
+if (!reduce) setInterval(updateBars, 2400);
+
+// ------------------------------------------------------------------ menú móvil
+const toggle = $('#navToggle');
+const menu = $('#mobileMenu');
+toggle.addEventListener('click', () => {
+  const open = toggle.getAttribute('aria-expanded') !== 'true';
+  toggle.setAttribute('aria-expanded', open);
+  menu.classList.toggle('is-open', open);
+  nav.classList.toggle('menu-open', open);
 });
+$$('a', menu).forEach((a) => a.addEventListener('click', () => {
+  toggle.setAttribute('aria-expanded', 'false');
+  menu.classList.remove('is-open');
+  nav.classList.remove('menu-open');
+}));
