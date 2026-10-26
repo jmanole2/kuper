@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grupo De Haro · Líderes en publicidad exterior OOH en México</title>
+<meta name="description" content="Casi 50 años de publicidad exterior en México. Más de 750 espacios en CDMX, Estado de México, Monterrey, Guadalajara, Puebla y Aguascalientes: KZ, KZ Digital, Megatop, Parabús, Publipantalla y DOOH programático.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="assets/img/logo-square-white-footer.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./assets/vendor/three/three.module.min.js",
+    "three/addons/": "./assets/vendor/three/addons/"
+  }
+}
+</script>
+<link rel="modulepreload" href="assets/vendor/three/three.module.min.js">
+<link rel="stylesheet" href="assets/css/site.css">
+<script type="module" src="assets/js/site.js"></script>
+</head>
+<body>
+
+<div class="loader" id="loader" aria-hidden="true">
+  <img src="assets/img/logo-square-white-footer.png" alt="" width="100" height="67">
+  <span class="loader-bar"><i></i></span>
+</div>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+
+<header class="nav" id="nav">
+  <a class="nav-logo" href="#inicio" aria-label="Grupo De Haro, inicio">
+    <img src="assets/img/logo-horizontal-white-header.png" alt="Grupo De Haro Publicidad" width="952" height="177">
+  </a>
+  <nav class="nav-links" aria-label="Principal">
+    <a href="#medios">Medios</a>
+    <a href="#proceso">Cómo trabajamos</a>
+    <a href="#cobertura">Cobertura</a>
+    <a href="#programatica">Programática</a>
+  </nav>
+  <a class="btn btn-ghost nav-cta" href="#contacto">Hablemos <span class="arrow" aria-hidden="true">→</span></a>
+  <button class="nav-toggle" id="navToggle" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
+</header>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#medios">Medios</a>
+  <a href="#proceso">Cómo trabajamos</a>
+  <a href="#cobertura">Cobertura</a>
+  <a href="#programatica">Programática</a>
+  <a href="#contacto">Contacto</a>
+</div>
+
+<main>
+  <!-- HERO: la escena 3D vive en el canvas fijo; esta sección solo da el recorrido de scroll -->
+  <section class="hero" id="inicio">
+    <div class="hero-sticky">
+      <div class="hero-copy" id="heroCopy">
+        <p class="eyebrow">Publicidad exterior · México</p>
+        <h1>Líderes en publicidad <em>exterior.</em></h1>
+        <p class="lead">Casi 50 años poniendo marcas donde México mira: más de 750 espacios en seis ciudades, del parabús a la pantalla digital.</p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#contacto">Cotiza tu campaña</a>
+          <a class="btn btn-ghost" href="#medios">Ver medios <span class="arrow" aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+
+      <div class="hud" id="hud">
+        <span class="hud-dot" id="hudDot"></span>
+        <span class="hud-place">Paseo de la Reforma, CDMX</span>
+        <span class="hud-time" id="hudTime">17:24</span>
+      </div>
+      <div class="scroll-cue" id="scrollCue"><span>Desliza</span><i></i></div>
+
+      <div class="hero-final" id="heroFinal">
+        <p class="eyebrow">Grupo De Haro Publicidad</p>
+        <h2>Te voltearán <em>a ver.</em></h2>
+      </div>
+    </div>
+  </section>
+
+  <section class="manifesto" id="nosotros">
+    <p class="manifesto-text" data-words>
+      Desde hace casi cincuenta años ponemos marcas en el lugar exacto: donde la gente camina, espera, maneja y voltea. Con permisos en regla, ubicaciones de alto impacto y datos para medir cada campaña.
+    </p>
+  </section>
+
+  <section class="stats" aria-label="Cifras">
+    <div class="stat reveal"><span class="stat-num"><small>~</small><b data-count="50">0</b></span><span class="stat-label">años de trayectoria en publicidad OOH</span></div>
+    <div class="stat reveal"><span class="stat-num"><b data-count="750">0</b><small>+</small></span><span class="stat-label">espacios publicitarios a nivel nacional</span></div>
+    <div class="stat reveal"><span class="stat-num"><b data-count="6">0</b></span><span class="stat-label">ciudades: CDMX, Edomex, Monterrey, Guadalajara, Puebla y Aguascalientes</span></div>
+    <div class="stat reveal"><span class="stat-num"><b data-count="25">0</b><small>%</small></span><span class="stat-label">del inventario en venta programática en CDMX y Estado de México</span></div>
+  </section>
+
+  <section class="media" id="medios">
+    <header class="section-head reveal">
+      <p class="eyebrow">Nuestros medios</p>
+      <h2>Seis formatos.<br><em>Una ciudad que no deja de mirar.</em></h2>
+    </header>
+    <div class="media-grid">
+      <ol class="media-list" id="mediaList">
+        <li data-img="assets/img/kz_header.jpg"><span class="n">01</span><div><h3>KZ</h3><p>Kioscos a pie de calle en esquinas de alto tráfico peatonal. La marca a la altura de los ojos, todos los días.</p></div></li>
+        <li data-img="assets/img/kz_digital_header.jpg"><span class="n">02</span><div><h3>KZ Digital</h3><p>Kioscos con pantallas digitales: creatividades dinámicas que cambian por horario, zona o audiencia.</p></div></li>
+        <li data-img="assets/img/megatop_header.jpg"><span class="n">03</span><div><h3>Megatop</h3><p>Gran formato sobre vialidades primarias y puentes. Imposible de ignorar para miles de conductores.</p></div></li>
+        <li data-img="assets/img/parabus_header.jpg"><span class="n">04</span><div><h3>Parabús</h3><p>Mobiliario urbano en paradas de transporte, con tiempos de exposición largos frente a pasajeros y peatones.</p></div></li>
+        <li data-img="assets/img/publipantalla_header.jpg"><span class="n">05</span><div><h3>Publipantalla</h3><p>Carteleras iluminadas en avenidas y camellones, visibles de día y de noche.</p></div></li>
+        <li data-img="assets/img/prod_esp_header.jpg"><span class="n">06</span><div><h3>Producciones especiales</h3><p>Intervenciones fuera de formato: forrados, extensiones, piezas 3D y activaciones que se vuelven noticia.</p></div></li>
+      </ol>
+      <div class="media-visual" aria-hidden="true">
+        <div class="media-frame" id="mediaFrame">
+          <img src="assets/img/kz_header.jpg" alt="" class="is-active">
+        </div>
+        <span class="media-caption" id="mediaCaption">01 / KZ</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="process" id="proceso">
+    <header class="section-head reveal">
+      <p class="eyebrow">Cómo trabajamos</p>
+      <h2>De la idea a la calle,<br><em>en tres pasos.</em></h2>
+    </header>
+    <div class="steps">
+      <article class="step reveal">
+        <span class="step-n">01</span>
+        <h3>Entendemos tu objetivo</h3>
+        <p>Qué quieres lograr, a quién le hablas y dónde está esa audiencia. Antes de proponer un espacio, entendemos el negocio.</p>
+      </article>
+      <article class="step reveal">
+        <span class="step-n">02</span>
+        <h3>Diseñamos la estrategia</h3>
+        <p>Combinamos formatos, ubicaciones y tiempos para que tu marca aparezca en el recorrido diario de tu cliente.</p>
+      </article>
+      <article class="step reveal">
+        <span class="step-n">03</span>
+        <h3>Activamos y medimos</h3>
+        <p>Instalamos con permisos en regla, damos seguimiento de principio a fin y te entregamos resultados medibles.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="coverage" id="cobertura">
+    <header class="section-head reveal">
+      <p class="eyebrow">Cobertura</p>
+      <h2>Seis ciudades.<br><em>Un solo equipo.</em></h2>
+      <p class="section-lead">Millones de conductores y peatones al mes en las zonas metropolitanas más importantes del país.</p>
+    </header>
+    <ul class="cities">
+      <li class="reveal"><span class="city">Ciudad de México</span><span class="formats">KZ de periódicos · KZ Digital</span></li>
+      <li class="reveal"><span class="city">Estado de México</span><span class="formats">Megatop · KZ de periódicos · Publipantallas</span></li>
+      <li class="reveal"><span class="city">Monterrey</span><span class="formats">KZ de bolero</span></li>
+      <li class="reveal"><span class="city">Guadalajara</span><span class="formats">Megatop</span></li>
+      <li class="reveal"><span class="city">Puebla</span><span class="formats">KZ de periódicos</span></li>
+      <li class="reveal"><span class="city">Aguascalientes</span><span class="formats">Parabuses</span></li>
+    </ul>
+  </section>
+
+  <section class="dooh" id="programatica">
+    <div class="dooh-copy reveal">
+      <p class="eyebrow">Venta programática DOOH</p>
+      <h2>Compra pantallas<br><em>como compras clics.</em></h2>
+      <p>El 25% de nuestro inventario en CDMX y Estado de México está disponible en venta programática, con medición de audiencia en tiempo real. Activa, ajusta y optimiza tu campaña sin esperar al cierre del mes.</p>
+      <a class="btn btn-solid" href="#contacto">Quiero activar DOOH</a>
+    </div>
+    <div class="dooh-panel reveal" aria-hidden="true">
+      <div class="panel-top"><span class="live"><i></i>En vivo</span><span>Impactos estimados / hora</span></div>
+      <div class="bars" id="bars"></div>
+      <div class="panel-foot"><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+    </div>
+  </section>
+
+  <section class="clients" aria-label="Clientes">
+    <p class="eyebrow center reveal">Marcas que han confiado en nosotros</p>
+    <div class="marquee"><div class="marquee-track">
+      <span>Amazon</span><span>AT&amp;T</span><span>Banamex</span><span>BBVA</span><span>Diageo</span><span>DiDi</span><span>Liverpool</span><span>Mercado Pago</span><span>Mitsubishi</span><span>Modelo</span><span>Nestlé</span>
+    </div></div>
+    <div class="marquee reverse"><div class="marquee-track">
+      <span>Nike</span><span>Nissan</span><span>Poett</span><span>Price Shoes</span><span>Santander</span><span>Telcel</span><span>Uber</span><span>Uber Eats</span><span>Viva</span><span>CDMX</span>
+    </div></div>
+  </section>
+
+  <section class="contact" id="contacto">
+    <p class="eyebrow reveal">Estamos listos para crecer tu negocio</p>
+    <h2 class="contact-title reveal">Hablemos<em>.</em></h2>
+    <div class="contact-grid">
+      <a class="contact-card reveal" href="tel:+525552416999"><span>Teléfono</span><b>55 5241 6999</b></a>
+      <a class="contact-card reveal" href="https://wa.me/525514753620" target="_blank" rel="noopener"><span>WhatsApp</span><b>55 1475 3620</b></a>
+      <a class="contact-card reveal" href="mailto:info@deharo.com.mx"><span>Correo</span><b>info@deharo.com.mx</b></a>
+      <a class="contact-card reveal" href="https://maps.google.com/?q=Paseo+de+la+Reforma+300,+Juárez,+Cuauhtémoc,+CDMX" target="_blank" rel="noopener"><span>Oficinas</span><b>Paseo de la Reforma 300, piso 8, Col. Juárez, CDMX</b></a>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <img src="assets/img/logo-horizontal-white-header.png" alt="Grupo De Haro Publicidad" width="952" height="177" class="footer-logo">
+  <div class="footer-links">
+    <a href="https://www.facebook.com/deharopublicidad" target="_blank" rel="noopener">Facebook</a>
+    <a href="https://www.instagram.com/grupodeharopublicidad" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://www.linkedin.com/company/deharopulicidad" target="_blank" rel="noopener">LinkedIn</a>
+  </div>
+  <div class="footer-legal">
+    <span>© 2026 Grupo De Haro. Todos los derechos reservados.</span>
+    <a href="https://grupodeharo.com.mx/aviso-legal-terminos-de-uso.html">Términos y condiciones</a>
+    <a href="https://grupodeharo.com.mx/aviso-de-privacidad-integral.html">Aviso de privacidad</a>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/525514753620" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+</a>
+
+</body>
+</html>
