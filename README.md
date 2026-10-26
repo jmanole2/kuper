@@ -40,14 +40,14 @@ node render.mjs --page src/agent.html --config agent.config.json --out out/kuper
 
 # Grupo De Haro — rediseño web con Three.js (`grupodeharo/`)
 
-Propuesta de home para grupodeharo.com.mx. Sitio estático: HTML + CSS + Three.js (r170, local en `assets/vendor/three`).
+Propuesta de home para grupodeharo.com.mx (v2: clara, fotográfica, poco texto). Sitio estático: HTML + CSS + Three.js (r170, local en `assets/vendor/three`).
 
-- **Hero 3D** (`assets/js/scene.js`): avenida de la CDMX con un espectacular unipolar. La cara es un *trivision* (prismas que giran) que rota entre anuncios dibujados en canvas (`assets/js/ads.js`). El cielo recorre el día completo (atardecer → noche → amanecer → día) con arbotantes, ventanas, tráfico y volcanes al fondo.
-- **Scroll**: la cámara sube hacia el espectacular, la escena se va a noche y luego a negro; al final el anuncio cambia a la marca y aparece "Te voltearán a ver.".
-- Secciones: manifiesto, cifras, medios (KZ, KZ Digital, Megatop, Parabús, Publipantalla, Producciones especiales), proceso, cobertura, DOOH programático, clientes y contacto. Datos tomados del sitio actual; las descripciones de cada medio son propuesta y conviene validarlas con el cliente.
+- **Hero 3D** (`assets/js/scene.js`): muro de concreto aparente a pleno día con un espectacular tipo caja de luz. Texturas PBR fotográficas y cielo HDRI de Poly Haven (CC0, `assets/tex/`). Un árbol fuera de cuadro proyecta sombras de hojas que se mueven con el viento. El anuncio cambia como un espectacular "scroll" (el póster rueda hacia arriba); los anuncios se componen en `assets/js/ads.js`.
+- **Scroll**: la cámara se acerca hasta que el anuncio llena la pantalla y de ahí entran los medios como fotos a pantalla completa.
+- Tipografías de la marca: Barlow Condensed (títulos) y DM Sans (texto).
+- Fotos de CDMX y retratos: Unsplash (licencia libre, `assets/photos/`). Fotos de medios y logos de clientes: sitio actual del cliente (600 px; conviene pedir versiones en alta).
 
 ```bash
 cd grupodeharo && python3 -m http.server 8765   # abrir http://localhost:8765
-# ?hora=21 fija la hora del cielo (útil para capturas), p. ej. ?hora=12, ?hora=18.6
 ```
-Necesita servirse por http (no `file://`) para que el logo pueda pintarse en las texturas.
+Necesita servirse por http (no `file://`).
