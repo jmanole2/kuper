@@ -275,7 +275,7 @@ export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = fa
       <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">${todo ? 'No hay eventos próximos en el calendario.' : 'Todavía no hay citas agendadas por el agente. Las demás reuniones del calendario se respetan: el agente nunca ofrece esos horarios.'}</div>`}` : ''}`;
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, todo = false, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [] } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, todo = false, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [], blog = null } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -288,7 +288,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -301,7 +301,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' ? `/admin/clientes/${client.id}/agente` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' ? `/admin/clientes/${client.id}/agente` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -328,6 +328,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ${!isNew && t === 'ventas' ? ventasSection(client, prospectos, { activo: ventasActivo, placesListo }) : ''}
 
   ${!isNew && t === 'llamadas' ? llamadasSection(llamadas, llamadasMes, { admin: true }) : ''}
+  ${!isNew && t === 'blog' && blog ? blogSection(client, blog) : ''}
 
   ${!isNew && t === 'citas' ? citasSection({ citas, citasError, agendaCfg, saEmail, admin: true, todo, url: `/admin/clientes/${client.id}?tab=citas` }) : ''}
 
@@ -897,4 +898,118 @@ export function cuentaMaestraPage() {
     <p class="muted small">Cuando ya entres con tu usuario, puedes apagar la contraseña maestra con ADMIN_MASTER_LOGIN=0 en el .env del servidor.</p>
     <a class="btn btn-accent" href="/admin/usuarios">Ir a Usuarios</a></div>`;
   return page({ title: 'Mi cuenta', side: side('cuenta'), body });
+}
+
+// ------------------------------------------------------------ agente de blog
+const BLOG_COL = { generando: '#93b4ff', borrador: '#fbbf24', publicado: '#4ade80', rechazado: '#a39d93', error: '#f87171' };
+const BLOG_TXT = { generando: 'Escribiendo…', borrador: 'Por revisar', publicado: 'Publicado', rechazado: 'Rechazado', error: 'Error' };
+const FREQ_TXT = { diario: 'Diario', '3_por_semana': '3 por semana', '2_por_semana': '2 por semana', semanal: '1 por semana', quincenal: 'Cada 15 días', mensual: '1 al mes' };
+function sitioForm(client, s = null) {
+  const c = s?.config || {};
+  const opt = (obj, sel) => Object.entries(obj).map(([k, l]) => html`<option value="${k}" ${raw(sel === k ? 'selected' : '')}>${l}</option>`);
+  return html`<form method="post" action="/admin/clientes/${client.id}/blog/sitios${s ? `/${s.id}` : ''}">
+    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div><label>Nombre del sitio</label><input name="nombre" required value="${s?.nombre || ''}" placeholder="Blog de Kuper"></div>
+      <div><label>Dominio</label><input name="dominio" value="${s?.dominio || ''}" placeholder="https://misitio.com"></div>
+      <div><label>Identificador (va en la conexión PHP)</label><input name="slug" value="${s?.slug || ''}" placeholder="se crea solo"></div>
+      <div><label>Frecuencia</label><select name="frecuencia">${opt(FREQ_TXT, c.frecuencia || '3_por_semana')}</select></div>
+      <div><label>Al terminar un artículo</label><select name="modo">${opt({ aprobacion: 'Lo reviso antes de publicar', auto: 'Se publica solo' }, c.modo || 'aprobacion')}</select></div>
+      <div><label>Imagen</label><select name="imagen">${opt({ pexels: 'Foto de Pexels (gratis)', ia: 'Imagen con IA', ninguna: 'Sin imagen' }, c.imagen || 'pexels')}</select></div>
+      <div><label>Noticias de</label><select name="pais">${opt({ MX: 'México', ES: 'España', US: 'Estados Unidos (español)', AR: 'Argentina', CO: 'Colombia', CL: 'Chile', PE: 'Perú' }, c.pais || 'MX')}</select></div>
+      <div><label>Largo (palabras)</label><input type="number" name="palabras" min="500" max="2500" step="100" value="${c.palabras || 900}"></div>
+      <div><label>Autor (opcional)</label><input name="autor" value="${c.autor || ''}" placeholder="Equipo Kuper"></div>
+    </div>
+    <label>De qué trata el sitio y para quién escribe</label>
+    <textarea name="descripcion" rows="3" placeholder="Blog de una agencia de marketing para dueños de PyMEs en México: tecnología, IA y ventas en línea, explicado fácil.">${c.descripcion || ''}</textarea>
+    <label>Categorías (una por línea: Nombre | qué buscar en noticias)</label>
+    <textarea name="categorias" rows="4" required placeholder="Inteligencia artificial | inteligencia artificial negocios\nMarketing digital | marketing digital México\nRedes sociales | redes sociales Instagram TikTok">${(c.categorias || []).map((x) => `${x.nombre} | ${x.busqueda}`).join('\n')}</textarea>
+    <label>Tono</label><input name="tono" value="${c.tono || 'cercano, claro y profesional'}">
+    <label>Fuentes RSS extra (opcional, una por línea)</label>
+    <textarea name="fuentes_rss" rows="2" placeholder="https://www.xataka.com.mx/feedburner.xml">${(c.fuentes_rss || []).join('\n')}</textarea>
+    <label class="variant" style="margin-top:10px;font-weight:400"><input type="checkbox" name="activo" value="1" ${raw(!s || s.activo ? 'checked' : '')}> Activo (escribe solo según la frecuencia)</label>
+    <p><button class="btn-accent">${s ? 'Guardar sitio' : 'Agregar sitio'}</button></p>
+  </form>`;
+}
+export function blogSection(client, { sitios = [], sel = null, articulos = [], pexelsListo = false, iaLista = false, panelUrl = '' }) {
+  const s = sitios.find((x) => x.id === sel) || sitios[0] || null;
+  const base = `/admin/clientes/${client.id}/blog`;
+  const n = (st) => articulos.filter((a) => a.status === st).length;
+  return html`
+  ${!pexelsListo ? html`<div class="err">Falta la clave gratis de Pexels para las fotos. Sácala en pexels.com/api y guárdala en el servidor con: <code>sudo bash /opt/agente-social/social-agent/deploy/clave.sh PEXELS_API_KEY</code></div>` : ''}
+  ${!iaLista ? html`<div class="err">Falta la clave de Gemini (GEMINI_TEXT_API_KEY) para escribir los artículos.</div>` : ''}
+  <div class="pills">${sitios.map((x) => html`<a class="${x.id === s?.id ? 'on' : ''}" href="${base}?sitio=${x.id}">${x.nombre}${x.activo ? '' : ' (pausado)'}</a>`)}<a class="${!s ? 'on' : ''}" href="${base}?sitio=nuevo">+ Nuevo sitio</a></div>
+  ${!s || sel === -1 ? html`<div class="card"><span class="mono">Nuevo sitio</span>${sitioForm(client)}</div>` : html`
+  ${kpis([[n('borrador'), 'Por revisar', '#fbbf24', n('borrador') > 0], [n('publicado'), 'Publicados', '#4ade80', false], [n('generando'), 'Escribiendo', '#93b4ff', false], [n('error'), 'Con error', '#f87171', false]])}
+  <div class="split">
+    <div class="card"><span class="mono">Escribir ahora</span>
+      <form method="post" action="${base}/sitios/${s.id}/generar" style="margin-top:10px">
+        <label>Tema (opcional)</label><input name="tema" maxlength="300" placeholder="Si lo dejas vacío, busca la noticia del momento">
+        <label>Categoría</label><select name="categoria"><option value="">La que toque</option>${s.config.categorias.map((c) => html`<option value="${c.slug}">${c.nombre}</option>`)}</select>
+        <p style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-accent" name="accion" value="ya">Escribir ahora</button><button class="btn-warn" name="accion" value="cola">Dejarlo para el siguiente</button></p>
+      </form>
+      ${s.config.temas_pendientes.length ? html`<p class="small muted">Temas en espera: ${s.config.temas_pendientes.map((t) => t.texto).join(' · ')}</p>` : ''}
+      <p class="small muted">Escribe solo ${FREQ_TXT[s.config.frecuencia].toLowerCase()}, de madrugada. Tarda de 1 a 3 minutos.</p>
+    </div>
+    <div class="card"><span class="mono">Conexión con tu sitio PHP</span>
+      <p class="small" style="margin-top:8px">En <code>blog/config.php</code> de tu sitio pon:</p>
+      <pre class="small" style="white-space:pre-wrap">$PANEL_URL = '${panelUrl}';\n$SITIO = '${s.slug}';</pre>
+      <p class="small muted">Lo publicado se ve en <a href="${panelUrl}/blog/${s.slug}/articulos.json" target="_blank" rel="noopener">${panelUrl}/blog/${s.slug}/articulos.json</a></p>
+    </div>
+  </div>
+  <h2>Artículos</h2>
+  ${articulos.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Artículo</th><th>Categoría</th><th>Estado</th><th>Fecha</th></tr>
+    ${articulos.map((a) => html`<tr><td><a href="/admin/blog/articulos/${a.id}">${a.titulo || (a.status === 'generando' ? 'Escribiendo…' : a.error || 'Sin título')}</a>${a.tema_pedido ? html`<div class="small muted">Pedido: ${a.tema_pedido}</div>` : ''}</td>
+      <td class="small">${s.config.categorias.find((c) => c.slug === a.categoria)?.nombre || a.categoria || '—'}</td>
+      <td><span class="badge" style="color:${BLOG_COL[a.status]}">${BLOG_TXT[a.status] || a.status}</span></td>
+      <td class="small muted">${fmtDate(a.published_at || (a.created_at && a.created_at.replace(' ', 'T') + 'Z'))}</td></tr>`)}</table></div>
+    ${articulos.some((a) => a.status === 'generando') ? vigilar(articulos.map((a) => `${a.id}:${a.status}`).join(',')) : ''}`
+    : html`<div class="card muted">Todavía no hay artículos. Usa "Escribir ahora" o espera a la madrugada.</div>`}
+  <details class="card" style="margin-top:18px"><summary style="cursor:pointer"><strong>Ajustes del sitio</strong></summary>${sitioForm(client, s)}
+    <form method="post" action="${base}/sitios/${s.id}/borrar" onsubmit="return confirm('¿Borrar el sitio y TODOS sus artículos? No se puede deshacer.')"><p><button class="btn-bad">Borrar sitio</button></p></form></details>`}`;
+}
+export function blogArticuloPage(a, sitio, client, { panelUrl = '' } = {}) {
+  const base = `/admin/blog/articulos/${a.id}`;
+  const cat = sitio.config.categorias.find((c) => c.slug === a.categoria);
+  const img = a.imagen_path ? `/media/${path.basename(a.imagen_path)}` : null;
+  const body = html`<p><a href="/admin/clientes/${client.id}/blog?sitio=${sitio.id}">← ${sitio.nombre}</a></p>
+  ${a.status === 'generando' ? html`<div class="okmsg">Escribiendo el artículo… esta página se actualiza sola.</div>${vigilar(a.status)}` : ''}
+  ${a.status === 'error' ? html`<div class="err">${a.error}</div>` : ''}
+  ${a.advertencias?.length ? html`<div class="card" style="border-color:#fbbf24;margin-bottom:14px"><strong>Revisa esto</strong><ul class="small">${a.advertencias.map((w) => html`<li>${w}</li>`)}</ul></div>` : ''}
+  <div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="badge" style="color:${BLOG_COL[a.status]}">${BLOG_TXT[a.status]}</span>
+    ${['borrador', 'rechazado'].includes(a.status) ? html`<form method="post" action="${base}/publicar" class="inline"><button class="btn-accent">Publicar</button></form>` : ''}
+    ${a.status === 'publicado' ? html`<form method="post" action="${base}/despublicar" class="inline"><button class="btn-warn">Quitar del sitio</button></form>
+      ${sitio.dominio ? html`<a class="btn btn-warn" href="${sitio.dominio}/blog/${a.slug}" target="_blank" rel="noopener">Ver en el sitio ↗</a>` : ''}` : ''}
+    ${a.status === 'borrador' ? html`<form method="post" action="${base}/rechazar" class="inline"><button class="btn-warn">Rechazar</button></form>` : ''}
+    <form method="post" action="${base}/borrar" class="inline" onsubmit="return confirm('¿Borrar este artículo?')"><button class="btn-bad">Borrar</button></form>
+  </div>
+  ${a.titulo ? html`<div class="split">
+    <article class="card">
+      ${img ? html`<img src="${img}" alt="${a.imagen_alt || ''}" style="width:100%;border-radius:16px;aspect-ratio:1.91/1;object-fit:cover">` : ''}
+      ${a.imagen_credito?.autor ? html`<p class="small muted">Foto de <a href="${a.imagen_credito.autor_url}" target="_blank" rel="noopener">${a.imagen_credito.autor}</a> en <a href="${a.imagen_credito.url}" target="_blank" rel="noopener">Pexels</a></p>` : ''}
+      <span class="mono">${cat?.nombre || a.categoria}</span>
+      <h1 style="font-size:30px;margin:8px 0">${a.titulo}</h1>
+      <p class="muted">${a.extracto}</p>
+      <style>.blog-cuerpo h2,.blog-cuerpo h3{font:600 22px/1.3 inherit;text-transform:none;letter-spacing:-.01em;margin:24px 0 8px;color:var(--ink)}.blog-cuerpo h3{font-size:18px}</style>
+      <div class="blog-cuerpo" style="line-height:1.7">${raw(a.contenido_html || '')}</div>
+      ${a.fuentes?.length ? html`<p class="small muted">Fuentes: ${a.fuentes.map((f, i) => html`${i ? ' · ' : ''}<a href="${f.url}" target="_blank" rel="noopener nofollow">${f.titulo}</a>`)}</p>` : ''}
+    </article>
+    <form class="card" method="post" action="${base}/editar"><span class="mono">SEO y edición</span>
+      <div class="card" style="background:#fff;color:#202124;padding:12px 14px;margin:10px 0;border-radius:12px">
+        <div style="font-size:12px;color:#4d5156">${sitio.dominio || 'tusitio.com'} › blog › ${a.slug}</div>
+        <div style="font-size:18px;color:#1a0dab;margin:2px 0">${a.meta_title || a.titulo}</div>
+        <div style="font-size:13px;color:#4d5156">${a.meta_description}</div></div>
+      <p class="small muted">Así se vería en Google. Palabra clave: <b>${a.palabra_clave || '—'}</b></p>
+      <label>Título</label><input name="titulo" value="${a.titulo}">
+      <label>Meta título (máx. 60)</label><input name="meta_title" maxlength="70" value="${a.meta_title || ''}">
+      <label>Meta descripción (120 a 155)</label><textarea name="meta_description" rows="3" maxlength="170">${a.meta_description || ''}</textarea>
+      <label>URL (slug)</label><input name="slug" value="${a.slug || ''}">
+      <label>Categoría</label><select name="categoria">${sitio.config.categorias.map((c) => html`<option value="${c.slug}" ${raw(c.slug === a.categoria ? 'selected' : '')}>${c.nombre}</option>`)}</select>
+      <label>Etiquetas (separadas por coma)</label><input name="etiquetas" value="${(a.etiquetas || []).join(', ')}">
+      <label>Extracto</label><textarea name="extracto" rows="2">${a.extracto || ''}</textarea>
+      <label>Contenido (HTML)</label><textarea name="contenido_html" rows="14" style="font-family:monospace;font-size:12px">${a.contenido_html || ''}</textarea>
+      <p><button class="btn-accent">Guardar cambios</button></p>
+    </form>
+  </div>` : ''}`;
+  return page({ title: `Blog · ${a.titulo || 'Artículo'}`, side: side('clientes'), body });
 }

@@ -1,3 +1,4 @@
 node_modules/
 data/
 .env
+blog-php/blog/cache/*.json

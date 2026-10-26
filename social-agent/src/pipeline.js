@@ -11,6 +11,7 @@ import { createVisual } from './animator/index.js';
 import { generateImage, imageModelConfigured, ensureJpeg } from './media/image.js';
 import { publishPost, publishStory } from './publishers/index.js';
 import { fetchCompetitors } from './competitors/instagram.js';
+import { tickBlog } from './blog.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
 import { tiene } from './plan.js';
@@ -482,6 +483,8 @@ export async function tick(now = new Date()) {
         db.logEvent({ clientId: client.id, tipo: 'competencia_error', detalle: e.message })));
     }
   }
+  // Blog: también de madrugada, un artículo a la vez (no abre el navegador, va aparte de los posts).
+  if (inGenerationWindow(now)) tickBlog(now).catch((e) => console.error('[blog]', e.message));
   // Generación: pocas piezas al día y de madrugada, una a la vez (cada render usa ~750 MB).
   if (generating || !inGenerationWindow(now) || piecesLeftToday(now) <= 0) return;
   const next = generationCandidates(now)[0];

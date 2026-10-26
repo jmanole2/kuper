@@ -33,6 +33,8 @@ export const config = {
   geminiTextApiKey: env('GEMINI_TEXT_API_KEY', ''),
   geminiTextModel: env('GEMINI_TEXT_MODEL', 'gemini-3.8-flash'),
   postsLlmOrden: env('POSTS_LLM_ORDEN', ''),
+  // Fotos gratis para el blog (pexels.com/api).
+  pexelsApiKey: env('PEXELS_API_KEY', ''),
   geminiThinking: env('GEMINI_THINKING', 'low'), // low | high | default (lo que decida el modelo)
   geminiTimeoutMs: Number(env('GEMINI_TIMEOUT_SEG', 600)) * 1000,
 

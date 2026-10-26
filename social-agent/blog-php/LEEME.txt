@@ -1,0 +1,27 @@
+BLOG PARA TUS SITIOS PHP — Agente de blog de Kuper
+==================================================
+
+Cómo funciona
+- El panel (redes.kuper.media) busca noticias del momento de cada categoría, escribe el artículo con su SEO,
+  le pone foto de Pexels y lo deja "Por revisar" (o lo publica solo, si así lo configuras).
+- Esta carpeta "blog" va en tu sitio y muestra lo publicado como páginas normales de tu dominio
+  (buenas para Google: título, meta descripción, canonical, Open Graph, datos estructurados y sitemap).
+
+Instalación en cada sitio (5 minutos)
+1. En el panel: cliente → pestaña Blog → "+ Nuevo sitio". Pon nombre, dominio y categorías. Copia el
+   identificador que te muestra en "Conexión con tu sitio PHP".
+2. Sube la carpeta "blog" a la raíz de tu sitio (queda en https://tusitio.com/blog/).
+3. Abre blog/config.php y cambia $SITIO por ese identificador y $NOMBRE_SITIO por el nombre de tu sitio.
+4. Listo: https://tusitio.com/blog/ muestra los artículos publicados.
+5. En Google Search Console agrega el sitemap: https://tusitio.com/blog/sitemap.xml
+
+Notas
+- Necesita PHP 7.4 o más nuevo y que el hosting permita conexiones salientes (casi todos lo permiten).
+- URLs bonitas (/blog/mi-articulo) usan el archivo .htaccess (Apache, cPanel). Si tu hosting es Nginx o no
+  funcionan, pon $URLS_BONITAS = false en config.php y las URLs serán /blog/articulo.php?slug=mi-articulo.
+- Si tu blog no va en /blog, cambia $BLOG_RUTA en config.php y RewriteBase en .htaccess.
+- Para usar el encabezado y pie de tu sitio: llena $ENCABEZADO y $PIE en config.php y, dentro del <head> de tu
+  encabezado, agrega la línea de PHP:  if (function_exists('blog_meta')) blog_meta();
+- Los colores se cambian al inicio de blog/estilos.css (--kb-acento, --kb-texto…).
+- La carpeta blog/cache guarda una copia por 10 minutos: si el panel no responde, el blog sigue mostrando lo último.
+- Las fotos de Pexels son gratis; el blog muestra el crédito del fotógrafo como pide Pexels.

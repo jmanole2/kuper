@@ -1,0 +1,8 @@
+# URLs bonitas del blog (Apache). Si tu blog no está en /blog, cambia RewriteBase.
+RewriteEngine On
+RewriteBase /blog/
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^categoria/([a-z0-9-]+)/?$ index.php?categoria=$1 [L,QSA]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z0-9-]+)/?$ articulo.php?slug=$1 [L,QSA]

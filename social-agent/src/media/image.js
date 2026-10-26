@@ -7,12 +7,12 @@ const ASPECT = { '1:1': '1:1', '4:5': '4:5', '9:16': '9:16', '1.91:1': '16:9' };
 
 export const imageModelConfigured = () => !!config.geminiApiKey;
 
-export async function generateImage({ prompt, formato, outFileBase }) {
-  if (!config.geminiApiKey) throw new Error('GEMINI_API_KEY no configurada');
+export async function generateImage({ prompt, formato, outFileBase, apiKey = config.geminiApiKey }) {
+  if (!apiKey) throw new Error('GEMINI_API_KEY no configurada');
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiImageModel}:generateContent`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.geminiApiKey },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: ASPECT[formato] || '1:1' } },

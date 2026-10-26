@@ -153,6 +153,31 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       k TEXT PRIMARY KEY,
       v TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS blog_sitios (
+      id INTEGER PRIMARY KEY,
+      client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      nombre TEXT NOT NULL,
+      dominio TEXT NOT NULL DEFAULT '',
+      slug TEXT NOT NULL UNIQUE,
+      config_json TEXT NOT NULL DEFAULT '{}',
+      activo INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS blog_articulos (
+      id INTEGER PRIMARY KEY,
+      sitio_id INTEGER NOT NULL REFERENCES blog_sitios(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'generando',
+      titulo TEXT, slug TEXT, categoria TEXT, etiquetas_json TEXT NOT NULL DEFAULT '[]',
+      meta_title TEXT, meta_description TEXT, extracto TEXT, contenido_html TEXT,
+      imagen_path TEXT, imagen_alt TEXT, imagen_credito_json TEXT,
+      fuentes_json TEXT NOT NULL DEFAULT '[]', noticia_url TEXT, palabra_clave TEXT,
+      advertencias_json TEXT NOT NULL DEFAULT '[]', error TEXT, tema_pedido TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      published_at TEXT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS blog_articulos_slug ON blog_articulos(sitio_id, slug) WHERE slug IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS blog_articulos_sitio ON blog_articulos(sitio_id, status, published_at);
     CREATE TABLE IF NOT EXISTS events (
       id INTEGER PRIMARY KEY,
       post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
@@ -378,6 +403,7 @@ export function recoverInterrupted() {
     d.prepare("UPDATE posts SET status = ?, error = ?, updated_at = datetime('now') WHERE id = ?").run(to, msg, p.id);
     logEvent({ postId: p.id, clientId: p.client_id, tipo: 'interrumpido', detalle: msg });
   }
+  d.prepare("UPDATE blog_articulos SET status = 'error', error = 'Se interrumpió (reinicio del servicio). Se reintenta sola.', updated_at = datetime('now') WHERE status = 'generando'").run();
   return stuck.length;
 }
 export const postEvents = (postId) =>

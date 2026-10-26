@@ -9,11 +9,12 @@ export const SERVICIOS = {
   chat: { nombre: 'Agente de IA (chat)', desc: 'Responde en WhatsApp, Messenger e Instagram y registra cada lead.', tabs: ['leads', 'agente'] },
   agenda: { nombre: 'Agenda de citas', desc: 'Citas en Google Calendar sin encimarse, con recordatorios.', tabs: ['citas'] },
   llamadas: { nombre: 'Agente de llamadas', desc: 'Contesta y hace llamadas, agenda citas y deja cada llamada con su resumen.', tabs: ['llamadas', 'ventas'] },
+  blog: { nombre: 'Agente de blog', desc: 'Escribe artículos con noticias del momento, con SEO e imagen, para sus sitios web.', tabs: ['blog'] },
   videollamadas: { nombre: 'Agente de videollamadas', desc: 'Atiende videollamadas con un avatar.', tabs: ['videollamadas'], proximamente: true },
 };
 
 const DEFAULT = {
-  servicios: { redes: true, chat: true, agenda: true, llamadas: false, videollamadas: false }, // clientes de antes: lo que ya tenían
+  servicios: { redes: true, chat: true, agenda: true, llamadas: false, blog: false, videollamadas: false }, // clientes de antes: lo que ya tenían
   posts_semana: 3,
   extra_gratis_mes: 1,
   precio_extra: 150,

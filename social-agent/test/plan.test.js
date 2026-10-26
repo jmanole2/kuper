@@ -74,7 +74,7 @@ test('el administrador guarda el plan desde la tarjeta', async () => {
   const p = plan.planDe(db.getClient(sabor.id));
   assert.equal(p.posts_semana, 4);
   assert.equal(p.precio_extra, 200);
-  assert.deepEqual(p.servicios, { redes: true, chat: true, agenda: false, llamadas: false, videollamadas: false });
+  assert.deepEqual(p.servicios, { redes: true, chat: true, agenda: false, llamadas: false, blog: false, videollamadas: false });
   assert.deepEqual(p.conceptos, [{ nombre: 'Redes sociales', monto: 2999, tipo: 'mensual' }, { nombre: 'Arranque', monto: 1500, tipo: 'unico' }]);
   assert.equal(plan.mensualidad(db.getClient(sabor.id)), 2999);
   assert.equal((await post(`/admin/clientes/${sabor.id}/plan`, admin, { conceptos: 'Mal | abc' })).status, 400);
@@ -147,7 +147,7 @@ test('nueva marca solo con chat: sin redes activas ni posts automáticos', async
   const c = db.listClients().find((x) => x.slug === 'tacos-uno');
   assert.equal(c.config.instagram.activo, false);
   assert.equal(c.config.facebook.activo, false);
-  assert.deepEqual(plan.planDe(c).servicios, { redes: false, chat: true, agenda: false, llamadas: false, videollamadas: false });
+  assert.deepEqual(plan.planDe(c).servicios, { redes: false, chat: true, agenda: false, llamadas: false, blog: false, videollamadas: false });
   // aunque alguien active Instagram después, sin el servicio de redes no se generan posts
   db.updateClient(c.id, { config: { ...c.config, instagram: { activo: true, frecuencia: 'diario' } } });
   assert.ok(!pipe.generationCandidates().some((g) => g.client.id === c.id));

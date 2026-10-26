@@ -22,6 +22,7 @@ import { reportePage } from './web/reporte.js';
 import * as agente from './agente.js';
 import * as conoc from './conocimiento.js';
 import * as seg from './seguridad.js';
+import * as blog from './blog.js';
 import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
@@ -142,6 +143,15 @@ export function createApp() {
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   app.use('/api/:slug', api);
+
+  // ------------------------------------------------------------ blog: lo que leen los sitios PHP (público, solo lo publicado)
+  const blogJson = (res, data) => {
+    if (!data) return res.status(404).json({ error: 'No encontrado' });
+    res.set({ 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=60' }).json(data);
+  };
+  app.get('/blog/:sitio/articulos.json', (req, res) => blogJson(res, blog.apiLista(req.params.sitio, { pagina: req.query.pagina, porPagina: req.query.por_pagina, categoria: String(req.query.categoria || '') })));
+  app.get('/blog/:sitio/articulo/:slug.json', (req, res) => blogJson(res, blog.apiArticulo(req.params.sitio, req.params.slug)));
+  app.get('/blog/:sitio/sitemap.json', (req, res) => blogJson(res, blog.apiSitemap(req.params.sitio)));
 
   // ------------------------------------------------------------ sesión admin
   const COOKIE = 'sa_admin';
@@ -508,6 +518,7 @@ export function createApp() {
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
     if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); }
     if (view.tab === 'ventas') { view.prospectos = prospeccion.listar(req.client.id); view.ventasActivo = prospeccion.activo(req.client.id); view.placesListo = !!config.googlePlacesKey; }
+    if (view.tab === 'blog') return res.redirect(`/admin/clientes/${req.client.id}/blog`);
     if (view.tab === 'llamadas') { view.llamadas = llamadas.listar(req.client.id); view.llamadasMes = llamadas.delMes(req.client.id, metricas.mesActual()); }
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
@@ -516,6 +527,60 @@ export function createApp() {
     }
     res.send(clientView(req.client, req.query.error ? String(req.query.error).slice(0, 300) : undefined, req.query.ok ? String(req.query.ok) : undefined, await withTikTokInfo(req.client, db.listPosts({ clientId: req.client.id, limit: 400 })), view));
   });
+  // ------------------------------------------------------------ agente de blog
+  const blogView = (c, { sitio = '', error, ok } = {}) => {
+    const sitios = blog.listarSitios(c.id);
+    const sel = sitio === 'nuevo' ? -1 : Number(sitio) || sitios[0]?.id || null;
+    return clientView(c, error, ok, undefined, { tab: 'blog', blog: {
+      sitios, sel, articulos: sel > 0 ? blog.listarArticulos(sel) : [], pexelsListo: !!config.pexelsApiKey,
+      iaLista: !!(config.geminiTextApiKey || process.env.ANTHROPIC_API_KEY || config.mockLlm), panelUrl: config.publicBaseUrl,
+    } });
+  };
+  const sitioDe = (req) => { const s = blog.getSitio(Number(req.params.sid)); return s && s.client_id === req.client.id ? s : null; };
+  admin.get('/clientes/:cid/blog', (req, res) => res.send(blogView(req.client, { sitio: String(req.query.sitio || ''), error: req.query.error ? String(req.query.error).slice(0, 300) : undefined, ok: req.query.ok ? String(req.query.ok).slice(0, 200) : undefined })));
+  admin.post('/clientes/:cid/blog/sitios', (req, res) => {
+    try { const s = blog.guardarSitio(req.client.id, blog.parseSitio(req.body)); res.redirect(303, `/admin/clientes/${req.client.id}/blog?sitio=${s.id}&ok=Sitio agregado`); }
+    catch (e) { res.status(400).send(blogView(req.client, { sitio: 'nuevo', error: e.message })); }
+  });
+  admin.post('/clientes/:cid/blog/sitios/:sid', (req, res) => {
+    const s = sitioDe(req); if (!s) return res.status(404).send('Sitio no encontrado');
+    try { blog.guardarSitio(req.client.id, blog.parseSitio(req.body), s.id); res.redirect(303, `/admin/clientes/${req.client.id}/blog?sitio=${s.id}&ok=Sitio guardado`); }
+    catch (e) { res.status(400).send(blogView(req.client, { sitio: String(s.id), error: e.message })); }
+  });
+  admin.post('/clientes/:cid/blog/sitios/:sid/borrar', (req, res) => {
+    const s = sitioDe(req); if (!s) return res.status(404).send('Sitio no encontrado');
+    for (const a of blog.listarArticulos(s.id, { limit: 100000 })) blog.borrarArticulo(a.id);
+    blog.borrarSitio(req.client.id, s.id);
+    res.redirect(303, `/admin/clientes/${req.client.id}/blog?ok=Sitio borrado`);
+  });
+  admin.post('/clientes/:cid/blog/sitios/:sid/generar', (req, res) => {
+    const s = sitioDe(req); if (!s) return res.status(404).send('Sitio no encontrado');
+    const tema = String(req.body.tema || '').trim().slice(0, 300), back = `/admin/clientes/${req.client.id}/blog?sitio=${s.id}`;
+    if (req.body.accion === 'cola') {
+      try { blog.agregarTemaBlog(s.id, tema); return res.redirect(303, `${back}&ok=${encodeURIComponent('Tema guardado para el siguiente artículo')}`); }
+      catch (e) { return res.redirect(303, `${back}&error=${encodeURIComponent(e.message)}`); }
+    }
+    blog.generarArticulo(s.id, { tema, categoria: String(req.body.categoria || '') }).catch(() => {});
+    res.redirect(303, `${back}&ok=${encodeURIComponent('Escribiendo el artículo (1 a 3 minutos)…')}`);
+  });
+  admin.param('aid', (req, res, next, id) => {
+    req.articulo = blog.getArticulo(Number(id));
+    req.sitio = req.articulo && blog.getSitio(req.articulo.sitio_id);
+    req.client = req.sitio && db.getClient(req.sitio.client_id);
+    return req.client ? next() : res.status(404).send('Artículo no encontrado');
+  });
+  const volverArt = (req, res, ok) => res.redirect(303, `/admin/blog/articulos/${req.articulo.id}${ok ? `?ok=${encodeURIComponent(ok)}` : ''}`);
+  admin.get('/blog/articulos/:aid', (req, res) => res.send(V.blogArticuloPage(req.articulo, req.sitio, req.client, { panelUrl: config.publicBaseUrl })));
+  admin.post('/blog/articulos/:aid/publicar', (req, res) => { try { blog.publicar(req.articulo.id); volverArt(req, res); } catch (e) { res.status(400).send(e.message); } });
+  admin.post('/blog/articulos/:aid/despublicar', (req, res) => { blog.despublicar(req.articulo.id); volverArt(req, res); });
+  admin.post('/blog/articulos/:aid/rechazar', (req, res) => { blog.rechazar(req.articulo.id); volverArt(req, res); });
+  admin.post('/blog/articulos/:aid/editar', (req, res) => { blog.editar(req.articulo.id, req.body || {}); volverArt(req, res); });
+  admin.post('/blog/articulos/:aid/borrar', (req, res) => {
+    const back = `/admin/clientes/${req.client.id}/blog?sitio=${req.sitio.id}&ok=Artículo borrado`;
+    blog.borrarArticulo(req.articulo.id);
+    res.redirect(303, back);
+  });
+
   // Borrar todos los posts con error o rechazados de un cliente.
   admin.post('/clientes/:cid/limpiar', (req, res) => {
     const ps = db.listPosts({ clientId: req.client.id, statuses: pipe.DELETABLE, limit: 1000 });
