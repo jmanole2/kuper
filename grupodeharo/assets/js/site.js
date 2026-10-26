@@ -87,9 +87,16 @@ function setYear(i) {
   const it = tlItems[i];
   tlYear.textContent = it.dataset.year;
   tlName.textContent = $('span', it).textContent;
+  // la tarjeta del logo entra solo cuando el año tiene logo
   const logo = it.dataset.logo;
-  $('#tlLogo').classList.toggle('is-empty', !logo);
-  if (logo) { $('#tlLogoImg').src = logo; $('#tlLogoImg').alt = `Logotipo de ${$('span', it).textContent}`; }
+  const card = $('#tlLogo');
+  card.classList.remove('show');
+  card.classList.toggle('is-empty', !logo);
+  if (logo) {
+    $('#tlLogoImg').src = logo;
+    $('#tlLogoImg').alt = `Logotipo de ${$('span', it).textContent}`;
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('show')));
+  }
   tlIndex.textContent = String(i + 1).padStart(2, '0');
   tlItems.forEach((li, j) => li.classList.toggle('is-on', j === i));
   tlYear.classList.remove('flip'); void tlYear.offsetWidth; tlYear.classList.add('flip');
