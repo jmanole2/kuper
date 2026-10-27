@@ -1539,3 +1539,35 @@ html.is-bucket-dragging * {
   .coverage-legend { right: calc(var(--section-content-edge, 36px) + 84px); }
   .coverage-map-hint { right: 96px !important; }
 }
+
+/* Productos › Otros productos y servicios: información a la izquierda y la
+   foto (solo la máquina de impresión) a la derecha, en formato vertical. */
+@media (min-width: 901px) {
+  .np-cat.is-service {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 30%);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: clamp(28px, 4vw, 64px);
+  }
+  .np-cat.is-service .np-cat-heading { grid-column: 1 / -1; }
+  .np-cat.is-service .np-cat-stage { grid-column: 2; grid-row: 2; min-height: 0; }
+  .np-cat.is-service .np-cat-footer {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: clamp(18px, 3vh, 32px);
+    min-height: 0;
+  }
+  .np-cat.is-service .np-cat-pager { display: none; }
+  .np-cat.is-service .np-cat-meta { max-width: 560px; }
+  .np-cat.is-service .np-cat-sheet { max-height: none; }
+  .np-cat.is-service .np-cat-service { inset: 0; }
+  .np-cat.is-service .np-cat-service img { object-position: center; }
+}
+@media (max-width: 900px) {
+  /* En pantallas angostas: primero el texto y después la foto. */
+  .np-cat.is-service .np-cat-stage { order: 2; height: min(110vw, 460px); }
+  .np-cat.is-service .np-cat-service img { object-position: center; }
+}

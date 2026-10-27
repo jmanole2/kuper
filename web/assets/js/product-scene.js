@@ -706,7 +706,9 @@ renderer.setAnimationLoop(() => {
   const pitch = inHeroState ? bucketDrag.pitch : 0;
   const sinkMm = BUCKET_PIVOT_Y * Math.cos(pitch) + BODY_RADIUS_UNITS * Math.abs(Math.sin(pitch)) - BUCKET_PIVOT_Y;
   const tiltLift = Math.max(0, sinkMm) * bucket.scale.x;
-  const shadowFade = 1 - Math.min(1, Math.abs(Math.sin(pitch)) * 4);
+  // En el hero la cubeta va sin sombra (pedido del cliente); al bajar a las
+  // otras secciones la sombra vuelve a aparecer debajo de ella.
+  const shadowFade = inHeroState ? 0 : 1 - Math.min(1, Math.abs(Math.sin(pitch)) * 4);
   contactShadow.material.opacity += (shadowFade - contactShadow.material.opacity) * 0.25;
   contactShadow.visible = contactShadow.material.opacity > 0.01;
   bucket.position.x += (targetBucketX - bucket.position.x) * 0.07;

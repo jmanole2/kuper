@@ -120,6 +120,7 @@ function renderUI() {
 
   const isService = !!category.service;
   stage.classList.toggle('is-service', isService);
+  stage.closest('.np-cat')?.classList.toggle('is-service', isService);
   $('catalogService').hidden = !isService;
   $('catalogPrev').hidden = $('catalogNext').hidden = isService || items.length < 2;
   $('catalogHint').hidden = isService;
@@ -222,20 +223,40 @@ if (renderer) {
   scene.add(new THREE.AmbientLight(0xffffff, 0.45));
   const key = new THREE.DirectionalLight(0xffffff, 1.5);
   key.position.set(2.5, 4, 3);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  key.shadow.radius = 18;
-  key.shadow.blurSamples = 10;
-  Object.assign(key.shadow.camera, { left: -8, right: 8, top: 6, bottom: -6 });
+  // Sin sombra proyectada por la luz lateral (caía a un lado y se encimaba con
+  // el envase): cada producto lleva su propia sombra de contacto centrada.
   scene.add(key);
   const fill = new THREE.DirectionalLight(0xffffff, 0.55);
   fill.position.set(-3, 1.5, 2);
   scene.add(fill);
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), new THREE.ShadowMaterial({ opacity: 0.12 }));
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
+}
+
+// Sombra de contacto: mancha radial suave, centrada justo bajo la base.
+let shadowTexture = null;
+function contactShadow(diameter) {
+  if (!shadowTexture) {
+    const size = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0.42)');
+    g.addColorStop(0.5, 'rgba(0,0,0,0.24)');
+    g.addColorStop(0.78, 'rgba(0,0,0,0.07)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    shadowTexture = new THREE.CanvasTexture(c);
+  }
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(diameter * 1.35, diameter * 1.35),
+    new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.002;
+  mesh.renderOrder = -1;
+  return mesh;
 }
 
 function disposeBucket(bucket) {
@@ -261,9 +282,15 @@ function buildBuckets() {
     spin.add(model);
     const root = new THREE.Group();
     root.add(spin);
+    // diámetro de la base (sin asa) para dimensionar la sombra
+    const body = model.userData.parts?.body;
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(body || model);
+    const shadow = contactShadow(Math.max(box.max.x - box.min.x, box.max.z - box.min.z));
+    root.add(shadow);
     root.visible = false;
     scene.add(root);
-    return { root, spin, item, x: 0, scale: 0, yaw: 0.6, pitch: 0, touched: 0 };
+    return { root, spin, shadow, item, x: 0, scale: 0, yaw: 0.6, pitch: 0, touched: 0 };
   });
   layoutBuckets(true);
 }
@@ -362,6 +389,8 @@ if (renderer) {
         bucket.pitch += (0 - bucket.pitch) * settle;
       }
       bucket.spin.rotation.set(bucket.pitch, bucket.yaw, 0);
+      // al inclinarlo se despega del piso: la sombra se desvanece
+      bucket.shadow.material.opacity = 1 - Math.min(1, Math.abs(Math.sin(bucket.pitch)) * 2.5);
     });
     renderer.render(scene, camera);
   });
