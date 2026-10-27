@@ -772,6 +772,12 @@ export function createApp() {
     seg.auditar(req, 'rfc_cliente', rfc);
     res.redirect(303, `/admin/clientes/${req.client.id}?tab=config&ok=${encodeURIComponent('RFC guardado')}`);
   });
+  admin.post('/clientes/:cid/requiere-factura', (req, res) => {
+    const sin = req.body.requiere !== '1';
+    db.updateClient(req.client.id, { config: { ...req.client.config, sin_factura: sin } });
+    seg.auditar(req, 'requiere_factura', sin ? 'no' : 'sí');
+    res.redirect(303, `/admin/clientes/${req.client.id}?tab=config&ok=${encodeURIComponent(sin ? 'Este cliente no se factura' : 'Este cliente sí se factura')}`);
+  });
   admin.get('/facturacion', async (req, res) => {
     let series = [], seriesError = '';
     if (facturacion.conectado()) { try { series = await facturacion.series(); } catch (e) { seriesError = e.message; } }

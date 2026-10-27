@@ -245,6 +245,15 @@ function resumenIva(client, monto) {
 }
 // Datos fiscales que capturó el cliente, para pasárselos al contador.
 function fiscalAdmin(client) {
+  // ¿Se le factura? (algunos clientes no requieren factura: el panel ni lo intenta)
+  const requiere = !client.config?.sin_factura;
+  const toggle = html`<form method="post" action="/admin/clientes/${client.id}/requiere-factura" style="margin-top:14px"><input type="hidden" name="requiere" value="${requiere ? '0' : '1'}">
+    <span class="small">${requiere ? 'Se le factura cada cobro (si la facturación automática está encendida).' : 'Marcado como "No requiere factura": sus cobros no se facturan.'}</span>
+    <button class="btn-warn" style="margin-left:8px">${requiere ? 'No requiere factura' : 'Sí requiere factura'}</button></form>`;
+  if (!requiere) return toggle;
+  return html`${toggle}${fiscalAdminDatos(client)}`;
+}
+function fiscalAdminDatos(client) {
   const f = fiscalDe(client);
   const rfcForm = html`<form method="post" action="/admin/clientes/${client.id}/rfc" class="row" style="gap:8px;margin-top:8px"><input name="rfc" maxlength="13" placeholder="RFC" value="${f?.rfc || ''}" style="max-width:200px;text-transform:uppercase"><button class="btn-warn">Guardar RFC</button></form>
     <p class="muted small" style="margin:4px 0 0">Si ya lo tienes dado de alta en Factura.com, con el RFC basta: se usan sus datos de allá.</p>`;
@@ -757,7 +766,7 @@ export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true, 
       <p class="muted small" style="margin-top:10px">Incluye: ${Object.entries(SERVICIOS).filter(([k]) => plan.servicios[k]).map(([, v]) => v.nombre).join(', ') || '—'}${plan.servicios.redes ? ` · ${plan.posts_semana} publicaciones por semana · ${plan.extra_gratis_mes} extra gratis al mes (después ${mxn(plan.precio_extra)} c/u)` : ''}.</p>
     </div>
   </div>
-  ${fiscalForm(client, fiscalError)}
+  ${client.config?.sin_factura ? '' : fiscalForm(client, fiscalError)}
   <h2>Facturas y cobros</h2>
   ${r.facturas?.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Fecha</th><th>Concepto</th><th>Estado</th><th style="text-align:right">Total</th><th>Factura</th><th></th></tr>
     ${r.facturas.map((f) => html`<tr><td class="small">${fmtDate(f.fecha)}</td><td class="small">${f.concepto || f.numero || ''}</td><td><span class="badge" style="color:${f.estado === 'paid' ? '#4ade80' : f.estado === 'open' ? '#fbbf24' : '#a39d93'}">${{ paid: 'Pagada', open: 'Pendiente', void: 'Anulada', draft: 'Borrador', uncollectible: 'No cobrada' }[f.estado] || f.estado}</span></td>

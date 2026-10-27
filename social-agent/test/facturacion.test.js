@@ -114,3 +114,10 @@ test('cliente que ya está en Factura.com: con el RFC basta y no se tocan sus da
   const r2 = await fac.facturarCobro(otro, { ...inv, id: 'in_10' });
   assert.equal(r2.factura.status, 'error'); assert.match(r2.factura.error, /no está dado de alta en Factura\.com/);
 });
+
+test('cliente marcado "No requiere factura": no se intenta', async () => {
+  const nf = db.createClient({ slug: 'sin-factura', nombre: 'Sin factura', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, credentials: {}, config: { sin_factura: true, fiscal } });
+  const n = pedidos.length;
+  const r = await fac.facturarCobro(nf, { ...inv, id: 'in_20' });
+  assert.equal(r.omitida, 'no_requiere'); assert.equal(pedidos.length, n); assert.equal(fac.porStripe(nf.id).in_20, undefined);
+});

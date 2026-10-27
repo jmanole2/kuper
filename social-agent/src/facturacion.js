@@ -116,6 +116,7 @@ export async function facturarCobro(client, inv, { forzar = false } = {}) {
   const aj = ajustes();
   if (!forzar && !aj.activo) return { omitida: 'apagada' };
   if (!inv?.id || !(inv.amount_paid > 0)) return { omitida: 'sin_monto' };
+  if (client.config?.sin_factura) return { omitida: 'no_requiere' }; // marcado en su configuración: no se le factura
   const previa = getFactura(inv.id);
   if (previa?.status === 'emitida') return { ya: previa };
   const total = r2(inv.amount_paid / 100);
