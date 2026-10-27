@@ -94,3 +94,23 @@ test('el webhook de Stripe (invoice.paid) dispara la factura y el panel la muest
     assert.equal((await fetch(`${base}/admin/facturacion/${f.id}/exe`, { headers: { cookie } })).status, 404);
   } finally { server.close(); }
 });
+
+test('cliente que ya está en Factura.com: con el RFC basta y no se tocan sus datos allá', async () => {
+  const solo = db.createClient({ slug: 'ya-alta', nombre: 'Ya dado de alta', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, credentials: {}, config: { fiscal: { rfc: 'YAA010101AAA' } } });
+  const antes = fac.hooks.fetch;
+  fac.hooks.fetch = async (url, opt) => {
+    if (/\/v1\/clients\/YAA010101AAA$/.test(url)) return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ status: 'success', Data: { UID: 'uid-existente', UsoCFDI: 'G01' } }) };
+    return antes(url, opt);
+  };
+  const n = pedidos.length;
+  const r = await fac.facturarCobro(db.getClient(solo.id), { ...inv, id: 'in_9' });
+  fac.hooks.fetch = antes;
+  assert.equal(r.factura.status, 'emitida');
+  const nuevos = pedidos.slice(n);
+  assert.ok(!nuevos.some((p) => /clients\/(create|.*\/update)/.test(p.url)), 'no lo da de alta ni lo modifica');
+  const cfdi = nuevos.find((p) => p.url.endsWith('/v4/cfdi40/create')).body;
+  assert.equal(cfdi.Receptor.UID, 'uid-existente'); assert.equal(cfdi.UsoCFDI, 'G01', 'usa el uso de CFDI que tiene en Factura.com');
+  const otro = db.createClient({ slug: 'no-esta', nombre: 'No está', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, credentials: {}, config: { fiscal: { rfc: 'NOE010101AAA' } } });
+  const r2 = await fac.facturarCobro(otro, { ...inv, id: 'in_10' });
+  assert.equal(r2.factura.status, 'error'); assert.match(r2.factura.error, /no está dado de alta en Factura\.com/);
+});

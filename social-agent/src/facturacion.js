@@ -56,23 +56,23 @@ export async function series() {
 // La razón social va sin el régimen de capital (así lo pide el SAT en CFDI 4.0).
 export const razonSinRegimen = (r) => String(r || '').toUpperCase().replace(/[,.\s]+(S\.?\s?A\.?\s?P\.?\s?I\.?|S\.?\s?A\.?|S\.?\s?DE\s?R\.?\s?L\.?|S\.?\s?C\.?|A\.?\s?C\.?|S\.?\s?A\.?\s?S\.?)(\s+DE\s+C\.?\s?V\.?)?\.?\s*$/i, '').trim();
 
-/** UID del cliente en Factura.com: lo busca por RFC y, si no existe, lo da de alta. */
-async function receptorUid(client, f, correo) {
-  if (f.facturacom_uid && f.facturacom_rfc === f.rfc) return f.facturacom_uid;
-  let uid = null;
+/** UID del cliente en Factura.com: si ya lo tienes dado de alta (por RFC) se usa tal cual, sin tocar sus
+ *  datos; si no existe, se da de alta con los datos fiscales que capturó en el panel. Devuelve { uid, uso }. */
+async function receptor(client, f, correo) {
+  if (f.facturacom_uid && f.facturacom_rfc === f.rfc) return { uid: f.facturacom_uid, uso: f.facturacom_uso };
+  let uid = null, uso = null;
   const b = await api('GET', `/v1/clients/${encodeURIComponent(f.rfc)}`);
-  if (b.res.ok && b.j?.Data?.UID) uid = b.j.Data.UID;
+  if (b.res.ok && b.j?.Data?.UID) { uid = b.j.Data.UID; uso = b.j.Data.UsoCFDI || b.j.Data.usocfdi || null; }
   if (!uid) {
+    if (!f.razon_social || !f.cp || !f.regimen) throw new Error(`El RFC ${f.rfc} no está dado de alta en Factura.com. Dalo de alta allá o que el cliente capture sus datos fiscales completos en Pagos.`);
+    if (!correo) throw new Error('No hay correo para mandarle la factura al cliente.');
     const c = await api('POST', '/v1/clients/create', { rfc: f.rfc, razons: razonSinRegimen(f.razon_social), codpos: Number(f.cp), email: correo, regimen: String(f.regimen), usocfdi: f.uso || 'G03', pais: 'MEX' });
     uid = c.j?.Data?.UID;
     if (!uid) throw new Error(`No se pudo dar de alta al cliente en Factura.com: ${mensajeError(c.j, c.res)}`);
-  } else {
-    // Si ya existía, se actualizan sus datos por si cambiaron (razón social, CP, régimen).
-    await api('POST', `/v1/clients/${uid}/update`, { rfc: f.rfc, razons: razonSinRegimen(f.razon_social), codpos: Number(f.cp), email: correo, regimen: String(f.regimen), usocfdi: f.uso || 'G03', pais: 'MEX' }).catch(() => {});
   }
   const cfg = db.getClient(client.id).config;
-  db.updateClient(client.id, { config: { ...cfg, fiscal: { ...cfg.fiscal, facturacom_uid: uid, facturacom_rfc: f.rfc } } });
-  return uid;
+  db.updateClient(client.id, { config: { ...cfg, fiscal: { ...cfg.fiscal, facturacom_uid: uid, facturacom_rfc: f.rfc, facturacom_uso: uso } } });
+  return { uid, uso };
 }
 
 const r2 = (n) => Math.round(n * 100) / 100;
@@ -127,12 +127,11 @@ export async function facturarCobro(client, inv, { forzar = false } = {}) {
   if (!aj.serie_id || !aj.clave_prod_serv) return { factura: guardar(inv.id, client.id, { status: 'pendiente', total, error: 'Falta elegir la serie y la clave del SAT en Facturación.' }) };
   try {
     const correo = f.correo || client.config.notificaciones?.email || inv.customer_email;
-    if (!correo) throw new Error('No hay correo para mandarle la factura al cliente.');
-    const uid = await receptorUid(client, f, correo);
+    const { uid, uso } = await receptor(client, f, correo);
     const conceptos = conceptosDeStripe(inv, aj);
     if (!conceptos.length) throw new Error('El cobro no tiene conceptos con monto.');
     const cuerpo = {
-      Receptor: { UID: uid }, TipoDocumento: 'factura', Conceptos: conceptos, UsoCFDI: f.uso || 'G03', Serie: Number(aj.serie_id),
+      Receptor: { UID: uid }, TipoDocumento: 'factura', Conceptos: conceptos, UsoCFDI: f.uso || uso || 'G03', Serie: Number(aj.serie_id),
       FormaPago: await formaPago(inv), MetodoPago: 'PUE', Moneda: 'MXN', EnviarCorreo: true, NumOrder: inv.id,
       Comentarios: `Cobro ${inv.number || inv.id}`,
     };
@@ -143,7 +142,7 @@ export async function facturarCobro(client, inv, { forzar = false } = {}) {
       throw new Error(mensajeError(j, res));
     }
     const fac = guardar(inv.id, client.id, { status: 'emitida', uuid: j.UUID || j.SAT?.UUID, cfdi_uid: j.uid || j.invoice_uid, serie: j.INV?.Serie || aj.serie_nombre, folio: String(j.INV?.Folio ?? ''), total, error: null, detalle: conceptos.map((c) => c.Descripcion).join(' · ') });
-    db.logEvent({ clientId: client.id, tipo: 'factura_emitida', detalle: `${fac.serie || ''}${fac.folio} · ${total.toFixed(2)} MXN · ${correo}` });
+    db.logEvent({ clientId: client.id, tipo: 'factura_emitida', detalle: `${fac.serie || ''}${fac.folio} · ${total.toFixed(2)} MXN${correo ? ` · ${correo}` : ''}` });
     return { factura: fac };
   } catch (e) {
     db.logEvent({ clientId: client.id, tipo: 'factura_error', detalle: `Cobro ${inv.number || inv.id}: ${e.message}` });

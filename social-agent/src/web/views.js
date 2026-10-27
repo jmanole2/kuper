@@ -232,8 +232,8 @@ function planCard(client, billing) {
     <textarea name="conceptos" style="min-height:96px" placeholder="Agente de IA WhatsApp | 499 | mensual&#10;Configuración inicial | 5499 | único">${conceptosTexto(plan)}</textarea>
     <p class="muted small">Mensualidad: ${raw(resumenIva(client, mensualidad(client)))}. Al domiciliar su tarjeta, el cliente paga lo único en el primer cobro y la mensualidad cada mes. Si cambias los montos después, la suscripción ya creada no cambia (se ajusta en Stripe).</p>
     <button class="btn-accent">Guardar plan</button>
-    ${fiscalAdmin(client)}
-  </form>`;
+  </form>
+  ${fiscalAdmin(client)}`;
 }
 // "$1,000 + IVA = $1,160" / "$1,160 con IVA incluido (IVA $160)" / "$500 sin IVA"
 function resumenIva(client, monto) {
@@ -246,7 +246,9 @@ function resumenIva(client, monto) {
 // Datos fiscales que capturó el cliente, para pasárselos al contador.
 function fiscalAdmin(client) {
   const f = fiscalDe(client);
-  if (!f) return html`<p class="muted small" style="margin-top:14px">Datos para factura: el cliente todavía no los captura (los llena en su panel, en Pagos).</p>`;
+  const rfcForm = html`<form method="post" action="/admin/clientes/${client.id}/rfc" class="row" style="gap:8px;margin-top:8px"><input name="rfc" maxlength="13" placeholder="RFC" value="${f?.rfc || ''}" style="max-width:200px;text-transform:uppercase"><button class="btn-warn">Guardar RFC</button></form>
+    <p class="muted small" style="margin:4px 0 0">Si ya lo tienes dado de alta en Factura.com, con el RFC basta: se usan sus datos de allá.</p>`;
+  if (!f || !f.razon_social) return html`<div class="card" style="margin-top:14px;padding:14px 16px"><span class="mono">Datos para factura</span>${f?.rfc ? html`<p class="small" style="margin:8px 0 0">RFC <b>${f.rfc}</b> (datos de Factura.com)</p>` : html`<p class="muted small" style="margin:8px 0 0">El cliente todavía no captura sus datos (los llena en su panel, en Pagos).</p>`}${rfcForm}</div>`;
   return html`<div class="card" style="margin-top:14px;padding:14px 16px"><span class="mono">Datos para factura</span>
     <p class="small" style="margin:8px 0 0;line-height:1.7"><b>${f.razon_social}</b><br>RFC ${f.rfc} · CP ${f.cp}<br>Régimen ${f.regimen} ${REGIMENES[f.regimen] || ''}<br>Uso CFDI ${f.uso} ${USOS_CFDI[f.uso] || ''}${f.correo ? html`<br>Enviar a ${f.correo}` : ''}</p></div>`;
 }

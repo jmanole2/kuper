@@ -763,6 +763,15 @@ export function createApp() {
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=URL del agente guardada`);
   });
   admin.get('/clientes/:cid/leads.csv', (req, res) => enviarCsv(req, res));
+  // RFC de un cliente que ya está dado de alta en Factura.com (no hace falta que capture todo lo demás).
+  admin.post('/clientes/:cid/rfc', (req, res) => {
+    const rfc = String(req.body.rfc || '').toUpperCase().replace(/[\s-]/g, '');
+    if (!/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc)) return res.redirect(303, `/admin/clientes/${req.client.id}?tab=config&error=${encodeURIComponent('El RFC no es válido.')}`);
+    const fiscal = req.client.config.fiscal || {};
+    db.updateClient(req.client.id, { config: { ...req.client.config, fiscal: { ...(fiscal.rfc === rfc ? fiscal : {}), rfc, actualizado: new Date().toISOString() } } });
+    seg.auditar(req, 'rfc_cliente', rfc);
+    res.redirect(303, `/admin/clientes/${req.client.id}?tab=config&ok=${encodeURIComponent('RFC guardado')}`);
+  });
   admin.get('/facturacion', async (req, res) => {
     let series = [], seriesError = '';
     if (facturacion.conectado()) { try { series = await facturacion.series(); } catch (e) { seriesError = e.message; } }
