@@ -1001,11 +1001,12 @@ export function blogSection(client, { sitios = [], sel = null, articulos = [], p
   <details class="card" style="margin-top:18px"><summary style="cursor:pointer"><strong>Ajustes del sitio</strong></summary>${sitioForm(client, s)}
     <form method="post" action="${base}/sitios/${s.id}/borrar" onsubmit="return confirm('¿Borrar el sitio y TODOS sus artículos? No se puede deshacer.')"><p><button class="btn-bad">Borrar sitio</button></p></form></details>`}`;
 }
-export function blogArticuloPage(a, sitio, client, { panelUrl = '' } = {}) {
+export function blogArticuloPage(a, sitio, client, { panelUrl = '', ok = '' } = {}) {
   const base = `/admin/blog/articulos/${a.id}`;
   const cat = sitio.config.categorias.find((c) => c.slug === a.categoria);
   const img = a.imagen_path ? `/media/${path.basename(a.imagen_path)}` : null;
   const body = html`<p><a href="/admin/clientes/${client.id}/blog?sitio=${sitio.id}">← ${sitio.nombre}</a></p>
+  ${ok ? html`<div class="${/^Error/.test(ok) ? 'err' : 'okmsg'}">${ok.replace(/^Error: /, '')}</div>` : ''}
   ${a.status === 'generando' ? html`<div class="okmsg">Escribiendo el artículo… esta página se actualiza sola.</div>${vigilar(a.status)}` : ''}
   ${a.status === 'error' ? html`<div class="err">${a.error}</div>` : ''}
   ${a.advertencias?.length ? html`<div class="card" style="border-color:#fbbf24;margin-bottom:14px"><strong>Revisa esto</strong><ul class="small">${a.advertencias.map((w) => html`<li>${w}</li>`)}</ul></div>` : ''}
@@ -1021,6 +1022,13 @@ export function blogArticuloPage(a, sitio, client, { panelUrl = '' } = {}) {
     <article class="card">
       ${img ? html`<img src="${img}" alt="${a.imagen_alt || ''}" style="width:100%;border-radius:16px;aspect-ratio:1.91/1;object-fit:cover">` : ''}
       ${a.imagen_credito?.autor ? html`<p class="small muted">Foto de <a href="${a.imagen_credito.autor_url}" target="_blank" rel="noopener">${a.imagen_credito.autor}</a> en <a href="${a.imagen_credito.url}" target="_blank" rel="noopener">Pexels</a></p>` : ''}
+      <details class="card" style="margin:10px 0 16px;padding:12px 14px"><summary style="cursor:pointer"><strong>Cambiar imagen</strong></summary>
+        <form method="post" action="${base}/imagen" enctype="multipart/form-data" style="margin-top:10px"><label>Subir una tuya (JPG o PNG, horizontal)</label>
+          <input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" required><p><button class="btn-accent">Subir imagen</button></p></form>
+        <form method="post" action="${base}/imagen"><label>O buscar otra foto en Pexels (en inglés funciona mejor)</label>
+          <div class="row" style="gap:8px"><input name="busqueda" required placeholder="online store, textile factory…"><button class="btn-warn">Buscar otra</button></div></form>
+        ${img ? html`<form method="post" action="${base}/imagen" style="margin-top:10px"><input type="hidden" name="accion" value="quitar"><button class="btn-bad">Quitar imagen</button></form>` : ''}
+      </details>
       <span class="mono">${cat?.nombre || a.categoria}</span>
       <h1 style="font-size:30px;margin:8px 0">${a.titulo}</h1>
       <p class="muted">${a.extracto}</p>
@@ -1041,6 +1049,7 @@ export function blogArticuloPage(a, sitio, client, { panelUrl = '' } = {}) {
       <label>Categoría</label><select name="categoria">${sitio.config.categorias.map((c) => html`<option value="${c.slug}" ${raw(c.slug === a.categoria ? 'selected' : '')}>${c.nombre}</option>`)}</select>
       <label>Etiquetas (separadas por coma)</label><input name="etiquetas" value="${(a.etiquetas || []).join(', ')}">
       <label>Extracto</label><textarea name="extracto" rows="2">${a.extracto || ''}</textarea>
+      <label>Descripción de la imagen (para Google y personas que no la ven)</label><input name="imagen_alt" maxlength="200" value="${a.imagen_alt || ''}">
       <label>Contenido (HTML)</label><textarea name="contenido_html" rows="14" style="font-family:monospace;font-size:12px">${a.contenido_html || ''}</textarea>
       <p><button class="btn-accent">Guardar cambios</button></p>
     </form>

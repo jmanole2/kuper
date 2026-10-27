@@ -139,6 +139,16 @@ test('panel: alta de sitio, escribir, revisar y publicar; el JSON público solo 
     const d = await (await fetch(`${base}/blog/blog-recetas/articulo/mole-poblano.json`)).json();
     assert.equal(d.articulo.contenido_html, '<p>Hola</p>');
     assert.equal((await fetch(`${base}/blog/blog-recetas/articulo/no-existe.json`)).status, 404);
+    // cambiar imagen: subir una propia, buscar otra en Pexels y quitarla
+    const fd = new FormData(); fd.append('archivo', new Blob([new Uint8Array([255, 216, 255, 0])], { type: 'image/jpeg' }), 'mia.jpg');
+    r = await fetch(`${base}/admin/blog/articulos/${a.id}/imagen`, { method: 'POST', redirect: 'manual', headers: { cookie, Origin: base }, body: fd });
+    assert.match(r.headers.get('location'), /ok=Imagen/);
+    assert.equal(blog.getArticulo(a.id).imagen_credito.fuente, 'Propia');
+    r = await post(`/admin/blog/articulos/${a.id}/imagen`, { busqueda: 'mole' });
+    const conPexels = blog.getArticulo(a.id);
+    assert.ok(conPexels.imagen_credito.fuente === 'Pexels' || /Error/.test(decodeURIComponent(r.headers.get('location'))));
+    await post(`/admin/blog/articulos/${a.id}/imagen`, { accion: 'quitar' });
+    assert.equal(blog.getArticulo(a.id).imagen_path, null);
   } finally { server.close(); }
 });
 

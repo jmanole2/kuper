@@ -63,7 +63,7 @@ export function createApp() {
       filename: (_req, f, cb) => cb(null, `subida-${Date.now()}-${randomToken(6)}${path.extname(f.originalname).toLowerCase() || ''}`),
     }),
     limits: { fileSize: 300 * 1024 * 1024 },
-    fileFilter: (_req, f, cb) => cb(null, ['image/jpeg', 'image/png', 'video/mp4', 'video/quicktime'].includes(f.mimetype)),
+    fileFilter: (_req, f, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'].includes(f.mimetype)),
   });
 
   // ------------------------------------------------------------ avisos de Stripe (pagos)
@@ -593,10 +593,16 @@ export function createApp() {
     return req.client ? next() : res.status(404).send('Artículo no encontrado');
   });
   const volverArt = (req, res, ok) => res.redirect(303, `/admin/blog/articulos/${req.articulo.id}${ok ? `?ok=${encodeURIComponent(ok)}` : ''}`);
-  admin.get('/blog/articulos/:aid', (req, res) => res.send(V.blogArticuloPage(req.articulo, req.sitio, req.client, { panelUrl: config.publicBaseUrl })));
+  admin.get('/blog/articulos/:aid', (req, res) => res.send(V.blogArticuloPage(req.articulo, req.sitio, req.client, { panelUrl: config.publicBaseUrl, ok: req.query.ok ? String(req.query.ok).slice(0, 300) : '' })));
   admin.post('/blog/articulos/:aid/publicar', (req, res) => { try { blog.publicar(req.articulo.id); volverArt(req, res); } catch (e) { res.status(400).send(e.message); } });
   admin.post('/blog/articulos/:aid/despublicar', (req, res) => { blog.despublicar(req.articulo.id); volverArt(req, res); });
   admin.post('/blog/articulos/:aid/rechazar', (req, res) => { blog.rechazar(req.articulo.id); volverArt(req, res); });
+  admin.post('/blog/articulos/:aid/imagen', (req, res, next) => upload.single('archivo')(req, res, (e) => (e ? volverArt(req, res, `Error: ${e.message}`) : next())), async (req, res) => {
+    try {
+      await blog.cambiarImagen(req.articulo.id, { archivo: req.file || null, busqueda: req.body.busqueda, quitar: req.body.accion === 'quitar', alt: req.body.imagen_alt });
+      volverArt(req, res, 'Imagen actualizada');
+    } catch (e) { volverArt(req, res, `Error: ${e.message}`); }
+  });
   admin.post('/blog/articulos/:aid/editar', (req, res) => { blog.editar(req.articulo.id, req.body || {}); volverArt(req, res); });
   admin.post('/blog/articulos/:aid/borrar', (req, res) => {
     const back = `/admin/clientes/${req.client.id}/blog?sitio=${req.sitio.id}&ok=Artículo borrado`;

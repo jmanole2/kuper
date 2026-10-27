@@ -198,6 +198,7 @@ export function editar(id, b) {
     categoria: cat ? cat.slug : a.categoria,
     etiquetas: String(b.etiquetas || '').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8),
     contenido_html: limpiarHtml(String(b.contenido_html || a.contenido_html)),
+    imagen_alt: String(b.imagen_alt ?? a.imagen_alt ?? '').trim().slice(0, 200),
   });
 }
 
@@ -359,6 +360,23 @@ async function imagenPexels(sitio, art, busqueda) {
   fs.writeFileSync(file, Buffer.from(await r.arrayBuffer()));
   return { file, credito: { fuente: 'Pexels', pexels_id: f.id, autor: f.photographer, autor_url: f.photographer_url, url: f.url } };
 }
+/** Cambiar la imagen de un artículo: subir una propia, buscar otra en Pexels o quitarla. */
+export async function cambiarImagen(id, { archivo = null, busqueda = '', quitar = false, alt = '' } = {}) {
+  const art = getArticulo(id), sitio = getSitio(art.sitio_id);
+  const borrarVieja = () => { if (art.imagen_path) try { fs.unlinkSync(art.imagen_path); } catch { /* ya no está */ } };
+  if (quitar) { borrarVieja(); return actualizar(id, { imagen_path: null, imagen_credito: null }); }
+  if (archivo) {
+    if (!/^image\/(jpeg|png|webp)$/.test(archivo.mimetype || '')) { try { fs.unlinkSync(archivo.path); } catch { /* nada */ } throw new Error('La imagen debe ser JPG, PNG o WebP.'); }
+    borrarVieja();
+    return actualizar(id, { imagen_path: archivo.path, imagen_credito: { fuente: 'Propia' }, ...(alt ? { imagen_alt: String(alt).slice(0, 200) } : {}) });
+  }
+  const q = String(busqueda || '').trim();
+  if (!q) throw new Error('Escribe qué foto buscar (en inglés funciona mejor, ej. "online store").');
+  const { file, credito } = await imagenPexels(sitio, art, q);
+  borrarVieja();
+  return actualizar(id, { imagen_path: file, imagen_credito: credito, ...(alt ? { imagen_alt: String(alt).slice(0, 200) } : {}) });
+}
+
 async function ponerImagen(sitio, art, out) {
   if (sitio.config.imagen === 'ninguna') return {};
   const intentos = sitio.config.imagen === 'ia' ? ['ia', 'pexels'] : ['pexels', 'ia'];
