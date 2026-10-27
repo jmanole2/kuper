@@ -26,7 +26,7 @@ test('Gemini va primero, con la clave gratis y el esquema JSON', async () => {
   fin();
   assert.deepEqual(r.data, { ok: 'gemini' }); assert.equal(r.proveedor, 'gemini');
   const p = pedidos.at(-1);
-  assert.match(p.url, /models\/gemini-prueba:generateContent$/);
+  assert.match(p.url, /models\/gemini-prueba:streamGenerateContent\?alt=sse$/);
   assert.equal(p.headers['x-goog-api-key'], 'gratis-123');
   assert.deepEqual(p.body.generationConfig.responseJsonSchema, schema);
   assert.equal(r.content, '{"ok":"gemini"}', 'no incluye el "pensamiento"');
@@ -95,4 +95,23 @@ test('si falla una corrección, el post se queda con la versión anterior (para 
   fin();
   ia.hooks.anthropic = claudeAntes; ia._reset();
   assert.deepEqual(r.out, { tema: 'v1' }); assert.deepEqual(r.errors, ['falta algo']);
+});
+
+test('Gemini en stream: junta los pedazos y si se corta la conexión reintenta', async () => {
+  let n = 0;
+  const antes = ia.hooks.fetch;
+  ia.hooks.fetch = async (url) => {
+    if (n++ === 0) { const e = new TypeError('fetch failed'); e.cause = { code: 'UND_ERR_HEADERS_TIMEOUT' }; throw e; }
+    const sse = [
+      { candidates: [{ content: { parts: [{ text: 'pienso', thought: true }] } }] },
+      { candidates: [{ content: { parts: [{ text: '{"ok":' }] } }] },
+      { candidates: [{ content: { parts: [{ text: '"stream"}' }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 4 } },
+    ].map((x) => `data: ${JSON.stringify(x)}\r\n\r\n`).join('');
+    return { ok: true, status: 200, text: async () => sse };
+  };
+  const fin = silencio();
+  const r = await ia.pedirJSON({ system: 's', messages: [{ role: 'user', content: 'x' }], schema });
+  fin();
+  ia.hooks.fetch = antes;
+  assert.deepEqual(r.data, { ok: 'stream' }); assert.equal(n, 2);
 });

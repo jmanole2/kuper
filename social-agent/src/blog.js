@@ -344,7 +344,7 @@ export async function generarArticulo(sitioId, { tema = '', categoria: catSlug =
   try {
     const cat = sitio.config.categorias.find((c) => c.slug === catSlug) || siguienteCategoria(sitio);
     const noticias = await buscarNoticias(sitio, pedido ? { ...cat, busqueda: `${pedido}` } : cat);
-    const { out, errs } = await redactar(sitio, cat, noticias, pedido);
+    const { out, errs } = await redactar(sitio, cat, noticias, pedido).catch((e) => { throw new Error(`Al escribir el artículo con la IA: ${e.message}`); });
     const categoria = sitio.config.categorias.some((c) => c.slug === out.categoria) ? out.categoria : cat.slug;
     const art = actualizar(id, {
       titulo: out.titulo, slug: slugLibre(sitioId, slugify(out.slug || out.titulo), id), categoria,

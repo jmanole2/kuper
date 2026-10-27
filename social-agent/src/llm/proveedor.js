@@ -66,7 +66,9 @@ export function aGemini(messages) {
 
 async function gemini({ system, messages, schema, maxTokens }) {
   const modelo = config.geminiTextModel;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`;
+  // En modo "stream" Gemini manda el texto conforme lo escribe: la conexión nunca se queda callada
+  // (Node corta una petición que tarda más de 5 min en empezar a responder: "fetch failed").
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse`;
   const cuerpo = (conEsquema) => ({
     systemInstruction: { parts: [{ text: conEsquema ? system : `${system}\n\nResponde SOLO con un objeto JSON que cumpla este esquema:\n${JSON.stringify(schema)}` }] },
     contents: aGemini(messages),
@@ -85,12 +87,13 @@ async function gemini({ system, messages, schema, maxTokens }) {
       body: JSON.stringify(cuerpo(conEsquema)),
       signal: AbortSignal.timeout(config.geminiTimeoutMs),
     }).catch((e) => {
-      // Se tardó demasiado: se reintenta una vez antes de pasar al siguiente proveedor.
-      if (intento < 2 && /abort|timeout/i.test(e.message)) return null;
-      throw e;
+      const causa = e.cause?.code || e.cause?.message || '';
+      // Se tardó demasiado o se cortó la conexión: se reintenta una vez antes de pasar al siguiente proveedor.
+      if (intento < 2 && /abort|timeout|fetch failed|socket|ECONN|ETIMEDOUT|EAI_AGAIN/i.test(`${e.message} ${causa}`)) { console.error(`[ia] Gemini no respondió (${causa || e.message}), reintento una vez`); return null; }
+      throw new Error(`Gemini no respondió: ${e.message}${causa ? ` (${causa})` : ''}`);
     });
-    if (!res) { console.error('[ia] Gemini tardó demasiado, reintento una vez'); continue; }
-    const j = await res.json().catch(() => ({}));
+    if (!res) { await sleep(3000); continue; }
+    const j = await leerRespuesta(res);
     if (res.ok) {
       const cand = j.candidates?.[0];
       if (!cand) throw new Error(`Gemini no devolvió respuesta (${j.promptFeedback?.blockReason || 'sin motivo'})`);
@@ -111,6 +114,26 @@ async function gemini({ system, messages, schema, maxTokens }) {
     if ([500, 502, 503, 504].includes(res.status) && intento < 2) { await sleep(3000); continue; }
     throw e;
   }
+}
+
+/** Junta la respuesta de Gemini: en stream (líneas "data: {...}") o un JSON normal (errores). */
+async function leerRespuesta(res) {
+  const crudo = res.text ? await res.text().catch(() => '') : JSON.stringify(await res.json().catch(() => ({})));
+  if (!/^\s*data:/.test(crudo)) { try { return JSON.parse(crudo); } catch { return {}; } }
+  const partes = [], out = {};
+  let finishReason;
+  for (const linea of crudo.split(/\r?\n/)) {
+    if (!linea.startsWith('data:')) continue;
+    let ev; try { ev = JSON.parse(linea.slice(5).trim()); } catch { continue; }
+    const c = ev.candidates?.[0];
+    if (c?.content?.parts) partes.push(...c.content.parts);
+    if (c?.finishReason) finishReason = c.finishReason;
+    if (ev.usageMetadata) out.usageMetadata = ev.usageMetadata;
+    if (ev.promptFeedback) out.promptFeedback = ev.promptFeedback;
+    if (ev.error) out.error = ev.error;
+  }
+  if (partes.length || finishReason) out.candidates = [{ content: { parts: partes }, finishReason }];
+  return out;
 }
 
 // ------------------------------------------------------------ Claude
