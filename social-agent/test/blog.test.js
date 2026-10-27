@@ -159,3 +159,15 @@ test('modo automático: se publica solo y llega el correo de aviso', async () =>
   assert.equal(b.status, 'borrador');
   assert.match(correos.at(-1).subject, /para revisar/);
 });
+
+test('artículo escrito a mano: texto simple a HTML, foto de Pexels y publicado', async () => {
+  assert.equal(blog.textoAHtml('Hola **mundo**.\n\n## Qué pasó\nDetalle\n\n- uno\n- dos\n\n1. a\n2. b'),
+    '<p>Hola <strong>mundo</strong>.</p><h2>Qué pasó</h2><p>Detalle</p><ul><li>uno</li><li>dos</li></ul><ol><li>a</li><li>b</li></ol>');
+  const s = blog.sitioPorSlug('blog-kuper');
+  await assert.rejects(blog.articuloManual(s.id, { titulo: 'Corto', contenido: 'x' }), /título/);
+  const a = await blog.articuloManual(s.id, { titulo: 'La falla de PHP que encontró una IA', categoria: 'ia', contenido: ('Párrafo con contenido útil. '.repeat(30)) + '\n\n## Qué hacer\n\n- Actualiza PHP', fuentes: 'La República | https://larepublica.co/x\nhttps://otra.com/y', busqueda_imagen: 'server security', publicar: true });
+  assert.equal(a.status, 'publicado'); assert.equal(a.slug, 'la-falla-de-php-que-encontro-una-ia');
+  assert.match(a.contenido_html, /<h2>Qué hacer<\/h2><ul><li>Actualiza PHP<\/li><\/ul>$/);
+  assert.deepEqual(a.fuentes.map((f) => f.titulo), ['La República', 'https://otra.com/y']);
+  assert.ok((a.imagen_path || a.advertencias.length) && a.meta_description.length <= 160, 'foto o aviso de por qué no hay');
+});

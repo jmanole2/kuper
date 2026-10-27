@@ -6,6 +6,7 @@ process.env.GEMINI_TEXT_API_KEY = 'gratis-123';
 process.env.GEMINI_TEXT_MODEL = 'gemini-prueba';
 delete process.env.ANTHROPIC_API_KEY;
 const ia = await import('../src/llm/proveedor.js');
+ia.hooks.esperaMs = 0;
 
 const pedidos = [];
 let respuestaGemini = () => ({ status: 200, body: { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'pensando…', thought: true }, { text: '{"ok":"gemini"}' }] } }], usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 } } });

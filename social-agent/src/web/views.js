@@ -957,6 +957,26 @@ export function blogSection(client, { sitios = [], sel = null, articulos = [], p
       <p class="small muted">Lo publicado se ve en <a href="${panelUrl}/blog/${s.slug}/articulos.json" target="_blank" rel="noopener">${panelUrl}/blog/${s.slug}/articulos.json</a></p>
     </div>
   </div>
+  <details class="card" style="margin-top:18px"><summary style="cursor:pointer"><strong>Escribirlo yo (pegar un artículo)</strong></summary>
+    <form method="post" action="${base}/sitios/${s.id}/manual" style="margin-top:10px">
+      <label>Título</label><input name="titulo" required maxlength="140">
+      <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+        <div><label>Categoría</label><select name="categoria">${s.config.categorias.map((c) => html`<option value="${c.slug}">${c.nombre}</option>`)}</select></div>
+        <div><label>Etiquetas (separadas por coma)</label><input name="etiquetas"></div>
+        <div><label>Foto: qué buscar en Pexels (en inglés)</label><input name="busqueda_imagen" placeholder="cyber security server"></div>
+      </div>
+      <label>Meta descripción (opcional, 120 a 155 caracteres)</label><input name="meta_description" maxlength="170">
+      <label>Contenido</label>
+      <textarea name="contenido" rows="14" required placeholder="Párrafos separados por una línea en blanco.
+
+## Así se pone un subtítulo
+
+- así una lista
+- otro punto"></textarea>
+      <label>Fuentes (opcional, una por línea: Nombre | https://…)</label><textarea name="fuentes" rows="3"></textarea>
+      <label class="variant" style="margin-top:10px;font-weight:400"><input type="checkbox" name="publicar" value="1" checked> Publicarlo de una vez</label>
+      <p><button class="btn-accent">Guardar artículo</button></p>
+    </form></details>
   <h2>Artículos</h2>
   ${articulos.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Artículo</th><th>Categoría</th><th>Estado</th><th>Fecha</th></tr>
     ${articulos.map((a) => html`<tr><td><a href="/admin/blog/articulos/${a.id}">${a.titulo || (a.status === 'generando' ? 'Escribiendo…' : a.error || 'Sin título')}</a>${a.tema_pedido ? html`<div class="small muted">Pedido: ${a.tema_pedido}</div>` : ''}</td>

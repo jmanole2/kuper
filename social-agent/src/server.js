@@ -563,6 +563,13 @@ export function createApp() {
     blog.generarArticulo(s.id, { tema, categoria: String(req.body.categoria || '') }).catch(() => {});
     res.redirect(303, `${back}&ok=${encodeURIComponent('Escribiendo el artículo (1 a 3 minutos)…')}`);
   });
+  admin.post('/clientes/:cid/blog/sitios/:sid/manual', async (req, res) => {
+    const s = sitioDe(req); if (!s) return res.status(404).send('Sitio no encontrado');
+    try {
+      const a = await blog.articuloManual(s.id, { ...req.body, publicar: req.body.publicar === '1' });
+      res.redirect(303, `/admin/blog/articulos/${a.id}`);
+    } catch (e) { res.redirect(303, `/admin/clientes/${req.client.id}/blog?sitio=${s.id}&error=${encodeURIComponent(e.message)}`); }
+  });
   admin.param('aid', (req, res, next, id) => {
     req.articulo = blog.getArticulo(Number(id));
     req.sitio = req.articulo && blog.getSitio(req.articulo.sitio_id);

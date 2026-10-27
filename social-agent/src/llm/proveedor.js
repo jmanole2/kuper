@@ -9,7 +9,7 @@ import { config } from '../config.js';
 export class RefusalError extends Error {}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-export const hooks = { fetch: (...a) => fetch(...a), anthropic: null }; // pruebas
+export const hooks = { fetch: (...a) => fetch(...a), anthropic: null, esperaMs: null }; // pruebas
 
 // Si un proveedor se quedó sin cupo o falló, se salta un rato para no esperar en cada pieza.
 const pausa = new Map();
@@ -111,7 +111,8 @@ async function gemini({ system, messages, schema, maxTokens }) {
     if (res.status === 400 && conPensamiento && /think/i.test(msg)) { conPensamiento = false; continue; }
     const e = new Error(`Gemini ${res.status}: ${msg}`);
     if (res.status === 429) { e.cupo = true; throw e; } // límite gratis del día o del minuto
-    if ([500, 502, 503, 504].includes(res.status) && intento < 2) { await sleep(3000); continue; }
+    // Saturado (503 "high demand") o falla momentánea: espera un poco más cada vez (15 s, 45 s) y reintenta.
+    if ([500, 502, 503, 504].includes(res.status) && intento < 3) { console.error(`[ia] Gemini ${res.status}, reintento en ${intento * 15 * (intento === 1 ? 1 : 1.5)} s`); await sleep(hooks.esperaMs ?? intento * 15000 * (intento === 1 ? 1 : 1.5)); continue; }
     throw e;
   }
 }

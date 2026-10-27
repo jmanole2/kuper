@@ -138,6 +138,54 @@ export function borrarArticulo(id) {
   db().prepare('DELETE FROM blog_articulos WHERE id = ?').run(id);
 }
 /** Edición a mano desde el panel (título, metas, extracto, categoría, etiquetas, contenido). */
+/** Texto simple → HTML: "## Título" es sección, "- algo" es lista, líneas en blanco separan párrafos. Si ya es HTML, se limpia. */
+export function textoAHtml(t) {
+  const s = String(t || '').replace(/\r/g, '').trim();
+  if (/<(p|h2|h3|ul|ol)\b/i.test(s)) return limpiarHtml(s);
+  const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2">$1</a>');
+  return limpiarHtml(s.split(/\n\s*\n/).map((b) => {
+    const l = b.split('\n').map((x) => x.trim()).filter(Boolean);
+    if (/^###\s/.test(l[0])) return `<h3>${esc(l[0].replace(/^###\s+/, ''))}</h3>${l.length > 1 ? `<p>${esc(l.slice(1).join(' '))}</p>` : ''}`;
+    if (/^##?\s/.test(l[0])) return `<h2>${esc(l[0].replace(/^##?\s+/, ''))}</h2>${l.length > 1 ? `<p>${esc(l.slice(1).join(' '))}</p>` : ''}`;
+    if (l.every((x) => /^[-*•]\s/.test(x))) return `<ul>${l.map((x) => `<li>${esc(x.replace(/^[-*•]\s+/, ''))}</li>`).join('')}</ul>`;
+    if (l.every((x) => /^\d+[.)]\s/.test(x))) return `<ol>${l.map((x) => `<li>${esc(x.replace(/^\d+[.)]\s+/, ''))}</li>`).join('')}</ol>`;
+    return `<p>${esc(l.join(' '))}</p>`;
+  }).join(''));
+}
+/** Artículo escrito a mano (o pegado): se guarda, se le busca foto en Pexels y se publica si se pide. */
+export async function articuloManual(sitioId, b) {
+  const sitio = getSitio(sitioId);
+  const titulo = String(b.titulo || '').trim().slice(0, 140);
+  if (titulo.length < 10) throw new Error('Ponle un título de al menos 10 caracteres.');
+  const contenido = textoAHtml(b.contenido);
+  if (palabras(contenido) < 80) throw new Error('El artículo está muy corto (mínimo 80 palabras).');
+  const cat = sitio.config.categorias.find((c) => c.slug === b.categoria) || sitio.config.categorias[0];
+  const fuentes = String(b.fuentes || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+    const m = /^(.*?)\s*\|\s*(https?:\/\/\S+)$/.exec(l) || /^()(https?:\/\/\S+)$/.exec(l);
+    return m ? { titulo: (m[1] || m[2]).slice(0, 160), url: m[2] } : null;
+  }).filter(Boolean).slice(0, 6);
+  const plano = contenido.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const meta = String(b.meta_description || '').trim() || plano.slice(0, 152).replace(/\s+\S*$/, '') + '…';
+  const id = Number(db().prepare("INSERT INTO blog_articulos (sitio_id, status, tema_pedido) VALUES (?, 'borrador', 'Escrito a mano')").run(sitioId).lastInsertRowid);
+  let art = actualizar(id, {
+    titulo, slug: slugLibre(sitioId, slugify(b.slug || titulo).split('-').slice(0, 8).join('-'), id), categoria: cat.slug,
+    meta_title: String(b.meta_title || titulo).trim().slice(0, 60), meta_description: meta.slice(0, 160),
+    extracto: String(b.extracto || '').trim().slice(0, 400) || plano.slice(0, 200).replace(/\s+\S*$/, '') + '…',
+    etiquetas: String(b.etiquetas || '').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8),
+    contenido_html: contenido, fuentes, palabra_clave: String(b.palabra_clave || '').trim().slice(0, 80) || null,
+    imagen_alt: String(b.imagen_alt || titulo).slice(0, 200),
+  });
+  const img = await ponerImagen(sitio, art, { busqueda_imagen: String(b.busqueda_imagen || '').trim() || titulo, palabra_clave: titulo, prompt_imagen: titulo });
+  art = actualizar(id, {
+    ...(img.imagen_path ? { imagen_path: img.imagen_path, imagen_credito: img.imagen_credito } : {}),
+    advertencias: img.advertencia ? [img.advertencia] : [],
+    ...(b.publicar ? { status: 'publicado', published_at: new Date().toISOString() } : {}),
+  });
+  logEvent({ clientId: sitio.client_id, tipo: 'blog_manual', detalle: `${sitio.nombre}: ${titulo}${b.publicar ? ' → publicado' : ''}` });
+  return art;
+}
+
 export function editar(id, b) {
   const a = getArticulo(id), s = getSitio(a.sitio_id);
   const cat = s.config.categorias.find((c) => c.slug === b.categoria);
