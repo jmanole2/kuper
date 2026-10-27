@@ -262,8 +262,8 @@ function fiscalAdminDatos(client) {
     <p class="small" style="margin:8px 0 0;line-height:1.7"><b>${f.razon_social}</b><br>RFC ${f.rfc} · CP ${f.cp}<br>Régimen ${f.regimen} ${REGIMENES[f.regimen] || ''}<br>Uso CFDI ${f.uso} ${USOS_CFDI[f.uso] || ''}${f.correo ? html`<br>Enviar a ${f.correo}` : ''}</p></div>`;
 }
 
-const ORIGEN_COL = { instagram: '#e1306c', whatsapp: '#25d366', llamada: '#c9f53a', web: '#93b4ff' };
-const ORIGEN_TXT = { instagram: 'Instagram', whatsapp: 'WhatsApp', llamada: 'Llamada', web: 'Página de citas', facebook: 'Facebook' };
+const ORIGEN_COL = { instagram: '#e1306c', whatsapp: '#25d366', llamada: '#c9f53a', web: '#93b4ff', chat_web: '#fbbf24', facebook: '#4f7cff' };
+const ORIGEN_TXT = { instagram: 'Instagram', whatsapp: 'WhatsApp', llamada: 'Llamada', web: 'Página de citas', facebook: 'Facebook', chat_web: 'Chat web' };
 export function leadsSection(client, leads, chats, base, { campanaSel = '', urlLeads = `${base}/leads` } = {}) {
   // Campañas de Meta de las que llegaron los leads (con cuántos cada una), para filtrar y descargar.
   const conteo = {};
