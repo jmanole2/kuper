@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angular Desarrollos | Vivienda residencial con criterio patrimonial</title>
+  <meta name="description" content="Angular Desarrollos crea vivienda residencial con criterio patrimonial, arquitectura con permanencia y ubicaciones de alta demanda en Ciudad de México y Zona Metropolitana." />
+
+
+  <style>
+    :root {
+      --bg-dark: #080909;
+      --bg-dark-2: #101111;
+      --bg-light: #f4f1ea;
+      --bg-warm: #ebe5da;
+      --text-light: #f5f1e8;
+      --text-muted: #b7b0a2;
+      --text-dark: #151515;
+      --line-light: rgba(245, 241, 232, .22);
+      --line-dark: rgba(20, 20, 20, .16);
+      --accent: #9d8a68;
+      --green: #233126;
+      --max: 1360px;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text-dark);
+      background: var(--bg-light);
+      line-height: 1.5;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(var(--max), calc(100% - 48px));
+      margin-inline: auto;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .19em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .serif {
+      font-family: var(--serif);
+      font-weight: 400;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px 34px;
+      align-items: center;
+    }
+
+    .text-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid currentColor;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-weight: 600;
+      opacity: .94;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .text-link:hover {
+      opacity: .66;
+      transform: translateX(2px);
+    }
+
+    .text-link span {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .site-header {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 20;
+      color: var(--text-light);
+      transition: background .25s ease, border .25s ease;
+      background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
+    }
+
+    .nav {
+      width: min(var(--max), calc(100% - 48px));
+      height: 82px;
+      margin-inline: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 24px;
+      letter-spacing: .18em;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 34px;
+      align-items: center;
+      font-size: 13px;
+      color: rgba(245,241,232,.88);
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
+
+    .menu-toggle {
+      display: none;
+      border: 1px solid rgba(255,255,255,.4);
+      background: transparent;
+      color: var(--text-light);
+      padding: 9px 12px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-size: 11px;
+    }
+
+    .hero {
+      min-height: 92vh;
+      color: var(--text-light);
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(5,5,5,.86) 0%, rgba(5,5,5,.54) 38%, rgba(5,5,5,.2) 72%, rgba(5,5,5,.45) 100%),
+        url("assets/hero-angular.jpg") center/cover no-repeat;
+        background-image: url('angular_home.jpeg');
+        background-size: cover;
+    }
+
+    /* Fallback visual si todavía no subes assets/hero-angular.jpg */
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 70% 45%, rgba(153,105,46,.34), transparent 26%),
+        radial-gradient(circle at 50% 70%, rgba(255,220,160,.12), transparent 20%),
+        linear-gradient(135deg, rgba(18,22,18,.4), rgba(0,0,0,.18));
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 150px 0 92px;
+      width: min(var(--max), calc(100% - 48px));
+      margin-inline: auto;
+    }
+
+    .hero h1 {
+      font-size: clamp(64px, 9vw, 138px);
+      line-height: .88;
+      letter-spacing: -.055em;
+      margin: 0 0 26px;
+      font-weight: 400;
+    }
+
+    .hero .subtitle {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(28px, 3.2vw, 52px);
+      line-height: 1.02;
+      max-width: 520px;
+      color: rgba(245,241,232,.92);
+      margin-bottom: 28px;
+    }
+
+    .hero .meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      color: rgba(245,241,232,.72);
+      font-size: 14px;
+      margin-bottom: 58px;
+    }
+
+    .hero .meta i {
+      width: 4px;
+      height: 4px;
+      background: rgba(245,241,232,.6);
+      border-radius: 50%;
+    }
+
+    .metrics {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      border-top: 1px solid rgba(255,255,255,.08);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1.7fr repeat(5, 1fr);
+      gap: 0;
+      min-height: 170px;
+      align-items: stretch;
+    }
+
+    .metric-intro,
+    .metric {
+      padding: 38px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .metric {
+      border-left: 1px solid var(--line-light);
+      text-align: center;
+    }
+
+    .metric-intro p {
+      font-family: var(--serif);
+      font-size: 30px;
+      line-height: 1.1;
+      margin: 0;
+      color: rgba(245,241,232,.9);
+      max-width: 420px;
+    }
+
+    .metric strong {
+      font-family: var(--serif);
+      font-size: clamp(38px, 3.8vw, 64px);
+      line-height: .95;
+      font-weight: 400;
+      letter-spacing: -.04em;
+      margin-bottom: 8px;
+    }
+
+    .metric span {
+      font-size: 10px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .about {
+      background: var(--bg-light);
+      padding: 95px 0;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: .95fr 1.25fr;
+      gap: 90px;
+      align-items: start;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-weight: 400;
+      letter-spacing: -.05em;
+      line-height: .9;
+      font-size: clamp(64px, 8vw, 128px);
+      margin: 0 0 28px;
+    }
+
+    .about-copy {
+      max-width: 530px;
+      color: rgba(20,20,20,.7);
+    }
+
+    .about-copy .lead {
+      font-family: var(--serif);
+      font-size: 23px;
+      color: rgba(20,20,20,.72);
+      margin-bottom: 28px;
+    }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 58px 70px;
+      padding-top: 18px;
+    }
+
+    .pillar {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 20px;
+    }
+
+    .icon {
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(20,20,20,.45);
+      border-radius: 2px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      color: rgba(20,20,20,.65);
+    }
+
+    .pillar h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+
+    .pillar p {
+      margin: 0;
+      font-size: 13px;
+      color: rgba(20,20,20,.62);
+    }
+
+    .track {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      padding: 80px 0 76px;
+    }
+
+    .track-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 44px;
+    }
+
+    .track h2,
+    .projects h2,
+    .miraloma h2,
+    .bottom-block h2,
+    .footer-cta h2 {
+      font-family: var(--serif);
+      font-weight: 400;
+      letter-spacing: -.045em;
+      line-height: .96;
+      margin: 0 0 22px;
+      font-size: clamp(42px, 4vw, 72px);
+    }
+
+    .track p,
+    .projects p,
+    .miraloma p,
+    .bottom-block p,
+    .footer-cta p {
+      color: rgba(245,241,232,.68);
+      font-size: 14px;
+      margin: 0 0 28px;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .project-card {
+      min-height: 245px;
+      position: relative;
+      overflow: hidden;
+      background: #1e211f;
+      isolation: isolate;
+    }
+
+    .project-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: var(--img);
+      background-position: center;
+      background-size: cover;
+      opacity: .88;
+      z-index: -2;
+    }
+
+    .project-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.82), rgba(0,0,0,.08));
+      z-index: -1;
+    }
+
+    .project-card .card-copy {
+      position: absolute;
+      inset: auto 0 0 0;
+      padding: 18px;
+    }
+
+    .project-card h3 {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      font-size: 17px;
+      line-height: 1.1;
+    }
+
+    .project-card small {
+      color: rgba(245,241,232,.7);
+      font-size: 12px;
+    }
+
+    .projects {
+      background: var(--bg-light);
+      padding: 74px 0;
+      color: var(--text-dark);
+    }
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .projects p {
+      color: rgba(20,20,20,.65);
+    }
+
+    .active-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .active-card {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 365px;
+      position: relative;
+      overflow: hidden;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      isolation: isolate;
+    }
+
+    .active-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: var(--img);
+      background-position: center;
+      background-size: cover;
+      opacity: .82;
+      z-index: -2;
+      transition: transform .5s ease;
+    }
+
+    .active-card:hover::before {
+      transform: scale(1.04);
+    }
+
+    .active-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.88), rgba(0,0,0,.12));
+      z-index: -1;
+    }
+
+    .tag {
+      align-self: flex-start;
+      margin-bottom: auto;
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.24);
+      padding: 8px 10px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+    }
+
+    .active-card h3 {
+      margin: 18px 0 4px;
+      font-size: 24px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      line-height: 1.06;
+    }
+
+    .active-card small {
+      color: rgba(245,241,232,.72);
+      display: block;
+      margin-bottom: 22px;
+    }
+
+    .card-meta {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(245,241,232,.72);
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,.18);
+      margin-bottom: 18px;
+    }
+
+    .miraloma {
+      min-height: 540px;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      background:
+        linear-gradient(90deg, rgba(3,5,4,.92) 0%, rgba(3,5,4,.72) 37%, rgba(3,5,4,.18) 100%),
+        url("reserva_miraf.webp") center/cover no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .miraloma::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 68% 45%, rgba(147,120,67,.2), transparent 28%),
+        linear-gradient(120deg, rgba(20,35,24,.35), transparent);
+      pointer-events: none;
+    }
+
+    .miraloma-content {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      padding: 90px 0;
+    }
+
+    .miraloma h2 {
+      font-size: clamp(54px, 6vw, 96px);
+    }
+
+    .whats {
+  position: fixed;
+  z-index: 1020;
+  right: 85px;
+  bottom: 25px;
+  width: 63px;
+  height: 63px;
+  border-radius: 50%;
+  background: #2ad07c;
+  font-size: 18px;
+  line-height: 63px;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 3px 3px rgb(0 0 0 / 10%);
+  transition: all 0.25s, bottom 0.75s ease-in-out;
+}
+
+.whats:hover {
+  box-shadow: 0 0 0 10px rgb(73 176 193 / 20%);
+}
+
+    .bottom {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      border-top: 1px solid rgba(255,255,255,.1);
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .bottom-block {
+      padding: 52px 48px 58px 0;
+      min-height: 360px;
+    }
+
+    .bottom-block + .bottom-block {
+      border-left: 1px solid var(--line-light);
+      padding-left: 48px;
+    }
+
+    .bottom-block h2 {
+      font-size: clamp(36px, 3.1vw, 58px);
+    }
+
+    .link-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.16);
+      font-size: 12px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: rgba(245,241,232,.88);
+    }
+
+    .insight {
+      display: grid;
+      grid-template-columns: 62px 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .thumb {
+      width: 62px;
+      height: 62px;
+      background: linear-gradient(135deg, #3b4437, #a68f63);
+    }
+
+    .insight h3 {
+      font-size: 13px;
+      line-height: 1.3;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .footer-cta {
+      background: var(--bg-light);
+      color: var(--text-dark);
+      padding: 46px 0 34px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.25fr repeat(3, 1fr);
+      gap: 36px;
+      align-items: center;
+    }
+
+    .footer-cta h2 {
+      color: var(--text-dark);
+      font-size: clamp(36px, 3.2vw, 60px);
+      margin-bottom: 10px;
+    }
+
+    .footer-cta p {
+      color: rgba(20,20,20,.62);
+      margin-bottom: 18px;
+    }
+
+    .contact-card {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      align-items: center;
+      color: rgba(20,20,20,.75);
+      font-size: 13px;
+    }
+
+    .contact-card strong {
+      display: block;
+      color: var(--text-dark);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .footer {
+      background: var(--bg-dark);
+      color: rgba(245,241,232,.7);
+      padding: 19px 0;
+      font-size: 12px;
+    }
+
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    @media (max-width: 1050px) {
+      .metrics-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .metric-intro {
+        grid-column: 1 / -1;
+        min-height: 130px;
+      }
+
+      .metric {
+        border-top: 1px solid var(--line-light);
+      }
+
+      .about-grid,
+      .track-grid,
+      .projects-grid,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .project-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .active-grid,
+      .bottom-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-block,
+      .bottom-block + .bottom-block {
+        padding: 44px 0;
+        border-left: 0;
+        border-top: 1px solid var(--line-light);
+      }
+
+      .bottom-block:first-child {
+        border-top: 0;
+      }
+
+     .nav-links {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 82px;
+    left: 0;
+    right: 0;
+    background: rgba(8, 9, 9, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 32px 28px 48px;
+    gap: 22px;
+    align-items: flex-start;
+    border-top: 1px solid rgba(255,255,255,.08);
+    transform: translateY(-110%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .35s ease, opacity .3s ease;
+    z-index: 19;
+    max-height: calc(100vh - 82px);
+    overflow-y: auto;
+  }
+
+  .nav-links a {
+            font-size: 12px;
+        letter-spacing: 0;
+        padding: 6px 0;
+        width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+  }
+
+  /* Cuando se abre el menú */
+  body.menu-open .nav-links {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Cambia el texto del botón al abrir */
+  body.menu-open .menu-toggle::before {
+    content: "Cerrar";
+    font-size: 12px;
+  }
+  .menu-toggle::before {
+    content: "Menú";
+    font-size: 12px;
+  }
+  /* Ocultamos el texto original "Menú" del HTML */
+  .menu-toggle {
+    font-size: 0;
+  }
+
+      .menu-toggle {
+        display: inline-block;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .container,
+      .nav,
+      .hero-content {
+        width: min(100% - 28px, var(--max));
+      }
+
+      .hero {
+        min-height: 86vh;
+    background-position: right;
+      }
+
+      .hero h1 {
+        font-size: 58px;
+      }
+
+      .hero .subtitle {
+        font-size: 28px;
+      }
+
+      .btn-row {
+        gap: 18px;
+      }
+
+      .metrics-grid,
+      .pillars,
+      .project-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric {
+        border-left: 0;
+      }
+
+      .about {
+        padding: 70px 0;
+      }
+
+      .section-title {
+        font-size: 72px;
+      }
+
+      .active-card {
+        min-height: 330px;
+      }
+
+      .footer-links {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="#inicio" class="logo" aria-label="Angular Desarrollos">ANGULAR</a>
+      <div class="nav-links">
+        <a href="#nosotros">Nosotros</a>
+        <a href="#proyectos">Proyectos</a>
+        <a href="#miraloma">Reserva Miraloma</a>
+        <a href="#inversionistas">Inversionistas</a>
+        <a href="/blog">Blog</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+      <button class="menu-toggle" onclick="document.body.classList.toggle('menu-open')">Menú</button>
+    </nav>
+  </header>
+
+
+     <a target="new"
+            href="https://api.whatsapp.com/send?phone=5215527373903&text=Hola,%20me%20gustaría%20obtener%20más%20información%20sobre%20los%20desarrollos%20de%20Angular">
+            <div class="whats">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
+  <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+</svg>
+            </div>
+        </a>
+
+  <main id="inicio">
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Angular<br>Desarrollos</h1>
+        <div class="subtitle">Vivienda residencial con criterio patrimonial.</div>
+        <div class="meta">
+          <span>Ciudad de México</span>
+          <i></i>
+          <span>Desde 2014</span>
+        </div>
+        <div class="btn-row">
+          <a class="text-link" href="#proyectos">Conocer proyectos <span>→</span></a>
+          <a class="text-link" href="#contacto">Hablar con Angular <span>→</span></a>
+          <a class="text-link" href="#miraloma">Reserva Miraloma <span>→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Métricas institucionales">
+      <div class="container metrics-grid">
+        <div class="metric-intro">
+          <p>Una trayectoria construida proyecto por proyecto.</p>
+        </div>
+        <div class="metric">
+          <strong>12</strong>
+          <span>Proyectos</span>
+        </div>
+        <div class="metric">
+          <strong>35,000+</strong>
+          <span>m²<br>construidos</span>
+        </div>
+        <div class="metric">
+          <strong>$389M</strong>
+          <span>MXN<br>administrados</span>
+        </div>
+        <div class="metric">
+          <strong>$1,000M+</strong>
+          <span>MXN<br> pipeline proyectado</span>
+        </div>
+        <div class="metric">
+          <strong>+40</strong>
+          <span>Años de experiencia<br>combinada</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="about" id="nosotros">
+      <div class="container about-grid">
+        <div>
+          <h2 class="section-title">Nosotros</h2>
+          <div class="about-copy">
+            <p class="lead">Desarrollamos vivienda con permanencia.</p>
+            <p>Angular Desarrollos es una desarrolladora residencial mexicana fundada en 2014, enfocada en proyectos de vivienda con escala humana, arquitectura intencional y valor patrimonial de largo plazo.
+</p>
+          </div>
+        </div>
+
+        <div class="pillars">
+          <article class="pillar">
+            <div class="icon">⌖</div>
+            <div>
+              <h3>Ubicación con demanda estructural</h3>
+              <p>Zonas con conectividad, servicios y profundidad de mercado.</p>
+            </div>
+          </article>
+
+          <article class="pillar">
+            <div class="icon">□</div>
+            <div>
+              <h3>Arquitectura con permanencia</h3>
+              <p>Proyectos sobrios, funcionales y lejos de modas pasajeras.</p>
+            </div>
+          </article>
+
+          <article class="pillar">
+            <div class="icon">⌂</div>
+            <div>
+              <h3>Producto residencial inteligente</h3>
+              <p>Tipologías pensadas para vivir, invertir y conservar valor.</p>
+            </div>
+          </article>
+
+          <article class="pillar">
+            <div class="icon">▣</div>
+            <div>
+              <h3>Ejecución disciplinada</h3>
+              <p>Visión financiera, control de obra y seguimiento operativo.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="track" id="track-record">
+      <div class="container track-grid">
+        <div>
+          <h2>Arquitectura con permanencia.</h2>
+          <p>Una selección de desarrollos residenciales en colonias con demanda estructural, escala humana y vocación patrimonial.</p>
+          <a class="text-link" href="#proyectos">Ver todos los proyectos <span>→</span></a>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card" style="--img:url('assets/uxmal.jpg')">
+            <div class="card-copy"><h3>Uxmal 257</h3><small>Narvarte Poniente</small></div>
+          </article>
+          <article class="project-card" style="--img:url('assets/Ixcateopan32.jpg')">
+            <div class="card-copy"><h3>Ixcateopan 32</h3><small>Vértiz Narvarte</small></div>
+          </article>
+          <article class="project-card" style="--img:url('assets/Ixcateopan_34.jpg')">
+            <div class="card-copy"><h3>Ixcateopan 34</h3><small>Vértiz Narvarte</small></div>
+          </article>
+          <article class="project-card" style="--img:url('assets/Uxmal_572.jpg')">
+            <div class="card-copy"><h3>Uxmal 572</h3><small>Vértiz Narvarte</small></div>
+          </article>
+        
+          <article class="project-card" style="--img:url('assets/Yacatas.jpg')">
+            <div class="card-copy"><h3>Yácatas 186</h3><small>Narvarte Poniente</small></div>
+          </article>
+          <article class="project-card" style="--img:url('assets/Palenque.jpg')">
+            <div class="card-copy"><h3>Palenque 358</h3><small>Narvarte Poniente</small></div>
+          </article>
+          <article class="project-card" style="--img:url('assets/Anaxagoras.jpg')">
+            <div class="card-copy"><h3>Anaxágoras 836</h3><small>Narvarte Poniente</small></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="projects" id="proyectos">
+      <div class="container projects-grid">
+        <div>
+          <h2>Proyectos activos.</h2>
+          <p>Desarrollos en diferentes etapas de preventa y entrega.</p>
+          <a class="text-link" href="#contacto">Ver todos los proyectos <span>→</span></a>
+        </div>
+
+        <div class="active-grid">
+          <article class="active-card" style="--img:url('assets/primero_mayo.jpg')">
+            <div class="tag">Entrega Septiembre 2026</div>
+            <h3>Primero de Mayo 145</h3>
+            <small>San Pedro de los Pinos</small>
+            <div class="card-meta"><span>12 unidades</span><span>Casas y deptos</span></div>
+            <a target="_blank" class="text-link" href="/2024_SAN PEDRO DE LOS PINOS_BROCHURE.pdf">Ver proyecto<span>→</span></a>
+               <a target="_blank" class="text-link" href="/DEPTO 103.pdf">103<span>→</span></a>
+              <a target="_blank" class="text-link" href="/DEPTO 202.pdf">202<span>→</span></a>
+             
+                  <a class="text-link" href="/DEPTO 203.pdf">203<span>→</span></a>
+          </article>
+
+          <article class="active-card" style="--img:url('assets/adolfo_prieto.jpg')">
+            <div class="tag">Entrega inmediata</div>
+            <h3>Adolfo Prieto 10</h3>
+            <small>Del Valle Norte</small>
+            <div class="card-meta"><span>Disponibilidad limitada</span><span>Casas y deptos</span></div>
+            <a target="_blank" class="text-link" href="/PRIETO BROCHURE.pdf">Ver Proyecto <span>→</span></a>
+             <a target="_blank" class="text-link" href="/DEPTO 104.pdf">104<span>→</span></a>
+          </article>
+
+          
+        </div>
+      </div>
+    </section>
+
+    <section class="miraloma" id="miraloma">
+      <div class="container">
+        <div class="miraloma-content">
+          <div class="eyebrow">Próximamente</div>
+          <h2>Acceso privado Miraloma</h2>
+          <p class="serif" style="font-size:28px; line-height:1.08; color:rgba(245,241,232,.9); margin-bottom:18px;">La nueva etapa de Angular Desarrollos.</p>
+          <p>Un desarrollo residencial concebido para integrarse a la naturaleza, elevar la experiencia residencial y responder a una forma más consciente de habitar.</p>
+          <p>Vivir en el borde del bosque, sin desconectarse de la ciudad.</p>
+          <div class="btn-row">
+            <a class="text-link" target="_blank" href="https://reservamiraloma.com/?utm_source=angulardesarrollos&amp;utm_medium=web&amp;utm_campaign=conocer_miraloma">Conocer Reserva Miraloma <span>→</span></a>
+            <a class="text-link" target="_blank" href="https://reservamiraloma.com/?utm_source=angulardesarrollos&amp;utm_medium=web&amp;utm_campaign=boton_inversionista#acceso">Solicitar información como inversionista calificado <span>→</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div class="container bottom-grid">
+        <article class="bottom-block">
+          <h2>Cómo trabajar con Angular</h2>
+          <p>Tres formas de iniciar una conversación.</p>
+          <div class="link-list">
+            <a href="#contacto" class="link-item">Comprar en proyectos activos <span>→</span></a>
+            <a href="#inversionistas" class="link-item">Invertir con Angular <span>→</span></a>
+            <a href="#contacto" class="link-item">Presentar un terreno <span>→</span></a>
+          </div>
+        </article>
+
+        <article class="bottom-block" id="inversionistas">
+          <h2>Para inversionistas</h2>
+          <p>Oportunidades de inversión inmobiliaria respaldadas por experiencia, estructura y trayectoria verificable.</p>
+          <div class="link-list">
+            <a href="#" class="link-item">Presentación institucional <span>→</span></a>
+            <a href="#" class="link-item">Nuestro enfoque <span>→</span></a>
+            <a href="#" class="link-item">Oportunidades actuales <span>→</span></a>
+          </div>
+        </article>
+
+        <article class="bottom-block" id="insights">
+          <h2>Insights Angular</h2>
+          <p>Nuestra lectura del mercado, la ciudad y la vivienda.</p>
+
+          <div class="insight">
+            <div class="thumb"></div>
+            <h3>Por qué la ubicación sigue siendo el principal activo de una vivienda</h3>
+          </div>
+          <div class="insight">
+            <div class="thumb"></div>
+            <h3>Vivienda boutique vs. desarrollo masivo: dos formas distintas de crear valor</h3>
+          </div>
+          <div class="insight">
+            <div class="thumb"></div>
+            <h3>Benito Juárez: demanda estructural y valor patrimonial</h3>
+          </div>
+
+          <a class="text-link" href="#">Ver todos los artículos <span>→</span></a>
+        </article>
+      </div>
+    </section>
+
+    <section class="footer-cta" id="contacto">
+      <div class="container footer-grid">
+        <div>
+          <h2>Desarrollamos proyectos para permanecer.</h2>
+          <p>Hablemos del siguiente proyecto.</p>
+          <a class="text-link" href="mailto:contacto@angulardesarrollos.com">Contactar a Angular <span>→</span></a>
+        </div>
+
+        <div class="contact-card">
+          <div class="icon">✉</div>
+          <div>
+            <strong>Email</strong>
+            <a href="mailto:contacto@angulardesarrollos.com">contacto@angulardesarrollos.com</a>
+          </div>
+        </div>
+
+        <div class="contact-card">
+          <div class="icon">☎</div>
+          <div>
+            <strong>Teléfono</strong>
+            <a href="tel:+5527373903">55.2737.3903</a>
+          </div>
+        </div>
+
+        <div class="contact-card">
+          <div class="icon">⌖</div>
+          <div>
+            <strong>Oficina</strong>
+          Adolfo Prieto 10, Col. Del Valle Norte, Benito Juárez, CDMX
+
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-row">
+      <div class="logo" style="font-size:16px;">ANGULAR</div>
+      <div>© 2026 Angular Desarrollos. Todos los derechos reservados.</div>
+      <div class="footer-links">
+        <a href="#">Aviso de Privacidad</a>
+        <a href="#">Términos y Condiciones</a>
+        <a href="#">Instagram</a>
+        <a href="#">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+
+
+<script>
+  // Cerrar menú al hacer clic en un enlace
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+      document.body.classList.remove('menu-open');
+    });
+  });
+
+  // Cerrar menú al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (document.body.classList.contains('menu-open') &&
+        !e.target.closest('.nav-links') &&
+        !e.target.closest('.menu-toggle')) {
+      document.body.classList.remove('menu-open');
+    }
+  });
+</script>
+
+
+
+<!-- Contador de visitas -->
+<script src="/contador/contador.js" defer></script>
+
+</body>
+</html>

@@ -39,7 +39,7 @@ if (!$logueado): ?>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Estadísticas · Reserva Miraloma</title>
+  <title>Estadísticas · <?= h(site_name()) ?></title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px;
@@ -58,7 +58,7 @@ if (!$logueado): ?>
 </head>
 <body>
   <form method="post">
-    <p class="eyebrow">Reserva Miraloma</p>
+    <p class="eyebrow"><?= h(site_name()) ?></p>
     <h1>Estadísticas</h1>
     <?php if (!empty($error)): ?><p class="error"><?= h($error) ?></p><?php endif; ?>
     <input type="password" name="clave" placeholder="Clave de acceso" autofocus required />
@@ -84,7 +84,6 @@ $q = function (string $sql, array $params = []) use ($pdo, $desde) {
     return $st->fetchAll(PDO::FETCH_ASSOC);
 };
 
-const ES_LEAD = "pagina LIKE '%gracias%'";
 
 // ---------------------------------------------------------------- CSV
 if (isset($_GET['csv'])) {
@@ -92,21 +91,21 @@ if (isset($_GET['csv'])) {
     $nombre = 'miraloma-' . $tipo . '-' . ($dias ? $dias . 'd' : 'todo') . '-' . gmdate('Y-m-d') . '.csv';
 
     if ($tipo === 'visitas') {
-        $cols = ['Fecha (UTC)', 'Visitante', 'Página', 'Fuente', 'Medio', 'Campaña', 'Sitio de origen', 'Dispositivo', 'Formulario enviado'];
-        $rows = $q('SELECT fecha, substr(visitante, 1, 10), pagina, utm_source, utm_medium, utm_campaign, referencia, dispositivo,
-            CASE WHEN ' . ES_LEAD . " THEN 'Sí' ELSE 'No' END
+        $cols = ['Fecha (UTC)', 'Visitante', 'Tipo', 'Detalle', 'Página', 'Fuente', 'Medio', 'Campaña', 'Sitio de origen', 'Dispositivo', 'Conversión'];
+        $rows = $q('SELECT fecha, substr(visitante, 1, 10), evento, detalle, pagina, utm_source, utm_medium, utm_campaign, referencia, dispositivo,
+            CASE WHEN ' . SQL_CONVERSION . " THEN 'Sí' ELSE 'No' END
             FROM visitas WHERE fecha >= :desde ORDER BY fecha DESC");
     } elseif ($tipo === 'campanas') {
-        $cols = ['Fuente', 'Medio', 'Campaña', 'Visitantes únicos', 'Páginas vistas', 'Formularios', 'Conversión %'];
+        $cols = ['Fuente', 'Medio', 'Campaña', 'Visitantes únicos', 'Páginas vistas', 'Conversiones', 'Conversión %'];
         $rows = $q("SELECT COALESCE(utm_source, '(directo / orgánico)'), COALESCE(utm_medium, ''), COALESCE(utm_campaign, ''),
-            COUNT(DISTINCT visitante) u, COUNT(*),
-            COUNT(DISTINCT CASE WHEN " . ES_LEAD . " THEN visitante END) l,
-            ROUND(COUNT(DISTINCT CASE WHEN " . ES_LEAD . " THEN visitante END) * 100.0 / COUNT(DISTINCT visitante), 1)
+            COUNT(DISTINCT visitante) u, SUM(CASE WHEN " . SQL_VISITA . " THEN 1 ELSE 0 END),
+            COUNT(DISTINCT CASE WHEN " . SQL_CONVERSION . " THEN visitante END) l,
+            ROUND(COUNT(DISTINCT CASE WHEN " . SQL_CONVERSION . " THEN visitante END) * 100.0 / COUNT(DISTINCT visitante), 1)
             FROM visitas WHERE fecha >= :desde GROUP BY 1, 2, 3 ORDER BY u DESC");
     } elseif ($tipo === 'diario') {
-        $cols = ['Día (UTC)', 'Visitantes únicos', 'Páginas vistas', 'Formularios'];
-        $rows = $q('SELECT substr(fecha, 1, 10) d, COUNT(DISTINCT visitante), COUNT(*),
-            COUNT(DISTINCT CASE WHEN ' . ES_LEAD . ' THEN visitante END)
+        $cols = ['Día (UTC)', 'Visitantes únicos', 'Páginas vistas', 'Conversiones'];
+        $rows = $q('SELECT substr(fecha, 1, 10) d, COUNT(DISTINCT visitante), SUM(CASE WHEN ' . SQL_VISITA . ' THEN 1 ELSE 0 END),
+            COUNT(DISTINCT CASE WHEN ' . SQL_CONVERSION . ' THEN visitante END)
             FROM visitas WHERE fecha >= :desde GROUP BY d ORDER BY d');
     } else {
         http_response_code(400);
@@ -119,7 +118,11 @@ if (isset($_GET['csv'])) {
     fwrite($out, "\xEF\xBB\xBF"); // para que Excel lea bien los acentos
     fputcsv($out, $cols);
     foreach ($rows as $r) {
-        fputcsv($out, array_values($r));
+        $r = array_values($r);
+        if ($tipo === 'visitas') {
+            $r[2] = EVENTOS[$r[2]] ?? $r[2];
+        }
+        fputcsv($out, $r);
     }
     fclose($out);
     exit;
@@ -127,8 +130,8 @@ if (isset($_GET['csv'])) {
 
 // ---------------------------------------------------------------- Resumen
 $resumen = function (string $de, string $hasta) use ($pdo) {
-    $st = $pdo->prepare('SELECT COUNT(DISTINCT visitante) unicos, COUNT(DISTINCT ip_hash) ips, COUNT(*) vistas,
-        COUNT(DISTINCT CASE WHEN ' . ES_LEAD . ' THEN visitante END) leads
+    $st = $pdo->prepare('SELECT COUNT(DISTINCT visitante) unicos, COUNT(DISTINCT ip_hash) ips, SUM(CASE WHEN ' . SQL_VISITA . ' THEN 1 ELSE 0 END) vistas,
+        COUNT(DISTINCT CASE WHEN ' . SQL_CONVERSION . ' THEN visitante END) leads
         FROM visitas WHERE fecha >= ? AND fecha < ?');
     $st->execute([$de, $hasta]);
     return $st->fetch(PDO::FETCH_ASSOC);
@@ -165,7 +168,7 @@ function delta(?array $prev, array $tot, string $k, bool $puntos = false): strin
 $porHora = $dias === 1;
 $len = $porHora ? 13 : 10;
 $serieRaw = $q("SELECT substr(fecha, 1, $len) k, COUNT(DISTINCT visitante) u,
-    COUNT(DISTINCT CASE WHEN " . ES_LEAD . " THEN visitante END) l
+    COUNT(DISTINCT CASE WHEN " . SQL_CONVERSION . " THEN visitante END) l
     FROM visitas WHERE fecha >= :desde GROUP BY k ORDER BY k");
 $map = array_column($serieRaw, null, 'k');
 $labels = $serieU = $serieL = [];
@@ -188,7 +191,7 @@ if ($porHora) {
 }
 
 $campanas = $q("SELECT COALESCE(utm_source, '(directo / orgánico)') fuente, COALESCE(utm_campaign, '—') campana,
-    COUNT(DISTINCT visitante) unicos, COUNT(DISTINCT CASE WHEN " . ES_LEAD . " THEN visitante END) leads
+    COUNT(DISTINCT visitante) unicos, COUNT(DISTINCT CASE WHEN " . SQL_CONVERSION . " THEN visitante END) leads
     FROM visitas WHERE fecha >= :desde GROUP BY fuente, campana ORDER BY unicos DESC");
 
 $fuentes = $q("SELECT COALESCE(utm_source, referencia, 'Directo') fuente, COUNT(DISTINCT visitante) unicos
@@ -198,10 +201,14 @@ $dispositivos = $q('SELECT dispositivo, COUNT(DISTINCT visitante) unicos
     FROM visitas WHERE fecha >= :desde GROUP BY dispositivo ORDER BY unicos DESC');
 
 $paginas = $q('SELECT pagina, COUNT(DISTINCT visitante) unicos, COUNT(*) vistas
-    FROM visitas WHERE fecha >= :desde GROUP BY pagina ORDER BY unicos DESC LIMIT 12');
+    FROM visitas WHERE fecha >= :desde AND ' . SQL_VISITA . ' GROUP BY pagina ORDER BY unicos DESC LIMIT 12');
 
 $referencias = $q("SELECT referencia, COUNT(DISTINCT visitante) unicos FROM visitas
-    WHERE fecha >= :desde AND referencia IS NOT NULL GROUP BY referencia ORDER BY unicos DESC LIMIT 12");
+    WHERE fecha >= :desde AND referencia IS NOT NULL AND " . SQL_VISITA . " GROUP BY referencia ORDER BY unicos DESC LIMIT 12");
+
+$clics = $q("SELECT evento, COALESCE(detalle, '—') detalle, COUNT(DISTINCT visitante) unicos, COUNT(*) total
+    FROM visitas WHERE fecha >= :desde AND evento <> 'visita' GROUP BY evento, detalle ORDER BY unicos DESC, total DESC LIMIT 20");
+$maxClic = max(array_merge([1], array_column($clics, 'unicos')));
 
 $maxCamp = max(array_merge([1], array_column($campanas, 'unicos')));
 $maxPag = max(array_merge([1], array_column($paginas, 'unicos')));
@@ -222,7 +229,7 @@ $csvBase = '?dias=' . $dias . '&csv=';
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Estadísticas · Reserva Miraloma</title>
+  <title>Estadísticas · <?= h(site_name()) ?></title>
   <style>
     :root {
       --bg: #06100e; --panel: rgba(255,255,255,.035); --line: rgba(246,244,239,.12);
@@ -309,16 +316,16 @@ $csvBase = '?dias=' . $dias . '&csv=';
 <div class="wrap">
   <header>
     <div>
-      <p class="eyebrow">Reserva Miraloma</p>
+      <p class="eyebrow"><?= h(site_name()) ?></p>
       <h1>Estadísticas de visitas</h1>
     </div>
     <div class="header-actions">
       <div class="dropdown" id="csvMenu">
         <button class="btn gold" type="button" aria-haspopup="true" aria-expanded="false">⭳ Descargar CSV</button>
         <div class="dropdown-menu" role="menu">
-          <a href="<?= h($csvBase) ?>campanas" role="menuitem">Resumen por campaña<small>Únicos, formularios y conversión</small></a>
-          <a href="<?= h($csvBase) ?>diario" role="menuitem">Resumen por día<small>Únicos, vistas y formularios por día</small></a>
-          <a href="<?= h($csvBase) ?>visitas" role="menuitem">Todas las visitas<small>Una fila por cada visita registrada</small></a>
+          <a href="<?= h($csvBase) ?>campanas" role="menuitem">Resumen por campaña<small>Únicos, conversiones y % de conversión</small></a>
+          <a href="<?= h($csvBase) ?>diario" role="menuitem">Resumen por día<small>Únicos, vistas y conversiones por día</small></a>
+          <a href="<?= h($csvBase) ?>visitas" role="menuitem">Todos los registros<small>Una fila por cada visita o clic</small></a>
         </div>
       </div>
       <a class="btn" href="?salir=1">Salir</a>
@@ -338,7 +345,7 @@ $csvBase = '?dias=' . $dias . '&csv=';
       <?= delta($prev, $tot, 'unicos') ?>
     </div>
     <div class="card kpi">
-      <div class="label">Formularios enviados</div>
+      <div class="label">Conversiones</div>
       <div class="value"><?= n($tot['leads']) ?></div>
       <?= delta($prev, $tot, 'leads') ?>
     </div>
@@ -395,13 +402,13 @@ $csvBase = '?dias=' . $dias . '&csv=';
     <div class="card-head">
       <div>
         <h2>Campañas</h2>
-        <p class="sub">Visitantes únicos, formularios y conversión por campaña</p>
+        <p class="sub">Visitantes únicos, conversiones y % de conversión por campaña</p>
       </div>
       <a class="btn" href="<?= h($csvBase) ?>campanas">⭳ CSV</a>
     </div>
     <?php if (!$campanas): ?><p class="empty">Aún no hay visitas en este periodo.</p><?php else: ?>
     <div class="scroll"><table>
-      <tr><th>Fuente · Campaña</th><th class="n">Únicos</th><th class="n">Formularios</th><th class="n">Conversión</th></tr>
+      <tr><th>Fuente · Campaña</th><th class="n">Únicos</th><th class="n">Conversiones</th><th class="n">%</th></tr>
       <?php foreach ($campanas as $r): $conv = $r['unicos'] ? $r['leads'] / $r['unicos'] * 100 : 0; ?>
         <tr>
           <td class="bar-cell"><div class="bar"><i style="width: <?= round($r['unicos'] / $maxCamp * 100) ?>%"></i>
@@ -409,6 +416,24 @@ $csvBase = '?dias=' . $dias . '&csv=';
           <td class="n"><?= n($r['unicos']) ?></td>
           <td class="n"><?= n($r['leads']) ?></td>
           <td class="n"><span class="pill <?= $r['leads'] ? '' : 'zero' ?>"><?= number_format($conv, 1) ?>%</span></td>
+        </tr>
+      <?php endforeach; ?>
+    </table></div>
+    <?php endif; ?>
+  </section>
+
+  <section class="card" style="margin-bottom: 14px">
+    <h2>Clics</h2>
+    <p class="sub">WhatsApp, correo, teléfono, PDFs y enlaces a otros sitios. WhatsApp, correo y teléfono cuentan como conversión.</p>
+    <?php if (!$clics): ?><p class="empty">Sin clics registrados en este periodo.</p><?php else: ?>
+    <div class="scroll"><table>
+      <tr><th>Tipo</th><th>Botón · destino</th><th class="n">Personas</th><th class="n">Clics</th></tr>
+      <?php foreach ($clics as $r): ?>
+        <tr>
+          <td><span class="pill <?= in_array($r['evento'], ['whatsapp', 'correo', 'telefono'], true) ? '' : 'zero' ?>"><?= h(EVENTOS[$r['evento']] ?? $r['evento']) ?></span></td>
+          <td class="bar-cell"><div class="bar"><i style="width: <?= round($r['unicos'] / $maxClic * 100) ?>%"></i><span><?= h($r['detalle']) ?></span></div></td>
+          <td class="n"><?= n($r['unicos']) ?></td>
+          <td class="n"><?= n($r['total']) ?></td>
         </tr>
       <?php endforeach; ?>
     </table></div>
@@ -431,7 +456,7 @@ $csvBase = '?dias=' . $dias . '&csv=';
     <?php endif; ?>
   </section>
 
-  <p class="nota">Cada persona se identifica con una cookie: si entra varias veces, cuenta como 1 visitante. Se ignoran robots y vistas previas de enlaces. Horas en UTC.</p>
+  <p class="nota">Cada persona se identifica con una cookie: si entra varias veces, cuenta como 1 visitante. Conversiones = formularios enviados (página de gracias) + clics en WhatsApp, correo o teléfono. Se ignoran robots y vistas previas de enlaces. Horas en UTC.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -473,7 +498,7 @@ $csvBase = '?dias=' . $dias . '&csv=';
         datasets: [
           { label: 'Visitantes únicos', data: D.unicos, borderColor: gold, backgroundColor: fill, fill: true,
             tension: 0.35, borderWidth: 2, pointRadius: D.labels.length > 40 ? 0 : 3, pointBackgroundColor: gold },
-          { label: 'Formularios', data: D.leads, borderColor: green, backgroundColor: green,
+          { label: 'Conversiones', data: D.leads, borderColor: green, backgroundColor: green,
             tension: 0.35, borderWidth: 2, pointRadius: D.labels.length > 40 ? 0 : 3 }
         ]
       },

@@ -44,6 +44,11 @@ $ipHash = hash('sha256', IP_SALT . $ip);
 $dispositivo = preg_match('/mobile|android|iphone|ipad/i', $ua) ? 'Móvil' : 'Escritorio';
 
 $pagina = campo($input, 'pagina') ?? '/';
+$evento = campo($input, 'evento') ?? 'visita';
+if (!array_key_exists($evento, EVENTOS)) {
+    $evento = 'visita';
+}
+$detalle = $evento === 'visita' ? null : campo($input, 'detalle', 200);
 $referencia = campo($input, 'referencia', 300);
 // Solo guardar el dominio de donde viene (no la URL completa).
 if ($referencia) {
@@ -54,8 +59,8 @@ if ($referencia) {
 
 try {
     $stmt = db()->prepare('INSERT INTO visitas
-        (visitante, ip_hash, pagina, utm_source, utm_medium, utm_campaign, referencia, dispositivo, fecha)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        (visitante, ip_hash, pagina, utm_source, utm_medium, utm_campaign, referencia, dispositivo, fecha, evento, detalle)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         $visitante,
         $ipHash,
@@ -66,6 +71,8 @@ try {
         $referencia,
         $dispositivo,
         gmdate('Y-m-d H:i:s'),
+        $evento,
+        $detalle,
     ]);
     echo '{"ok":true}';
 } catch (Throwable $e) {
