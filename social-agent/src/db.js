@@ -198,6 +198,12 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   db.exec("UPDATE leads SET telefono = '+52' || substr(telefono, 5) WHERE telefono LIKE '+521%' AND length(telefono) = 14");
   ensure('leads', 'control', "TEXT NOT NULL DEFAULT 'bot'"); // 'bot' | 'humano' (alguien tomó la conversación)
   ensure('lead_mensajes', 'autor', 'TEXT'); // quién respondió a mano desde el panel
+  // Anuncio de Meta del que llegó el lead (el primero; lo manda el agente) y los nombres que se leen de Meta.
+  ensure('leads', 'anuncio_id', 'TEXT');
+  ensure('leads', 'anuncio', 'TEXT');
+  ensure('leads', 'conjunto', 'TEXT');
+  ensure('leads', 'campana', 'TEXT');
+  ensure('leads', 'campana_json', 'TEXT');
   ensure('leads', 'email', 'TEXT'); // leads de llamadas por la web: a veces solo dejan su correo
   return db;
 }
@@ -424,7 +430,14 @@ function normTel(t) {
   return `+${d}`;
 }
 /** Crea o actualiza un lead (se identifica por teléfono o por usuario de Instagram). */
-export function upsertLead(clientId, { nombre, telefono, usuario, email, origen, estado, nota, cita_inicio, cita_evento, control }) {
+// Datos del anuncio de Meta que manda el agente: { anuncio_id, titulo, texto, url, tipo, ctwa_clid, ref, canal }.
+function limpiarCampana(c) {
+  if (!c || typeof c !== 'object') return null;
+  const s = (v, n = 300) => (v == null || v === '' ? undefined : String(v).slice(0, n));
+  const out = { anuncio_id: s(c.anuncio_id, 40), titulo: s(c.titulo, 200), texto: s(c.texto, 500), url: s(c.url, 500), tipo: s(c.tipo, 30), ctwa_clid: s(c.ctwa_clid, 200), ref: s(c.ref, 200), canal: s(c.canal, 20) };
+  return Object.values(out).some(Boolean) ? JSON.parse(JSON.stringify(out)) : null;
+}
+export function upsertLead(clientId, { nombre, telefono, usuario, email, origen, estado, nota, cita_inicio, cita_evento, control, campana }) {
   const tel = normTel(telefono), user = usuario ? String(usuario).replace(/^@/, '').toLowerCase() : null;
   const mail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || '').trim()) ? String(email).trim().toLowerCase() : null;
   if (!tel && !user && !mail) throw new Error('El lead necesita teléfono, usuario o correo');
@@ -439,10 +452,14 @@ export function upsertLead(clientId, { nombre, telefono, usuario, email, origen,
       nota = COALESCE(?, nota), cita_inicio = COALESCE(?, cita_inicio), cita_evento = COALESCE(?, cita_evento), updated_at = datetime('now') WHERE id = ?`)
       .run(nombre ?? null, tel, user, mail, nuevoEstado, nota ?? null, cita_inicio ?? null, cita_evento ?? null, prev.id);
     if (control === 'bot' || control === 'humano') d.prepare('UPDATE leads SET control = ? WHERE id = ?').run(control, prev.id);
+    const camp = limpiarCampana(campana);
+    // Se guarda el PRIMER anuncio por el que llegó (no se pisa si después vuelve a escribir desde otro).
+    if (camp && !prev.campana_json) d.prepare('UPDATE leads SET campana_json = ?, anuncio_id = ?, anuncio = ? WHERE id = ?').run(JSON.stringify(camp), camp.anuncio_id || null, camp.titulo || null, prev.id);
     return d.prepare('SELECT * FROM leads WHERE id = ?').get(prev.id);
   }
-  const r = d.prepare('INSERT INTO leads (client_id, nombre, telefono, usuario, email, origen, estado, nota, cita_inicio, cita_evento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(clientId, nombre ?? null, tel, user, mail, origen || 'otro', estado || 'nuevo', nota ?? null, cita_inicio ?? null, cita_evento ?? null);
+  const camp = limpiarCampana(campana);
+  const r = d.prepare('INSERT INTO leads (client_id, nombre, telefono, usuario, email, origen, estado, nota, cita_inicio, cita_evento, campana_json, anuncio_id, anuncio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(clientId, nombre ?? null, tel, user, mail, origen || 'otro', estado || 'nuevo', nota ?? null, cita_inicio ?? null, cita_evento ?? null, camp ? JSON.stringify(camp) : null, camp?.anuncio_id || null, camp?.titulo || null);
   return d.prepare('SELECT * FROM leads WHERE id = ?').get(Number(r.lastInsertRowid));
 }
 export const getLead = (clientId, id) => getDb().prepare('SELECT * FROM leads WHERE id = ? AND client_id = ?').get(id, clientId);
@@ -493,6 +510,10 @@ export const touchLogin = (id) => getDb().prepare("UPDATE users SET last_login =
 export const listLeads = (clientId, { estado, limit = 300 } = {}) => getDb()
   .prepare(`SELECT * FROM leads WHERE client_id = ? ${estado ? 'AND estado = ?' : ''} ORDER BY updated_at DESC LIMIT ?`)
   .all(...[clientId, ...(estado ? [estado] : []), limit]);
+/** Nombres de campaña, conjunto y anuncio leídos de Meta para todos los leads de ese anuncio. */
+export const setNombresAnuncio = (clientId, anuncioId, { campana, conjunto, anuncio }) => getDb()
+  .prepare('UPDATE leads SET campana = COALESCE(?, campana), conjunto = COALESCE(?, conjunto), anuncio = COALESCE(?, anuncio) WHERE client_id = ? AND anuncio_id = ?')
+  .run(campana || null, conjunto || null, anuncio || null, clientId, anuncioId);
 export function setLeadEstado(clientId, id, estado) {
   if (!LEAD_ESTADOS[estado]) throw new Error('Estado no válido');
   getDb().prepare("UPDATE leads SET estado = ?, updated_at = datetime('now') WHERE id = ? AND client_id = ?").run(estado, id, clientId);

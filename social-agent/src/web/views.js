@@ -2,6 +2,7 @@
 import path from 'node:path';
 import { html, raw, esc, page } from './html.js';
 import { STATUS, PLATFORMS, LEAD_ESTADOS, ultimaHistoria } from '../db.js';
+import { etiquetaCampana } from '../campanas.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
@@ -251,12 +252,23 @@ function fiscalAdmin(client) {
 
 const ORIGEN_COL = { instagram: '#e1306c', whatsapp: '#25d366', llamada: '#c9f53a', web: '#93b4ff' };
 const ORIGEN_TXT = { instagram: 'Instagram', whatsapp: 'WhatsApp', llamada: 'Llamada', web: 'Página de citas', facebook: 'Facebook' };
-export function leadsSection(client, leads, chats, base) {
-  return html`${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
+export function leadsSection(client, leads, chats, base, { campanaSel = '', urlLeads = `${base}/leads` } = {}) {
+  // Campañas de Meta de las que llegaron los leads (con cuántos cada una), para filtrar y descargar.
+  const conteo = {};
+  for (const l of leads) { const c = etiquetaCampana(l); conteo[c] = (conteo[c] || 0) + 1; }
+  const campanas = Object.entries(conteo).sort((a, b) => (a[0] === 'Orgánico') - (b[0] === 'Orgánico') || b[1] - a[1]);
+  const sep = urlLeads.includes('?') ? '&' : '?';
+  if (campanaSel) leads = leads.filter((l) => etiquetaCampana(l) === campanaSel);
+  return html`<div class="row spread" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
+    <div class="pills" style="margin:0">${campanas.length > 1 || campanaSel ? html`<a class="${campanaSel ? '' : 'on'}" href="${urlLeads}">Todas <em>${Object.values(conteo).reduce((a, b) => a + b, 0)}</em></a>${campanas.map(([c, n]) => html`<a class="${c === campanaSel ? 'on' : ''}" href="${urlLeads}${sep}campana=${encodeURIComponent(c)}">${c} <em>${n}</em></a>`)}` : ''}</div>
+    ${leads.length ? html`<a class="btn btn-warn" href="${base}/leads.csv${campanaSel ? `?campana=${encodeURIComponent(campanaSel)}` : ''}">Descargar CSV</a>` : ''}
+  </div>
+  ${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
   ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
-    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
+    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Campaña</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
     ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono || l.email)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : '', l.email].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}${l.control === 'humano' ? html` <span class="badge" style="color:#93b4ff">Atiende una persona</span>` : ''}</td>
       <td><span class="badge" style="color:${ORIGEN_COL[l.origen] || '#93b4ff'}">${ORIGEN_TXT[l.origen] || l.origen}</span></td>
+      <td class="small">${etiquetaCampana(l) === 'Orgánico' ? html`<span class="muted">Orgánico</span>` : html`<b>${etiquetaCampana(l)}</b>${l.campana && l.anuncio ? html`<div class="muted">${l.conjunto ? `${l.conjunto} · ` : ''}${l.anuncio}</div>` : ''}`}</td>
       <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
       <td><form method="post" action="${base}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
   </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram, le escribe al agente de WhatsApp o habla con el agente de llamadas.</div>`}`;
@@ -275,7 +287,7 @@ export function citasSection({ citas, citasError, agendaCfg, saEmail, admin = fa
       <p style="font-size:20px;margin:10px 0 4px">${fmtDate(e.start?.dateTime || e.start?.date)}</p>${e.repeticiones?.length ? html`<p class="muted small" style="margin:0 0 6px">Se repite · ${e.repeticiones.length} más: ${e.repeticiones.slice(0, 3).map((d) => fmtDate(d)).join(', ')}${e.repeticiones.length > 3 ? '…' : ''}</p>` : ''}<p class="muted small" style="white-space:pre-wrap;margin:0">${e.description || ''}</p></div>`)}</div>` : html`<div class="card muted">${todo ? 'No hay eventos próximos en el calendario.' : 'Todavía no hay citas agendadas por el agente. Las demás reuniones del calendario se respetan: el agente nunca ofrece esos horarios.'}</div>`}` : ''}`;
 }
 
-export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, todo = false, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [], blog = null } = {}) {
+export function clientFormPage(client, { error, notice, tab = 'posts', filtro = '', red = '', leads = [], chats = {}, llamadas = [], llamadasMes = null, prospectos = [], ventasActivo = false, placesListo = false, leadsCount = 0, billing = null, citas = null, todo = false, citasError = '', agendaCfg = null, saEmail = null, competitors = [], report, posts = [], creds = {}, keywordReplies = [], blog = null, campanaSel = '' } = {}) {
   const isNew = !client;
   const action = isNew ? '/admin/clientes/nuevo' : `/admin/clientes/${client.id}`;
   const portal = client ? `${config.publicBaseUrl}/p/${client.portal_token}` : '';
@@ -323,7 +335,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   ${shown.length ? html`<div class="grid">${shown.map((p) => postCard(p, { base: `/admin/posts/${p.id}`, admin: true }))}</div>` : html`<div class="card muted">No hay posts en "${fSel[1]}".</div>`}
   ` : ''}
 
-  ${!isNew && t === 'leads' ? leadsSection(client, leads, chats, `/admin/clientes/${client.id}`) : ''}
+  ${!isNew && t === 'leads' ? leadsSection(client, leads, chats, `/admin/clientes/${client.id}`, { campanaSel, urlLeads: `/admin/clientes/${client.id}?tab=leads` }) : ''}
 
   ${!isNew && t === 'ventas' ? ventasSection(client, prospectos, { activo: ventasActivo, placesListo }) : ''}
 
@@ -395,6 +407,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       <label>ID de la Página de Facebook</label><input name="meta_page_id" value="${meta.page_id || ''}">
       <label>ID de la cuenta de Instagram Business</label><input name="meta_ig_user_id" value="${meta.ig_user_id || ''}">
       <label>Token de acceso de la Página</label><input name="meta_page_token" type="text" placeholder="${set(meta.page_token)}" autocomplete="off" spellcheck="false" data-lpignore="true">
+      <label>Token de anuncios (opcional, permiso ads_read: para ver el nombre de la campaña en Leads)</label><input name="meta_ads_token" type="text" placeholder="${set(meta.ads_token)}" autocomplete="off" spellcheck="false" data-lpignore="true">
     </div><div>
       <strong>LinkedIn (Página de empresa)</strong>
       <label>ID de la organización</label><input name="li_org_id" value="${li.org_id || ''}" placeholder="12345678">
@@ -827,8 +840,8 @@ export function appProximamentePage(client, servicio) {
   return page({ title: `${s.nombre} · ${client.nombre}`, side: sideApp(servicio, client), body });
 }
 
-export function appLeadsPage(client, leads, chats, posts = []) {
-  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app')}` });
+export function appLeadsPage(client, leads, chats, posts = [], campanaSel = '') {
+  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app', { campanaSel })}` });
 }
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
   return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false, url: '/app/citas' })}` });

@@ -23,6 +23,7 @@ import * as agente from './agente.js';
 import * as conoc from './conocimiento.js';
 import * as seg from './seguridad.js';
 import * as blog from './blog.js';
+import * as campanas from './campanas.js';
 import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
@@ -139,10 +140,23 @@ export function createApp() {
     catch (e) { res.status(/no encontrado/.test(e.message) ? 404 : 400).json({ error: e.message }); }
   });
   api.post('/leads', (req, res) => {
-    try { res.json({ ok: true, lead: db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' }) }); }
+    try {
+      const lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
+      campanas.completarCampana(req.client, lead); // nombre de la campaña de Meta, en segundo plano
+      res.json({ ok: true, lead });
+    }
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   app.use('/api/:slug', api);
+
+  // Descarga de leads en CSV (abre en Excel); respeta el filtro de campaña.
+  function enviarCsv(req, res) {
+    const sel = String(req.query.campana || '');
+    const leads = db.listLeads(req.client.id, { limit: 100000 }).filter((l) => !sel || campanas.etiquetaCampana(l) === sel);
+    const nombre = `leads-${req.client.slug}-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${nombre}"`, 'Cache-Control': 'no-store' })
+      .send(campanas.leadsCsv(leads, { estados: db.LEAD_ESTADOS }));
+  }
 
   // ------------------------------------------------------------ blog: lo que leen los sitios PHP (público, solo lo publicado)
   const blogJson = (res, data) => {
@@ -339,7 +353,8 @@ export function createApp() {
     return req.post && req.post.client_id === req.client.id ? next() : res.status(404).send('Post no encontrado');
   });
   postActions(appR, (req) => `/app/posts#post-${req.post.id}`);
-  appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id), db.leadMessageCounts(req.client.id), appPosts(req.client))));
+  appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id), db.leadMessageCounts(req.client.id), appPosts(req.client), String(req.query.campana || ''))));
+  appR.get('/leads.csv', servicio('chat'), (req, res) => enviarCsv(req, res));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
   chatRoutes(appR, () => '/app', { app: true, prefix: '' });
   appR.use('/agente', servicio('chat'));
@@ -473,6 +488,7 @@ export function createApp() {
         page_id: keep(body.meta_page_id, existingCreds.meta?.page_id),
         ig_user_id: keep(body.meta_ig_user_id, existingCreds.meta?.ig_user_id),
         page_token: tok(body.meta_page_token, existingCreds.meta?.page_token),
+        ads_token: tok(body.meta_ads_token, existingCreds.meta?.ads_token),
       },
       linkedin: {
         org_id: keep(body.li_org_id, existingCreds.linkedin?.org_id),
@@ -516,7 +532,7 @@ export function createApp() {
       return res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: `/admin/clientes/${req.client.id}?tab=reporte&`, meses: metricas.ultimosMeses(), side: V.adminSide() }));
     }
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
-    if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); }
+    if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); view.campanaSel = String(req.query.campana || ''); }
     if (view.tab === 'ventas') { view.prospectos = prospeccion.listar(req.client.id); view.ventasActivo = prospeccion.activo(req.client.id); view.placesListo = !!config.googlePlacesKey; }
     if (view.tab === 'blog') return res.redirect(`/admin/clientes/${req.client.id}/blog`);
     if (view.tab === 'llamadas') { view.llamadas = llamadas.listar(req.client.id); view.llamadasMes = llamadas.delMes(req.client.id, metricas.mesActual()); }
@@ -715,6 +731,7 @@ export function createApp() {
     db.logEvent({ clientId: req.client.id, tipo: 'agente_url', detalle: raw || '(quitada)' });
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=URL del agente guardada`);
   });
+  admin.get('/clientes/:cid/leads.csv', (req, res) => enviarCsv(req, res));
   admin.post('/clientes/:cid/leads/:leadId', (req, res) => {
     db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado));
     res.redirect(`/admin/clientes/${req.client.id}?tab=leads`);
