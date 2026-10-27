@@ -8,7 +8,7 @@
    <script src="/contador/contador.js" defer></script>
    ```
    (`index.html` ya la tiene.) Es importante ponerla en `gracias.html`: así se cuentan los formularios enviados.
-4. Ver estadísticas: `https://TU-DOMINIO/contador/estadisticas.php`
+4. Ver estadísticas: `https://TU-DOMINIO/contador/estadisticas.php` (gráficas y botón **Descargar CSV**: por campaña, por día o todas las visitas). Vista previa: `panel-estadisticas.png`.
 
 Requiere PHP con SQLite (viene en casi todos los hostings). La carpeta `contador/data/` debe tener permiso de escritura.
 
