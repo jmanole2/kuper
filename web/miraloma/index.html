@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Reserva Miraloma | Acceso privado para inversionistas calificados</title>
+  <meta name="description" content="Reserva Miraloma es una oportunidad privada de inversión en etapa inicial, dirigida exclusivamente a inversionistas calificados." />
+
+ 
+
+  <style>
+    @font-face {
+      font-family: "Aeonik";
+      src: url("assets/fonts/Aeonik-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #06100e;
+      --bg-2: #091513;
+      --panel: rgba(9, 17, 16, 0.86);
+      --panel-soft: rgba(8, 15, 14, 0.68);
+      --white: #f6f4ef;
+      --muted: rgba(246, 244, 239, 0.72);
+      --muted-2: rgba(246, 244, 239, 0.55);
+      --gold: #d4a85f;
+      --gold-2: #b8873f;
+      --line: rgba(212, 168, 95, 0.42);
+      --line-soft: rgba(246, 244, 239, 0.18);
+      --max: 1220px;
+      --sans: "Aeonik", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--white);
+      background:
+        radial-gradient(circle at 50% 25%, rgba(21, 59, 45, 0.25), transparent 36%),
+        linear-gradient(180deg, #07110f 0%, #050a09 100%);
+      min-height: 100vh;
+      line-height: 1.48;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .container {
+      width: min(var(--max), calc(100% - 72px));
+      margin-inline: auto;
+    }
+
+    .topbar {
+      position: absolute;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 42px 0 0;
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .brand {
+      width: clamp(180px, 19vw, 275px);
+    }
+
+    .access-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 47px;
+      padding: 0 20px;
+      border: 1px solid var(--gold);
+      border-radius: 3px;
+      color: var(--gold);
+      font-size: 14px;
+      background: rgba(4, 12, 15, 0.26);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+    }
+
+    .access-nav:hover {
+      transform: translateY(-1px);
+      background: rgba(212, 168, 95, 0.09);
+      border-color: rgba(244, 210, 145, 0.9);
+    }
+
+    .lock {
+      font-size: 15px;
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 790px;
+      overflow: hidden;
+      isolation: isolate;
+      background: #0b1514;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      background-image: url("assets/miraloma-mountain.png");
+      background-size: cover;
+      background-position: center center;
+      transform: scale(1.01);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background:
+        linear-gradient(90deg, rgba(3, 9, 12, 0.70) 0%, rgba(3, 9, 12, 0.72) 36%, rgba(3, 9, 12, 0.07) 72%, rgba(3, 9, 12, 0.30) 100%),
+        linear-gradient(180deg, rgba(3, 9, 12, 0.02) 0%, rgba(3, 9, 12, 0.08) 54%, rgba(3, 9, 12, 0.76) 100%);
+    }
+
+    .hero-glow {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 70% 18%, rgba(83, 152, 224, 0.26), transparent 26%),
+        radial-gradient(circle at 83% 8%, rgba(255, 255, 255, 0.16), transparent 13%),
+        radial-gradient(circle at 18% 45%, rgba(212, 168, 95, 0.10), transparent 24%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      min-height: 790px;
+      display: flex;
+      align-items: center;
+      padding: 150px 0 120px;
+    }
+
+    .copy {
+      width: min(690px, 100%);
+    }
+
+    .eyebrow {
+      margin: 0 0 26px;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-size: clamp(13px, 1.2vw, 16px);
+      font-weight: 400;
+    }
+
+    h1 {
+      margin: 0 0 28px;
+      max-width: 760px;
+      font-size: clamp(54px, 7.5vw, 96px);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+      font-weight: 400;
+    }
+
+    .hero-lead {
+      margin: 0 0 30px;
+      max-width: 610px;
+      color: rgba(255, 255, 255, 0.94);
+      font-size: clamp(19px, 2vw, 24px);
+      line-height: 1.42;
+    }
+
+    .hero-body {
+      display: grid;
+      gap: 21px;
+      max-width: 620px;
+      margin: 0 0 34px;
+      color: rgba(255, 255, 255, 0.84);
+      font-size: clamp(15px, 1.35vw, 18px);
+      line-height: 1.62;
+    }
+
+    .hero-body p {
+      margin: 0;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 42px;
+      min-width: 285px;
+      min-height: 62px;
+      padding: 0 26px;
+      border: 0;
+      border-radius: 3px;
+      background: linear-gradient(135deg, #e0b66d 0%, #c9974d 100%);
+      color: #13100b;
+      cursor: pointer;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+      transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    .cta:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .cta .arrow {
+      font-size: 27px;
+      line-height: 1;
+    }
+
+     .cta_2 {
+          display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 42px;
+    min-width: 285px;
+    min-height: 62px;
+    padding: 0 26px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+    transition: transform 180ms ease, filter 180ms ease;
+    border: 1px solid white;
+    }
+
+    .cta_2:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .cta_2 .arrow {
+      font-size: 27px;
+      line-height: 1;
+    }
+
+    .cta_2 img {
+      max-width: 150px;
+    display: inline-block;
+    margin-left: 10px;
+    }
+
+    .leed-badge {
+      position: absolute;
+      right: clamp(34px, 5vw, 82px);
+      bottom: 34px;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 12px;
+      line-height: 1.15;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+    }
+
+    .leed-badge img {
+      width: clamp(78px, 8vw, 112px);
+      height: auto;
+      opacity: 0.92;
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
+    }
+
+    .edge-badge {
+        position: absolute;
+    right: clamp(34px, 25vw, 300px);
+    bottom: 74px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    gap: 7px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 12px;
+    line-height: 1.15;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+    }
+
+    .edge-badge img {
+      width: clamp(78px, 8vw, 112px);
+      height: auto;
+      opacity: 0.92;
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
+    }
+
+    .form-section {
+      position: relative;
+      padding: 38px 0 34px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(34, 72, 57, 0.22), transparent 38%),
+        linear-gradient(180deg, rgba(4, 11, 10, 0.98) 0%, #06100e 100%);
+    }
+
+    .form-panel {
+      width: min(1000px, 100%);
+      margin-inline: auto;
+      padding: clamp(42px, 6vw, 70px) clamp(28px, 8vw, 150px) clamp(38px, 5vw, 58px);
+      border: 1px solid rgba(246, 244, 239, 0.22);
+      border-radius: 6px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+        rgba(9, 17, 16, 0.78);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.20);
+    }
+
+    .form-panel h2 {
+      margin: 0 0 40px;
+      text-align: center;
+      font-size: clamp(29px, 4vw, 42px);
+      font-weight: 400;
+      letter-spacing: -0.025em;
+    }
+
+    .field {
+      margin-bottom: 23px;
+    }
+
+    label,
+    .label {
+      display: block;
+      margin: 0 0 10px;
+      color: rgba(255, 255, 255, 0.94);
+      font-size: 15px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"] {
+      width: 100%;
+      min-height: 55px;
+      padding: 0 20px;
+      color: var(--white);
+      background: rgba(3, 8, 8, 0.46);
+      border: 1px solid rgba(246, 244, 239, 0.24);
+      border-radius: 2px;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    input::placeholder {
+      color: rgba(246, 244, 239, 0.46);
+    }
+
+    input:focus {
+      border-color: rgba(212, 168, 95, 0.78);
+      box-shadow: 0 0 0 3px rgba(212, 168, 95, 0.13);
+      background: rgba(3, 8, 8, 0.64);
+    }
+
+    .profile-options {
+      display: grid;
+      gap: 13px;
+      margin-top: 6px;
+      margin-bottom: 30px;
+    }
+
+    .radio-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 15px;
+      cursor: pointer;
+      width: fit-content;
+    }
+
+    .radio-row input {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(246, 244, 239, 0.78);
+      background: transparent;
+      display: inline-grid;
+      place-items: center;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .radio-row input::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      transform: scale(0);
+      transition: transform 120ms ease-in-out;
+      background: var(--gold);
+    }
+
+    .radio-row input:checked::before {
+      transform: scale(1);
+    }
+
+    .form-submit {
+      width: 100%;
+      min-height: 66px;
+      justify-content: center;
+      margin-top: 8px;
+      font-size: 18px;
+    }
+
+    .form-submit .arrow {
+      position: absolute;
+      right: clamp(28px, 8vw, 150px);
+    }
+
+    .footer-disclaimer {
+      padding: 0 0 48px;
+      background: #06100e;
+      text-align: center;
+    }
+
+    .footer-divider {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      margin: 0 auto 18px;
+      width: min(var(--max), calc(100% - 72px));
+    }
+
+    .footer-divider::before,
+    .footer-divider::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0.75;
+    }
+
+    .footer-monogram {
+      width: 74px;
+      height: auto;
+      opacity: 0.92;
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+    }
+
+    .disclaimer-copy {
+      width: min(1010px, calc(100% - 72px));
+      margin: 0 auto;
+      color: rgba(246, 244, 239, 0.66);
+      font-size: clamp(14px, 1.4vw, 18px);
+      line-height: 1.48;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        width: min(100% - 40px, var(--max));
+      }
+
+      .topbar {
+        padding-top: 28px;
+      }
+
+      .topbar-inner {
+        align-items: center;
+      }
+
+      .brand {
+        width: 188px;
+      }
+
+      .access-nav {
+        min-height: 42px;
+        padding-inline: 14px;
+        font-size: 12px;
+      }
+
+      .hero,
+      .hero-content {
+        min-height: 720px;
+      }
+
+      .hero-content {
+        padding-top: 132px;
+        padding-bottom: 120px;
+      }
+
+      .hero::after {
+        background:
+          linear-gradient(90deg, rgba(3, 9, 12, 0.92) 0%, rgba(3, 9, 12, 0.69) 64%, rgba(3, 9, 12, 0.42) 100%),
+          linear-gradient(180deg, rgba(3, 9, 12, 0.18) 0%, rgba(3, 9, 12, 0.32) 48%, rgba(3, 9, 12, 0.98) 100%);
+      }
+
+      .leed-badge {
+        right: 28px;
+        bottom: 22px;
+        font-size: 10px;
+      }
+
+      .leed-badge img {
+        width: 76px;
+      }
+
+      .form-panel {
+        padding: 40px 28px;
+      }
+
+      .form-submit .arrow {
+        right: 34px;
+      }
+
+      .footer-divider,
+      .disclaimer-copy {
+        width: min(100% - 40px, var(--max));
+      }
+    }
+
+    @media (max-width: 620px) {
+
+      .edge-badge {
+                right: auto;
+    left: 20px;
+    bottom: 7px;
+
+      }
+
+      .edge-badge img {
+            width: clamp(72px, 7vw, 98px);
+            margin: 0 auto;
+            margin-bottom: 10px;
+      }
+
+      .leed-badge img {
+          margin: 0 auto;
+      }
+
+
+      .topbar-inner {
+        gap: 18px;
+      }
+
+      .brand {
+        width: 148px;
+      }
+
+      .access-nav {
+        gap: 7px;
+        padding-inline: 12px;
+        font-size: 11px;
+      }
+
+      .hero,
+      .hero-content {
+        min-height: 760px;
+      }
+
+      h1 {
+        font-size: clamp(46px, 13vw, 62px);
+      }
+
+      .hero-lead {
+        font-size: 18px;
+      }
+
+      .hero-body {
+        font-size: 14px;
+      }
+
+      .cta {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .leed-badge {
+        align-items: flex-end;
+        right: 20px;
+        bottom: 8px;
+      }
+
+      .leed-badge img {
+        width: 64px;
+      }
+
+      .leed-badge span {
+        max-width: 170px;
+      }
+
+      .form-section {
+        padding-top: 22px;
+      }
+
+      .form-panel h2 {
+        text-align: left;
+      }
+
+      .form-submit {
+        font-size: 16px;
+      }
+
+      .form-submit .arrow {
+        right: 26px;
+      }
+
+      .footer-monogram {
+        width: 62px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar" aria-label="Encabezado">
+    <div class="container topbar-inner">
+      <a href="#inicio" aria-label="Reserva Miraloma">
+        <img class="brand" src="assets/rm-logo-white.png" alt="Reserva Miraloma" />
+      </a>
+
+      <a class="access-nav" href="#acceso">
+        <span class="lock" aria-hidden="true">▧</span>
+        <span>Acceso privado</span>
+      </a>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <section class="hero" aria-label="Reserva Miraloma">
+      <div class="hero-glow"></div>
+
+      <div class="container hero-content">
+        <div class="copy">
+          <p class="eyebrow">Reserva Miraloma</p>
+
+          <h1>Donde la naturaleza define el valor.</h1>
+
+          <p class="hero-lead">
+            Oportunidad privada de inversión en etapa inicial, dirigida exclusivamente a inversionistas calificados.
+          </p>
+
+          <div class="hero-body">
+            <p>
+              Reserva Miraloma es un proyecto residencial de Angular Desarrollos en Zona Esmeralda,
+              actualmente en fase de estructuración y acceso privado para capital estratégico.
+            </p>
+            <p>
+              En esta etapa, la información detallada del proyecto será compartida únicamente con
+              inversionistas calificados, previa validación de perfil.
+            </p>
+          </div>
+
+          <a class="cta" href="#acceso">
+            <span>Solicitar acceso privado</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="cta_2" href="https://www.angulardesarrollos.com/">
+            <span>Un desarrollo de <img src="/assets/Logo_angular.png" alt=""></span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="edge-badge" aria-label="Edge">
+        <img src="assets/edge.png" alt="EDGE project number: 1002123043" />
+         <span>EDGE project number: 1002123043</span>
+      </div>
+       <div class="leed-badge" aria-label="LEED project number: 1000229356">
+        <img src="assets/leed-certification.png" alt="Proudly pursuing LEED Certification" />
+        <span>LEED project number: 1000229356</span>
+      </div>
+    </section>
+
+    <section class="form-section" id="acceso" aria-label="Formulario de acceso privado">
+      <div class="container">
+      <form class="form-panel" id="miFormulario" method="post">
+  <h2>Formulario de acceso privado</h2>
+
+  <div class="field">
+    <label for="nombre">Nombre completo</label>
+    <!-- REQUIRED ACTIVO -->
+    <input id="nombre" name="nombre_completo" type="text" placeholder="Ingresa tu nombre completo" autocomplete="name" required />
+  </div>
+
+  <div class="field">
+    <label for="correo">Correo</label>
+    <!-- REQUIRED ACTIVO -->
+    <input id="correo" name="correo" type="email" placeholder="Ingresa tu correo electrónico" autocomplete="email" required />
+  </div>
+
+  <div class="field">
+    <label for="telefono">Teléfono</label>
+    <!-- REQUIRED ACTIVO -->
+    <input id="telefono" name="telefono" type="tel" placeholder="Ingresa tu número de teléfono" autocomplete="tel" required />
+  </div>
+
+  <div class="field">
+    <label for="empresa">Empresa / family office / vehículo de inversión</label>
+    <!-- Este campo es opcional, lo dejamos sin required -->
+    <input id="empresa" name="empresa_family_office_vehiculo" type="text" placeholder="Ingresa el nombre de tu empresa o vehículo" autocomplete="organization" />
+  </div>
+
+  <div class="field">
+    <span class="label">Perfil:</span>
+
+    <div class="profile-options">
+      <label class="radio-row">
+        <!-- SOLO EL PRIMERO LLEVA REQUIRED PARA EVALUAR TODO EL GRUPO -->
+        <input type="radio" name="perfil" value="Inversionista individual calificado" required />
+        <span>Inversionista individual calificado</span>
+      </label>
+
+      <label class="radio-row">
+        <input type="radio" name="perfil" value="Family office" />
+        <span>Family office</span>
+      </label>
+
+      <label class="radio-row">
+        <input type="radio" name="perfil" value="Fondo / vehículo de inversión" />
+        <span>Fondo / vehículo de inversión</span>
+      </label>
+
+      <label class="radio-row">
+        <input type="radio" name="perfil" value="Socio estratégico" />
+        <span>Socio estratégico</span>
+      </label>
+
+      <label class="radio-row">
+        <input type="radio" name="perfil" value="Broker de capital" />
+        <span>Broker de capital</span>
+      </label>
+
+      <label class="radio-row">
+        <input type="radio" name="perfil" value="Otro" />
+        <span>Otro</span>
+      </label>
+    </div>
+  </div>
+
+  <button class="cta form-submit" type="submit">
+    <span>Solicitar acceso privado</span>
+    <span class="arrow" aria-hidden="true">→</span>
+  </button>
+</form>
+
+
+      </div>
+    </section>
+
+    <footer class="footer-disclaimer">
+      <div class="footer-divider">
+        <img class="footer-monogram" src="assets/rm-monogram-white.png" alt="Monograma Reserva Miraloma" />
+      </div>
+
+      <p class="disclaimer-copy">
+        Este sitio tiene fines exclusivamente informativos y no constituye una oferta pública de valores,
+        ni una oferta de compraventa de unidades inmobiliarias. La información detallada será compartida
+        únicamente con inversionistas calificados, previa validación de perfil.
+      </p>
+    </footer>
+  </main>
+
+
+<script>
+  document.getElementById('miFormulario').addEventListener('submit', async function(e) {
+    // 1. Validar que los campos obligatorios del HTML estén llenos
+    if (!this.checkValidity()) {
+        this.reportValidity(); // Muestra las alertas nativas del navegador si falta algo
+        return; 
+    }
+
+    e.preventDefault(); // Detiene el envío normal si todo es válido para usar Fetch
+
+    const boton = this.querySelector('.form-submit');
+    boton.disabled = true;
+    const textoOriginal = boton.querySelector('span').innerText;
+    boton.querySelector('span').innerText = 'Enviando...';
+
+    const formData = new FormData(this);
+
+    try {
+        const response = await fetch('procesar.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            window.location.href = 'gracias.html'; // Redirección a Thank You Page
+        } else {
+            alert(data.message || 'Ocurrió un problema, intenta de nuevo.');
+            boton.disabled = false;
+            boton.querySelector('span').innerText = textoOriginal;
+        }
+
+    } catch (error) {
+        alert('Error de conexión. Inténtalo más tarde.');
+        console.error('Error:', error);
+        boton.disabled = false;
+        boton.querySelector('span').innerText = textoOriginal;
+    }
+});
+</script>
+
+<!-- Contador de visitas -->
+<script src="/contador/contador.js" defer></script>
+
+</body>
+</html>
