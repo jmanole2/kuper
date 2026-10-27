@@ -153,6 +153,15 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       k TEXT PRIMARY KEY,
       v TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS facturas (
+      id INTEGER PRIMARY KEY,
+      client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      stripe_invoice TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'pendiente', -- pendiente | emitida | error | omitida
+      uuid TEXT, cfdi_uid TEXT, serie TEXT, folio TEXT, total REAL, detalle TEXT, error TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS blog_sitios (
       id INTEGER PRIMARY KEY,
       client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,

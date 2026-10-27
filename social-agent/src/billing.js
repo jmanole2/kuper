@@ -5,6 +5,9 @@ import crypto from 'node:crypto';
 import { config } from './config.js';
 import * as db from './db.js';
 import { planDe, ivaDe, TASA_IVA } from './plan.js';
+import * as facturacion from './facturacion.js';
+// La facturación le pregunta a Stripe si la tarjeta es de débito o crédito (forma de pago del CFDI).
+facturacion.hooks.stripe ??= (m, p, b) => stripe(m, p, b);
 
 const KEY = () => process.env.STRIPE_SECRET_KEY || '';
 export const stripeOn = () => !!KEY();
@@ -119,7 +122,7 @@ export async function resumen(client) {
     if (sub) { tarjeta = tarjetaTxt(sub.default_payment_method) || tarjeta; proximo = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : proximo; }
   }
   const upd = db.setBilling(client.id, { tarjeta, proximo_cobro: proximo, ...(tarjeta && b.estado === 'sin_tarjeta' ? { estado: 'al_corriente' } : {}) });
-  return { ...upd, facturas: (inv.data || []).map((i) => ({ numero: i.number, fecha: new Date(i.created * 1000).toISOString(), total: i.total / 100, estado: i.status, url: i.hosted_invoice_url, concepto: i.lines?.data?.[0]?.description || '' })) };
+  return { ...upd, facturas: (inv.data || []).map((i) => ({ id: i.id, numero: i.number, fecha: new Date(i.created * 1000).toISOString(), total: i.total / 100, estado: i.status, url: i.hosted_invoice_url, concepto: i.lines?.data?.[0]?.description || '' })) };
 }
 
 /** Cobra un extra a la tarjeta domiciliada. Devuelve { ok, factura } o { ok:false, error, url } si el banco pide confirmar. */
@@ -174,6 +177,8 @@ export async function procesarEvento(ev) {
     case 'invoice.paid':
       db.setBilling(c.id, { estado: 'al_corriente', ultimo_pago: new Date().toISOString() });
       db.logEvent({ clientId: c.id, tipo: 'pago_recibido', detalle: `${(o.amount_paid / 100).toFixed(2)} MXN · ${o.number || o.id}` });
+      // Factura (CFDI) automática con Factura.com, en segundo plano para contestarle rápido a Stripe.
+      facturacion.facturarCobro(c, o).catch((e) => console.error('[factura]', e.message));
       break;
     case 'invoice.payment_failed':
       db.setBilling(c.id, { estado: 'pago_fallido' });

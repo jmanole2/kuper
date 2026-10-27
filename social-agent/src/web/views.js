@@ -140,6 +140,7 @@ const side = (on) => [
   { href: '/admin', icon: 'home', label: 'Inicio', on: on === 'clientes', logo: true },
   { href: '/admin/clientes/nuevo', icon: 'plus', label: 'Nuevo cliente', on: on === 'nuevo' },
   { href: '/admin/usuarios', icon: 'users', label: 'Usuarios', on: on === 'usuarios' },
+  { href: '/admin/facturacion', icon: 'bill', label: 'Facturación', on: on === 'facturacion' },
   { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta', bottom: true },
   { href: '/admin/salir', icon: 'out', label: 'Salir', bottom: true },
 ];
@@ -730,7 +731,7 @@ function fiscalForm(client, error = '') {
     <button class="btn-accent" style="margin-top:12px">Guardar datos de factura</button>
   </form>`;
 }
-export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true, fiscalError = '' } = {}) {
+export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true, fiscalError = '', facturas = {} } = {}) {
   const plan = planDe(client), est = estadoCobro(client, r), mensual = mensualidad(client), modo = modoCobro(client), iva = ivaDe(client);
   const body = html`${appHero(client, 'pagos', [], 0, { note: ['Mensualidad', mensual ? `${mxn(mensualidadTotal(client))} al mes` : 'Sin mensualidad'] })}
   ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
@@ -756,9 +757,9 @@ export function appPagosPage(client, r, { error = '', ok = '', stripeOn = true, 
   </div>
   ${fiscalForm(client, fiscalError)}
   <h2>Facturas y cobros</h2>
-  ${r.facturas?.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Fecha</th><th>Concepto</th><th>Estado</th><th style="text-align:right">Total</th><th></th></tr>
+  ${r.facturas?.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Fecha</th><th>Concepto</th><th>Estado</th><th style="text-align:right">Total</th><th>Factura</th><th></th></tr>
     ${r.facturas.map((f) => html`<tr><td class="small">${fmtDate(f.fecha)}</td><td class="small">${f.concepto || f.numero || ''}</td><td><span class="badge" style="color:${f.estado === 'paid' ? '#4ade80' : f.estado === 'open' ? '#fbbf24' : '#a39d93'}">${{ paid: 'Pagada', open: 'Pendiente', void: 'Anulada', draft: 'Borrador', uncollectible: 'No cobrada' }[f.estado] || f.estado}</span></td>
-      <td style="text-align:right">${mxn(f.total)}</td><td>${f.url ? html`<a class="small" href="${f.url}" target="_blank" rel="noopener">Ver ↗</a>` : ''}</td></tr>`)}</table></div>`
+      <td style="text-align:right">${mxn(f.total)}</td><td class="small">${facturas[f.id]?.status === 'emitida' ? html`<a href="/app/pagos/factura/${f.id}/pdf">PDF</a> · <a href="/app/pagos/factura/${f.id}/xml">XML</a>` : facturas[f.id]?.status === 'pendiente' && !fiscalDe(client) ? html`<a href="#factura">Faltan tus datos</a>` : facturas[f.id] ? html`<span class="muted">En proceso</span>` : ''}</td><td>${f.url ? html`<a class="small" href="${f.url}" target="_blank" rel="noopener">Ver ↗</a>` : ''}</td></tr>`)}</table></div>`
     : html`<div class="card muted">Aún no hay cobros.</div>`}`;
   return page({ title: `Pagos · ${client.nombre}`, side: sideApp('pagos', client), body });
 }
@@ -1055,4 +1056,44 @@ export function blogArticuloPage(a, sitio, client, { panelUrl = '', ok = '' } = 
     </form>
   </div>` : ''}`;
   return page({ title: `Blog · ${a.titulo || 'Artículo'}`, side: side('clientes'), body });
+}
+
+// ------------------------------------------------------------ facturación (Factura.com)
+const FAC_COL = { emitida: '#4ade80', pendiente: '#fbbf24', error: '#f87171', omitida: '#a39d93' };
+const FAC_TXT = { emitida: 'Emitida', pendiente: 'Pendiente', error: 'Error', omitida: 'Omitida' };
+export function facturacionPage({ ajustes: a, conectado, sandbox, series = [], seriesError = '', facturas = [], ok = '', error = '' }) {
+  const serieSel = `${a.serie_id}|${a.serie_nombre}`;
+  const body = html`${hero({ kicker: 'Facturación', title: 'Facturas automáticas', sub: 'Cada cobro de Stripe se factura solo con Factura.com y le llega al cliente por correo.' })}
+  ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+  ${!conectado ? html`<div class="err">Faltan las claves de Factura.com. En el servidor corre:<br><code>sudo bash /opt/agente-social/social-agent/deploy/clave.sh FACTURACOM_API_KEY</code><br><code>sudo bash /opt/agente-social/social-agent/deploy/clave.sh FACTURACOM_SECRET_KEY</code><br>(Las sacas en Factura.com → Desarrolladores → API → Datos de acceso.)</div>` : ''}
+  ${sandbox ? html`<div class="okmsg">Modo de pruebas (sandbox): las facturas no tienen validez fiscal.</div>` : ''}
+  ${seriesError ? html`<div class="err">Factura.com respondió: ${seriesError}</div>` : ''}
+  <div class="split">
+    <form class="card" method="post" action="/admin/facturacion"><span class="mono">Ajustes</span>
+      <label>Serie de tus facturas</label>
+      <select name="serie">${!series.length ? html`<option value="${serieSel}">${a.serie_nombre || (conectado ? 'No hay series (créalas en Factura.com → Configuración → Series)' : 'Conecta Factura.com para ver tus series')}</option>` : ''}
+        ${series.map((s) => html`<option value="${s.id}|${s.nombre}" ${raw(s.id === a.serie_id ? 'selected' : '')}>${s.nombre}${s.descripcion ? ` · ${s.descripcion}` : ''}</option>`)}</select>
+      <label>Clave de producto o servicio del SAT (te la da tu contador)</label><input name="clave_prod_serv" inputmode="numeric" maxlength="8" value="${a.clave_prod_serv}" placeholder="8 números, ej. 81112100">
+      <div style="display:grid;gap:12px;grid-template-columns:1fr 2fr"><div><label>Clave de unidad</label><input name="clave_unidad" value="${a.clave_unidad}"></div><div><label>Unidad</label><input name="unidad" value="${a.unidad}"></div></div>
+      <label class="variant" style="margin-top:10px;font-weight:400"><input type="checkbox" name="activo" value="1" ${raw(a.activo ? 'checked' : '')}> Facturar automáticamente cada cobro</label>
+      <p><button class="btn-accent">Guardar</button></p>
+      <p class="muted small">Se factura con método PUE y forma de pago 04 (tarjeta de crédito) o 28 (débito), según la tarjeta. Uso del CFDI, RFC, régimen y código postal salen de lo que el cliente capturó en su página de Pagos.</p>
+    </form>
+    <div class="card"><span class="mono">Cómo funciona</span>
+      <ol class="small" style="line-height:1.7;margin:10px 0 0;padding-left:18px">
+        <li>Stripe cobra la mensualidad o un extra.</li>
+        <li>El panel da de alta al cliente en Factura.com (la primera vez) y timbra la factura con el IVA desglosado.</li>
+        <li>Factura.com le manda el PDF y el XML por correo; el cliente también los ve en su página de Pagos.</li>
+        <li>Si al cliente le faltan sus datos fiscales, queda "Pendiente" y se factura sola en cuanto los capture.</li>
+      </ol>
+      <form method="post" action="/admin/facturacion/reintentar" style="margin-top:14px"><button class="btn-warn">Reintentar pendientes y con error</button></form>
+    </div>
+  </div>
+  <h2>Facturas</h2>
+  ${facturas.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table><tr><th>Fecha</th><th>Cliente</th><th>Folio</th><th style="text-align:right">Total</th><th>Estado</th><th></th></tr>
+    ${facturas.map((f) => html`<tr><td class="small">${fmtDate(f.created_at.replace(' ', 'T') + 'Z')}</td><td>${f.cliente}</td><td class="small">${f.folio ? `${f.serie || ''}${f.folio}` : '—'}${f.uuid ? html`<div class="muted" style="font-size:11px">${f.uuid}</div>` : ''}</td>
+      <td style="text-align:right">${mxn(f.total)}</td><td><span class="badge" style="color:${FAC_COL[f.status]}">${FAC_TXT[f.status] || f.status}</span>${f.error ? html`<div class="small" style="color:#fbbf24;max-width:320px">${f.error}</div>` : ''}</td>
+      <td class="small">${f.status === 'emitida' ? html`<a href="/admin/facturacion/${f.id}/pdf">PDF</a> · <a href="/admin/facturacion/${f.id}/xml">XML</a>` : ''}</td></tr>`)}</table></div>`
+    : html`<div class="card muted">Todavía no hay facturas. Aparecen aquí con cada cobro de Stripe.</div>`}`;
+  return page({ title: 'Facturación', side: side('facturacion'), body });
 }

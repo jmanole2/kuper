@@ -24,6 +24,7 @@ import * as conoc from './conocimiento.js';
 import * as seg from './seguridad.js';
 import * as blog from './blog.js';
 import * as campanas from './campanas.js';
+import * as facturacion from './facturacion.js';
 import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
@@ -148,6 +149,24 @@ export function createApp() {
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   app.use('/api/:slug', api);
+
+  // ------------------------------------------------------------ facturación (Factura.com)
+  async function enviarArchivoFactura(res, fac, tipo) {
+    if (!['pdf', 'xml'].includes(tipo)) throw new Error('Archivo no válido');
+    if (!fac || fac.status !== 'emitida') throw new Error('Factura no encontrada');
+    const buf = await facturacion.archivo(fac, tipo);
+    res.set({ 'Content-Type': tipo === 'xml' ? 'application/xml' : 'application/pdf', 'Content-Disposition': `attachment; filename="factura-${fac.serie || ''}${fac.folio || fac.id}.${tipo}"` }).send(buf);
+  }
+  /** Vuelve a intentar las facturas pendientes o con error de un cliente (o de todos). */
+  async function reintentarFacturas(clientId = null) {
+    const pend = facturacion.listar({ clientId, limit: 200 }).filter((f) => ['pendiente', 'error'].includes(f.status));
+    for (const f of pend) {
+      const c = db.getClient(f.client_id);
+      const inv = await billing.stripe('GET', `/invoices/${f.stripe_invoice}`).catch(() => null);
+      if (c && inv) await facturacion.facturarCobro(c, inv, { forzar: true });
+    }
+    return pend.length;
+  }
 
   // Descarga de leads en CSV (abre en Excel); respeta el filtro de campaña.
   function enviarCsv(req, res) {
@@ -319,7 +338,12 @@ export function createApp() {
   appR.get('/pagos', async (req, res) => {
     let r = { ...db.getBilling(req.client.id), facturas: [] }, error = '';
     try { r = await billing.resumen(req.client); } catch (e) { console.error('[pagos]', e.message); error = 'No pudimos consultar tus pagos en este momento.'; }
-    res.send(V.appPagosPage(req.client, r, { error, ok: req.query.ok ? 'Listo, tu tarjeta quedó domiciliada.' : req.query.fiscal ? 'Listo, guardamos tus datos para la factura.' : '', stripeOn: billing.stripeOn() }));
+    res.send(V.appPagosPage(req.client, r, { error, ok: req.query.ok ? 'Listo, tu tarjeta quedó domiciliada.' : req.query.fiscal ? 'Listo, guardamos tus datos para la factura.' : '', stripeOn: billing.stripeOn(), facturas: facturacion.porStripe(req.client.id) }));
+  });
+  // PDF o XML de la factura de un cobro (solo los del propio cliente).
+  appR.get('/pagos/factura/:inv/:tipo', async (req, res) => {
+    const fac = facturacion.porStripe(req.client.id)[req.params.inv];
+    try { await enviarArchivoFactura(res, fac, req.params.tipo); } catch (e) { res.status(404).send(e.message); }
   });
   appR.post('/pagos/domiciliar', async (req, res) => {
     try { res.redirect(303, await billing.checkoutUrl(req.client, { email: req.sesion.user?.email })); }
@@ -331,6 +355,7 @@ export function createApp() {
       db.updateClient(req.client.id, { config: { ...req.client.config, fiscal } });
       seg.auditar(req, 'datos_fiscales', fiscal.rfc);
       await billing.actualizarFiscal(req.client, fiscal);
+      reintentarFacturas(req.client.id).catch(() => {}); // si había cobros esperando sus datos, ya se facturan
       res.redirect(303, '/app/pagos?fiscal=1#factura');
     } catch (e) {
       res.status(400).send(V.appPagosPage(req.client, { ...db.getBilling(req.client.id), facturas: [] }, { fiscalError: e.message, stripeOn: billing.stripeOn() }));
@@ -738,6 +763,23 @@ export function createApp() {
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=URL del agente guardada`);
   });
   admin.get('/clientes/:cid/leads.csv', (req, res) => enviarCsv(req, res));
+  admin.get('/facturacion', async (req, res) => {
+    let series = [], seriesError = '';
+    if (facturacion.conectado()) { try { series = await facturacion.series(); } catch (e) { seriesError = e.message; } }
+    res.send(V.facturacionPage({ ajustes: facturacion.ajustes(), conectado: facturacion.conectado(), sandbox: config.facturacom.sandbox, series, seriesError, facturas: facturacion.listar(), ok: String(req.query.ok || '').slice(0, 200), error: String(req.query.error || '').slice(0, 300) }));
+  });
+  admin.post('/facturacion', (req, res) => {
+    try { facturacion.guardarAjustes(req.body || {}); res.redirect(303, '/admin/facturacion?ok=Ajustes guardados'); }
+    catch (e) { res.redirect(303, `/admin/facturacion?error=${encodeURIComponent(e.message)}`); }
+  });
+  admin.post('/facturacion/reintentar', async (req, res) => {
+    const n = await reintentarFacturas().catch(() => 0);
+    res.redirect(303, `/admin/facturacion?ok=${encodeURIComponent(`${n} factura(s) reintentadas`)}`);
+  });
+  admin.get('/facturacion/:fid/:tipo', async (req, res) => {
+    const fac = facturacion.listar({ limit: 100000 }).find((f) => f.id === Number(req.params.fid));
+    try { await enviarArchivoFactura(res, fac, req.params.tipo); } catch (e) { res.status(404).send(e.message); }
+  });
   admin.post('/clientes/:cid/leads/:leadId', (req, res) => {
     db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado));
     res.redirect(`/admin/clientes/${req.client.id}?tab=leads`);

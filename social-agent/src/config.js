@@ -33,6 +33,8 @@ export const config = {
   geminiTextApiKey: env('GEMINI_TEXT_API_KEY', ''),
   geminiTextModel: env('GEMINI_TEXT_MODEL', 'gemini-3.8-flash'),
   postsLlmOrden: env('POSTS_LLM_ORDEN', ''),
+  // Facturación automática con Factura.com (CFDI 4.0). FACTURACOM_SANDBOX=1 usa el ambiente de pruebas.
+  facturacom: { apiKey: env('FACTURACOM_API_KEY', ''), secretKey: env('FACTURACOM_SECRET_KEY', ''), sandbox: bool('FACTURACOM_SANDBOX', '0') },
   // Fotos gratis para el blog (pexels.com/api).
   pexelsApiKey: env('PEXELS_API_KEY', ''),
   geminiThinking: env('GEMINI_THINKING', 'low'), // low | high | default (lo que decida el modelo)
