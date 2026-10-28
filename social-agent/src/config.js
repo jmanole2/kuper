@@ -32,6 +32,8 @@ export const config = {
   // si falla o se acaba su cupo del día, entra Claude. POSTS_LLM_ORDEN cambia el orden.
   geminiTextApiKey: env('GEMINI_TEXT_API_KEY', ''),
   geminiTextModel: env('GEMINI_TEXT_MODEL', 'gemini-3.8-flash'),
+  // Modelos de respaldo (gratis también) si el principal está saturado o sin cupo.
+  geminiTextFallbacks: env('GEMINI_TEXT_RESPALDO', 'gemini-3.6-flash,gemini-3.5-flash-lite'),
   postsLlmOrden: env('POSTS_LLM_ORDEN', ''),
   // Facturación automática con Factura.com (CFDI 4.0). FACTURACOM_SANDBOX=1 usa el ambiente de pruebas.
   facturacom: { apiKey: env('FACTURACOM_API_KEY', ''), secretKey: env('FACTURACOM_SECRET_KEY', ''), sandbox: bool('FACTURACOM_SANDBOX', '0') },

@@ -7,6 +7,7 @@ process.env.GEMINI_TEXT_MODEL = 'gemini-prueba';
 delete process.env.ANTHROPIC_API_KEY;
 const ia = await import('../src/llm/proveedor.js');
 ia.hooks.esperaMs = 0;
+(await import('../src/config.js')).config.geminiTextFallbacks = ''; // sin modelos de respaldo salvo en su prueba
 
 const pedidos = [];
 let respuestaGemini = () => ({ status: 200, body: { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'pensando…', thought: true }, { text: '{"ok":"gemini"}' }] } }], usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 } } });
@@ -115,4 +116,26 @@ test('Gemini en stream: junta los pedazos y si se corta la conexión reintenta',
   fin();
   ia.hooks.fetch = antes;
   assert.deepEqual(r.data, { ok: 'stream' }); assert.equal(n, 2);
+});
+
+test('modelo saturado (503) o sin cupo: pasa al modelo de respaldo antes que a Claude', async () => {
+  const { config } = await import('../src/config.js');
+  config.geminiTextFallbacks = 'gemini-respaldo,gemini-lite';
+  const urls = [];
+  respuestaGemini = () => ({ status: 200, body: {} });
+  const antes = ia.hooks.fetch;
+  ia.hooks.fetch = async (url) => {
+    urls.push(url.match(/models\/([^:]+)/)[1]);
+    const m = urls.at(-1);
+    const r = m === 'gemini-prueba' ? { status: 503, body: { error: { message: 'high demand' } } }
+      : m === 'gemini-respaldo' ? { status: 429, body: { error: { message: 'quota' } } }
+      : { status: 200, body: { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"ok":"lite"}' }] } }] } };
+    return { ok: r.status === 200, status: r.status, json: async () => r.body };
+  };
+  const fin = silencio();
+  const r = await ia.pedirJSON({ system: 'sys', messages: [{ role: 'user', content: 'hola' }], schema });
+  fin();
+  ia.hooks.fetch = antes; config.geminiTextFallbacks = ''; ia._reset();
+  assert.deepEqual(r.data, { ok: 'lite' });
+  assert.deepEqual(urls, ['gemini-prueba', 'gemini-prueba', 'gemini-respaldo', 'gemini-lite']);
 });

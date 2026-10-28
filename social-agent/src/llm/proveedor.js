@@ -64,8 +64,27 @@ export function aGemini(messages) {
     .filter((m) => m.parts.length);
 }
 
-async function gemini({ system, messages, schema, maxTokens }) {
-  const modelo = config.geminiTextModel;
+// Si el modelo principal está saturado (503) o sin cupo (429), se prueba con los de respaldo:
+// cada modelo tiene su propio cupo gratis.
+export function modelosGemini() {
+  const respaldo = String(config.geminiTextFallbacks || '').split(',').map((m) => m.trim()).filter(Boolean);
+  return [...new Set([config.geminiTextModel, ...respaldo])];
+}
+
+async function gemini(args) {
+  const modelos = modelosGemini();
+  let ultimo;
+  for (let i = 0; i < modelos.length; i++) {
+    try { return await geminiModelo(modelos[i], args, i < modelos.length - 1); } catch (e) {
+      ultimo = e;
+      if (!(e.cupo || e.saturado || e.noExiste) || i === modelos.length - 1) throw e;
+      console.error(`[ia] Gemini ${modelos[i]}: ${e.message.slice(0, 120)}. Pruebo con ${modelos[i + 1]}`);
+    }
+  }
+  throw ultimo;
+}
+
+async function geminiModelo(modelo, { system, messages, schema, maxTokens }, hayRespaldo) {
   // En modo "stream" Gemini manda el texto conforme lo escribe: la conexión nunca se queda callada
   // (Node corta una petición que tarda más de 5 min en empezar a responder: "fetch failed").
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:streamGenerateContent?alt=sse`;
@@ -111,7 +130,10 @@ async function gemini({ system, messages, schema, maxTokens }) {
     if (res.status === 400 && conPensamiento && /think/i.test(msg)) { conPensamiento = false; continue; }
     const e = new Error(`Gemini ${res.status}: ${msg}`);
     if (res.status === 429) { e.cupo = true; throw e; } // límite gratis del día o del minuto
+    if (res.status === 404) { e.noExiste = true; throw e; }
     // Saturado (503 "high demand") o falla momentánea: espera un poco más cada vez (15 s, 45 s) y reintenta.
+    // Si hay otro modelo de respaldo, solo se reintenta una vez y luego se cambia de modelo.
+    if ([500, 502, 503, 504].includes(res.status) && hayRespaldo && intento >= 2) { e.saturado = true; throw e; }
     if ([500, 502, 503, 504].includes(res.status) && intento < 3) { console.error(`[ia] Gemini ${res.status}, reintento en ${intento * 15 * (intento === 1 ? 1 : 1.5)} s`); await sleep(hooks.esperaMs ?? intento * 15000 * (intento === 1 ? 1 : 1.5)); continue; }
     throw e;
   }
