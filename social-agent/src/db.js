@@ -378,12 +378,12 @@ export function recentVisuals(clientId, { limit = 6, excludeId = 0 } = {}) {
        AND status IN ('publicado','aprobado','publicando','pendiente','necesita_asset','rechazado')
      ORDER BY id DESC LIMIT 40`,
   ).all(clientId, excludeId)
-    .map((r) => { try { const v = JSON.parse(r.salida_json)?.visual; return v?.concepto && !v.respaldo ? { formato: r.formato, concepto: String(v.concepto).slice(0, 300) } : null; } catch { return null; } })
+    .map((r) => { try { const v = JSON.parse(r.salida_json)?.visual; return v?.concepto && !v.respaldo ? { formato: r.formato, concepto: String(v.concepto).slice(0, 300), direccion: v.direccion || null } : null; } catch { return null; } })
     .filter(Boolean).slice(0, limit);
 }
 export function recentHistory(clientId, { limit = 12, excludeId = 0 } = {}) {
   return getDb().prepare(
-    `SELECT plataforma, pilar, tema, formato, estructura, tipo_post, COALESCE(published_at, scheduled_at) AS fecha, status
+    `SELECT plataforma, pilar, tema, formato, estructura, tipo_post, COALESCE(published_at, scheduled_at) AS fecha, status, salida_json
      FROM posts WHERE client_id = ? AND id != ? AND tema IS NOT NULL
        AND status IN ('publicado','aprobado','publicando','pendiente','necesita_asset')
      ORDER BY COALESCE(published_at, scheduled_at) DESC LIMIT ?`,

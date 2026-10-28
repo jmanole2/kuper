@@ -28,8 +28,8 @@ test('salidas correctas pasan la validación (reel, carrusel, LinkedIn, Facebook
 test('el ejemplo del prompt maestro cumple sus propias reglas', () => {
   const md = fs.readFileSync(path.join(ROOT, 'prompts/maestro.md'), 'utf8');
   const ex = JSON.parse(md.slice(md.lastIndexOf('```json') + 7, md.lastIndexOf('```')));
-  const p = { ...perfil, palabra_clave_cta: 'AGENTE', terminos_busqueda: ['agente de IA para WhatsApp'], permite_emojis: true, max_emojis: 1,
-    pilares_de_contenido: [{ nombre: 'el costo de contestar tarde', requiere_imagen_real: false }] };
+  const p = { ...perfil, palabra_clave_cta: 'CEPILLO', terminos_busqueda: ['cepillarse', 'encía'], permite_emojis: true, max_emojis: 1,
+    pilares_de_contenido: [{ nombre: 'prevención', requiere_imagen_real: false }] };
   assert.deepEqual(validatePost(cleanOutput(ex), { ...ctx('instagram'), perfil: p, fechaCalculada: '2026-10-27' }), []);
 });
 

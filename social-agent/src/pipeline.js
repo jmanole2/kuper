@@ -20,6 +20,7 @@ import { reporteCorreo } from './web/reporte.js';
 import { sendMail } from './notify.js';
 import { notifyClient } from './notify.js';
 import { adaptCaption } from './llm/adapt.js';
+import { elegirReceta, erroresReceta, elegirDireccion, resumenGuion, DIRECCIONES } from './rotacion.js';
 
 // Cola de trabajos en serie: las generaciones abren Chromium y llaman a APIs, mejor de una en una.
 let chain = Promise.resolve();
@@ -60,9 +61,12 @@ function menosUsados(client, historial) {
 
 function buildInput(client, plataforma, { feedback, postId, tema } = {}) {
   const slot = slotFor(client, plataforma);
-  const historial = db.recentHistory(client.id, { excludeId: postId }).map((h) => ({
-    plataforma: h.plataforma, pilar: h.pilar, tipo_post: h.tipo_post, estructura: h.estructura, formato: h.formato, tema: h.tema, fecha: h.fecha?.slice(0, 10),
-  }));
+  const historial = db.recentHistory(client.id, { excludeId: postId }).map((h) => {
+    let salida = null; try { salida = JSON.parse(h.salida_json || 'null'); } catch {}
+    return { plataforma: h.plataforma, pilar: h.pilar, tipo_post: h.tipo_post, estructura: h.estructura, formato: h.formato, tema: h.tema, fecha: h.fecha?.slice(0, 10), ...resumenGuion(salida) };
+  });
+  // Al aplicar cambios del cliente no se impone receta: se respeta lo que pidió.
+  const receta = feedback ? null : elegirReceta({ perfil: client.perfil, plataforma, historial, formatosPermitidos: platformCfg(client, plataforma).formatos, tema });
   const report = db.latestCompetitorReport(client.id);
   return {
     plataforma,
@@ -73,6 +77,7 @@ function buildInput(client, plataforma, { feedback, postId, tema } = {}) {
     fechaCalculada: slot.fecha,
     scheduledAt: slot.scheduledAt,
     feedback,
+    receta,
     ...(tema ? { solicitud: tema } : {}),
   };
 }
@@ -121,6 +126,9 @@ async function produceMedia(client, post, out, { feedback } = {}) {
   }
 
   const kind = KIND[out.formato_contenido];
+  const anteriores = db.recentVisuals(client.id, { excludeId: post.id });
+  // Con cambios del cliente se conserva la dirección que ya tenía la pieza.
+  const direccion = feedback ? DIRECCIONES.find((d) => d.id === post.salida?.visual?.direccion) : elegirDireccion(anteriores);
   const r = await createVisual({
     kind,
     formato: out.formato_imagen,
@@ -130,14 +138,15 @@ async function produceMedia(client, post, out, { feedback } = {}) {
     brand: brandOf(client),
     plataforma: post.plataforma,
     ideaVisual: out.idea_visual,
-    anteriores: feedback ? [] : db.recentVisuals(client.id, { excludeId: post.id }),
+    anteriores: feedback ? [] : anteriores,
+    direccion: direccion?.txt,
     feedback,
   }, base, { log: (m) => db.logEvent({ postId: post.id, clientId: client.id, tipo: 'animador', detalle: m }) });
   return {
     video_path: r.video,
     image_path: r.cover,
     images: kind === 'carrusel' ? r.images : [],
-    visual: { concepto: r.concepto, codigo: r.codigo, rondas: r.rondas, respaldo: !!r.respaldo },
+    visual: { concepto: r.concepto, codigo: r.codigo, rondas: r.rondas, respaldo: !!r.respaldo, direccion: direccion?.id || null },
   };
 }
 
@@ -151,10 +160,10 @@ async function fillPost(postId, { feedback, tema } = {}) {
   if (feedback && post.scheduled_at) input.fechaCalculada = input.historial.fecha_calculada = localDate(post.scheduled_at, config.timezone);
   const modo = modoDe(client, post.plataforma);
   // Limpia huellas tipográficas (rayas, comillas curvas, invisibles) y luego valida.
-  const validate = (out) => validatePost(cleanOutput(out), {
+  const validate = (out) => [...validatePost(cleanOutput(out), {
     perfil: client.perfil, plataforma: post.plataforma, modo, historial: input.historial.ultimas_publicaciones,
     fechaCalculada: input.fechaCalculada, formatosPermitidos: platformCfg(client, post.plataforma).formatos,
-  });
+  }), ...erroresReceta(out, input.receta)];
 
   const { out, errors } = await generatePost(input, validate);
   if (out.error) {

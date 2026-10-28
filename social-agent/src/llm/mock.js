@@ -30,15 +30,15 @@ function caption({ plataforma, perfil, v, kw, trabajo }) {
   return [first, ...body].join('\n\n');
 }
 
-export function mockPost({ plataforma, perfil, config, historial, fechaCalculada, feedback, solicitud }) {
+export function mockPost({ plataforma, perfil, config, historial, fechaCalculada, feedback, solicitud, receta }) {
   const rules = PLATFORM_RULES[plataforma];
   const prevs = historial.ultimas_publicaciones.filter((h) => h.plataforma === plataforma);
   const pilares = perfil.pilares_de_contenido.filter(pilarActivo).filter((p) => !p.requiere_fuente_real);
-  const pilar = pilares.find((p) => !p.requiere_imagen_real && p.nombre !== prevs[0]?.pilar) || pilares[0];
+  const pilar = pilares.find((p) => p.nombre === receta?.pilar) || pilares.find((p) => !p.requiere_imagen_real && p.nombre !== prevs[0]?.pilar) || pilares[0];
   const allowed = (config[plataforma].formatos?.length ? config[plataforma].formatos : rules.formatos).filter((f) => rules.formatos.includes(f));
-  const formato = pilar.requiere_imagen_real ? 'imagen_estatica' : allowed[prevs.length % allowed.length];
-  const estructura = ESTRUCTURAS.find((e) => !prevs.slice(0, 2).some((p) => p.estructura === e));
-  const tipo_post = TIPOS.find((t) => t !== prevs[0]?.tipo_post);
+  const formato = pilar.requiere_imagen_real ? 'imagen_estatica' : receta?.formato || allowed[prevs.length % allowed.length];
+  const estructura = receta?.estructura || ESTRUCTURAS.find((e) => !prevs.slice(0, 2).some((p) => p.estructura === e));
+  const tipo_post = receta?.tipo_post || TIPOS.find((t) => t !== prevs[0]?.tipo_post);
   const kw = perfil.palabra_clave_cta || 'INFO';
   const sintetico = !pilar.requiere_imagen_real;
   const trabajo = formato === 'video_animado' ? 'A' : 'B';
@@ -53,6 +53,7 @@ export function mockPost({ plataforma, perfil, config, historial, fechaCalculada
     { formula_id: 5, formula: 'Time Collapse', texto: 'De nueve horas a cuatro segundos: lo que tarda tu negocio en contestar.', en_pantalla: '9 horas vs. 4 segundos' },
     { formula_id: 1, formula: 'Cost Confession', texto: 'Ese cliente que te escribió de noche ya le compró a otro.', en_pantalla: 'Ese cliente ya compró' },
   ];
+  if (receta?.formulas?.length >= 3) ganchos.forEach((g, i) => { g.formula_id = receta.formulas[i]; });
   const opening = formato === 'carrusel' ? ganchos[1].en_pantalla : ganchos[0].en_pantalla;
   return {
     error: null,

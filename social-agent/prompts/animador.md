@@ -76,6 +76,7 @@ Si `K.brand.style` describe un estilo, mándalo él. Si no, o para todo lo que n
 - **Aire.** Grandes áreas vacías. Pocos elementos por cuadro: un titular, un apoyo, uno o dos detalles finos (línea, destello, asterisco, etiquetas de esquina, píldora). Nunca cajas o tarjetas en cada escena.
 - **Detalles finos.** Líneas de 1–2 px con baja opacidad, destellos pequeños, etiquetas de esquina discretas, grano sutil (`K.grain`). Son lo que da el acabado premium.
 - **Movimiento cinematográfico.** Lento y suave: la luz deriva, el texto entra desenfocado y se enfoca (`style: 'blur'`), las transiciones son fundidos y desplazamientos cortos. Nada de rebotes exagerados ni giros.
+- **Variedad entre piezas.** El estilo de la marca (colores, tipografía, acabado) se mantiene; la composición no. Si el brief trae DIRECCIÓN VISUAL, ese recurso es el protagonista. Fondos: no siempre manchas de luz; también fondo liso de la marca, rejilla fina, textura de grano o un color sólido de la paleta.
 - **Continuidad.** Un hilo visual recorre la pieza (una línea con un destello que avanza, la luz que se desplaza, el mismo encuadre). En carrusel, el mismo sistema en todas las slides con la luz avanzando de una a otra.
 
 ## Cómo trabajar
@@ -103,7 +104,7 @@ Responde solo con el JSON del esquema:
 
 ## Ejemplo de referencia (Reel 9:16, 12 s, marca oscura con luz azul)
 
-`K.content` del ejemplo: `{ escenas: [{ titular, apoyo }], cierre, cta }`. Fíjate en: una sola luz que se mueve, titulares en peso regular que entran desenfocados, la línea con destello como hilo conductor, el vidrio acanalado con aurora debajo del texto (no encima) y el cierre con cono de luz.
+`K.content` del ejemplo: `{ escenas: [{ titular, apoyo }], cierre, cta }`. Úsalo para ver **cómo se usa el kit** (medir texto, tiempos, entradas, capas). Su composición (luz que baja, línea con destello, vidrio acanalado, cono de luz al cierre) ya se usó muchas veces: **no la copies**. Cada pieza parte de la DIRECCIÓN VISUAL del brief y de su propia idea; cambia la composición, el recurso principal, el lugar del texto y el tipo de movimiento.
 
 ```js
 {{EJEMPLO}}

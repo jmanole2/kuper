@@ -41,6 +41,7 @@ function briefText(job) {
     `Marca: ${job.brand.name}. Colores: ${job.brand.colors.join(', ')}. Tipografía titulares: ${job.brand.fontHead}; texto: ${job.brand.fontBody}. Logo: ${job.brand.logoPath ? 'sí' : 'no (usa el nombre)'}.`,
     `Estilo visual de la marca: ${job.brand.style || 'sin indicaciones; propone uno coherente con la paleta'}.`,
     job.ideaVisual ? `Idea visual sugerida por el redactor (puedes mejorarla): ${job.ideaVisual}` : '',
+    job.direccion ? `## DIRECCIÓN VISUAL DE ESTA PIEZA (asignada para variar el feed)\n${job.direccion}\nConstruye la pieza alrededor de este recurso, con los colores y la tipografía de la marca. No uses la composición del ejemplo de referencia (luz que baja + línea con destello + vidrio acanalado + cono de luz).` : '',
     job.feedback ? `Comentarios del cliente sobre la versión anterior: ${job.feedback}` : '',
     job.anteriores?.length ? `## PIEZAS ANTERIORES DE ESTA MARCA (no las repitas)\nAsí se diseñaron las últimas. Mantén colores, tipografía y estilo de la marca, pero usa una composición, un recurso visual y una animación DISTINTOS a estos:\n${job.anteriores.map((a, i) => `${i + 1}. (${a.formato || 'pieza'}) ${a.concepto}`).join('\n')}` : '',
     `## K.content`,

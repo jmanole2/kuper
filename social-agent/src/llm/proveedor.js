@@ -73,7 +73,7 @@ async function gemini({ system, messages, schema, maxTokens }) {
     systemInstruction: { parts: [{ text: conEsquema ? system : `${system}\n\nResponde SOLO con un objeto JSON que cumpla este esquema:\n${JSON.stringify(schema)}` }] },
     contents: aGemini(messages),
     generationConfig: {
-      responseMimeType: 'application/json', ...(conEsquema ? { responseJsonSchema: schema } : {}), maxOutputTokens: Math.min(maxTokens, 65536), temperature: 0.8,
+      responseMimeType: 'application/json', ...(conEsquema ? { responseJsonSchema: schema } : {}), maxOutputTokens: Math.min(maxTokens, 65536), temperature: 1,
       // Pensar poco: es más rápido y el pensamiento cuenta como texto de salida.
       ...(conPensamiento && config.geminiThinking !== 'default' ? { thinkingConfig: { thinkingLevel: config.geminiThinking } } : {}),
     },
