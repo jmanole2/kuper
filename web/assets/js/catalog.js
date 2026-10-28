@@ -229,6 +229,12 @@ if (renderer) {
   const fill = new THREE.DirectionalLight(0xffffff, 0.55);
   fill.position.set(-3, 1.5, 2);
   scene.add(fill);
+  // Luz desde la cámara y luz de cielo/suelo: al inclinar el producto hacia
+  // el frente sigue viéndose blanco (antes la cara visible quedaba gris).
+  const front = new THREE.DirectionalLight(0xffffff, 0.7);
+  front.position.copy(camera.position);
+  scene.add(front);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xe8e6e1, 0.55));
 
 }
 
@@ -290,7 +296,8 @@ function buildBuckets() {
     root.add(shadow);
     root.visible = false;
     scene.add(root);
-    return { root, spin, shadow, item, x: 0, scale: 0, yaw: 0.6, pitch: 0, touched: 0 };
+    const radius = Math.max(box.max.x - box.min.x, box.max.z - box.min.z) / 2;
+    return { root, spin, shadow, radius, item, x: 0, scale: 0, yaw: 0.6, pitch: 0, touched: 0 };
   });
   layoutBuckets(true);
 }
@@ -389,6 +396,11 @@ if (renderer) {
         bucket.pitch += (0 - bucket.pitch) * settle;
       }
       bucket.spin.rotation.set(bucket.pitch, bucket.yaw, 0);
+      // Gira sobre su centro: al inclinarlo se levanta lo justo para que la
+      // base nunca atraviese el piso (ni la sombra se pinte encima).
+      const half = BUCKET_H / 2;
+      const lift = Math.max(0, half * Math.abs(Math.cos(bucket.pitch)) + bucket.radius * Math.abs(Math.sin(bucket.pitch)) - half);
+      bucket.spin.position.y = half + lift;
       // al inclinarlo se despega del piso: la sombra se desvanece
       bucket.shadow.material.opacity = 1 - Math.min(1, Math.abs(Math.sin(bucket.pitch)) * 2.5);
     });
