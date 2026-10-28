@@ -1,7 +1,7 @@
 // ==========================================
 // SECCIÓN 07: PRODUCTOS — carrusel 3D
 // Cada producto se muestra en 3D. `model` elige el modelo (product-models.js:
-// cubeta19, cubeta5, envase1); sin `model` se usa la cubeta del hero (4 L,
+// cubeta19, cubeta10, cubeta5, envase1); sin `model` se usa la cubeta del hero (4 L,
 // bucket-model.js), dibujada sin asa cuando handle es false.
 // ==========================================
 import * as THREE from 'three';
@@ -20,7 +20,7 @@ const categories = [
     items: [
       // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
       { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', handle: true, scale: 1 },
-      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', handle: true, scale: 0.95 },
+      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', model: 'cubeta10', handle: false, scale: 0.95 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', handle: true, scale: 0.88 },
       { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', model: 'envase1', handle: false, scale: 0.8 }

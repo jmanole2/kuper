@@ -4,6 +4,7 @@
 //                asa de alambre con agarradera negra)
 //   'cubeta5'  → cubeta de 5 L (tapa de borde redondeado, collar, asa redonda translúcida)
 //   'envase1'  → envase de 1 L de pared delgada (cónico, con tapa plana a presión)
+//   'cubeta10' → cubeta de 10 L de boca roscada (borde, rosca, anillo de soporte, sin asa)
 // La cubeta de 4 L es la del hero (bucket-model.js).
 //
 // Igual que bucket-model.js: cotas en MILÍMETROS (Y = 0 en la base), el modelo se escala a
@@ -42,6 +43,20 @@ export const DIMS = {
     rodR: 4.4,     // asa redonda
     bailRise: 122,
     handleRest: 2.0,    // asa caída sobre el frente, como en la foto
+  },
+  cubeta10: {
+    E: 280,        // altura total (boca abierta, como en la foto)
+    rBase: 100,    // radio de la base
+    rBody: 104,    // radio del cuerpo bajo el anillo de soporte
+    wall: 2.4,
+    ringY: 220,    // anillo de soporte (el más ancho)
+    ringH: 16,
+    rRing: 111,
+    rNeck: 103,    // cuello roscado
+    threadY: 250,  // centro de la rosca
+    threadTurns: 1.6,
+    lipH: 13,      // borde superior
+    rLip: 106,
   },
   envase1: {
     E: 150,
@@ -313,7 +328,49 @@ function envase1(o) {
   return normalize(model, o.withLid ? yT : d.E, o.height, o.origin, { body, lid, handlePivot: null }, d);
 }
 
-const BUILDERS = { cubeta19, cubeta5, envase1 };
+/* ---------- cubeta 10 L (boca roscada) ---------- */
+
+function cubeta10(o) {
+  const d = { ...DIMS.cubeta10, ...(o.dims || {}) };
+  const mats = materials();
+  const seg = o.segments;
+  const model = new THREE.Group();
+  const w = d.wall;
+  const yLip = d.E - d.lipH;
+  const yRingTop = d.ringY + d.ringH;
+
+  const outer = [
+    [d.rNeck - 3, d.E],
+    [d.rLip, d.E - 1, 2.5], [d.rLip, yLip + 1, 2],            // borde superior
+    [d.rNeck, yLip - 1, 0.8], [d.rNeck, yRingTop + 1, 0.8],     // cuello (lleva la rosca)
+    [d.rRing, yRingTop - 1, 2.5], [d.rRing, d.ringY + 2, 2.5],  // anillo de soporte
+    [d.rBody, d.ringY - 2, 2],
+    [d.rBase, 0, 4],
+  ];
+  const inner = [
+    [d.rBase - w, 0, 1], [d.rBase - w, 4, 1], [0, 4], [0, 7],
+    [d.rBase - w, 7, 4],
+    [d.rBody - w, d.ringY - 2],
+    [d.rNeck - 3 - w, yRingTop],
+    [d.rNeck - 3 - w, d.E],
+  ];
+  const body = shell(outer, inner, mats.pp, seg);
+  model.add(body);
+
+  // Rosca: hélice alrededor del cuello.
+  const pts = [];
+  const N = 200, pitch = 9, turns = d.threadTurns;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, a = t * turns * Math.PI * 2;
+    const r = d.rNeck + 2.6 * Math.min(1, t * 8, (1 - t) * 8);   // los extremos se funden con el cuello
+    pts.push(new THREE.Vector3(Math.sin(a) * r, d.threadY - (turns * pitch) / 2 + t * turns * pitch, Math.cos(a) * r));
+  }
+  body.add(mk(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, 3.2, 12, false), mats.pp));
+
+  return normalize(model, d.E, o.height, o.origin, { body, lid: null, handlePivot: null }, d);
+}
+
+const BUILDERS = { cubeta19, cubeta10, cubeta5, envase1 };
 
 export function createProduct(kind, opts = {}) {
   const build = BUILDERS[kind];
