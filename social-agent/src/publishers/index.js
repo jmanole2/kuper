@@ -4,6 +4,7 @@ import { clientCredentials, updateClient } from '../db.js';
 import { publishInstagram, publishFacebook, publishInstagramStory } from './meta.js';
 import { publishLinkedIn } from './linkedin.js';
 import { publishTikTok, freshTikTokCreds } from './tiktok.js';
+import { versionHistoria } from '../media/historia.js';
 
 export function captionFor(post) {
   const tags = post.hashtags?.length ? `\n\n${post.hashtags.join(' ')}` : '';
@@ -46,8 +47,11 @@ export async function publishPost(post, client) {
 export async function publishStory(post, client) {
   const creds = clientCredentials(client);
   if (config.dryRun || creds.dry_run) return { id: `dry-run-historia-${post.id}`, dryRun: true };
-  const videoUrl = post.video_path ? mediaUrl(post.video_path) : null;
   const img = post.images?.[0] || post.image_path;
-  if (!videoUrl && !img) throw new Error('No hay video ni imagen para la historia');
-  return publishInstagramStory(creds.meta, { videoUrl, imageUrl: videoUrl ? null : mediaUrl(img) });
+  let archivo = post.video_path || img;
+  if (!archivo) throw new Error('No hay video ni imagen para la historia');
+  // Lo que no es vertical se acomoda en 9:16 para que Instagram no lo recorte.
+  if (post.salida?.formato_imagen !== '9:16') archivo = await versionHistoria(archivo);
+  const url = mediaUrl(archivo);
+  return publishInstagramStory(creds.meta, post.video_path ? { videoUrl: url, imageUrl: null } : { videoUrl: null, imageUrl: url });
 }

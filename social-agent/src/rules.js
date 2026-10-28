@@ -107,6 +107,7 @@ export function validatePost(out, { perfil, plataforma, modo, historial = [], fe
     if (out.prompt_imagen && !(perfil.imagenes_ia && f === 'imagen_estatica')) errs.push('"prompt_imagen" debe ser null (las imágenes con IA no están activadas para esta marca o este formato).');
   }
   if (!r.proporciones.includes(out.formato_imagen) && f !== 'solo_texto') errs.push(`"formato_imagen" para ${plataforma} debe ser ${r.proporciones.join(', ')}.`);
+  if (plataforma === 'instagram' && f === 'video_animado' && out.formato_imagen !== '9:16') errs.push('Los Reels de Instagram van en 9:16 (vertical); si no, se ven con franjas y la historia sale recortada.');
   if (['imagen_estatica', 'carrusel'].includes(f) && out.formato_imagen === '9:16') errs.push('Imágenes y carruseles van en 4:5 o 1:1 (9:16 solo para videos).');
 
   // ---- rotación e historial

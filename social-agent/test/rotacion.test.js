@@ -39,3 +39,12 @@ test('resumenGuion saca gancho, fórmula y titulares', () => {
   const r = resumenGuion({ ganchos: [{ formula_id: 3, en_pantalla: 'a' }, { formula_id: 9, en_pantalla: 'b' }], gancho_elegido: 1, animacion: { escenas: [{ titular: 'x' }, { titular: 'y' }] } });
   assert.deepEqual(r, { gancho: 'b', formula: 9, titulares: ['x', 'y'] });
 });
+
+test('historia: arma 1080x1920 con la pieza completa y fondo desenfocado', async () => {
+  const { argsHistoria, rutaHistoria } = await import('../src/media/historia.js');
+  assert.equal(rutaHistoria('/m/a-b.mp4'), '/m/a-b-historia.mp4');
+  assert.equal(rutaHistoria('/m/a.png'), '/m/a-historia.jpg');
+  const a = argsHistoria('/m/a.mp4', '/m/a-historia.mp4').join(' ');
+  assert.match(a, /force_original_aspect_ratio=decrease/);
+  assert.match(a, /0:a\?/);
+});
