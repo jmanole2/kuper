@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <title>Inicio · SM Kaluz</title>
+    <link rel="preload" href="./assets/images/standby-map-1906.jpg" as="image" />
+    <link rel="prefetch" href="./pages/intro.html" />
+    <link rel="prefetch" href="./assets/images/intro/casa-art-nouveau.png" as="image" />
+    <link rel="prefetch" href="./assets/images/intro/edificio-esquina.png" as="image" />
+    <link rel="stylesheet" href="./styles/styles.css" />
+    <link rel="stylesheet" href="./styles/standby-anim.css" />
+    <script src="./scripts/interaction.js" defer></script>
+    <script src="./scripts/app.js" defer></script>
+    <script src="./scripts/standby-anim.js" defer></script>
+  </head>
+  <body data-interaction="standby">
+    <main class="stage" aria-label="Kiosco SM Kaluz">
+      <section class="screen standby is-loading" aria-label="Pantalla de inicio">
+        <img class="standby__image" src="./assets/images/standby-map-1906.jpg" alt="Plano perspectivo de la Ciudad de México en 1906" />
+        <div class="standby__caption">
+          <h1>Mapa de 1906</h1>
+          <svg class="standby__ornament" viewBox="0 0 320 24" aria-hidden="true">
+            <path pathLength="1" d="M2 12 C 60 12, 80 2, 120 8 S 150 22, 160 12 S 175 2, 200 8 S 260 12, 318 12" />
+          </svg>
+          <p>Henry Wellge mira la Ciudad de México a vista de pájaro: 400 mil habitantes, canales aún vivos y, en primer plano, las colonias recién trazadas. Este plano nació como anuncio inmobiliario; hoy es el retrato del escenario donde el <em>Art nouveau</em> se volvió ciudad.</p>
+        </div>
+        <div class="standby__shade" aria-hidden="true"></div>
+        <div class="standby__pulse" aria-hidden="true"></div>
+        <a class="standby__start" href="./pages/intro.html" data-transition data-interaction-start>
+          <span class="standby__label">Toca la pantalla para comenzar</span>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
