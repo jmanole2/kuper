@@ -10,10 +10,100 @@
     <link rel="prefetch" href="./assets/images/intro/casa-art-nouveau.png" as="image" />
     <link rel="prefetch" href="./assets/images/intro/edificio-esquina.png" as="image" />
     <link rel="stylesheet" href="./styles/styles.css" />
-    <link rel="stylesheet" href="./styles/standby-anim.css" />
+    <style>
+      /* ===== Animación del standby (mapa, texto y botón) ===== */
+
+      /* Mapa: aparece suave */
+      .standby__image {
+        animation: sb-map-in 2.2s cubic-bezier(.22,.61,.36,1) both;
+      }
+      @keyframes sb-map-in {
+        from { opacity: 0; filter: blur(8px) saturate(.4); }
+        to   { opacity: 1; filter: blur(0) saturate(1); }
+      }
+
+      /* Capa de efectos: se coloca exactamente encima del mapa */
+      .standby__fx {
+        position: absolute;
+        pointer-events: none;
+        overflow: hidden;
+        opacity: 0;
+        animation: sb-fade 3s ease 1.4s forwards;
+        z-index: 1;
+      }
+      @keyframes sb-fade { to { opacity: 1; } }
+
+      /* Nubes: solo en el cielo, se desvanecen antes de las montañas */
+      .sb-clouds {
+        position: absolute;
+        left: 0; top: 0;
+        width: 200%;
+        height: 24%;
+        background-repeat: repeat-x;
+        background-size: 50% 100%;
+        -webkit-mask-image: linear-gradient(#000 0%, #000 40%, transparent 100%);
+                mask-image: linear-gradient(#000 0%, #000 40%, transparent 100%);
+        will-change: transform;
+      }
+      .sb-clouds--far  { opacity: .5;  animation: sb-pan 160s linear infinite; }
+      .sb-clouds--near { opacity: .35; animation: sb-pan 100s linear infinite; height: 18%; }
+      @keyframes sb-pan { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+      /* Brillo del atardecer que respira en el horizonte */
+      .sb-glow {
+        position: absolute;
+        left: -10%; right: -10%;
+        top: 10%; height: 14%;
+        background: radial-gradient(60% 100% at 55% 70%, rgba(255,180,140,.45), transparent 70%);
+        mix-blend-mode: soft-light;
+        animation: sb-glow 7s ease-in-out infinite alternate;
+      }
+      @keyframes sb-glow { from { opacity: .3; } to { opacity: 1; } }
+
+      /* Pájaros */
+      .sb-flock { position: absolute; left: 0; will-change: transform; }
+      .sb-bird {
+        position: absolute;
+        width: var(--s, 12px);
+        height: calc(var(--s, 12px) * .5);
+        color: rgba(35, 30, 28, .85);
+      }
+      .sb-bird svg {
+        display: block; width: 100%; height: 100%; overflow: visible;
+        transform-origin: 50% 55%;
+        animation: sb-flap var(--f, .45s) ease-in-out infinite alternate;
+        animation-delay: var(--fd, 0s);
+      }
+      @keyframes sb-flap { from { transform: scaleY(1); } to { transform: scaleY(-.35); } }
+
+      /* Texto: entra el título y luego el párrafo */
+      .standby__caption h1,
+      .standby__caption p {
+        opacity: 0;
+        animation: sb-text-in 1.1s cubic-bezier(.22,.61,.36,1) forwards;
+      }
+      .standby__caption h1 { animation-delay: 1.2s; }
+      .standby__caption p  { animation-delay: 1.8s; }
+      @keyframes sb-text-in {
+        from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
+        to   { opacity: 1; transform: none;             filter: blur(0); }
+      }
+
+      /* "Toca la pantalla para comenzar": aparece y parpadea */
+      .standby__label {
+        display: inline-block;
+        opacity: 0;
+        animation:
+          sb-fade 1s ease 3s forwards,
+          sb-blink 1.6s ease-in-out 4s infinite;
+      }
+      @keyframes sb-blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: .15; }
+      }
+    </style>
     <script src="./scripts/interaction.js" defer></script>
     <script src="./scripts/app.js" defer></script>
-    <script src="./scripts/standby-anim.js" defer></script>
   </head>
   <body data-interaction="standby">
     <main class="stage" aria-label="Kiosco SM Kaluz">
@@ -29,5 +119,97 @@
         </a>
       </section>
     </main>
+
+    <script>
+      /* Nubes y pájaros encima del mapa. Se reinicia en cada reload del kiosco. */
+      (function () {
+        var img = document.querySelector('.standby__image');
+        if (!img) return;
+
+        // Capa de efectos, del mismo tamaño y posición que la imagen
+        var fx = document.createElement('div');
+        fx.className = 'standby__fx';
+        fx.setAttribute('aria-hidden', 'true');
+        img.insertAdjacentElement('afterend', fx);
+        if (getComputedStyle(img.parentNode).position === 'static') img.parentNode.style.position = 'relative';
+
+        function place() {
+          fx.style.left = img.offsetLeft + 'px';
+          fx.style.top = img.offsetTop + 'px';
+          fx.style.width = img.offsetWidth + 'px';
+          fx.style.height = img.offsetHeight + 'px';
+        }
+        place();
+        img.addEventListener('load', place);
+        window.addEventListener('resize', place);
+        if (window.ResizeObserver) new ResizeObserver(place).observe(img);
+
+        // Nubes generadas con ruido (no hacen falta imágenes extra)
+        function cloudTexture(seed, freq, tint) {
+          var svg =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="400">' +
+            '<filter id="c" x="0" y="0" width="100%" height="100%">' +
+            '<feTurbulence type="fractalNoise" baseFrequency="' + freq + '" numOctaves="5" seed="' + seed + '" stitchTiles="stitch"/>' +
+            '<feColorMatrix values="0 0 0 0 ' + tint[0] + ' 0 0 0 0 ' + tint[1] + ' 0 0 0 0 ' + tint[2] + ' 0 0 0 2.4 -1.25"/>' +
+            '<feGaussianBlur stdDeviation="2"/>' +
+            '</filter><rect width="100%" height="100%" filter="url(#c)"/></svg>';
+          return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+        }
+        [['far', 7, '0.004 0.012', [1, .93, .86]],
+         ['near', 21, '0.003 0.009', [1, .88, .82]]].forEach(function (c) {
+          var el = document.createElement('div');
+          el.className = 'sb-clouds sb-clouds--' + c[0];
+          el.style.backgroundImage = cloudTexture(c[1], c[2], c[3]);
+          fx.appendChild(el);
+        });
+        var glow = document.createElement('div');
+        glow.className = 'sb-glow';
+        fx.appendChild(glow);
+
+        // Parvadas de pájaros
+        var BIRD = '<svg viewBox="0 0 20 10"><path d="M0 2 Q5 0 10 7 Q15 0 20 2 Q15 2 10 9 Q5 2 0 2Z" fill="currentColor"/></svg>';
+        function rand(a, b) { return a + Math.random() * (b - a); }
+
+        function flock() {
+          var W = fx.clientWidth, H = fx.clientHeight;
+          if (!W || !H) return;
+          var ltr = Math.random() < .5;
+          var n = Math.round(rand(3, 9));
+          var size = H * rand(.02, .034);          // proporcional al mapa
+          var y0 = rand(.04, .22) * H;               // altura de vuelo
+          var drop = rand(-.06, .06) * H;            // leve subida o bajada
+          var dur = rand(16, 26);
+
+          var g = document.createElement('div');
+          g.className = 'sb-flock';
+          g.style.top = y0 + 'px';
+          for (var i = 0; i < n; i++) {
+            var b = document.createElement('div');
+            b.className = 'sb-bird';
+            var row = Math.ceil(i / 2), side = i % 2 ? -1 : 1;   // formación en V suelta
+            b.style.left = (-row * size * 1.6 + rand(-3, 3)) + 'px';
+            b.style.top = (side * row * size * .9 + rand(-3, 3)) + 'px';
+            b.style.setProperty('--s', size * rand(.8, 1.15) + 'px');
+            b.style.setProperty('--f', rand(.32, .55) + 's');
+            b.style.setProperty('--fd', -rand(0, 1) + 's');
+            b.innerHTML = BIRD;
+            g.appendChild(b);
+          }
+          fx.appendChild(g);
+
+          var from = ltr ? -120 : W + 120, to = ltr ? W + 120 : -120;
+          var a = g.animate([
+            { transform: 'translate(' + from + 'px,0)' },
+            { transform: 'translate(' + (from + to) / 2 + 'px,' + (drop * .3 - 6) + 'px)' },
+            { transform: 'translate(' + to + 'px,' + drop + 'px)' }
+          ], { duration: dur * 1000, easing: 'linear' });
+          a.onfinish = function () { g.remove(); };
+        }
+
+        // Primera parvada al aparecer el mapa, luego cada 6–14 s
+        function loop() { flock(); setTimeout(loop, rand(6000, 14000)); }
+        setTimeout(loop, 2500);
+      })();
+    </script>
   </body>
 </html>
