@@ -1,7 +1,7 @@
 // ==========================================
 // SECCIÓN 07: PRODUCTOS — carrusel 3D
 // Cada producto se muestra en 3D. `model` elige el modelo (product-models.js:
-// cubeta19, cubeta10, cubeta5, envase1); sin `model` se usa la cubeta del hero (4 L,
+// cubeta19, cubeta10, envase1kg, cubeta5, envase1, hogar12); sin `model` se usa la cubeta del hero (4 L,
 // bucket-model.js), dibujada sin asa cuando handle es false.
 // ==========================================
 import * as THREE from 'three';
@@ -35,9 +35,8 @@ const categories = [
       { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', note: 'Asa de metal', handle: true, scale: 1 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: 'Asa de plástico o metal', handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: 'Asa de plástico o metal', handle: true, scale: 0.88 },
-      { kind: 'Cubeta de', size: '3 L', line: 'Cubetas', note: 'Asa de plástico o metal', handle: true, scale: 0.85 },
-      { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', handle: false, scale: 0.78 },
-      { kind: 'Cubeta de', size: '12 L', line: 'Línea hogar', handle: true, scale: 0.96 }
+      { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', model: 'envase1kg', handle: false, scale: 0.78 },
+      { kind: 'Cubeta del hogar', size: '12 L', line: 'Línea hogar', model: 'hogar12', note: 'Asa de metal', handle: true, scale: 0.96 }
     ]
   },
   {
@@ -127,7 +126,7 @@ function renderUI() {
   dragZone.hidden = isService;
 
   if (isService) {
-    $('catalogName').innerHTML = '<span>Impresión y</span><strong>desarrollo</strong>';
+    $('catalogName').innerHTML = '<span>Impresión y</span> <strong>desarrollo</strong>';
     $('catalogMeta').textContent = 'Capacidades complementarias para desarrollar, imprimir, mantener y producir soluciones a la medida.';
     $('catalogPager').innerHTML = '';
   } else {

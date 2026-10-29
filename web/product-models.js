@@ -4,7 +4,10 @@
 //                asa de alambre con agarradera negra)
 //   'cubeta5'  → cubeta de 5 L (tapa de borde redondeado, collar, asa redonda translúcida)
 //   'envase1'  → envase de 1 L de pared delgada (cónico, con tapa plana a presión)
-//   'cubeta10' → cubeta de 10 L de boca roscada (borde, rosca, anillo de soporte, sin asa)
+//   'cubeta10' → cubeta de 10 L de boca roscada (borde, rosca, anillo de soporte, sin asa);
+//                'envase1kg' es el mismo envase (grado industrial, 1 kg)
+//   'hogar12'  → cubeta del hogar de 12 L (boca ancha con pico, escalón, base redondeada,
+//                asa de alambre con agarradera negra)
 // La cubeta de 4 L es la del hero (bucket-model.js).
 //
 // Igual que bucket-model.js: cotas en MILÍMETROS (Y = 0 en la base), el modelo se escala a
@@ -57,6 +60,23 @@ export const DIMS = {
     threadTurns: 1.6,
     lipH: 13,      // borde superior
     rLip: 106,
+  },
+  hogar12: {
+    E: 275,        // altura (sin tapa)
+    rRim: 152,     // borde superior grueso
+    rUpper: 147,   // franja superior (donde está el pico)
+    stepY: 200,    // escalón entre la franja superior y el cuerpo
+    rBody: 139,    // cuerpo bajo el escalón
+    rLow: 124,     // cuerpo antes del redondeo de la base
+    rBase: 108,
+    wall: 2.4,
+    earY: 256,
+    spoutAngle: -58,   // grados desde el frente (+Z); negativo = a la izquierda
+    wireR: 2.2,
+    bailRise: 175,
+    gripLen: 95,
+    gripR: 10,
+    handleRest: 2.25,  // asa caída al frente, como en la foto
   },
   envase1: {
     E: 150,
@@ -202,19 +222,7 @@ function cubeta19(o) {
   const handlePivot = new THREE.Group();
   handlePivot.position.y = d.earY;
   if (o.withHandle) {
-    const x0 = rIn + 9;
-    handlePivot.add(mk(new THREE.TubeGeometry(bailCurve(x0, d.bailRise, 6), 160, d.wireR, 10, false), mats.wire));
-    const grip = new THREE.Group();
-    grip.add(mk(new THREE.CapsuleGeometry(d.gripR, d.gripLen - d.gripR * 2, 6, 20), mats.grip));
-    for (const x of [-0.22, 0.22]) {        // ranuras de la agarradera
-      const g = mk(new THREE.TorusGeometry(d.gripR + 0.2, 1.2, 8, 24), mats.grip);
-      g.rotation.x = Math.PI / 2;
-      g.position.y = x * d.gripLen;
-      grip.add(g);
-    }
-    grip.rotation.z = Math.PI / 2;
-    grip.position.y = d.bailRise;
-    handlePivot.add(grip);
+    addWireBail(handlePivot, rIn + 9, d, mats);
     handlePivot.rotation.x = o.handleAngle ?? d.handleRest;
     model.add(handlePivot);
   }
@@ -370,7 +378,83 @@ function cubeta10(o) {
   return normalize(model, d.E, o.height, o.origin, { body, lid: null, handlePivot: null }, d);
 }
 
-const BUILDERS = { cubeta19, cubeta10, cubeta5, envase1 };
+/* ---------- cubeta del hogar 12 L ---------- */
+
+function hogar12(o) {
+  const d = { ...DIMS.hogar12, ...(o.dims || {}) };
+  const mats = materials();
+  const seg = o.segments;
+  const model = new THREE.Group();
+  const w = d.wall;
+
+  const outer = [
+    [d.rUpper - 5, d.E],
+    [d.rRim, d.E, 1.5], [d.rRim, d.E - 8, 1.5],          // borde grueso
+    [d.rUpper, d.E - 9, 1], [d.rUpper, d.stepY + 4, 3],   // franja superior
+    [d.rBody, d.stepY - 4, 3],                            // escalón
+    [d.rLow, 26, 14],
+    [d.rBase, 0, 10],                                     // base redondeada
+  ];
+  const inner = [
+    [d.rBase - w, 0, 1], [d.rBase - w, 4, 1], [0, 4], [0, 7],
+    [d.rBase - w, 7, 10],
+    [d.rLow - w, 26, 12],
+    [d.rBody - w, d.stepY - 4, 3],
+    [d.rUpper - 5 - w, d.stepY + 4],
+    [d.rUpper - 5 - w, d.E],
+  ];
+  const body = shell(outer, inner, mats.pp, seg);
+  model.add(body);
+
+  // Pico vertedor: canal redondeado en la franja superior, del borde al escalón.
+  const a = (d.spoutAngle * Math.PI) / 180;
+  const spoutH = d.E - d.stepY - 4;
+  const spoutMat = mats.pp.clone();
+  spoutMat.side = THREE.DoubleSide;
+  const spout = new THREE.Group();
+  const shellGeo = new THREE.CylinderGeometry(24, 15, spoutH, 32, 1, true, -Math.PI / 2, Math.PI);
+  spout.add(mk(shellGeo, spoutMat));
+  const cap = mk(new THREE.SphereGeometry(15, 24, 12, -Math.PI / 2, Math.PI, Math.PI / 2, Math.PI / 2), spoutMat);
+  cap.position.y = -spoutH / 2;
+  spout.add(cap);
+  spout.position.set(Math.sin(a) * (d.rUpper - 16), d.stepY + spoutH / 2, Math.cos(a) * (d.rUpper - 16));
+  spout.rotation.y = a;
+  body.add(spout);
+
+  // Orejas: lengüetas rectangulares bajo el borde.
+  for (const sgn of [-1, 1]) {
+    const ear = mk(new THREE.BoxGeometry(8, 20, 22), mats.pp);
+    ear.position.set(sgn * (d.rUpper + 3), d.earY, 0);
+    body.add(ear);
+  }
+
+  const handlePivot = new THREE.Group();
+  handlePivot.position.y = d.earY;
+  if (o.withHandle) {
+    addWireBail(handlePivot, d.rUpper + 9, d, mats);
+    handlePivot.rotation.x = o.handleAngle ?? d.handleRest;
+    model.add(handlePivot);
+  }
+  return normalize(model, d.E, o.height, o.origin, { body, lid: null, handlePivot }, d);
+}
+
+// Asa de alambre con agarradera negra (19 L y hogar 12 L).
+function addWireBail(pivot, x0, d, mats) {
+  pivot.add(mk(new THREE.TubeGeometry(bailCurve(x0, d.bailRise, 6), 160, d.wireR, 10, false), mats.wire));
+  const grip = new THREE.Group();
+  grip.add(mk(new THREE.CapsuleGeometry(d.gripR, d.gripLen - d.gripR * 2, 6, 20), mats.grip));
+  for (const x of [-0.22, 0.22]) {
+    const g = mk(new THREE.TorusGeometry(d.gripR + 0.2, 1.2, 8, 24), mats.grip);
+    g.rotation.x = Math.PI / 2;
+    g.position.y = x * d.gripLen;
+    grip.add(g);
+  }
+  grip.rotation.z = Math.PI / 2;
+  grip.position.y = d.bailRise;
+  pivot.add(grip);
+}
+
+const BUILDERS = { cubeta19, cubeta10, envase1kg: cubeta10, cubeta5, envase1, hogar12 };
 
 export function createProduct(kind, opts = {}) {
   const build = BUILDERS[kind];
