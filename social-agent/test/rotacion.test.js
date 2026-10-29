@@ -48,3 +48,26 @@ test('historia: arma 1080x1920 con la pieza completa y fondo desenfocado', async
   assert.match(a, /force_original_aspect_ratio=decrease/);
   assert.match(a, /0:a\?/);
 });
+
+test('temas agotados: WhatsApp en muchos posts se prohíbe salvo en su pilar', async () => {
+  const { temasAgotados } = await import('../src/rotacion.js');
+  const historial = [
+    h('a', { tema: 'El negocio que dejaba los mensajes de WhatsApp sin responder', gancho: 'Te escribió de noche' }),
+    h('b', { tema: 'Contestar WhatsApp a mano te cuesta clientes' }),
+    h('c', { tema: 'Diseño web que sí vende' }),
+    h('d', { tema: 'Por qué tu WhatsApp pierde ventas en la noche' }),
+    h('e', { tema: 'Tu logo no es tu marca' }),
+  ];
+  assert.ok(temasAgotados(historial).includes('whatsapp'));
+  const r = elegirReceta({ perfil, plataforma: 'instagram', historial });
+  if (r.pilar !== 'agente whatsapp') assert.ok(r.evitar.includes('whatsapp'));
+  const errs = erroresReceta({ pilar_de_contenido: r.pilar, estructura: r.estructura, formato_contenido: r.formato, tema: 'El error de los anuncios sin WhatsApp atendido', ganchos: [{ formula_id: r.formulas[0] }], gancho_elegido: 0 }, { ...r, evitar: ['whatsapp'] });
+  assert.ok(errs.some((e) => /whatsapp/.test(e)));
+  const conPilar = elegirReceta({ perfil: { ...perfil, pilares_de_contenido: [{ nombre: 'agente whatsapp' }] }, plataforma: 'instagram', historial });
+  assert.ok(!conPilar.evitar?.includes('whatsapp'));
+});
+
+test('tema casi igual a uno reciente se rechaza', () => {
+  const errs = erroresReceta({ tema: 'Mensajes de WhatsApp sin responder hasta la mañana' }, { recientes: ['El negocio que dejaba los mensajes de WhatsApp sin responder hasta la mañana siguiente'] });
+  assert.equal(errs.length, 1);
+});

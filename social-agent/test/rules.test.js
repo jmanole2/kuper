@@ -39,7 +39,7 @@ test('limpia rayas, comillas curvas e invisibles', () => {
 
 test('caption de Instagram: primera línea, una acción, palabra clave, búsqueda, muletillas', () => {
   const errs = captionIssues('Hola a todos! En el mundo actual la sinergia es clave y esta primera línea es tan larga que Instagram la corta antes de que alguien llegue al final de verdad.\n¿El resultado?\nGuarda este post y comenta info. https://x.com', { plataforma: 'instagram', perfil, trabajo: 'A' }).join('\n');
-  for (const re of [/125/, /saludo/, /2 llamadas/, /en el mundo actual/, /sinergia/, /pregunta retórica/, /link/, /palabra clave INFO/, /término de búsqueda/, /trabajo A/]) assert.match(errs, re);
+  for (const re of [/125/, /saludo/, /2 llamadas/, /en el mundo actual/, /sinergia/, /pregunta retórica/, /link/, /palabra clave en MAYÚSCULAS/, /término de búsqueda/, /trabajo A/]) assert.match(errs, re);
 });
 
 test('el gancho elegido debe abrir la pieza y usar 3 fórmulas distintas', () => {

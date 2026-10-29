@@ -25,6 +25,40 @@ export const DIRECCIONES = [
 
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
 
+// ------------------------------------------------------------ temas agotados
+// Palabras demasiado generales para contar como "tema" (aparecen en casi cualquier post de un negocio).
+const VACIAS = new Set(('para pero como cuando este esta esto estos estas porque sobre entre tiene tienes tener hasta desde todo todos toda todas nada cada solo tambien donde mucho muchos mismo misma otro otra otros otras ' +
+  'antes despues ahora siempre nunca hacer hace haces puede puedes sabes saber quien cual cuales aqui alla menos mejor peor dias horas veces ' +
+  'negocio negocios cliente clientes empresa empresas pyme pymes dueno duenos venta ventas vender vende tuyo tuya nuestro nuestra error errores').split(' '));
+const raiz = (w) => w.slice(0, 6);
+/** Raíces de las palabras con contenido de un texto. */
+export function raices(texto) {
+  return new Set(norm(texto).split(/[^a-z0-9ñ]+/).filter((w) => w.length >= 4 && !VACIAS.has(w)).map(raiz));
+}
+const textoDe = (h) => [h.tema, h.gancho, ...(h.titulares || [])].filter(Boolean).join(' ');
+const textoSalida = (o) => [o.tema, o.ganchos?.[o.gancho_elegido ?? 0]?.en_pantalla, ...(o.animacion?.escenas || []).map((e) => e.titular), ...(o.slides || []).map((x) => x.titulo)].filter(Boolean).join(' ');
+
+/** Palabras que ya salieron en muchos posts recientes (en 3 o más de los últimos 8, y en al menos 40%). */
+export function temasAgotados(historial = []) {
+  const vistos = new Set();
+  const docs = [];
+  for (const h of historial) {
+    const k = norm(h.tema);
+    if (!h.tema || vistos.has(k)) continue; // el mismo post en IG y FB cuenta una vez
+    vistos.add(k); docs.push(h);
+    if (docs.length >= 8) break;
+  }
+  if (docs.length < 3) return [];
+  const df = new Map(), forma = new Map();
+  for (const h of docs) {
+    const palabras = norm(textoDe(h)).split(/[^a-z0-9ñ]+/).filter((w) => w.length >= 4 && !VACIAS.has(w));
+    for (const w of palabras) if (!forma.has(raiz(w))) forma.set(raiz(w), w);
+    for (const r of new Set(palabras.map(raiz))) df.set(r, (df.get(r) || 0) + 1);
+  }
+  const min = Math.max(3, Math.ceil(docs.length * 0.4));
+  return [...df].filter(([, n]) => n >= min).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([r]) => forma.get(r));
+}
+
 /** Mezcla con desempate al azar: ordena por uso y, entre los igual de usados, al azar. */
 function menosUsadosPrimero(opciones, usos, rand) {
   return opciones.map((o) => ({ o, n: usos.get(o) || 0, r: rand() })).sort((a, b) => a.n - b.n || a.r - b.r).map((x) => x.o);
@@ -90,6 +124,14 @@ export function elegirReceta({ perfil, plataforma, historial = [], formatosPermi
   const usadas = new Set(historial.slice(0, 10).map((h) => h.formula).filter(Boolean));
   const libres = FORMULAS_IDS.filter((id) => !usadas.has(id));
   receta.formulas = menosUsadosPrimero(libres.length >= 5 ? libres : FORMULAS_IDS, new Map(), rand).slice(0, 5).sort((a, b) => a - b);
+
+  // Temas agotados: no se tocan salvo que el pilar sea justo de eso. Con tema pedido no se impone nada.
+  if (!tema) {
+    const delPilar = raices(receta.pilar || '');
+    const evitar = temasAgotados(historial).filter((w) => !delPilar.has(raiz(w)));
+    if (evitar.length) receta.evitar = evitar;
+    receta.recientes = historial.map((h) => h.tema).filter(Boolean).slice(0, 8);
+  }
   return receta;
 }
 
@@ -100,6 +142,15 @@ export function erroresReceta(out, receta) {
   if (receta.pilar && norm(out.pilar_de_contenido) !== norm(receta.pilar)) errs.push(`Este post es del pilar "${receta.pilar}" (asignado en RECETA_DE_ESTE_POST), no de "${out.pilar_de_contenido}".`);
   if (receta.estructura && out.estructura !== receta.estructura) errs.push(`La estructura asignada es "${receta.estructura}", no "${out.estructura}".`);
   if (receta.formato && out.formato_contenido !== receta.formato) errs.push(`El formato asignado es "${receta.formato}", no "${out.formato_contenido}".`);
+  const propias = raices(textoSalida(out));
+  const repetidas = (receta.evitar || []).filter((w) => propias.has(raiz(w)));
+  if (repetidas.length) errs.push(`El post vuelve a hablar de ${repetidas.map((w) => `"${w}"`).join(', ')}, que ya salió en muchas publicaciones recientes. Busca otra idea del pilar "${receta.pilar || out.pilar_de_contenido}" que no toque eso (ni en el tema, ni en el gancho, ni en los titulares).`);
+  const tema = raices(out.tema);
+  for (const prev of receta.recientes || []) {
+    const r = raices(prev);
+    const comun = [...tema].filter((x) => r.has(x)).length;
+    if (Math.min(tema.size, r.size) >= 3 && comun / Math.min(tema.size, r.size) >= 0.6) { errs.push(`El tema se parece demasiado a uno reciente ("${prev}"); elige otra idea.`); break; }
+  }
   const f = formulaDe(out);
   if (receta.formulas?.length && f != null && !receta.formulas.includes(f)) errs.push(`El gancho elegido debe usar una de las fórmulas asignadas (${receta.formulas.join(', ')}); usaste la ${f}.`);
   return errs;

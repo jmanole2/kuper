@@ -67,6 +67,8 @@ function buildInput(client, plataforma, { feedback, postId, tema } = {}) {
   });
   // Al aplicar cambios del cliente no se impone receta: se respeta lo que pidió.
   const receta = feedback ? null : elegirReceta({ perfil: client.perfil, plataforma, historial, formatosPermitidos: platformCfg(client, plataforma).formatos, tema });
+  // Los textos de prueba (MOCK_LLM) son fijos: no pueden esquivar temas agotados.
+  if (receta && config.mockLlm) { delete receta.evitar; delete receta.recientes; }
   const report = db.latestCompetitorReport(client.id);
   return {
     plataforma,

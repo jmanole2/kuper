@@ -100,8 +100,10 @@ export function captionIssues(copy, { plataforma, perfil = {}, trabajo, label = 
   if (/^[#@]/.test(first) || /^\p{Extended_Pictographic}/u.test(first)) errs.push(`${label}: la primera línea no puede empezar con hashtag, mención ni emoji.`);
   if (/https?:\/\/|www\./i.test(text)) errs.push(`${label}: tiene un link; en Instagram no son clicables. Usa "link en la bio".`);
   if (!asks.length) errs.push(`${label}: no tiene ninguna llamada a la acción; pon una (p. ej. ${perfil.palabra_clave_cta ? `"Comenta ${perfil.palabra_clave_cta}"` : 'comentar una palabra clave'}).`);
-  if (perfil.palabra_clave_cta && /comenta/i.test(text) && !new RegExp(`\\b${perfil.palabra_clave_cta}\\b`).test(text)) {
-    errs.push(`${label}: pide comentar pero no usa la palabra clave ${perfil.palabra_clave_cta} en MAYÚSCULAS.`);
+  // Si pide comentar, debe ser una palabra clave en MAYÚSCULAS. La de la marca es para el servicio
+  // al que lleva; en posts de otros temas vale otra (WEB, MARCA, GUIA…), para no forzar el producto estrella.
+  if (/comenta/i.test(text) && !/[Cc]omenta\s+(?:la\s+palabra\s+)?["“]?[A-ZÁÉÍÓÚÑ]{3,}(?![a-záéíóúñ])/u.test(text)) {
+    errs.push(`${label}: pide comentar pero no da una palabra clave en MAYÚSCULAS (p. ej. ${perfil.palabra_clave_cta || 'INFO'}, o una del tema del post).`);
   }
   if (trabajo === 'A' && !findAsks(first).length) errs.push(`${label}: es un Reel (trabajo A), así que la primera línea debe ser la acción dicha sin rodeos.`);
   const terms = perfil.terminos_busqueda || [];
