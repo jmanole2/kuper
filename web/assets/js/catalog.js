@@ -19,7 +19,7 @@ const categories = [
     legal: FOOD_LEGAL,
     items: [
       // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
-      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', handle: true, scale: 1 },
+      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', lidLeaning: true, handle: true, scale: 1 },
       { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', model: 'cubeta10', handle: false, scale: 0.95 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', handle: true, scale: 0.88 },
@@ -278,7 +278,7 @@ function buildBuckets() {
   buckets.forEach(disposeBucket);
   buckets = (categories[cat].items || []).map((item) => {
     const model = item.model
-      ? createProduct(item.model, { height: BUCKET_H, origin: 'bottom', withHandle: item.handle })
+      ? createProduct(item.model, { height: BUCKET_H, origin: 'bottom', withHandle: item.handle, lidLeaning: !!item.lidLeaning })
       : createBucket({ height: BUCKET_H, origin: 'bottom', withHandle: item.handle, handleAngle: -0.55 });
     if (!item.model) {
       // cubeta de 4 L (la del hero): mismo logo pequeño al frente, abajo

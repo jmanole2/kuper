@@ -34,6 +34,7 @@ export const DIMS = {
     gripLen: 112,  // agarradera negra
     gripR: 10.5,
     handleRest: 2.05,   // asa caída hacia el frente, como en la foto
+    lidLeanAngle: -0.75,// tapa recargada al frente-izquierda (solo grado alimenticio)
   },
   cubeta5: {
     E: 225,
@@ -240,7 +241,30 @@ function cubeta19(o) {
     ]).reverse(), 64), mats.pp));
     spout.position.set(-58, yT - 3.5, -62);
     lid.add(spout);
-    model.add(lid);
+    if (o.lidLeaning) {
+      // Tapa recargada de lado al frente de la cubeta abierta (como en la foto):
+      // boquilla abierta (hoyo oscuro) y tapa casi vertical, apoyada en el piso.
+      // en la foto la boquilla abierta es grande y queda casi al centro
+      spout.scale.set(1.3, 1.6, 1.3);
+      spout.position.set(28, yT - 3.5, -12);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(20, 40), new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.9 }));
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.y = 6.6;
+      spout.add(hole);
+      const tiltA = 1.3;                                   // ~75° desde horizontal
+      const yc = RL * Math.sin(tiltA) + 4;                 // el borde inferior toca el piso
+      const lean = new THREE.Group();
+      lid.position.y = -(yB + yT) / 2;                     // centra la tapa en su espesor
+      lean.add(lid);
+      lean.rotation.x = tiltA;
+      lean.position.set(0, yc, rIn + 55);
+      const place = new THREE.Group();
+      place.rotation.y = d.lidLeanAngle;
+      place.add(lean);
+      model.add(place);
+    } else {
+      model.add(lid);
+    }
   }
 
   // Asa de alambre con agarradera negra.
@@ -248,11 +272,13 @@ function cubeta19(o) {
   handlePivot.position.y = d.earY;
   if (o.withHandle) {
     addWireBail(handlePivot, rIn + 9, d, mats);
-    handlePivot.rotation.x = o.handleAngle ?? d.handleRest;
+    // con la tapa al frente, el asa cuelga hacia atrás para no atravesarla
+    handlePivot.rotation.x = o.handleAngle ?? (o.lidLeaning ? -d.handleRest : d.handleRest);
     model.add(handlePivot);
   }
-  if (o.logo) addLogo(body, { y: d.E * 0.3, h: d.E * 0.12, rAt: bodyR });
-  return normalize(model, o.withLid ? yT : d.E, o.height, o.origin, { body, lid, handlePivot }, d);
+  // con la tapa recargada, el logo se corre a la derecha para que se vea junto a la tapa
+  if (o.logo) addLogo(body, { y: d.E * 0.3, h: d.E * 0.12, rAt: bodyR, angle: o.lidLeaning ? 1.0 : 0 });
+  return normalize(model, o.withLid && !o.lidLeaning ? yT : d.E, o.height, o.origin, { body, lid, handlePivot }, d);
 }
 
 /* ---------- cubeta 5 L ---------- */
