@@ -6,7 +6,7 @@
 // ==========================================
 import * as THREE from 'three';
 import { createBucket } from '../../bucket-model.js';
-import { createProduct } from '../../product-models.js';
+import { createProduct, addLogo } from '../../product-models.js';
 
 const FOOD_LEGAL = 'Estos materiales cumplen con la regulación FDA Título 21 CFR 177.1520 y con las directivas europeas 2002/72/EC, 85/572/EC y 97/48/EC, que permiten su uso en artículos y componentes en contacto con alimentos.';
 
@@ -280,6 +280,13 @@ function buildBuckets() {
     const model = item.model
       ? createProduct(item.model, { height: BUCKET_H, origin: 'bottom', withHandle: item.handle })
       : createBucket({ height: BUCKET_H, origin: 'bottom', withHandle: item.handle, handleAngle: -0.55 });
+    if (!item.model) {
+      // cubeta de 4 L (la del hero): mismo logo pequeño al frente, abajo
+      const d = model.userData.dims;
+      const topY = d.E - d.H - d.neckH - d.bevelH - d.collarH;
+      const rAt = (y) => d.C / 2 + (d.bodyTopR - d.C / 2) * (y / topY);
+      addLogo(model.userData.model, { y: d.E * 0.32, h: d.E * 0.13, rAt });
+    }
     model.position.y = -BUCKET_H / 2;          // pivote en el centro de la cubeta
     const spin = new THREE.Group();
     spin.rotation.order = 'XYZ';

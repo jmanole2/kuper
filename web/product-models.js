@@ -62,18 +62,21 @@ export const DIMS = {
     rLip: 106,
   },
   hogar12: {
-    E: 275,        // altura (sin tapa)
-    rRim: 152,     // borde superior grueso
-    rUpper: 147,   // franja superior (donde está el pico)
-    stepY: 200,    // escalón entre la franja superior y el cuerpo
-    rBody: 139,    // cuerpo bajo el escalón
-    rLow: 124,     // cuerpo antes del redondeo de la base
-    rBase: 108,
+    E: 275,        // altura total (medida sobre la foto)
+    rRim: 149,     // borde superior grueso
+    rUpperTop: 143,// franja superior (lleva el pico), un poco cónica
+    rUpper: 138,   // franja superior, abajo
+    stepY: 203,    // escalón entre la franja superior y el cuerpo
+    rBody: 131,    // cuerpo bajo el escalón
+    rLow: 112,     // cuerpo justo antes de la esquina de la base
+    lowY: 18,
+    rBase: 101,    // base plana
     wall: 2.4,
-    earY: 256,
+    earY: 258,
     spoutAngle: -58,   // grados desde el frente (+Z); negativo = a la izquierda
+    spoutW: 72,        // ancho del pico arriba
     wireR: 2.2,
-    bailRise: 175,
+    bailRise: 170,
     gripLen: 95,
     gripR: 10,
     handleRest: 2.25,  // asa caída al frente, como en la foto
@@ -140,6 +143,28 @@ function addEars(group, r, y, mats, { w = 16, h = 22, t = 6 } = {}) {
     hole.position.set(sgn * (r + t - 0.95), y, 0);
     group.add(hole);
   }
+}
+
+// Logo Novaplástica pequeño, al frente (+Z) y en la parte baja del cuerpo, curvado
+// sobre la pared como en la cubeta del hero. rAt(y) = radio exterior del cuerpo en mm.
+const LOGO_ASPECT = 927 / 390;                 // proporción de logo.png
+let logoTexture = null;
+export function addLogo(group, { y, h, rAt, angle = 0 }) {
+  if (typeof document === 'undefined') return null;
+  if (!logoTexture) {
+    logoTexture = new THREE.TextureLoader().load('logo.png');
+    logoTexture.colorSpace = THREE.SRGBColorSpace;
+    logoTexture.anisotropy = 8;
+  }
+  const lift = 0.5;                            // despegue mínimo de la pared
+  const theta = (h * LOGO_ASPECT) / (rAt(y) + lift);
+  const geo = new THREE.CylinderGeometry(rAt(y + h / 2) + lift, rAt(y - h / 2) + lift, h, 48, 1, true, angle - theta / 2, theta);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    map: logoTexture, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  }));
+  mesh.position.y = y;
+  group.add(mesh);
+  return mesh;
 }
 
 function normalize(model, topY, height, origin, parts, d) {
@@ -226,6 +251,7 @@ function cubeta19(o) {
     handlePivot.rotation.x = o.handleAngle ?? d.handleRest;
     model.add(handlePivot);
   }
+  if (o.logo) addLogo(body, { y: d.E * 0.3, h: d.E * 0.12, rAt: bodyR });
   return normalize(model, o.withLid ? yT : d.E, o.height, o.origin, { body, lid, handlePivot }, d);
 }
 
@@ -291,6 +317,7 @@ function cubeta5(o) {
     handlePivot.rotation.x = o.handleAngle ?? d.handleRest;
     model.add(handlePivot);
   }
+  if (o.logo) addLogo(body, { y: d.E * 0.32, h: d.E * 0.13, rAt: (y) => d.rBase + (rBodyTop - d.rBase) * (y / (d.collarY - 6)) });
   return normalize(model, o.withLid ? yT : d.E, o.height, o.origin, { body, lid, handlePivot }, d);
 }
 
@@ -333,6 +360,7 @@ function envase1(o) {
     ]), seg), mats.pp));
     model.add(lid);
   }
+  if (o.logo) addLogo(body, { y: d.E * 0.32, h: d.E * 0.13, rAt: (y) => d.rBase + (rWallTop - d.rBase) * (y / (d.beadY - 1)) });
   return normalize(model, o.withLid ? yT : d.E, o.height, o.origin, { body, lid, handlePivot: null }, d);
 }
 
@@ -375,6 +403,7 @@ function cubeta10(o) {
   }
   body.add(mk(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, 3.2, 12, false), mats.pp));
 
+  if (o.logo) addLogo(body, { y: d.E * 0.32, h: d.E * 0.12, rAt: (y) => d.rBase + (d.rBody - d.rBase) * (y / (d.ringY - 2)) });
   return normalize(model, d.E, o.height, o.origin, { body, lid: null, handlePivot: null }, d);
 }
 
@@ -388,53 +417,62 @@ function hogar12(o) {
   const w = d.wall;
 
   const outer = [
-    [d.rUpper - 5, d.E],
-    [d.rRim, d.E, 1.5], [d.rRim, d.E - 8, 1.5],          // borde grueso
-    [d.rUpper, d.E - 9, 1], [d.rUpper, d.stepY + 4, 3],   // franja superior
-    [d.rBody, d.stepY - 4, 3],                            // escalón
-    [d.rLow, 26, 14],
-    [d.rBase, 0, 10],                                     // base redondeada
+    [d.rUpperTop - 5, d.E],
+    [d.rRim, d.E, 1.5], [d.rRim, d.E - 8, 1.5],             // borde grueso
+    [d.rUpperTop, d.E - 9, 1], [d.rUpper, d.stepY + 3, 2.5],  // franja superior
+    [d.rBody, d.stepY - 3, 2.5],                              // escalón
+    [d.rLow, d.lowY, 12],                                     // esquina redondeada
+    [d.rBase, 0, 8],                                          // base plana
   ];
   const inner = [
     [d.rBase - w, 0, 1], [d.rBase - w, 4, 1], [0, 4], [0, 7],
-    [d.rBase - w, 7, 10],
-    [d.rLow - w, 26, 12],
-    [d.rBody - w, d.stepY - 4, 3],
-    [d.rUpper - 5 - w, d.stepY + 4],
-    [d.rUpper - 5 - w, d.E],
+    [d.rBase - w, 7, 8],
+    [d.rLow - w, d.lowY, 10],
+    [d.rBody - w, d.stepY - 3, 2.5],
+    [d.rUpperTop - 5 - w, d.E - 9],
+    [d.rUpperTop - 5 - w, d.E],
   ];
   const body = shell(outer, inner, mats.pp, seg);
   model.add(body);
 
-  // Pico vertedor: canal redondeado en la franja superior, del borde al escalón.
+  // Pico vertedor: canaleta en "U" que sale de la franja superior y se va
+  // metiendo hasta fundirse con el escalón; el borde grueso la cubre por arriba.
   const a = (d.spoutAngle * Math.PI) / 180;
-  const spoutH = d.E - d.stepY - 4;
-  const spoutMat = mats.pp.clone();
-  spoutMat.side = THREE.DoubleSide;
+  const yTopS = d.E - 8, yBotS = d.stepY - 2, hS = yTopS - yBotS;
+  const halfW = d.spoutW / 2, halfB = halfW * 0.6;
+  const squash = 0.6;                                    // sección ovalada (sale menos de lo que mide de ancho)
+  const shiftTop = 9, shiftBot = -10;                    // arriba sale, abajo se mete en la pared
+  const beak = mk(new THREE.CylinderGeometry(halfW, halfB, hS, 40, 4, false, -Math.PI / 2, Math.PI), mats.pp);
+  beak.scale.z = squash;
+  const tilt = new THREE.Group();
+  tilt.add(beak);
+  tilt.rotation.x = Math.atan((shiftTop - shiftBot) / hS);
+  tilt.position.set(0, yBotS + hS / 2, (shiftTop + shiftBot) / 2);
+  const lipMesh = mk(new THREE.CylinderGeometry(halfW + 6, halfW + 6, 8, 40, 1, false, -Math.PI / 2, Math.PI), mats.pp);
+  lipMesh.position.set(0, d.E - 4, shiftTop);
+  lipMesh.scale.z = squash;
   const spout = new THREE.Group();
-  const shellGeo = new THREE.CylinderGeometry(24, 15, spoutH, 32, 1, true, -Math.PI / 2, Math.PI);
-  spout.add(mk(shellGeo, spoutMat));
-  const cap = mk(new THREE.SphereGeometry(15, 24, 12, -Math.PI / 2, Math.PI, Math.PI / 2, Math.PI / 2), spoutMat);
-  cap.position.y = -spoutH / 2;
-  spout.add(cap);
-  spout.position.set(Math.sin(a) * (d.rUpper - 16), d.stepY + spoutH / 2, Math.cos(a) * (d.rUpper - 16));
+  spout.add(tilt, lipMesh);
+  const rS = d.rUpperTop - 10;
+  spout.position.set(Math.sin(a) * rS, 0, Math.cos(a) * rS);
   spout.rotation.y = a;
   body.add(spout);
 
   // Orejas: lengüetas rectangulares bajo el borde.
   for (const sgn of [-1, 1]) {
     const ear = mk(new THREE.BoxGeometry(8, 20, 22), mats.pp);
-    ear.position.set(sgn * (d.rUpper + 3), d.earY, 0);
+    ear.position.set(sgn * (d.rUpperTop + 2), d.earY, 0);
     body.add(ear);
   }
 
   const handlePivot = new THREE.Group();
   handlePivot.position.y = d.earY;
   if (o.withHandle) {
-    addWireBail(handlePivot, d.rUpper + 9, d, mats);
+    addWireBail(handlePivot, d.rUpperTop + 8, d, mats);
     handlePivot.rotation.x = o.handleAngle ?? d.handleRest;
     model.add(handlePivot);
   }
+  if (o.logo) addLogo(body, { y: d.E * 0.33, h: d.E * 0.12, rAt: (y) => d.rLow + (d.rBody - d.rLow) * ((y - d.lowY) / (d.stepY - 3 - d.lowY)) });
   return normalize(model, d.E, o.height, o.origin, { body, lid: null, handlePivot }, d);
 }
 
@@ -460,6 +498,6 @@ export function createProduct(kind, opts = {}) {
   const build = BUILDERS[kind];
   if (!build) throw new Error(`Modelo de producto desconocido: ${kind}`);
   return build({
-    height: 2, origin: 'center', segments: 160, withLid: true, withHandle: true, ...opts,
+    height: 2, origin: 'center', segments: 160, withLid: true, withHandle: true, logo: true, ...opts,
   });
 }
