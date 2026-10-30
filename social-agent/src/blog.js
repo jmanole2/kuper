@@ -8,7 +8,7 @@ import path from 'node:path';
 import { config, mediaDir } from './config.js';
 import { getDb, logEvent } from './db.js';
 import { pedirJSON } from './llm/proveedor.js';
-import { freqDays } from './schedule.js';
+import { freqDays, localDate, addDays } from './schedule.js';
 import { randomToken } from './crypto.js';
 import { generateImage, ensureJpeg } from './media/image.js';
 import { sendMail, smtpConfigured } from './notify.js';
@@ -486,11 +486,14 @@ export function tocaSitio(sitio, now = new Date()) {
   if (!sitio.activo || !sitio.config.categorias.length) return false;
   if (db().prepare("SELECT 1 FROM blog_articulos WHERE sitio_id = ? AND status = 'generando'").get(sitio.id)) return false;
   const err = db().prepare("SELECT updated_at FROM blog_articulos WHERE sitio_id = ? AND status = 'error' ORDER BY id DESC LIMIT 1").get(sitio.id);
-  if (err && now - new Date(err.updated_at.replace(' ', 'T') + 'Z') < 6 * 3600_000) return false; // no reintentar en bucle
-  const ult = db().prepare("SELECT created_at FROM blog_articulos WHERE sitio_id = ? AND status IN ('borrador','publicado','rechazado') ORDER BY id DESC LIMIT 1").get(sitio.id);
+  // Si falló (p. ej. la IA saturada), reintenta en una hora: varias oportunidades por noche, sin hacer bucle.
+  if (err && now - new Date(err.updated_at.replace(' ', 'T') + 'Z') < 3600_000) return false;
+  // Cuenta desde el último artículo automático (los escritos a mano no frenan la programación).
+  const ult = db().prepare("SELECT created_at FROM blog_articulos WHERE sitio_id = ? AND status IN ('borrador','publicado','rechazado') AND COALESCE(tema_pedido, '') != 'Escrito a mano' ORDER BY id DESC LIMIT 1").get(sitio.id);
   if (!ult) return true;
-  const dias = (now - new Date(ult.created_at.replace(' ', 'T') + 'Z')) / 86400_000;
-  return dias >= freqDays(sitio.config.frecuencia) - 0.25; // un poco de margen: la ventana de madrugada varía unos minutos
+  // Por día del calendario (no por horas exactas), para que no se corra un día cada vez.
+  const tz = config.timezone;
+  return localDate(now, tz) >= addDays(localDate(new Date(ult.created_at.replace(' ', 'T') + 'Z'), tz), freqDays(sitio.config.frecuencia));
 }
 
 let ocupado = false;

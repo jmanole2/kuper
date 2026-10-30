@@ -95,6 +95,14 @@ test('calendario: con 3 por semana toca cada 2 días', () => {
   const s = blog.getSitio(sitio.id);
   assert.equal(blog.tocaSitio(s, new Date()), false, 'acaba de escribir uno');
   assert.equal(blog.tocaSitio(s, new Date(Date.now() + 2 * 86400_000)), true);
+  // Por día de calendario: si el último salió tarde en la madrugada, a los 2 días toca desde temprano.
+  db.getDb().prepare("UPDATE blog_articulos SET created_at = datetime('now', '-1 day', '-20 hours') WHERE sitio_id = ?").run(sitio.id);
+  assert.equal(blog.tocaSitio(s, new Date(Date.now() + 4 * 3600_000)), true);
+  // Un artículo escrito a mano no frena la programación.
+  db.getDb().prepare("INSERT INTO blog_articulos (sitio_id, status, tema_pedido) VALUES (?, 'publicado', 'Escrito a mano')").run(sitio.id);
+  assert.equal(blog.tocaSitio(s, new Date(Date.now() + 4 * 3600_000)), true);
+  db.getDb().prepare("DELETE FROM blog_articulos WHERE tema_pedido = 'Escrito a mano'").run();
+  db.getDb().prepare("UPDATE blog_articulos SET created_at = datetime('now') WHERE sitio_id = ?").run(sitio.id);
 });
 
 test('tema pedido: se usa en el siguiente artículo y sale de la lista', async () => {
