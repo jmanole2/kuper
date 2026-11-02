@@ -71,3 +71,12 @@ test('tema casi igual a uno reciente se rechaza', () => {
   const errs = erroresReceta({ tema: 'Mensajes de WhatsApp sin responder hasta la mañana' }, { recientes: ['El negocio que dejaba los mensajes de WhatsApp sin responder hasta la mañana siguiente'] });
   assert.equal(errs.length, 1);
 });
+
+test('una hora ya usada (23:47) no vuelve en ningún post', async () => {
+  const { temasAgotados } = await import('../src/rotacion.js');
+  const hist = [{ plataforma: 'instagram', tema: 'Ventas perdidas de noche', gancho: 'Te escribió a las 23:47' }, { plataforma: 'instagram', tema: 'Tu logo' }];
+  const evitar = temasAgotados(hist);
+  assert.deepEqual(evitar, ['23:47']);
+  assert.equal(erroresReceta({ tema: 'Otra cosa', slides: [{ titulo: 'El mensaje de las 23:47' }] }, { evitar }).length, 1);
+  assert.equal(erroresReceta({ tema: 'Otra cosa', slides: [{ titulo: 'Abre a las 9:00' }] }, { evitar }).length, 0);
+});

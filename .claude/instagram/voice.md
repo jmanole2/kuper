@@ -79,7 +79,7 @@ inventan nada.
 - **Ritmo:** 160 palabras por minuto {{medir}}
 - **Idioma:** español neutro, tuteando ("tú", no "usted"), que se entienda
   igual en México y en España:
-  - Hora en formato 24 h ("23:47"), no "11:47 p. m.".
+  - Hora en formato 24 h ("18:30"), no "6:30 p. m.".
   - Sin lugares de un solo país (colonias, barrios, ciudades) en los ejemplos.
   - Palabras que funcionan en ambos: "reservar una cita" (no "agendar"),
     "dar el precio" o "presupuesto" (no solo "cotizar"), "clínica" (no

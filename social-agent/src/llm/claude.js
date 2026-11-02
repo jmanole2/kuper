@@ -79,6 +79,7 @@ function renderInput(i) {
       `- estructura: "${r.estructura}"`,
       r.formato ? `- formato_contenido: "${r.formato}"` : '',
       `- ganchos: usa solo estas fórmulas de FORMULAS_DE_GANCHO: ${r.formulas.join(', ')}`,
+      r.pilar ? `- Habla SOLO de "${r.pilar}". La marca vende varias cosas: no metas su producto estrella ni su escena de siempre en un post de otro pilar, aunque la voz hable mucho de eso.` : '',
       '- Idea, gancho y titulares NUEVOS: nada parecido a los "gancho" y "titulares" de HISTORIAL_RECIENTE (ni la misma escena con otras palabras).',
       r.evitar?.length ? `- TEMAS AGOTADOS (ya salieron en muchos posts recientes; no los menciones ni en el tema, ni en el gancho, ni en los titulares): ${r.evitar.join(', ')}` : '',
     ].filter(Boolean).join('\n')]);

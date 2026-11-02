@@ -32,8 +32,12 @@ const VACIAS = new Set(('para pero como cuando este esta esto estos estas porque
   'negocio negocios cliente clientes empresa empresas pyme pymes dueno duenos venta ventas vender vende tuyo tuya nuestro nuestra error errores').split(' '));
 const raiz = (w) => w.slice(0, 6);
 /** Raíces de las palabras con contenido de un texto. */
+// Las horas exactas ("23:47") cuentan como una palabra: son el gancho típico que la IA repite.
+const palabras = (texto) => norm(texto).replace(/(^|\D)(\d{1,2}):(\d{2})(?!\d)/g, '$1 h$2$3 ').split(/[^a-z0-9ñ]+/).filter((w) => w.length >= 4 && !VACIAS.has(w));
+const esHora = (w) => /^h\d{3,4}$/.test(w);
+const mostrar = (w) => (esHora(w) ? `${w.slice(1, -2)}:${w.slice(-2)}` : w);
 export function raices(texto) {
-  return new Set(norm(texto).split(/[^a-z0-9ñ]+/).filter((w) => w.length >= 4 && !VACIAS.has(w)).map(raiz));
+  return new Set(palabras(texto).map(raiz));
 }
 const textoDe = (h) => [h.tema, h.gancho, ...(h.titulares || [])].filter(Boolean).join(' ');
 const textoSalida = (o) => [o.tema, o.ganchos?.[o.gancho_elegido ?? 0]?.en_pantalla, ...(o.animacion?.escenas || []).map((e) => e.titular), ...(o.slides || []).map((x) => x.titulo)].filter(Boolean).join(' ');
@@ -46,17 +50,18 @@ export function temasAgotados(historial = []) {
     const k = norm(h.tema);
     if (!h.tema || vistos.has(k)) continue; // el mismo post en IG y FB cuenta una vez
     vistos.add(k); docs.push(h);
-    if (docs.length >= 8) break;
   }
-  if (docs.length < 3) return [];
-  const df = new Map(), forma = new Map();
-  for (const h of docs) {
-    const palabras = norm(textoDe(h)).split(/[^a-z0-9ñ]+/).filter((w) => w.length >= 4 && !VACIAS.has(w));
-    for (const w of palabras) if (!forma.has(raiz(w))) forma.set(raiz(w), w);
-    for (const r of new Set(palabras.map(raiz))) df.set(r, (df.get(r) || 0) + 1);
-  }
-  const min = Math.max(3, Math.ceil(docs.length * 0.4));
-  return [...df].filter(([, n]) => n >= min).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([r]) => forma.get(r));
+  const df = new Map(), forma = new Map(), horas = new Set();
+  docs.forEach((h, i) => {
+    const ws = palabras(textoDe(h));
+    for (const w of ws) { if (!forma.has(raiz(w))) forma.set(raiz(w), w); if (esHora(w)) horas.add(raiz(w)); }
+    if (i < 8) for (const r of new Set(ws.map(raiz))) df.set(r, (df.get(r) || 0) + 1);
+  });
+  // Una hora ya usada no vuelve; una palabra que salió en 2 o más de los últimos 8 posts descansa.
+  const recientes = Math.min(docs.length, 8);
+  const min = Math.max(2, Math.ceil(recientes * 0.3));
+  const palabrasAgotadas = recientes >= 3 ? [...df].filter(([r, n]) => n >= min && !esHora(r)).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([r]) => r) : [];
+  return [...horas, ...palabrasAgotadas].map((r) => mostrar(forma.get(r)));
 }
 
 /** Mezcla con desempate al azar: ordena por uso y, entre los igual de usados, al azar. */
@@ -128,7 +133,7 @@ export function elegirReceta({ perfil, plataforma, historial = [], formatosPermi
   // Temas agotados: no se tocan salvo que el pilar sea justo de eso. Con tema pedido no se impone nada.
   if (!tema) {
     const delPilar = raices(receta.pilar || '');
-    const evitar = temasAgotados(historial).filter((w) => !delPilar.has(raiz(w)));
+    const evitar = temasAgotados(historial).filter((w) => ![...raices(w)].some((r) => delPilar.has(r)));
     if (evitar.length) receta.evitar = evitar;
     receta.recientes = historial.map((h) => h.tema).filter(Boolean).slice(0, 8);
   }
@@ -143,8 +148,8 @@ export function erroresReceta(out, receta) {
   if (receta.estructura && out.estructura !== receta.estructura) errs.push(`La estructura asignada es "${receta.estructura}", no "${out.estructura}".`);
   if (receta.formato && out.formato_contenido !== receta.formato) errs.push(`El formato asignado es "${receta.formato}", no "${out.formato_contenido}".`);
   const propias = raices(textoSalida(out));
-  const repetidas = (receta.evitar || []).filter((w) => propias.has(raiz(w)));
-  if (repetidas.length) errs.push(`El post vuelve a hablar de ${repetidas.map((w) => `"${w}"`).join(', ')}, que ya salió en muchas publicaciones recientes. Busca otra idea del pilar "${receta.pilar || out.pilar_de_contenido}" que no toque eso (ni en el tema, ni en el gancho, ni en los titulares).`);
+  const repetidas = (receta.evitar || []).filter((w) => [...raices(w)].some((r) => propias.has(r)));
+  if (repetidas.length) errs.push(`El post vuelve a hablar de ${repetidas.map((w) => `"${w}"`).join(', ')}, que ya salió en muchas publicaciones recientes. Busca otra idea${receta.pilar || out.pilar_de_contenido ? ` del pilar "${receta.pilar || out.pilar_de_contenido}"` : ""} que no toque eso (ni en el tema, ni en el gancho, ni en los titulares).`);
   const tema = raices(out.tema);
   for (const prev of receta.recientes || []) {
     const r = raices(prev);
