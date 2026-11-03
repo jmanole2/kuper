@@ -141,3 +141,6 @@ ajústalas si alguna no es tuya):
   sale de esa conversación. Agente de demostración: https://wa.me/525534907598
   (el DM se manda solo cuando alguien comenta AGENTE).
 - **A dónde va mi link:** WhatsApp 55 3490 7598 (agente de demostración)
+
+## Variedad (manda sobre lo de arriba)
+Kuper vende varias cosas: agentes de IA (WhatsApp, redes, llamadas, chat web), páginas web, branding, redes sociales, anuncios, SEO/blog y automatización. El agente de WhatsApp es solo uno de los temas: máximo 1 de cada 4 posts habla de él. Nunca uses la escena del mensaje de la noche que se contestó tarde.

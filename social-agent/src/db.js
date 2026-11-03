@@ -378,7 +378,7 @@ export function recentVisuals(clientId, { limit = 6, excludeId = 0 } = {}) {
        AND status IN ('publicado','aprobado','publicando','pendiente','necesita_asset','rechazado')
      ORDER BY id DESC LIMIT 40`,
   ).all(clientId, excludeId)
-    .map((r) => { try { const v = JSON.parse(r.salida_json)?.visual; return v?.concepto && !v.respaldo ? { formato: r.formato, concepto: String(v.concepto).slice(0, 300), direccion: v.direccion || null } : null; } catch { return null; } })
+    .map((r) => { try { const v = JSON.parse(r.salida_json)?.visual; return v?.concepto && !v.respaldo ? { formato: r.formato, concepto: String(v.concepto).slice(0, 300), direccion: v.direccion || null, paleta: v.paleta || null, mascota: !!v.mascota } : null; } catch { return null; } })
     .filter(Boolean).slice(0, limit);
 }
 export function recentHistory(clientId, { limit = 12, excludeId = 0 } = {}) {

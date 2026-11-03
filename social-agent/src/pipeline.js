@@ -20,7 +20,7 @@ import { reporteCorreo } from './web/reporte.js';
 import { sendMail } from './notify.js';
 import { notifyClient } from './notify.js';
 import { adaptCaption } from './llm/adapt.js';
-import { elegirReceta, erroresReceta, elegirDireccion, resumenGuion, DIRECCIONES } from './rotacion.js';
+import { elegirReceta, erroresReceta, elegirDireccion, resumenGuion, DIRECCIONES, erroresVetados, elegirVisual } from './rotacion.js';
 
 // Cola de trabajos en serie: las generaciones abren Chromium y llaman a APIs, mejor de una en una.
 let chain = Promise.resolve();
@@ -89,12 +89,14 @@ const fileBase = (client, post) => path.join(mediaDir(), `${client.slug}-${post.
 
 const KIND = { video_animado: 'video', carrusel: 'carrusel', imagen_estatica: 'imagen' };
 
-export function brandOf(client) {
+export function brandOf(client, paleta = null) {
   const p = client.perfil;
   const estilo = typeof p.estilo_visual === 'string' ? p.estilo_visual : p.estilo_visual ? JSON.stringify(p.estilo_visual) : '';
   return {
     name: p.cliente || client.nombre,
-    colors: p.colores_marca || [],
+    colors: paleta?.colores?.length ? paleta.colores : p.colores_marca || [],
+    // La paleta puede fijar fondo, color principal y acento (p. ej. una pieza de fondo claro).
+    ...(paleta?.fondo ? { bg: paleta.fondo } : {}), ...(paleta?.primario ? { primary: paleta.primario } : {}), ...(paleta?.acento ? { accent: paleta.acento } : {}),
     fontHead: p.tipografia?.titulos || 'DM Sans',
     fontBody: p.tipografia?.texto || p.tipografia?.titulos || 'DM Sans',
     style: estilo,
@@ -131,13 +133,23 @@ async function produceMedia(client, post, out, { feedback } = {}) {
   const anteriores = db.recentVisuals(client.id, { excludeId: post.id });
   // Con cambios del cliente se conserva la dirección que ya tenía la pieza.
   const direccion = feedback ? DIRECCIONES.find((d) => d.id === post.salida?.visual?.direccion) : elegirDireccion(anteriores);
+  // Paleta y mascota de esta pieza (rotan para que el feed no sea de un solo color); con cambios, las mismas.
+  const mascotaPath = client.config?.mascota_path && fs.existsSync(client.config.mascota_path) ? client.config.mascota_path : null;
+  const prev = post.salida?.visual || {};
+  const vis = feedback
+    ? { paleta: (client.perfil.paletas || []).find((p) => p.nombre === prev.paleta) || null, mascota: !!prev.mascota && !!mascotaPath }
+    : elegirVisual({ perfil: client.perfil, anteriores, hayMascota: !!mascotaPath });
+  const brand = brandOf(client, vis.paleta);
+  if (vis.mascota) brand.markPath = mascotaPath;
   const r = await createVisual({
     kind,
     formato: out.formato_imagen,
     duration: out.animacion?.duracion_seg ?? 10,
     slides: out.slides?.length || 1,
     content: visualContent(out),
-    brand: brandOf(client),
+    brand,
+    paleta: vis.paleta?.nombre || null,
+    mascota: vis.mascota,
     plataforma: post.plataforma,
     ideaVisual: out.idea_visual,
     anteriores: feedback ? [] : anteriores,
@@ -148,7 +160,7 @@ async function produceMedia(client, post, out, { feedback } = {}) {
     video_path: r.video,
     image_path: r.cover,
     images: kind === 'carrusel' ? r.images : [],
-    visual: { concepto: r.concepto, codigo: r.codigo, rondas: r.rondas, respaldo: !!r.respaldo, direccion: direccion?.id || null },
+    visual: { concepto: r.concepto, codigo: r.codigo, rondas: r.rondas, respaldo: !!r.respaldo, direccion: direccion?.id || null, paleta: vis.paleta?.nombre || null, mascota: vis.mascota },
   };
 }
 
@@ -165,7 +177,7 @@ async function fillPost(postId, { feedback, tema } = {}) {
   const validate = (out) => [...validatePost(cleanOutput(out), {
     perfil: client.perfil, plataforma: post.plataforma, modo, historial: input.historial.ultimas_publicaciones,
     fechaCalculada: input.fechaCalculada, formatosPermitidos: platformCfg(client, post.plataforma).formatos,
-  }), ...erroresReceta(out, input.receta)];
+  }), ...erroresReceta(out, input.receta), ...erroresVetados(out, client.perfil)];
 
   const { out, errors } = await generatePost(input, validate);
   if (out.error) {

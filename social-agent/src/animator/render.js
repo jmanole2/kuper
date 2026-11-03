@@ -57,7 +57,7 @@ export function buildSpec(job) {
       width, height, format: job.formato, kind: job.kind,
       duration: job.kind === 'video' ? job.duration : 1, fps: job.fps || 30,
       slides: job.slides || 1, content: job.content || {},
-      brand: { name: job.brand.name, colors: job.brand.colors, fontHead, fontBody, style: job.brand.style },
+      brand: { name: job.brand.name, colors: job.brand.colors, fontHead, fontBody, style: job.brand.style, bg: job.brand.bg, primary: job.brand.primary, accent: job.brand.accent },
       fonts: fontList([fontHead, fontBody]),
     },
     assets: { logo: dataUri(job.brand.logoPath), mark: dataUri(job.brand.markPath) },

@@ -42,6 +42,8 @@ function briefText(job) {
     `Estilo visual de la marca: ${job.brand.style || 'sin indicaciones; propone uno coherente con la paleta'}.`,
     job.ideaVisual ? `Idea visual sugerida por el redactor (puedes mejorarla): ${job.ideaVisual}` : '',
     job.direccion ? `## DIRECCIÓN VISUAL DE ESTA PIEZA (asignada para variar el feed)\n${job.direccion}\nConstruye la pieza alrededor de este recurso, con los colores y la tipografía de la marca. No uses la composición del ejemplo de referencia (luz que baja + línea con destello + vidrio acanalado + cono de luz).` : '',
+    job.paleta ? `## PALETA DE ESTA PIEZA: ${job.paleta}\nLos colores de arriba son los de ESTA pieza (no uses los de otras paletas de la marca). Si la paleta trae fondo claro, la pieza va en claro: nada de fondo oscuro con luz.` : '',
+    job.mascota ? `## MASCOTA\nEsta pieza lleva a la mascota de la marca como protagonista: dibújala con K.mascota(ctx, x, y, alto, { align, alpha, flip, rot }) en grande (al menos un tercio del alto), que entre con movimiento y tenga vida (rebote suave, se asoma, voltea, salta entre escenas). El texto convive con ella sin taparla.` : '',
     job.feedback ? `Comentarios del cliente sobre la versión anterior: ${job.feedback}` : '',
     job.anteriores?.length ? `## PIEZAS ANTERIORES DE ESTA MARCA (no las repitas)\nAsí se diseñaron las últimas. Mantén colores, tipografía y estilo de la marca, pero usa una composición, un recurso visual y una animación DISTINTOS a estos:\n${job.anteriores.map((a, i) => `${i + 1}. (${a.formato || 'pieza'}) ${a.concepto}`).join('\n')}` : '',
     `## K.content`,

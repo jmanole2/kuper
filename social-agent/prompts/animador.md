@@ -56,6 +56,7 @@ function draw(ctx, t, K) {     // obligatoria, corre en cada cuadro.
 - `K.hairline(ctx, x1, y1, x2, y2, { alpha, width, p })` — línea fina (p la dibuja). `K.sparkle(ctx, x, y, r, { alpha, rot })` — destello de 4 puntas. `K.asterisk(ctx, x, y, r, { arms, w, rot, p })` — asterisco de trazos (marca gráfica).
 - `K.roundRect(ctx, x, y, w, h, r)` (deja el path listo para fill/stroke), `K.glowCircle(ctx, x, y, r, color, alpha)`.
 - `K.logo(ctx, x, y, alto, { align, alpha })` — logo del cliente (o su nombre si no hay logo). Devuelve el ancho.
+- `K.mascota(ctx, x, y, alto, { align, alpha, flip, rot })` — la mascota de la marca, solo si el brief dice que esta pieza la lleva (`K.hayMascota` es true). Devuelve el ancho.
 - `K.grain(ctx, amount)`, `K.vignette(ctx, strength)`.
 - Color: `K.rgba(hex, a)`, `K.mix(hex1, hex2, k)`, `K.readableOn(hex)`, `K.contrast(a, b)`.
 
@@ -71,7 +72,7 @@ function draw(ctx, t, K) {     // obligatoria, corre en cada cuadro.
 
 Si `K.brand.style` describe un estilo, mándalo él. Si no, o para todo lo que no especifique, este es el nivel y el lenguaje esperado (editorial, premium, tecnológico):
 
-- **Oscuro y con luz.** Fondo casi negro de la marca; UNA fuente de luz principal (una mancha de luz, un haz, una aurora tras vidrio) que dirige la mirada al texto. Negros profundos: no laves todo el lienzo de color.
+- **Color según la paleta de la pieza.** El brief dice la paleta de esta pieza: úsala con decisión. Si es oscura, fondo profundo con una fuente de luz o un color sólido de la paleta; si es clara, fondo claro con tipografía oscura y acentos de color. No todas las piezas son oscuras ni azules: sigue la paleta, no la costumbre.
 - **Tipografía como protagonista.** Titulares grandes en peso regular o ligero (400/300), en minúsculas y mayúsculas normales, interlineado apretado (~1.0), tracking ligeramente negativo. Nada de titulares en negrita gruesa ni todo en mayúsculas (las mayúsculas solo en etiquetas pequeñas con tracking abierto). Texto de apoyo pequeño y más tenue.
 - **Aire.** Grandes áreas vacías. Pocos elementos por cuadro: un titular, un apoyo, uno o dos detalles finos (línea, destello, asterisco, etiquetas de esquina, píldora). Nunca cajas o tarjetas en cada escena.
 - **Detalles finos.** Líneas de 1–2 px con baja opacidad, destellos pequeños, etiquetas de esquina discretas, grano sutil (`K.grain`). Son lo que da el acabado premium.

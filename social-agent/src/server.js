@@ -24,6 +24,7 @@ import * as conoc from './conocimiento.js';
 import * as seg from './seguridad.js';
 import * as blog from './blog.js';
 import * as campanas from './campanas.js';
+import { parsePaletas } from './rotacion.js';
 import * as facturacion from './facturacion.js';
 import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
@@ -802,6 +803,22 @@ export function createApp() {
   admin.post('/clientes/:cid/rotar-token', (req, res) => { db.rotatePortalToken(req.client.id); res.redirect(`/admin/clientes/${req.client.id}`); });
   admin.post('/clientes/:cid/logo', upload.single('archivo'), (req, res) => {
     if (req.file) db.updateClient(req.client.id, { logo_path: req.file.path });
+    res.redirect(`/admin/clientes/${req.client.id}?tab=config`);
+  });
+  admin.post('/clientes/:cid/mascota', upload.single('archivo'), (req, res) => {
+    const cfg = { ...req.client.config };
+    if (req.body?.quitar) delete cfg.mascota_path;
+    else if (req.file) cfg.mascota_path = req.file.path;
+    db.updateClient(req.client.id, { config: cfg });
+    res.redirect(`/admin/clientes/${req.client.id}?tab=config`);
+  });
+  admin.post('/clientes/:cid/paletas', (req, res) => {
+    db.updateClient(req.client.id, { perfil: { ...req.client.perfil, paletas: parsePaletas(req.body.paletas) } });
+    res.redirect(`/admin/clientes/${req.client.id}?tab=config`);
+  });
+  admin.post('/clientes/:cid/vetados', (req, res) => {
+    const vetados = [...new Set(String(req.body.vetados || '').split(/\r?\n/).map((s) => s.trim().slice(0, 80)).filter(Boolean))].slice(0, 40);
+    db.updateClient(req.client.id, { perfil: { ...req.client.perfil, temas_vetados: vetados } });
     res.redirect(`/admin/clientes/${req.client.id}?tab=config`);
   });
   admin.post('/clientes/:cid/competencia', (req, res) => {

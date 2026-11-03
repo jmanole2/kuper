@@ -449,6 +449,17 @@ window.makeKit = function makeKit(spec, assets) {
     ctx.save(); ctx.globalAlpha *= alpha; ctx.drawImage(img, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x, y, w, h); ctx.restore();
     return w;
   }
+  /** Mascota de la marca (si esta pieza la trae): dibuja la imagen con alto h. Devuelve el ancho (0 si no hay). */
+  function mascota(ctx, x, y, h = 300 * U, o = {}) {
+    const img = assets.mark;
+    if (!img) return 0;
+    const { align = 'center', alpha = 1, flip = false, rot = 0 } = o;
+    const w = img.width * (h / img.height);
+    const x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+    ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x0 + w / 2, y + h / 2); ctx.rotate(rot); if (flip) ctx.scale(-1, 1);
+    ctx.drawImage(img, -w / 2, -h / 2, w, h); ctx.restore();
+    return w;
+  }
   /** Número que cuenta de `from` a `to` entre a y b. */
   const counter = (t, from, to, a, b, decimals = 0) => (from + (to - from) * tween(t, a, b, ease.outExpo)).toFixed(decimals);
 
@@ -468,7 +479,7 @@ window.makeKit = function makeKit(spec, assets) {
     slide: spec.slide || 0, slides: spec.slides || 1, safe, brand, content: spec.content || {},
     clamp, lerp, seg, ease, tween, stagger, inOut, rand, noise,
     rgba, mix, lum, contrast, readableOn,
-    font, wrap, fit, drawText, roundRect, glass, pill, glowCircle, bg: bgs, grain, vignette, logo, counter,
+    font, wrap, fit, drawText, roundRect, glass, pill, glowCircle, bg: bgs, grain, vignette, logo, mascota, hayMascota: !!assets.mark, counter,
     flare, beam, hairline, sparkle, asterisk, fluted, corners, aurora, lightCone,
     _bindCtx(c) { ctxRef = c; },
   };

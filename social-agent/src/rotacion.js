@@ -181,3 +181,43 @@ export function resumenGuion(salida) {
     ...(titulares.length ? { titulares } : {}),
   };
 }
+
+// ------------------------------------------------------------ temas vetados (los decide la agencia)
+/** Frases que la marca no quiere ver nunca (perfil.temas_vetados). Se rechaza el post si trae una. */
+export function erroresVetados(out, perfil) {
+  const vetados = (perfil?.temas_vetados || []).map(String).filter((v) => v.trim());
+  if (!vetados.length) return [];
+  const caption = (out.variantes_copy || []).map((v) => v.copy).join(' ');
+  const propias = raices(`${textoSalida(out)} ${(out.slides || []).map((s) => s.texto).join(' ')} ${(out.animacion?.escenas || []).map((e) => e.apoyo).join(' ')} ${caption}`);
+  const hits = vetados.filter((v) => { const r = [...raices(v)]; return r.length && r.every((x) => propias.has(x)); });
+  return hits.length ? [`El post toca un tema que la marca vetó (${hits.map((h) => `"${h}"`).join(', ')}). Cambia la idea por completo: otro ángulo, otra escena y otros ejemplos.`] : [];
+}
+
+// ------------------------------------------------------------ paleta y mascota de cada pieza
+/** Paleta (de perfil.paletas) y si sale la mascota: rotan contra las piezas anteriores. */
+export function elegirVisual({ perfil, anteriores = [], hayMascota = false, rand = Math.random }) {
+  const paletas = (perfil?.paletas || []).filter((p) => p?.nombre && (p.colores?.length || p.fondo));
+  let paleta = null;
+  if (paletas.length) {
+    const ultima = anteriores[0]?.paleta;
+    const usos = contar(anteriores.slice(0, 6).map((a) => a.paleta));
+    const opciones = paletas.filter((p) => p.nombre !== ultima);
+    paleta = menosUsadosPrimero(opciones.length ? opciones : paletas, new Map(paletas.map((p) => [p, usos.get(p.nombre) || 0])), rand)[0];
+  }
+  // Mascota: más o menos 1 de cada 3 piezas, nunca dos seguidas.
+  const conMascota = hayMascota && !anteriores[0]?.mascota && !anteriores.slice(0, 2).some((a) => a.mascota) ? true
+    : hayMascota && !anteriores[0]?.mascota && rand() < 0.2;
+  return { paleta, mascota: !!conMascota };
+}
+
+/** "azul: #03070D #3F79E2 …" (una por línea; "fondo=#hex" opcional) → [{ nombre, fondo?, colores }]. */
+export function parsePaletas(texto) {
+  return String(texto || '').split(/\r?\n/).map((l) => {
+    const m = /^\s*([^:#]{1,30}):\s*(.+)$/.exec(l);
+    if (!m) return null;
+    const fondo = /fondo\s*=\s*(#[0-9a-f]{6})/i.exec(m[2])?.[1];
+    const colores = (m[2].replace(/fondo\s*=\s*#[0-9a-f]{6}/i, '').match(/#[0-9a-f]{6}\b/gi) || []).slice(0, 8);
+    if (!colores.length && !fondo) return null;
+    return { nombre: m[1].trim().toLowerCase(), ...(fondo ? { fondo: fondo.toUpperCase() } : {}), colores: colores.map((c) => c.toUpperCase()) };
+  }).filter(Boolean).slice(0, 8);
+}

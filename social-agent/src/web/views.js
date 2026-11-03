@@ -399,6 +399,22 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
     ${client.logo_path ? html`<img src="/media/${path.basename(client.logo_path)}" style="height:48px">` : ''}
     <input type="file" name="archivo" accept="image/png,image/jpeg" required style="width:auto"><button class="btn-warn">Subir logo</button>
     <span class="muted small">PNG con fondo transparente. Lo usa el animador en cierres y esquinas.</span></form>
+  <h2>Mascota</h2>
+  <form method="post" action="/admin/clientes/${client.id}/mascota" enctype="multipart/form-data" class="card row">
+    ${client.config?.mascota_path ? html`<img src="/media/${path.basename(client.config.mascota_path)}" style="height:64px">` : ''}
+    <input type="file" name="archivo" accept="image/png,image/webp" required style="width:auto"><button class="btn-warn">Subir mascota</button>
+    ${client.config?.mascota_path ? html`<button class="btn-ghost" name="quitar" value="1" formnovalidate>Quitar</button>` : ''}
+    <span class="muted small">PNG con fondo transparente. Sale como protagonista más o menos en 1 de cada 3 piezas.</span></form>
+  <h2>Paletas de color</h2>
+  <form method="post" action="/admin/clientes/${client.id}/paletas" class="card">
+    <textarea name="paletas" rows="5" style="font-family:ui-monospace,monospace;font-size:13px" placeholder="azul: #03070D #0B1E46 #3F79E2 #6FA8FF #EAF2FF&#10;morado: #0D0718 #2A1450 #7C4DFF #9B6DFF #F1EBFF&#10;claro: fondo=#F5F1EA #1B1B1B #7C4DFF #B6DF4B">${(client.perfil?.paletas || []).map((p) => `${p.nombre}: ${p.fondo ? `fondo=${p.fondo} ` : ''}${(p.colores || []).join(' ')}`).join('\n')}</textarea>
+    <p class="muted small">Una paleta por línea: <code>nombre: colores</code>. Cada pieza usa una distinta (rotan), para que el feed no sea de un solo color. <code>fondo=#…</code> fija el fondo (para piezas en claro). Vacío = solo los colores de la marca.</p>
+    <button class="btn-warn">Guardar paletas</button></form>
+  <h2>Temas vetados</h2>
+  <form method="post" action="/admin/clientes/${client.id}/vetados" class="card">
+    <textarea name="vetados" rows="4" placeholder="23:47&#10;contestar tarde&#10;mensaje de noche">${(client.perfil?.temas_vetados || []).join('\n')}</textarea>
+    <p class="muted small">Uno por línea. Si un post trae esas palabras (en el tema, los textos o el caption), se rechaza y la IA escribe otro. Úsalo para cortar temas repetidos.</p>
+    <button class="btn-warn">Guardar temas vetados</button></form>
 ` : ''}
   <h2>Configuración</h2>
   <form method="post" action="${action}" class="card">

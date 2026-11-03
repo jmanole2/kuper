@@ -80,3 +80,23 @@ test('una hora ya usada (23:47) no vuelve en ningún post', async () => {
   assert.equal(erroresReceta({ tema: 'Otra cosa', slides: [{ titulo: 'El mensaje de las 23:47' }] }, { evitar }).length, 1);
   assert.equal(erroresReceta({ tema: 'Otra cosa', slides: [{ titulo: 'Abre a las 9:00' }] }, { evitar }).length, 0);
 });
+
+test('paletas y mascota rotan; temas vetados se rechazan; paletas desde texto', async () => {
+  const { elegirVisual, erroresVetados, parsePaletas } = await import('../src/rotacion.js');
+  const perfil = { paletas: parsePaletas('Azul: #03070D #3F79E2\nmorado: #0D0718 #7C4DFF\nclaro: fondo=#f5f1ea #1B1B1B #7C4DFF\nbasura sin colores') };
+  assert.deepEqual(perfil.paletas.map((p) => p.nombre), ['azul', 'morado', 'claro']);
+  assert.equal(perfil.paletas[2].fondo, '#F5F1EA');
+  let ant = [], mascotas = 0;
+  for (let i = 0; i < 12; i++) {
+    const v = elegirVisual({ perfil, anteriores: ant, hayMascota: true });
+    assert.notEqual(v.paleta.nombre, ant[0]?.paleta, 'nunca la misma paleta dos veces seguidas');
+    if (v.mascota) { assert.ok(!ant[0]?.mascota, 'mascota nunca dos seguidas'); mascotas++; }
+    ant = [{ paleta: v.paleta.nombre, mascota: v.mascota }, ...ant];
+  }
+  assert.ok(mascotas >= 3 && mascotas <= 6, `mascota ~1 de cada 3 (${mascotas}/12)`);
+  assert.equal(elegirVisual({ perfil, hayMascota: false }).mascota, false);
+  const vet = { temas_vetados: ['23:47', 'contestar tarde'] };
+  assert.equal(erroresVetados({ tema: 'Ventas', slides: [{ titulo: 'El mensaje de las 23:47' }] }, vet).length, 1);
+  assert.equal(erroresVetados({ tema: 'Lo que cuesta contestar tarde', variantes_copy: [] }, vet).length, 1);
+  assert.equal(erroresVetados({ tema: 'Tu página web no vende', variantes_copy: [{ copy: 'Contesta GUIA' }] }, vet).length, 0);
+});
