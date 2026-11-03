@@ -60,7 +60,7 @@
     });
   }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
-  window.addEventListener('resize', () => { if (window.innerWidth >= 992) closeMenu(); });
+  window.addEventListener('resize', () => { if (window.innerWidth >= 1280) closeMenu(); });
 
   /* ---- submenú en pantallas táctiles: el primer toque abre, el segundo navega ---- */
   document.querySelectorAll('.np-nav-has-sub > a').forEach((a) => {
