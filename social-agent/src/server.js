@@ -25,6 +25,7 @@ import * as seg from './seguridad.js';
 import * as blog from './blog.js';
 import * as campanas from './campanas.js';
 import { parsePaletas } from './rotacion.js';
+import * as avisosAgente from './avisos-agente.js';
 import * as facturacion from './facturacion.js';
 import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
@@ -140,6 +141,11 @@ export function createApp() {
   api.post('/prospectos/:pid/resultado', (req, res) => {
     try { res.json({ ok: true, prospecto: prospeccion.resultado(req.client, Number(req.params.pid), req.body || {}) }); }
     catch (e) { res.status(/no encontrado/.test(e.message) ? 404 : 400).json({ error: e.message }); }
+  });
+  // El agente de WhatsApp avisa que alguien necesita a una persona: se marca en el lead y se manda por correo.
+  api.post('/avisos', async (req, res) => {
+    try { res.json(await avisosAgente.recibir(req.client, req.body || {})); }
+    catch (e) { console.error('[avisos agente]', e.message); res.status(500).json({ error: e.message }); }
   });
   api.post('/leads', (req, res) => {
     try {
