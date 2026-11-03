@@ -499,6 +499,8 @@ export function createApp() {
         if (v.email && !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(String(v.email).trim())) throw new Error('notificaciones: "email" no es un correo válido');
         continue;
       }
+      // Ajustes internos que no son redes (mascota_path, temas_pendientes, sin_factura…): no son objetos de red.
+      if (!db.PLATFORMS.includes(k) && (v === null || typeof v !== 'object' || Array.isArray(v))) continue;
       if (!db.PLATFORMS.includes(k)) throw new Error(`Red no soportada: ${k} (usa ${db.PLATFORMS.join(', ')})`);
       if (v.activo) freqDays(v.frecuencia || 'semanal');
       if (v.hora && !/^\d{2}:\d{2}$/.test(v.hora)) throw new Error(`${k}: "hora" debe ser HH:MM`);
