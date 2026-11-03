@@ -46,6 +46,14 @@
             "link": "/collections/rituales",
             "color": "#B9AFD2"
           }
+        },
+        "b5": {
+          "type": "chip",
+          "settings": {
+            "label": "Accesorios",
+            "link": "/collections/accesorios",
+            "color": "#F9C9D2"
+          }
         }
       },
       "block_order": [
@@ -53,7 +61,8 @@
         "b1",
         "b2",
         "b3",
-        "b4"
+        "b4",
+        "b5"
       ]
     },
     "news": {
