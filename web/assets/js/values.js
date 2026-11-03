@@ -7,6 +7,12 @@
 
 const ITEMS = [
   {
+    title: 'Propósito',
+    text: '<mark>Fabricamos confianza.</mark>',
+    pillars: [],
+    photo: 0, caption: 'Nuestra gente'
+  },
+  {
     title: 'Misión',
     text: 'Fabricar y distribuir productos plásticos de <mark>alta calidad e innovación</mark>, con personal calificado y tecnología, superando expectativas en México y el extranjero.',
     pillars: ['Calidad', 'Innovación', 'Personal calificado'],
@@ -27,7 +33,7 @@ const ITEMS = [
   {
     title: 'Política de inocuidad',
     text: 'Garantizar <mark>productos inocuos</mark> y el cumplimiento normativo mediante el desarrollo del personal, la comunicación efectiva y la mejora continua de nuestros procesos.',
-    pillars: ['FSSC 22000', 'HACCP', 'Cumplimiento normativo'],
+    pillars: ['FSSC 22000', 'Cumplimiento normativo'],
     photo: 3, caption: 'Inocuidad en cada paso'
   }
 ];

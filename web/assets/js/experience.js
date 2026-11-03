@@ -10,12 +10,12 @@
   const GRADES = {
     alimenticio: {
       title: 'Envases seguros para tus alimentos',
-      text: 'Fabricamos cubetas y tapas en polietileno y polipropileno para contacto con alimentos, con certificación FSSC 22000 e ISO 9001. Atendemos a marcas de lácteos, chocolates e ingredientes.',
-      caption: 'Cumplen FDA 21 CFR 177.1520 y directivas europeas para contacto con alimentos.'
+      text: 'Fabricamos cubetas y tapas en polietileno y polipropileno para contacto con alimentos, con certificación FSSC 22000 e ISO 9001. Atendemos a todo tipo de marcas de la industria alimentaria.',
+      caption: ''
     },
     industrial: {
-      title: 'Resistencia para pinturas y recubrimientos',
-      text: 'Cubetas y tapas rígidas y duraderas en PE-HD y PP para envasar, almacenar y transportar pinturas, recubrimientos y otros productos de uso industrial.',
+      title: 'Resistencia para uso industrial',
+      text: 'Cubetas y tapas rígidas y duraderas en polietileno y polipropileno para envasar, almacenar y transportar todo tipo de productos de uso industrial, con certificación ISO 9001.',
       caption: 'Diseños de línea en distintas capacidades, listos para tu operación.'
     },
     especiales: {
@@ -37,6 +37,7 @@
     title.textContent = data.title;
     text.textContent = data.text;
     caption.textContent = data.caption;
+    caption.hidden = !data.caption;
     if (data.photo && photo) photo.src = data.photo;
   };
   pills.forEach((pill) => pill.addEventListener('click', () => select(pill.dataset.grade)));

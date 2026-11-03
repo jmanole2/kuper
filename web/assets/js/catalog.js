@@ -8,7 +8,6 @@ import * as THREE from 'three';
 import { createBucket } from '../../bucket-model.js';
 import { createProduct, addLogo } from '../../product-models.js';
 
-const FOOD_LEGAL = 'Estos materiales cumplen con la regulación FDA Título 21 CFR 177.1520 y con las directivas europeas 2002/72/EC, 85/572/EC y 97/48/EC, que permiten su uso en artículos y componentes en contacto con alimentos.';
 
 // kind/size forman el nombre grande ("Cubeta de" / "19 L"); line es la familia del catálogo.
 const categories = [
@@ -16,7 +15,7 @@ const categories = [
     kicker: 'PRODUCTOS GRADO ALIMENTICIO',
     materials: ['PE-HD', 'PP', 'PE-LD'],
     accessories: 'Envases y tapas con o sin impresión, selección de tintas, variedad de colores, tapones, asas de plástico o metal y entrega a domicilio.',
-    legal: FOOD_LEGAL,
+    legal: '',
     items: [
       // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
       { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', lidLeaning: true, handle: true, scale: 1 },

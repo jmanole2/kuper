@@ -15,11 +15,6 @@
       title: 'Certificación ISO 9001',
       description: 'Sistema de gestión de calidad certificado para Novaplástica.',
       label: 'Documento de certificación ISO 9001'
-    },
-    haccp: {
-      title: 'Certificación HACCP',
-      description: 'Certificación enfocada en el análisis de riesgos y los puntos críticos de control.',
-      label: 'Documento de certificación HACCP'
     }
   };
 

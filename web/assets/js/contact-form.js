@@ -23,7 +23,7 @@
       status.textContent = 'Gracias, recibimos tu solicitud. Te contactaremos pronto.';
     } catch (error) {
       status.classList.add('is-error');
-      status.textContent = 'No pudimos enviar el mensaje. Escríbenos a aviesca@novaplasticasa.com.';
+      status.textContent = 'No pudimos enviar el mensaje. Escríbenos a ventas@novaplasticasa.com.';
     } finally {
       button.disabled = false;
     }

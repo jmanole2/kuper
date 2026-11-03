@@ -43,7 +43,7 @@
       <li class="np-nav-has-sub">
         <a href="#valores" data-nav-section="valores brandValues recognitions" aria-haspopup="true">Nosotros<svg class="np-nav-caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg></a>
         <ul class="np-nav-sub">
-          <li><a href="#valores" data-nav-section="valores">Misión, visión y políticas</a></li>
+          <li><a href="#valores" data-nav-section="valores">Propósito, misión y visión</a></li>
           <li><a href="#brandValues" data-nav-section="brandValues">Valores</a></li>
           <li><a href="#recognitions" data-nav-section="recognitions">Certificaciones</a></li>
         </ul>
@@ -159,8 +159,8 @@
           </div>
           <div class="exp-feature-text col-12 col-sm-8" aria-live="polite">
             <h3 id="expTitle">Envases seguros para tus alimentos</h3>
-            <p id="expText">Fabricamos cubetas y tapas en polietileno y polipropileno para contacto con alimentos, con certificación FSSC 22000 e ISO 9001. Atendemos a marcas de lácteos, chocolates e ingredientes.</p>
-            <p class="exp-feature-sub" id="expCaption">Cumplen FDA 21 CFR 177.1520 y directivas europeas para contacto con alimentos.</p>
+            <p id="expText">Fabricamos cubetas y tapas en polietileno y polipropileno para contacto con alimentos, con certificación FSSC 22000 e ISO 9001. Atendemos a todo tipo de marcas de la industria alimentaria.</p>
+            <p class="exp-feature-sub" id="expCaption" hidden></p>
           </div>
         </div>
       </div>
@@ -214,7 +214,7 @@
     <div class="mv-grid">
       <div class="mv-index">
         <p class="mv-kicker exp-card-tag">LO QUE NOS MUEVE</p>
-        <h2 class="mv-title exp-title">MISIÓN, VISIÓN Y POLÍTICAS</h2>
+        <h2 class="mv-title exp-title">PROPÓSITO, MISIÓN, VISIÓN Y POLÍTICAS</h2>
         <div class="mv-list" id="mvList" role="tablist" aria-label="Misión, visión y políticas"></div>
       </div>
 
@@ -279,7 +279,7 @@
     </div>
 
     <div class="recognition-cards row" id="recognitionCards">
-      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <div class="recognition-card-column col-12 col-md-4 d-flex align-items-center">
       <article class="recognition-card">
         <span class="recognition-card-number">01</span>
         <div class="recognition-card-logo"><img src="assets/images/recognitions/iso-9001.png" alt="Sello ISO 9001" loading="lazy" decoding="async" fetchpriority="low"></div>
@@ -293,7 +293,7 @@
       </article>
       </div>
 
-      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <div class="recognition-card-column col-12 col-md-4 d-flex align-items-center">
       <article class="recognition-card recognition-card-featured">
         <span class="recognition-card-number">02</span>
         <div class="recognition-card-logo"><img src="assets/images/recognitions/global-quality.png" alt="Global Quality Foundation" loading="lazy" decoding="async" fetchpriority="low"></div>
@@ -306,7 +306,7 @@
       </article>
       </div>
 
-      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
+      <div class="recognition-card-column col-12 col-md-4 d-flex align-items-center">
       <article class="recognition-card recognition-card-fssc">
         <span class="recognition-card-number">03</span>
         <div class="recognition-card-logo"><img src="assets/images/recognitions/fssc-22000.png" alt="Sello FSSC 22000" loading="lazy" decoding="async" fetchpriority="low"></div>
@@ -318,19 +318,6 @@
       </article>
       </div>
 
-      <div class="recognition-card-column col-12 col-md-3 d-flex align-items-center">
-      <article class="recognition-card">
-        <span class="recognition-card-number">04</span>
-        <div class="recognition-card-logo"><img src="assets/images/recognitions/haccp.png" alt="Sello HACCP" loading="lazy" decoding="async" fetchpriority="low"></div>
-        <div class="recognition-card-copy exp-feature-text">
-          <span class="recognition-card-type exp-card-tag">CERTIFICACIÓN</span>
-          <h3>HACCP</h3>
-          <p>Control preventivo para garantizar la inocuidad y seguridad en nuestros productos.</p>
-        </div>
-        <button class="recognition-document-button exp-pill" type="button" data-certificate="haccp">VER CERTIFICADO</button>
-        <span class="recognition-document-preview haccp" aria-hidden="true">&nbsp;</span>
-      </article>
-      </div>
     </div>
 
   </div>
@@ -366,13 +353,15 @@
         <p>Atendemos clientes y distribución en puntos estratégicos del país, con operación central y representación regional.</p>
         <div class="coverage-location-lists" aria-label="Ubicaciones con cobertura nacional">
           <div class="coverage-location-group is-direct">
-            <h3><i></i>Presencia directa <span>18 estados</span></h3>
+            <h3><i></i>Presencia directa <span>21 estados</span></h3>
             <ul>
               <li>Aguascalientes</li>
               <li>Baja California</li>
               <li>Campeche</li>
               <li>Chihuahua</li>
+              <li>Ciudad de México</li>
               <li>Coahuila</li>
+              <li>Colima</li>
               <li>Durango</li>
               <li>Guanajuato</li>
               <li>Guerrero</li>
@@ -381,6 +370,7 @@
               <li>Nuevo León</li>
               <li>Oaxaca</li>
               <li>Puebla</li>
+              <li>Querétaro</li>
               <li>Quintana Roo</li>
               <li>San Luis Potosí</li>
               <li>Tabasco</li>
@@ -559,10 +549,6 @@
         </article>
       </div>
 
-      <aside class="materials-regulation">
-        <span>USO EN CONTACTO CON ALIMENTOS</span>
-        <p>Estos materiales cumplen con la regulación <strong>FDA Título 21 CFR 177.1520</strong> y con las directivas europeas <strong>2002/72/EC, 85/572/EC y 97/48/EC</strong>, que permiten su uso en artículos y componentes destinados al contacto con alimentos.</p>
-      </aside>
     </div>
   </div>
 </section>
@@ -631,7 +617,7 @@
           </div>
           <div class="contact-email">
             <dt>Correo</dt>
-            <dd><a href="mailto:aviesca@novaplasticasa.com">aviesca@novaplasticasa.com</a></dd>
+            <dd><a href="mailto:ventas@novaplasticasa.com">ventas@novaplasticasa.com</a></dd>
           </div>
         </dl>
       </div>
