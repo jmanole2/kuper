@@ -925,7 +925,19 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
           <td style="text-align:right">${i === 0 ? html`<span class="badge" style="color:#c9f53a">Actual</span>` : html`<button class="btn-warn" style="padding:6px 12px;font-size:13px" formaction="${base}/agente/restaurar/${v.id}" formnovalidate onclick="return confirm('¿Volver a esta versión?')">Restaurar</button>`}</td></tr>`)}</table>` : html`<p class="muted small">Aún no hay versiones.</p>`}
       </div>
     </div>
-  </form>`;
+  </form>
+  <div class="card" style="margin-top:18px"><span class="mono">Archivos para compartir</span>
+    <p class="muted small" style="margin:6px 0 12px">Brochure, catálogo, menú, lista de precios… Tu agente los manda por WhatsApp cuando alguien los pide. PDF, imagen o video (máx. 16 MB para documentos).</p>
+    ${(client.config?.archivos_agente || []).length ? html`<table style="margin-bottom:14px">${(client.config.archivos_agente).map((a) => html`<tr>
+      <td><b>${a.nombre}</b><div class="muted small">Lo manda cuando: ${a.cuando || '—'}</div></td>
+      <td class="small"><a href="/media/${path.basename(a.archivo)}" target="_blank" style="color:var(--accent)">Ver</a></td>
+      <td style="text-align:right"><form method="post" action="${base}/agente/archivos/${a.id}/borrar" class="inline" onsubmit="return confirm('¿Quitar este archivo?')"><button class="btn-ghost" style="padding:6px 12px;font-size:13px">Quitar</button></form></td></tr>`)}</table>` : html`<p class="muted small">Todavía no hay archivos.</p>`}
+    <form method="post" action="${base}/agente/archivos" enctype="multipart/form-data" style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end">
+      <div><label>Nombre</label><input name="nombre" required maxlength="60" placeholder="Brochure de Red One"></div>
+      <div><label>Cuándo mandarlo</label><input name="cuando" required maxlength="160" placeholder="cuando pidan brochure, presentación o más información"></div>
+      <div><label>Archivo</label><input type="file" name="archivo" accept="application/pdf,image/png,image/jpeg,video/mp4" required></div>
+      <div><button class="btn-accent">Subir archivo</button></div>
+    </form></div>`;
   return page({ title: `Agente · ${client.nombre}`, side: app ? sideApp('agente', client) : side('clientes'), body });
 }
 

@@ -5,7 +5,7 @@ import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { config, mediaDir } from './config.js';
+import { config, mediaDir, mediaUrl } from './config.js';
 import * as db from './db.js';
 import * as pipe from './pipeline.js';
 import { sign, unsign, safeEqual, randomToken, hashPassword, verifyPassword, tempPassword, encrypt, decrypt } from './crypto.js';
@@ -69,6 +69,16 @@ export function createApp() {
     fileFilter: (_req, f, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'].includes(f.mimetype)),
   });
 
+  // Archivos que manda el agente de WhatsApp: también PDF (nombre al azar: se sirven públicos para WhatsApp).
+  const uploadDoc = multer({
+    storage: multer.diskStorage({
+      destination: mediaDir(),
+      filename: (_req, f, cb) => cb(null, `archivo-${Date.now()}-${randomToken(10)}${path.extname(f.originalname).toLowerCase().replace(/[^.a-z0-9]/g, '') || ''}`),
+    }),
+    limits: { fileSize: 60 * 1024 * 1024 },
+    fileFilter: (_req, f, cb) => cb(null, ['application/pdf', 'image/jpeg', 'image/png', 'video/mp4'].includes(f.mimetype)),
+  });
+
   // ------------------------------------------------------------ avisos de Stripe (pagos)
   app.post('/webhooks/stripe', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
     const raw = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : '';
@@ -114,7 +124,11 @@ export function createApp() {
   });
   api.get('/conocimiento', (req, res) => {
     const k = conoc.actual(req.client.id);
-    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado } : { version: 0, texto: '', datos: {} });
+    // Archivos para compartir: con URL pública para que WhatsApp los descargue y los mande.
+    const archivos = (Array.isArray(req.client.config.archivos_agente) ? req.client.config.archivos_agente : [])
+      .filter((a) => fs.existsSync(a.archivo))
+      .map((a) => ({ clave: `archivo-${a.id}`, nombre: a.nombre, cuando: a.cuando, tipo: a.tipo, url: mediaUrl(a.archivo), nombre_archivo: `${a.nombre.replace(/[\\/:*?"<>|]/g, '')}${path.extname(a.archivo)}` }));
+    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos } : { version: 0, texto: '', datos: {}, archivos });
   });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
@@ -1017,6 +1031,26 @@ export function createApp() {
       const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));
       try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
+    });
+    // Archivos que el agente puede mandar por WhatsApp (brochure, catálogo, menú…).
+    router.post(`${prefix}/agente/archivos`, (req, res, next) => uploadDoc.single('archivo')(req, res, (e) => (e ? vista(req, res, { error: e.message }) : next())), (req, res) => {
+      if (!req.file) return vista(req, res, { error: 'Sube un PDF, una imagen (JPG/PNG) o un video MP4.' });
+      if (req.file.mimetype === 'application/pdf' && req.file.size > 16 * 1024 * 1024) { fs.rmSync(req.file.path, { force: true }); return vista(req, res, { error: 'El PDF pesa más de 16 MB, el máximo de WhatsApp. Compártelo más ligero.' }); }
+      const lista = Array.isArray(req.client.config.archivos_agente) ? req.client.config.archivos_agente : [];
+      if (lista.length >= 15) { fs.rmSync(req.file.path, { force: true }); return vista(req, res, { error: 'Máximo 15 archivos. Quita alguno antes.' }); }
+      const nombre = String(req.body.nombre || '').trim().slice(0, 60) || 'Archivo';
+      const tipo = req.file.mimetype === 'application/pdf' ? 'document' : req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+      const nuevo = { id: randomToken(6), nombre, cuando: String(req.body.cuando || '').trim().slice(0, 160), archivo: req.file.path, tipo, original: String(req.file.originalname || '').slice(0, 120), subido: new Date().toISOString() };
+      db.updateClient(req.client.id, { config: { ...req.client.config, archivos_agente: [...lista, nuevo] } });
+      db.logEvent({ clientId: req.client.id, tipo: 'archivo_agente', detalle: nombre });
+      res.redirect(`${base(req)}/agente?ok=1`);
+    });
+    router.post(`${prefix}/agente/archivos/:fid/borrar`, (req, res) => {
+      const lista = Array.isArray(req.client.config.archivos_agente) ? req.client.config.archivos_agente : [];
+      const quitado = lista.find((a) => a.id === req.params.fid);
+      if (quitado) fs.rmSync(quitado.archivo, { force: true });
+      db.updateClient(req.client.id, { config: { ...req.client.config, archivos_agente: lista.filter((a) => a.id !== req.params.fid) } });
+      res.redirect(`${base(req)}/agente?ok=1`);
     });
     router.post(`${prefix}/agente/restaurar/:vid`, (req, res) => {
       try { conoc.restaurar(req.client.id, Number(req.params.vid), req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
