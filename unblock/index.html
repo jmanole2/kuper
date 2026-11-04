@@ -6,14 +6,11 @@
 <title>UNBLOCK · Experiencias para personas y empresas en CDMX</title>
 <meta name="description" content="UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos, constelaciones y retiros en Ciudad de México y otros destinos de México.">
 <link rel="canonical" href="https://unblock.mx/">
-<meta property="og:title" content="UNBLOCK · See what you’ve stopped seeing.">
-<meta property="og:description" content="Experiencias para personas y organizaciones que crean una pausa, cambian la perspectiva y hacen visible lo que desde adentro es difícil de ver.">
-<meta property="og:image" content="img/sunset-at-valle-de-bravo-unsplash.jpg">
-<meta name="theme-color" content="#F7F4EF">
+<meta name="theme-color" content="#111111">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 136 126'%3E%3Cg stroke='%23111' stroke-width='6' fill='none' stroke-linecap='round'%3E%3Cpath d='M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script>document.documentElement.classList.add('js')</script>
 <script type="application/ld+json">
 {
@@ -24,423 +21,269 @@
   "description": "UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.",
   "areaServed": ["Ciudad de México", "México"],
   "address": { "@type": "PostalAddress", "addressLocality": "Ciudad de México", "addressCountry": "MX" },
-  "founder": { "@type": "Person", "name": "Daniela", "jobTitle": "Fundadora de UNBLOCK" },
-  "knowsAbout": ["Team building", "Offsites para empresas", "Leadership Experiences", "Family Day", "Eventos corporativos", "Constelaciones organizacionales", "Constelaciones familiares", "Retiros"]
+  "founder": { "@type": "Person", "name": "Daniela", "jobTitle": "Fundadora de UNBLOCK" }
 }
 </script>
 <style>
 :root {
   --ink: #111111;
-  --ground: #F7F4EF;
-  --surface: #EFEBE4;
-  --muted: #55524D;
-  --accent: #2F5BFF;
-  --accent-strong: #1E44D6;
-  --on-accent: #FFFFFF;
-  --dark: #111111;
-  --on-dark: #F7F4EF;
-  --on-dark-muted: #B9B5AE;
+  --ivory: #F7F4EF;
+  --red: #C81016;
+  --pink: #F075C8;
+  --yellow: #FFF3C6;
+  --blue: #2F5BFF;
+  --green: #0F5B4D;
+
+  --fg: var(--ivory);
+  --bg: var(--ink);
 
   --serif: "Instrument Serif", "Times New Roman", serif;
   --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* five sizes */
-  --t-display: clamp(64px, 10.4vw, 184px);
-  --t-head: clamp(40px, 4.6vw, 76px);
-  --t-state: clamp(24px, 2.5vw, 36px);
+  --t-display: clamp(56px, 8.4vw, 150px);
+  --t-head: clamp(40px, 5vw, 84px);
+  --t-state: clamp(24px, 2.4vw, 36px);
   --t-body: 18px;
   --t-small: 15px;
+  --m: clamp(16px, 2.6vw, 40px);
 
-  --m: clamp(16px, 2.4vw, 36px);
-  --gap: clamp(120px, 12vw, 180px);
-
-  --ease-out: cubic-bezier(.2, .7, .2, 1);
-  --ease-in-out: cubic-bezier(.7, 0, .2, 1);
-  --ease-soft: cubic-bezier(.25, .6, .25, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
+html[data-tone="dark"] { --fg: var(--ink); --bg: var(--ivory); }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0;
-  background: var(--ground);
-  color: var(--ink);
+  margin: 0; background: var(--ink); color: var(--ivory);
   font: 400 var(--t-body)/1.55 var(--sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
 }
-img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; }
-p { margin: 0; }
-h1, h2, h3 { margin: 0; font-weight: 400; }
-ul { margin: 0; padding: 0; list-style: none; }
-::selection { background: var(--accent); color: var(--on-accent); }
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+p, h1, h2, h3, ul, figure, blockquote { margin: 0; }
+h1, h2, h3 { font-weight: 400; }
+ul { padding: 0; list-style: none; }
+::selection { background: var(--blue); color: #fff; }
+:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
 .vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.wrap { padding-inline: var(--m); }
-.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); }
+/* the 3D world sits behind the journey */
+#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
 
-.serif { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; }
-.h2 { font-family: var(--serif); font-size: var(--t-head); line-height: 1; letter-spacing: -0.015em; text-wrap: balance; }
-
-/* buttons: square, flat, one shape everywhere */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: .6em;
-  min-height: 52px; padding: 0 26px;
-  font: 500 15px/1 var(--sans); text-decoration: none;
-  background: var(--ink); color: var(--ground);
-  border: 0; border-radius: 0; cursor: pointer;
-  transition: transform 160ms var(--ease-out), background-color 200ms ease, color 200ms ease;
-}
-.btn--accent { background: var(--accent); color: var(--on-accent); }
-.btn--light { background: var(--ground); color: var(--ink); }
-.btn:active { transform: scale(.97); }
-.btn .arrow { transition: transform 240ms var(--ease-out); }
-@media (hover: hover) and (pointer: fine) {
-  .btn:hover { background: #2a2a2a; }
-  .btn--accent:hover { background: var(--accent-strong); }
-  .btn--light:hover { background: #fff; }
-  .btn:hover .arrow { transform: translateX(4px); }
-}
-.link { text-decoration: underline; text-decoration-thickness: .07em; text-underline-offset: .22em; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); transition: text-decoration-color 200ms ease; }
-@media (hover: hover) and (pointer: fine) { .link:hover { text-decoration-color: currentColor; } }
-
-/* photographs: they arrive grey and take their colour as you look at them */
-.see img { filter: grayscale(1) contrast(1.04); transition: filter 1600ms var(--ease-soft), transform 1600ms var(--ease-soft); }
-.see.is-seen img { filter: none; }
-.no-js-colour .see img { filter: none; }
-@media (prefers-reduced-motion: reduce) { .see img { filter: none; transition: none; } }
-
-/* ---------- header ---------- */
+/* header takes the ink of the chapter beneath it */
 .top {
-  position: absolute; inset: 0 0 auto 0; z-index: 10;
+  position: fixed; inset: 0 0 auto 0; z-index: 20;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 22px var(--m);
+  padding: 22px var(--m); color: var(--hdr, var(--fg));
+  transition: color 400ms ease, opacity 300ms ease;
 }
-.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font: 500 15px/1 var(--sans); letter-spacing: .02em; }
-.brand svg { width: 34px; height: auto; }
-.nav { display: flex; align-items: center; gap: clamp(18px, 2.2vw, 36px); font-size: var(--t-small); }
-.nav a:not(.btn) { text-decoration: none; position: relative; padding: 6px 0; }
-.nav a:not(.btn)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 260ms var(--ease-out); }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font: 500 15px/1 var(--sans); letter-spacing: .04em; }
+.brand svg { width: 32px; height: 30px; }
+.nav { display: flex; align-items: center; gap: clamp(18px, 2.2vw, 34px); font-size: var(--t-small); }
+.nav a { text-decoration: none; position: relative; padding: 6px 0; }
+.nav a:not(.btn)::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1.5px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) { .nav a:not(.btn):hover::after { transform: scaleX(1); } }
-.nav .btn { min-height: 44px; padding: 0 20px; font-size: 15px; }
 .menu { display: none; }
 
-/* ---------- hero ---------- */
-.hero { min-height: 100svh; display: grid; grid-template-rows: 1fr auto 1fr; padding: 96px var(--m) 36px; }
-.hero h1 {
-  grid-row: 2; font-family: var(--serif); font-size: var(--t-display);
-  line-height: .96; letter-spacing: -0.03em;
+/* buttons: square, flat, always the inverse of the current field */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+  min-height: 52px; padding: 0 26px; border: 0; border-radius: 0; cursor: pointer;
+  font: 500 15px/1 var(--sans); text-decoration: none;
+  background: currentColor;
+  transition: transform 160ms var(--ease-out), opacity 200ms ease;
 }
-.hero h1 .line { display: flex; align-items: baseline; gap: .22em; white-space: nowrap; }
-.hero h1 .line + .line { padding-left: 1.05em; }
-.slot { display: inline-block; width: 1.75em; height: .7em; overflow: hidden; flex: none; position: relative; top: .02em; }
-.slot img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
-.hero-foot { grid-row: 3; align-self: end; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); align-items: end; row-gap: 28px; }
-.hero-foot p { grid-column: 1 / span 5; font-size: var(--t-body); line-height: 1.5; max-width: 34em; }
-.hero-actions { grid-column: 8 / -1; display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
-.hero-photo { display: none; }
-
-/* shutter, used once: the picture inside the sentence */
-.shutter { overflow: hidden; }
-@media (prefers-reduced-motion: no-preference) {
-  .js .shutter { clip-path: inset(0 100% 0 0); transition: clip-path 1100ms var(--ease-in-out) 150ms; }
-  .js .shutter img { transform: scale(1.12); transition: transform 1500ms var(--ease-soft) 150ms, filter 1600ms var(--ease-soft) 900ms; }
-  .js .shutter.is-in { clip-path: inset(0); }
-  .js .shutter.is-in img { transform: none; }
-}
-
-/* entrances */
-@media (prefers-reduced-motion: no-preference) {
-  .js [data-reveal] > * { opacity: 0; transform: translateY(24px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); }
-  .js [data-reveal].is-in > * { opacity: 1; transform: none; }
-  .js [data-reveal].is-in > *:nth-child(2) { transition-delay: 80ms; }
-  .js [data-reveal].is-in > *:nth-child(3) { transition-delay: 160ms; }
-  .js [data-reveal].is-in > *:nth-child(4) { transition-delay: 240ms; }
-  .js [data-reveal].is-in > *:nth-child(5) { transition-delay: 320ms; }
-  .js .hero h1 .line { opacity: 0; transform: translateY(.18em); transition: opacity 900ms var(--ease-out), transform 1000ms var(--ease-out); }
-  .js .hero.is-in h1 .line { opacity: 1; transform: none; }
-  .js .hero.is-in h1 .line + .line { transition-delay: 120ms; }
-  .js .hero-foot > * { opacity: 0; transform: translateY(16px); transition: opacity 800ms var(--ease-out) 500ms, transform 800ms var(--ease-out) 500ms; }
-  .js .hero.is-in .hero-foot > * { opacity: 1; transform: none; }
-  .js .hero.is-in .hero-foot > * + * { transition-delay: 600ms; }
-}
-
-/* ---------- intro: the heading holds while the pictures pass ---------- */
-.intro { margin-top: var(--gap); }
-.intro .grid { align-items: start; }
-.intro-head { grid-column: 1 / span 5; position: sticky; top: 16vh; padding-bottom: 4vh; }
-.intro-head .h2 { max-width: 9.5em; }
-.intro-head .lead-serif { font-family: var(--serif); font-size: var(--t-state); line-height: 1.15; margin-top: 28px; }
-.intro-head p:not(.lead-serif) { margin-top: 28px; font-size: var(--t-body); max-width: 26em; }
-.passes { grid-column: 7 / -1; display: grid; gap: 10vh; padding-top: 0; }
-.pass { display: grid; gap: 24px; }
-.pass figure { margin: 0; overflow: hidden; }
-.pass:nth-child(1) figure { width: 52%; aspect-ratio: 4 / 5; }
-.pass:nth-child(2) { justify-items: end; }
-.pass:nth-child(2) figure { width: 100%; aspect-ratio: 16 / 10; }
-.pass:nth-child(3) figure { width: 46%; aspect-ratio: 1; margin-left: 18%; }
-.pass:nth-child(3) p { margin-left: 18%; }
-.pass img, .pass video { display: block; width: 100%; height: 100%; object-fit: cover; }
-.see video { filter: grayscale(1) contrast(1.04); transition: filter 1600ms var(--ease-soft); }
-.see.is-seen video { filter: none; }
-.pass p { font-family: var(--serif); font-size: var(--t-state); line-height: 1.18; max-width: 19em; }
-.pass:nth-child(2) p { justify-self: start; }
-
-/* ---------- two ways: statement, table pushed right ---------- */
-.ways { margin-top: var(--gap); }
-.ways .h2 { grid-column: 1 / -1; text-indent: 3vw; }
-.ways-body { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; margin-top: 96px; align-items: end; }
-.ways figure { grid-column: 1 / span 4; margin: 0; aspect-ratio: 4 / 5; overflow: hidden; }
-.ways figure img { width: 100%; height: 100%; object-fit: cover; }
-.ways-tables { grid-column: 6 / -1; display: grid; gap: 72px; }
-.group h3 { font: 500 var(--t-small)/1.3 var(--sans); color: var(--muted); margin-bottom: 18px; }
-.group > p { font-size: var(--t-body); max-width: 60ch; margin-bottom: 26px; }
-.rows li a {
-  display: grid; grid-template-columns: minmax(0, 13.5em) minmax(0, 1fr) auto; column-gap: 24px; align-items: baseline;
-  padding: 13px 0; text-decoration: none; font-size: var(--t-body);
-  transition: background-color 200ms ease, padding 260ms var(--ease-out);
-}
-.rows .name { font-weight: 500; }
-.rows .what { color: var(--muted); }
-.rows .when { text-align: right; white-space: nowrap; }
-.rows .when::after { content: "→"; display: inline-block; margin-left: .6em; transition: transform 240ms var(--ease-out); }
+.btn > span { color: var(--btn-ink, var(--ink)); }
+.btn--ghost { background: transparent; box-shadow: inset 0 0 0 2px currentColor; }
+.btn--ghost > span { color: inherit; }
+.btn:active { transform: scale(.97); }
+.btn .arrow { display: inline-block; transition: transform 240ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
-  .rows li a:hover { background: var(--surface); padding-inline: 12px; }
-  .rows li a:hover .when::after { transform: translateX(4px); }
+  .btn:hover { opacity: .88; }
+  .btn:hover .arrow { transform: translateX(4px); }
 }
-.group .btn { margin-top: 26px; }
+.on-light .btn > span, .on-light.btn > span { --btn-ink: var(--ivory); }
+.nav .btn { min-height: 42px; padding: 0 18px; }
+.top .btn > span { color: var(--hdr-inv, var(--bg)); transition: color 400ms ease; }
 
-/* ---------- services as one paragraph with pictures in it ---------- */
-.services { margin-top: var(--gap); }
-.services .statement { grid-column: 1 / span 9; font-family: var(--serif); font-size: var(--t-state); line-height: 1.5; }
-.services .statement .pic { display: inline-block; width: 1.9em; height: 1em; vertical-align: -0.16em; overflow: hidden; margin: 0 .08em; }
-.services .statement .pic img { width: 100%; height: 100%; object-fit: cover; }
-.services-foot { grid-column: 7 / -1; margin-top: 72px; display: grid; gap: 28px; }
-.services-foot ul { display: flex; flex-wrap: wrap; gap: 10px 26px; }
-.services-foot a { text-decoration: none; }
-
-/* ---------- the live thing: what is your team living? ---------- */
-.moment { margin-top: var(--gap); background: var(--surface); padding-block: clamp(72px, 8vw, 120px) clamp(64px, 6vw, 96px); }
-.moment .h2 { grid-column: 1 / span 8; }
-.moment-lead { grid-column: 1 / span 6; margin-top: 28px; }
-.moment-ui { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; margin-top: 64px; align-items: start; }
-.moment fieldset { grid-column: 1 / span 5; border: 0; margin: 0; padding: 0; min-width: 0; }
-.moment legend { font-weight: 500; font-size: var(--t-small); margin-bottom: 16px; padding: 0; }
-.chips { display: flex; flex-wrap: wrap; gap: 10px; }
-.chips input { position: absolute; opacity: 0; pointer-events: none; }
-.chips label {
-  display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px;
-  background: var(--ground); cursor: pointer; font-size: var(--t-small);
-  transition: background-color 200ms ease, color 200ms ease, transform 160ms var(--ease-out);
+/* ---------- the journey: each chapter holds its words while the camera travels ---------- */
+.journey { position: relative; z-index: 1; }
+.ch { position: relative; height: 175vh; }
+.ch:first-child { height: 150vh; }
+.ch:last-child { height: 160vh; }
+.stage {
+  position: sticky; top: 0; height: 100vh; height: 100svh; /* taste-skill-ignore: svh follows */
+  display: flex; align-items: center; padding: 96px var(--m) 56px;
+  pointer-events: none;
 }
-.chips label:active { transform: scale(.97); }
-.chips input:checked + label { background: var(--ink); color: var(--ground); }
-.chips input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 3px; }
-@media (hover: hover) and (pointer: fine) { .chips input:not(:checked) + label:hover { background: #fff; } }
-.answer { grid-column: 7 / -1; display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: start; min-height: 260px; }
-.answer .result { display: none; }
-.answer .result h3 { font-family: var(--serif); font-size: var(--t-state); line-height: 1.15; margin-bottom: 18px; }
-.answer .result p { max-width: 30em; }
-.answer .result .btn { margin-top: 28px; }
-.moment:has(#m-integracion:checked) [data-r="integracion"],
-.moment:has(#m-cambio:checked) [data-r="cambio"],
-.moment:has(#m-liderazgo:checked) [data-r="liderazgo"],
-.moment:has(#m-colaboracion:checked) [data-r="colaboracion"],
-.moment:has(#m-conflicto:checked) [data-r="conflicto"],
-.moment:has(#m-alineacion:checked) [data-r="alineacion"],
-.moment:has(#m-crecimiento:checked) [data-r="crecimiento"],
-.moment:has(#m-etapa:checked) [data-r="etapa"] { display: block; animation: rise 600ms var(--ease-out); }
-@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.map { width: clamp(150px, 15vw, 230px); }
-.map line { stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; transition: stroke 300ms ease, stroke-width 300ms ease; }
-.map circle { fill: var(--ink); transition: r 400ms var(--ease-out), fill 300ms ease; }
-.map circle.on { fill: var(--accent); r: 8; }
-.map line.on { stroke: var(--accent); stroke-width: 3.2; }
+.copy { pointer-events: auto; max-width: 620px; }
+.copy > * { will-change: transform, opacity; }
+.ch[data-tone="light"] { color: var(--ivory); }
+.ch[data-tone="dark"] { color: var(--ink); }
+.ch[data-tone="dark"] .btn > span { color: var(--ivory); }
+.ch[data-tone="light"] .btn > span { color: var(--ink); }
+.ch[data-tone] .btn--ghost > span { color: inherit; }
+.ch.right .stage { justify-content: flex-end; }
 
-/* ---------- work: names as one paragraph ---------- */
-.work { margin-top: var(--gap); }
-.names { grid-column: 1 / -1; font-family: var(--serif); font-size: var(--t-head); line-height: 1.12; letter-spacing: -0.012em; }
-.names h2 { display: inline; font-size: inherit; }
-.names ul { display: inline; }
-.names li { display: inline; }
-.names a { text-decoration: none; color: var(--muted); transition: color 260ms ease; }
-.names a:hover, .names a:focus-visible, .names a[aria-current="true"] { color: var(--ink); }
-.names a[aria-current="true"] { text-decoration: underline; text-decoration-thickness: .045em; text-underline-offset: .12em; }
-.case { grid-column: 1 / span 5; margin-top: 56px; min-height: 4.6em; }
-.case h3 { font: 500 var(--t-body)/1.4 var(--sans); }
-.case p { color: var(--ink); max-width: 30em; }
-.work-foot { grid-column: 8 / -1; margin-top: 56px; display: flex; justify-content: flex-end; align-items: start; }
+.hero-stage { align-items: flex-end; padding-bottom: clamp(40px, 7vh, 88px); }
+.hero h1 { font-family: var(--serif); font-size: var(--t-display); line-height: .94; letter-spacing: -0.028em; }
+.hero h1 span { display: block; }
+.hero .copy { max-width: 980px; }
+.hero p { margin-top: 30px; max-width: 34em; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.cue { position: absolute; right: var(--m); bottom: clamp(40px, 7vh, 88px); font-size: var(--t-small); display: flex; align-items: center; gap: 10px; }
+.cue i { display: block; width: 2px; height: 44px; background: currentColor; transform-origin: top; animation: cue 2.2s var(--ease-in-out) infinite; }
+@keyframes cue { 0% { transform: scaleY(0); } 45% { transform: scaleY(1); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
 
-/* ---------- testimonials: the quote spread edge to edge ---------- */
-.voices { margin-top: var(--gap); background: var(--accent); color: var(--on-accent); padding-block: clamp(96px, 10vw, 160px); }
-.voices .h2 { font-size: var(--t-state); line-height: 1.2; margin-bottom: clamp(64px, 8vw, 120px); }
-.spread { margin: 0; font-family: var(--serif); font-size: var(--t-head); line-height: .98; letter-spacing: -0.025em; }
-.spread .row { display: flex; justify-content: space-between; gap: .3em; }
-.spread .row + .row { margin-top: .5em; }
-.spread figcaption, .attrib { display: flex; justify-content: space-between; gap: 16px; font: 400 var(--t-body)/1.4 var(--sans); letter-spacing: 0; margin-top: 56px; }
-.more-voices { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); margin-top: clamp(96px, 10vw, 150px); align-items: start; }
-.more-voices blockquote { margin: 0; font-size: var(--t-body); line-height: 1.55; }
-.more-voices blockquote:nth-child(1) { grid-column: 1 / span 5; }
-.more-voices blockquote:nth-child(2) { grid-column: 7 / span 5; margin-top: 96px; }
-.more-voices cite { display: block; font-style: normal; margin-top: 18px; font-size: var(--t-small); }
-.voices .btn { margin-top: 72px; }
+.ch h2 { font-family: var(--serif); font-size: var(--t-head); line-height: 1; letter-spacing: -0.018em; text-wrap: balance; }
+.ch .lead { font-family: var(--serif); font-size: var(--t-state); line-height: 1.18; margin-top: 22px; }
+.ch .body { margin-top: 24px; max-width: 30em; }
+.ch .copy .btn, .ch .copy .more { margin-top: 32px; }
+.more { display: inline-flex; align-items: center; gap: .55em; font-weight: 500; text-decoration: none; padding: 8px 0; }
+.more .arrow { transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .more:hover .arrow { transform: translateX(5px); } }
+.fact { display: flex; gap: 36px; margin-top: 30px; }
+.fact div { display: grid; gap: 2px; }
+.fact b { font-family: var(--serif); font-weight: 400; font-size: var(--t-state); line-height: 1.1; }
+.fact span { font-size: var(--t-small); }
+.services { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; margin-top: 28px; }
+.services a { text-decoration: none; padding: 7px 0; display: flex; justify-content: space-between; gap: 12px; }
+.services a::after { content: "→"; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .services a:hover::after { transform: translateX(4px); } }
 
-/* ---------- closing question at both edges ---------- */
-.ask { background: var(--dark); color: var(--on-dark); display: grid; grid-template-rows: auto 1fr auto; text-align: center; padding: 32px var(--m) 28px; }
-.ask h2 { font-family: var(--serif); font-size: clamp(64px, 10.4vw, 184px); line-height: 1; letter-spacing: -0.03em; display: contents; }
+/* ---------- after the journey: solid pages ---------- */
+.solid { position: relative; z-index: 2; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 200px) var(--m) 0; }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); }
+.sec-h { font-family: var(--serif); font-size: var(--t-head); line-height: 1; letter-spacing: -0.018em; grid-column: 1 / span 8; }
+.cases { grid-column: 1 / -1; margin-top: 64px; }
+.cases li a {
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px);
+  align-items: baseline; padding: 26px 0; text-decoration: none;
+  transition: transform 300ms var(--ease-out);
+}
+.cases .n { grid-column: 1 / span 6; font-family: var(--serif); font-size: var(--t-state); line-height: 1.15; }
+.cases .d { grid-column: 7 / span 5; }
+.cases .a { grid-column: 12; justify-self: end; transition: transform 240ms var(--ease-out); }
+.cases li + li a { background-image: none; }
+.cases li:nth-child(even) a { background: #EFEBE4; padding-inline: 18px; margin-inline: -18px; }
+@media (hover: hover) and (pointer: fine) { .cases li a:hover .a { transform: translateX(6px); } .cases li a:hover { transform: translateX(6px); } }
+.cases-foot { grid-column: 1 / -1; margin-top: 44px; }
+.cases-foot .btn > span, .voices .btn > span { color: var(--ivory); }
+.cases-foot .btn, .voices .btn { color: var(--ink); }
+
+.voices { margin-top: clamp(140px, 14vw, 220px); }
+.quote { grid-column: 1 / -1; margin-top: 56px; font-family: var(--serif); font-size: var(--t-head); line-height: 1.04; letter-spacing: -0.018em; max-width: 15em; }
+.quote cite { display: block; margin-top: 28px; font: 400 var(--t-body)/1.4 var(--sans); font-style: normal; }
+.pair { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); margin-top: 96px; }
+.pair blockquote:nth-child(1) { grid-column: 1 / span 5; }
+.pair blockquote:nth-child(2) { grid-column: 7 / span 5; margin-top: 80px; }
+.pair cite { display: block; margin-top: 16px; font-size: var(--t-small); font-style: normal; }
+.voices .btn { margin-top: 64px; }
+
+.ask { position: relative; z-index: 2; background: var(--red); color: var(--ivory); padding: clamp(100px, 11vw, 180px) var(--m); text-align: center; margin: clamp(140px, 14vw, 220px) calc(-1 * var(--m)) 0; }
+.ask h2 { font-family: var(--serif); font-size: var(--t-display); line-height: .98; letter-spacing: -0.028em; }
 .ask h2 span { display: block; }
-.ask h2 span:first-child { grid-row: 1; }
-.ask h2 span:last-child { grid-row: 3; }
-.ask-mid { grid-row: 2; align-self: center; display: grid; justify-items: center; gap: 20px; padding-block: clamp(72px, 8vw, 120px); }
-.ask-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: clamp(24px, 4vw, 64px); }
-.ask-row .btn { min-width: 220px; min-height: 58px; font-size: var(--t-body); }
-.ask-row .btn:first-child { justify-self: end; }
-.ask-row .or { color: var(--on-dark-muted); font-size: var(--t-body); }
-.ask-mid p { color: var(--on-dark-muted); font-size: var(--t-small); }
-@media (hover: hover) and (pointer: fine) { .ask .btn--light:hover { background: #fff; } }
+.ask .row { display: flex; justify-content: center; align-items: center; gap: 28px; margin-top: 64px; }
+.ask .btn { min-width: 220px; min-height: 58px; font-size: var(--t-body); color: var(--ivory); }
+.ask .btn > span { color: var(--red); }
+.ask .btn--ghost > span { color: var(--ivory); }
+.ask .note { margin-top: 22px; font-size: var(--t-small); }
 
-/* ---------- footer ---------- */
-.foot { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); padding: clamp(72px, 9vw, 140px) var(--m) 0; }
-.foot-top { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); align-items: start; }
-.foot-invite { grid-column: 1 / span 7; }
-.foot-invite h2 { font-family: var(--serif); font-size: var(--t-head); line-height: 1; letter-spacing: -0.015em; }
-.foot-invite .btn { margin-top: 36px; }
-.foot-links { grid-column: 9 / -1; justify-self: end; display: grid; gap: 10px; }
-.foot-links a { text-decoration: none; }
-.foot-about { margin-top: 72px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: clamp(12px, 1.6vw, 24px); }
-.foot-about p { grid-column: 1 / span 7; max-width: 62ch; }
-.credits { grid-column: 1 / -1; margin-top: 28px; font-size: var(--t-small); line-height: 1.55; color: var(--muted); }
-.credits a { color: inherit; }
-.legal { display: flex; justify-content: space-between; gap: 16px; font-size: var(--t-small); padding-top: 48px; position: relative; z-index: 1; }
-.wordmark { font: 600 clamp(120px, 27vw, 520px)/.8 var(--sans); letter-spacing: -0.055em; white-space: nowrap; margin: 0 0 0 -0.04em; transform: translateY(26%); user-select: none; }
+.foot { position: relative; z-index: 2; background: var(--ink); color: var(--ivory); overflow: hidden; padding: clamp(90px, 9vw, 140px) var(--m) 0; }
+.foot h2 { grid-column: 1 / span 7; font-family: var(--serif); font-size: var(--t-head); line-height: 1; letter-spacing: -0.018em; }
+.foot .links { grid-column: 9 / -1; justify-self: end; display: grid; gap: 10px; align-content: start; }
+.foot .links a, .foot .legal a { text-decoration: none; }
+.foot .about { grid-column: 1 / span 7; margin-top: 56px; max-width: 62ch; }
+.foot .btn { margin-top: 36px; color: var(--ivory); }
+.foot .btn > span { color: var(--ink); }
+.legal { display: flex; justify-content: space-between; gap: 16px; font-size: var(--t-small); margin-top: 80px; color: #B9B5AE; }
+.wordmark { font: 600 clamp(110px, 26.5vw, 520px)/.8 var(--sans); letter-spacing: -0.055em; white-space: nowrap; margin: 24px 0 0 -0.04em; transform: translateY(24%); user-select: none; }
 
-/* ---------- tablet ---------- */
-@media (max-width: 1024px) {
-  .nav a.opt { display: none; }
-  .hero-foot p { grid-column: 1 / span 7; }
-  .hero-actions { grid-column: 1 / -1; justify-content: flex-start; }
-  .intro-head { grid-column: 1 / span 6; }
-  .passes { grid-column: 7 / -1; }
-  .ways figure { grid-column: 1 / span 4; }
-  .ways-tables { grid-column: 6 / -1; }
-  .rows li a { grid-template-columns: 1fr auto; row-gap: 2px; padding: 12px 0; }
-  .rows .what { grid-column: 1 / -1; grid-row: 2; font-size: var(--t-small); }
-  .rows .when { grid-row: 1; grid-column: 2; }
-  .services .statement { grid-column: 1 / -1; }
-  .services-foot { grid-column: 4 / -1; }
-  .moment fieldset { grid-column: 1 / -1; }
-  .answer { grid-column: 1 / -1; margin-top: 48px; min-height: 0; }
-  .case { grid-column: 1 / span 7; }
-  .work-foot { grid-column: 9 / -1; }
+/* entrance for solid sections */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] > * { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--ease-out), transform 800ms var(--ease-out); }
+  .js [data-reveal].is-in > * { opacity: 1; transform: none; }
+  .js [data-reveal].is-in > *:nth-child(2) { transition-delay: 70ms; }
+  .js [data-reveal].is-in > *:nth-child(3) { transition-delay: 140ms; }
+  .js [data-reveal].is-in > *:nth-child(4) { transition-delay: 210ms; }
 }
 
-/* ---------- phone ---------- */
+/* without WebGL the chapters keep their colour fields */
+.no-gl #gl { display: none; }
+.no-gl .ch { background: var(--chbg); }
+.no-gl .ch { height: auto; }
+.no-gl .stage { position: relative; height: auto; min-height: 100vh; }
+
+@media (max-width: 900px) {
+  .nav a.opt { display: none; }
+  .services { grid-template-columns: 1fr; }
+  .cases .n { grid-column: 1 / -1; }
+  .cases .d { grid-column: 1 / span 11; margin-top: 8px; }
+  .cases .a { grid-row: 1; grid-column: 12; }
+  .pair blockquote:nth-child(1), .pair blockquote:nth-child(2) { grid-column: 1 / -1; margin-top: 0; }
+  .pair blockquote + blockquote { margin-top: 48px !important; }
+}
 @media (max-width: 700px) {
-  :root { --gap: 120px; }
   .nav { display: none; }
   .menu { display: block; position: relative; }
   .menu summary { list-style: none; cursor: pointer; font: 500 15px/1 var(--sans); padding: 14px 0 14px 16px; }
   .menu summary::-webkit-details-marker { display: none; }
-  .menu ul { position: absolute; right: 0; top: 100%; background: var(--ground); padding: 12px 0; min-width: 220px; display: grid; }
-  .menu li a { display: block; padding: 12px 16px; text-decoration: none; }
-  .menu[open] ul { box-shadow: 0 18px 40px rgba(17, 17, 17, .14); } /* taste-skill-ignore: floating menu */
-
-  .hero { padding-top: 104px; grid-template-rows: auto auto auto auto; align-content: center; }
-  .hero h1 { grid-row: 1; font-size: 15.4vw; line-height: .94; }
-  .hero h1 .line { display: block; }
-  .hero h1 .line + .line { padding-left: 0; }
-  .hero h1 .slot { display: none; }
-  .hero-photo { display: block; grid-row: 2; margin: 28px 0 0; aspect-ratio: 3 / 2; }
-  .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
-  .hero-foot { grid-row: 3; margin-top: 28px; }
-  .hero-foot p { grid-column: 1 / -1; }
-  .hero-actions { flex-direction: column; align-items: stretch; }
-
-  .intro-head { grid-column: 1 / -1; position: static; padding-bottom: 0; }
-  .passes { grid-column: 1 / -1; gap: 72px; margin-top: 56px; }
-  .pass:nth-child(1) figure { width: 72%; }
-  .pass:nth-child(2) figure { width: 88%; }
-  .pass:nth-child(2) p { margin-left: 12%; }
-  .pass:nth-child(3) figure { width: 64%; margin-left: 0; }
-  .pass:nth-child(3) p { margin-left: 0; }
-  .pass p { font-size: 24px; }
-
-  .ways .h2 { text-indent: 0; }
-  .ways-body { margin-top: 48px; }
-  .ways-tables { grid-column: 1 / -1; order: 1; gap: 56px; }
-  .ways figure { grid-column: 4 / -1; order: 2; margin-top: 56px; }
-  .services .statement { font-size: 24px; line-height: 1.55; }
-  .services .statement .pic { width: 1.5em; }
-  .services-foot { grid-column: 1 / -1; margin-top: 48px; }
-
-  .moment .h2, .moment-lead { grid-column: 1 / -1; }
-  .moment-ui { margin-top: 40px; }
-  .chips label { min-height: 46px; padding: 0 16px; }
-  .answer { grid-template-columns: 1fr; }
-  .map { width: 130px; order: -1; }
-
-  .names { font-size: 9vw; line-height: 1.18; }
-  .case, .work-foot { grid-column: 1 / -1; }
-  .work-foot { justify-content: flex-start; margin-top: 8px; }
-
-  .voices .h2 { font-size: 24px; }
-  .spread { font-size: 24px; line-height: 1.25; }
-  .spread .row { display: inline; }
-  .spread .row span::after { content: " "; }
-  .spread .row + .row { margin-top: 0; }
-  .spread figcaption, .attrib { flex-direction: column; gap: 2px; font-size: var(--t-small); }
-  .attrib span:nth-child(2) { align-self: center; }
-  .attrib span:nth-child(3) { align-self: flex-end; }
-  .more-voices blockquote:nth-child(1), .more-voices blockquote:nth-child(2) { grid-column: 1 / -1; margin-top: 0; }
-  .more-voices blockquote + blockquote { margin-top: 56px !important; }
-
-  .ask h2 { font-size: 12.6vw; }
-  .ask-row { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
-  .ask-row .btn, .ask-row .btn:first-child { justify-self: center; width: 76vw; min-width: 0; }
-
-  .foot-invite, .foot-links, .foot-about p { grid-column: 1 / -1; }
-  .foot-invite h2 { font-size: 11vw; }
-  .foot-invite .btn { width: 100%; }
-  .foot-links { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 40px; justify-self: start; }
-  .legal { flex-direction: column; gap: 6px; }
-  .wordmark { font-size: 34vw; }
+  .menu ul { position: absolute; right: 0; top: 100%; background: var(--ivory); color: var(--ink); padding: 10px 0; min-width: 220px; }
+  .menu li a { display: block; padding: 12px 18px; text-decoration: none; }
+  .stage { align-items: flex-end; padding-bottom: 40px; }
+  .ch.right .stage { justify-content: flex-start; }
+  .hero h1 { font-size: 13.6vw; }
+  .hero p { margin-top: 20px; }
+  .actions { flex-direction: column; }
+  .actions .btn { width: 100%; }
+  .cue { display: none; }
+  .ch h2 { font-size: 10.4vw; }
+  .ch .lead { font-size: 24px; }
+  .fact { gap: 24px; }
+  .services a { padding: 6px 0; }
+  .sec-h { grid-column: 1 / -1; font-size: 10.4vw; }
+  .quote { font-size: 8.6vw; }
+  .ask h2 { font-size: 12.4vw; }
+  .ask .row { flex-direction: column; gap: 12px; }
+  .ask .btn { width: 100%; }
+  .foot h2, .foot .links, .foot .about { grid-column: 1 / -1; justify-self: start; }
+  .foot .links { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 10px 22px; }
+  .foot .btn { width: 100%; }
+  .legal { flex-direction: column; }
+  .wordmark { font-size: 33vw; }
 }
-
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  .cue i { animation: none; transform: none; }
+  *, *::before, *::after { transition-duration: 1ms !important; }
 }
 </style>
 </head>
 <body>
 
+<canvas id="gl" aria-hidden="true"></canvas>
+
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="mark" viewBox="-6 -6 136 126">
-    <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
       <path d="M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28"/>
     </g>
     <g fill="currentColor">
-      <circle cx="7" cy="27" r="5"/><circle cx="31" cy="6" r="5"/><circle cx="65" cy="10" r="5"/><circle cx="44" cy="34" r="5"/>
-      <circle cx="76" cy="43" r="5"/><circle cx="111" cy="27" r="5"/><circle cx="117" cy="67" r="5"/><circle cx="94" cy="87" r="5"/>
-      <circle cx="72" cy="107" r="5"/><circle cx="47" cy="73" r="5"/><circle cx="14" cy="64" r="5"/>
+      <circle cx="7" cy="27" r="6"/><circle cx="31" cy="6" r="6"/><circle cx="65" cy="10" r="6"/><circle cx="44" cy="34" r="6"/>
+      <circle cx="76" cy="43" r="6"/><circle cx="111" cy="27" r="6"/><circle cx="117" cy="67" r="6"/><circle cx="94" cy="87" r="6"/>
+      <circle cx="72" cy="107" r="6"/><circle cx="47" cy="73" r="6"/><circle cx="14" cy="64" r="6"/>
     </g>
   </symbol>
 </svg>
 
 <header class="top">
-  <a class="brand" href="/" aria-label="UNBLOCK, inicio">
-    <svg aria-hidden="true"><use href="#mark"/></svg>
-    <span>UNBLOCK</span>
-  </a>
+  <a class="brand" href="/" aria-label="UNBLOCK, inicio"><svg aria-hidden="true"><use href="#mark"/></svg><span>UNBLOCK</span></a>
   <nav class="nav" aria-label="Principal">
     <a href="/para-ti">Para ti</a>
     <a href="/para-empresas">Para empresas</a>
     <a href="/experiencias">Experiencias</a>
     <a class="opt" href="/sobre-unblock">Sobre UNBLOCK</a>
     <a class="opt" href="/el-libro">El libro</a>
-    <a class="btn btn--accent" href="/contacto">Contacto</a>
+    <a class="btn" href="/contacto"><span>Contacto</span></a>
   </nav>
   <details class="menu">
     <summary>Menú</summary>
@@ -456,316 +299,413 @@ ul { margin: 0; padding: 0; list-style: none; }
 </header>
 
 <main>
+  <div class="journey" id="journey">
 
-  <section class="hero" data-hero>
-    <h1>
-      <span class="line">See what you’ve</span>
-      <span class="line">stopped <span class="slot shutter see" aria-hidden="true"><img src="img/hero-mirar.jpg" width="1040" height="416" alt="" fetchpriority="high"></span> seeing.</span>
-    </h1>
-    <figure class="hero-photo see" aria-hidden="true"><img src="img/sunset-at-valle-de-bravo-unsplash.jpg" width="1600" height="1067" alt=""></figure>
-    <div class="hero-foot">
-      <p>UNBLOCK diseña experiencias para personas y organizaciones que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
-      <div class="hero-actions">
-        <a class="btn" href="/para-ti">Explorar experiencias para mí</a>
-        <a class="btn btn--accent" href="/para-empresas">Explorar experiencias para empresas <span class="arrow" aria-hidden="true">→</span></a>
-      </div>
-    </div>
-  </section>
-
-  <section class="intro wrap" aria-labelledby="intro-t">
-    <div class="grid">
-      <div class="intro-head" data-reveal>
-        <h2 class="h2" id="intro-t">A veces no necesitamos hacer más.</h2>
-        <p class="lead-serif">Necesitamos mirar diferente.</p>
-        <p>Diseñamos espacios para salir de lo automático, observar desde otra perspectiva y abrir nuevas posibilidades.</p>
-      </div>
-      <div class="passes">
-        <div class="pass" data-reveal>
-          <figure class="see"><img src="img/road-in-the-desierto-de-los-leones.jpg" width="1600" height="1200" alt="Sendero de tierra entre árboles cubiertos de musgo en el Desierto de los Leones, Ciudad de México" loading="lazy" decoding="async"></figure>
-          <p>Podemos cambiar de rutina, estrategia, equipo, relación o proceso y seguir llegando al mismo lugar.</p>
-        </div>
-        <div class="pass" data-reveal>
-          <figure class="see"><video muted loop playsinline autoplay preload="metadata" poster="img/fog-lake-poster.jpg" aria-label="Niebla que se levanta sobre un lago al amanecer"><source src="video/fog-lake.webm" type="video/webm"><source src="video/fog-lake.mp4" type="video/mp4"></video></figure>
-          <p>A veces no porque la solución haya fallado, sino porque seguimos respondiendo desde algo que ya dejamos de ver.</p>
-        </div>
-        <div class="pass" data-reveal>
-          <figure class="see"><img src="img/paisaje-del-nevado-de-toluca-mexico.jpg" width="1600" height="1200" alt="Laguna dentro del cráter del Nevado de Toluca, rodeada de paredes de roca" loading="lazy" decoding="async"></figure>
-          <p>Ahí empieza UNBLOCK: en el momento en que algo se vuelve visible otra vez.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="ways wrap" aria-labelledby="ways-t">
-    <div class="grid">
-      <h2 class="h2" id="ways-t" data-reveal><span>¿Cómo quieres vivir UNBLOCK?</span></h2>
-      <div class="ways-body">
-        <figure class="see" data-reveal><img src="img/camino-a-la-piramide-del-tepozteco.jpg" width="1600" height="1200" alt="Dos personas caminan por una calle empedrada de Tepoztlán hacia la montaña" loading="lazy" decoding="async"></figure>
-        <div class="ways-tables">
-          <div class="group" data-reveal>
-            <h3>Para mí</h3>
-            <p>Caminatas, retreats, workshops, constelaciones y experiencias para salir del ruido cotidiano y observar tu vida desde otro lugar.</p>
-            <ul class="rows">
-              <li><a href="/para-ti#slow-morning"><span class="name">Slow Morning</span><span class="what">Hike, fotografía y presencia en la naturaleza</span><span class="when">Una mañana</span></a></li>
-              <li><a href="/para-ti#slow-weekend"><span class="name">Slow Weekend</span><span class="what">Una noche fuera de la rutina</span><span class="when">Una noche</span></a></li>
-              <li><a href="/para-ti#slow-retreat"><span class="name">Slow Retreat</span><span class="what">Bajar el ruido y observar con más profundidad</span><span class="when">Dos noches</span></a></li>
-              <li><a href="/constelaciones-familiares-cdmx"><span class="name">Constelaciones</span><span class="what">Workshops grupales para observar patrones</span><span class="when">3 o 4 sesiones</span></a></li>
-              <li><a href="/retiros-mexico"><span class="name">Retiros</span><span class="what">Constelaciones, naturaleza e integración</span><span class="when">Inmersivo</span></a></li>
-            </ul>
-            <a class="btn" href="/para-ti">Explorar experiencias personales</a>
-          </div>
-          <div class="group" data-reveal>
-            <h3>Para mi empresa</h3>
-            <p>Experiencias diseñadas alrededor del momento real de una organización, en Ciudad de México y otros destinos de México.</p>
-            <ul class="rows">
-              <li><a href="/team-building-cdmx"><span class="name">Team Building</span><span class="what">Con propósito, nunca de catálogo</span><span class="when">Equipos</span></a></li>
-              <li><a href="/offsites-empresas"><span class="name">Offsites</span><span class="what">Salir de la oficina para pensar distinto</span><span class="when">Equipos</span></a></li>
-              <li><a href="/para-empresas#liderazgo"><span class="name">Leadership Experiences</span><span class="what">Para nuevos y actuales liderazgos</span><span class="when">Liderazgo</span></a></li>
-              <li><a href="/constelaciones-organizacionales"><span class="name">Constelaciones organizacionales</span><span class="what">Lo que el organigrama no cuenta</span><span class="when">Sistémico</span></a></li>
-              <li><a href="/family-day-cdmx"><span class="name">Family Days</span><span class="what">Para colaboradores y sus familias</span><span class="when">Eventos</span></a></li>
-              <li><a href="/eventos-corporativos-cdmx"><span class="name">Eventos 360</span><span class="what">Concepto, venue, producción y logística</span><span class="when">Eventos</span></a></li>
-              <li><a href="/fiestas-fin-de-ano-empresas"><span class="name">Fiestas de fin de año</span><span class="what">Cerrar el año con una memoria</span><span class="when">Eventos</span></a></li>
-            </ul>
-            <a class="btn btn--accent" href="/para-empresas">Explorar experiencias para empresas <span class="arrow" aria-hidden="true">→</span></a>
+    <section class="ch hero" data-theme="ink" data-tone="light" style="--chbg:#111111" aria-labelledby="h-hero">
+      <div class="stage hero-stage">
+        <div class="copy">
+          <h1 id="h-hero"><span>See what you’ve</span> <span>stopped seeing.</span></h1>
+          <p>UNBLOCK diseña experiencias para personas y organizaciones que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
+          <div class="actions">
+            <a class="btn" href="#ch-mi"><span>Explorar experiencias para mí</span></a>
+            <a class="btn btn--ghost" href="#ch-empresas"><span>Explorar experiencias para empresas</span></a>
           </div>
         </div>
+        <div class="cue" aria-hidden="true">Baja para entrar <i></i></div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="services wrap" aria-labelledby="services-t">
-    <h2 class="vh" id="services-t">Servicios destacados</h2>
+    <section class="ch right" data-theme="ink" data-tone="light" style="--chbg:#111111" aria-labelledby="h-que">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="h-que">A veces no necesitamos hacer más.</h2>
+          <p class="lead">Necesitamos mirar diferente.</p>
+          <p class="body">Podemos cambiar de rutina, estrategia, equipo o relación y seguir llegando al mismo lugar. No porque la solución haya fallado, sino porque seguimos respondiendo desde algo que ya dejamos de ver.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="ch" id="ch-mi" data-theme="yellow" data-tone="dark" style="--chbg:#FFF3C6" aria-labelledby="h-morning">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="h-morning">Slow Morning</h2>
+          <p class="lead">Hike, fotografía y presencia en la naturaleza.</p>
+          <p class="body">Una mañana para salir del ruido cotidiano. No necesitas saber fotografía: la cámara es solo una forma de mirar con más atención.</p>
+          <a class="more" href="/para-ti#slow-morning">Conocer Slow Morning <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ch right" data-theme="green" data-tone="light" style="--chbg:#0F5B4D" aria-labelledby="h-weekend">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="h-weekend">Slow Weekend &amp; Slow Retreat</h2>
+          <div class="fact">
+            <div><b>Una noche</b><span>fuera de la rutina para crear espacio, perspectiva y conexión</span></div>
+            <div><b>Dos noches</b><span>para bajar el ruido y observar con más profundidad</span></div>
+          </div>
+          <a class="more" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ch" data-theme="pink" data-tone="dark" style="--chbg:#F075C8" aria-labelledby="h-const">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="h-const">Sometimes the pattern started long before you noticed it.</h2>
+          <p class="body">Constelaciones: workshops grupales de 3 o 4 sesiones y retiros inmersivos para observar dinámicas, relaciones y patrones desde una perspectiva sistémica.</p>
+          <a class="btn" href="/para-ti#proximas"><span>Ver próximas experiencias <span class="arrow" aria-hidden="true">→</span></span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ch right" id="ch-empresas" data-theme="blue" data-tone="light" style="--chbg:#2F5BFF" aria-labelledby="h-emp">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="h-emp">Different moments need different experiences.</h2>
+          <p class="body">Para empresas, equipos y líderes en Ciudad de México y otros destinos de México. Algunas experiencias ayudan a trabajar diferente; otras, a conectar o a celebrar.</p>
+          <ul class="services">
+            <li><a href="/team-building-cdmx">Team Building</a></li>
+            <li><a href="/offsites-empresas">Offsites</a></li>
+            <li><a href="/para-empresas#liderazgo">Leadership Experiences</a></li>
+            <li><a href="/para-empresas#kickoffs">Kickoffs</a></li>
+            <li><a href="/constelaciones-organizacionales">Constelaciones organizacionales</a></li>
+            <li><a href="/family-day-cdmx">Family Days</a></li>
+            <li><a href="/eventos-corporativos-cdmx">Eventos 360</a></li>
+            <li><a href="/fiestas-fin-de-ano-empresas">Fiestas de fin de año</a></li>
+          </ul>
+          <a class="btn" href="/contacto?tipo=empresa"><span>Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ch" data-theme="ivory" data-tone="dark" style="--chbg:#F7F4EF" aria-labelledby="h-q">
+      <div class="stage">
+        <div class="copy">
+          <h2 id="h-q">¿Qué queremos que las personas vivan aquí?</h2>
+          <p class="lead">Empezamos siempre por la misma pregunta.</p>
+          <p class="body">Los formatos cambian. La intención es diseñar la experiencia correcta para el momento correcto.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="solid" aria-labelledby="h-cases">
     <div class="grid" data-reveal>
-      <p class="statement">Diseñamos team buildings <span class="pic see"><img src="img/mexico-city-skyline-5604867225.jpg" width="1600" height="1200" alt="Vista de la Ciudad de México con la Torre Latinoamericana" loading="lazy" decoding="async"></span> con propósito, offsites <span class="pic see"><img src="img/lago-valle-de-bravo-07.jpg" width="1600" height="1200" alt="Lago de Valle de Bravo con montañas al fondo" loading="lazy" decoding="async"></span> para equipos en cambio, Family Days <span class="pic see"><img src="img/efmp-families-enjoy-german-cooking-class-6861313.jpg" width="1600" height="1067" alt="Una niña y una adulta cocinan juntas en un taller familiar" loading="lazy" decoding="async"></span> para todas las edades y retiros <span class="pic see"><img src="img/exconvento-del-desierto-de-los-leones-cdmx.jpg" width="1600" height="1200" alt="Laguna y bosque del exconvento del Desierto de los Leones" loading="lazy" decoding="async"></span> para bajar el ruido.</p>
-      <div class="services-foot">
-        <p>Cada formato empieza por la misma pregunta: ¿qué queremos que las personas vivan aquí?</p>
-        <ul aria-label="Servicios">
-          <li><a class="link" href="/team-building-cdmx">Team Building</a></li>
-          <li><a class="link" href="/offsites-empresas">Offsites</a></li>
-          <li><a class="link" href="/family-day-cdmx">Family Days</a></li>
-          <li><a class="link" href="/eventos-corporativos-cdmx">Eventos corporativos 360</a></li>
-          <li><a class="link" href="/constelaciones-organizacionales">Constelaciones</a></li>
-          <li><a class="link" href="/retiros-mexico">Retiros</a></li>
-        </ul>
-      </div>
+      <h2 class="sec-h" id="h-cases">Things we’ve already made happen.</h2>
+      <ul class="cases">
+        <li><a href="/experiencias#liderazgo-estrategico"><span class="n">Liderazgo estratégico para supervisores</span><span class="d">Diseño y facilitación de una experiencia enfocada en ejecución, comunicación, influencia y manejo de conflictos.</span><span class="a" aria-hidden="true">→</span></a></li>
+        <li><a href="/experiencias#equipos-colaborativos"><span class="n">Equipos colaborativos de alto impacto</span><span class="d">Una experiencia para observar y fortalecer comportamientos cotidianos de colaboración.</span><span class="a" aria-hidden="true">→</span></a></li>
+        <li><a href="/experiencias#paint-and-connect"><span class="n">Paint &amp; Connect</span><span class="d">Integración creativa utilizando la pintura como vehículo.</span><span class="a" aria-hidden="true">→</span></a></li>
+        <li><a href="/experiencias#cook-it"><span class="n">Cook it like you mean it</span><span class="d">Cocina colaborativa diseñada alrededor de comunicación, coordinación y roles.</span><span class="a" aria-hidden="true">→</span></a></li>
+      </ul>
+      <div class="cases-foot"><a class="btn" href="/experiencias"><span>Ver experiencias <span class="arrow" aria-hidden="true">→</span></span></a></div>
     </div>
-  </section>
 
-  <section class="moment" aria-labelledby="moment-t">
-    <div class="wrap">
-      <div class="grid">
-        <h2 class="h2" id="moment-t" data-reveal><span>Your team doesn’t need another activity.</span></h2>
-        <p class="moment-lead" data-reveal><span>It needs the right experience for this moment. Elige lo que está viviendo tu equipo hoy.</span></p>
-        <div class="moment-ui">
-          <fieldset>
-            <legend>Mi equipo está viviendo…</legend>
-            <div class="chips">
-              <input type="radio" name="momento" id="m-integracion" value="integracion" checked><label for="m-integracion">Integración</label>
-              <input type="radio" name="momento" id="m-cambio" value="cambio"><label for="m-cambio">Cambio</label>
-              <input type="radio" name="momento" id="m-crecimiento" value="crecimiento"><label for="m-crecimiento">Crecimiento</label>
-              <input type="radio" name="momento" id="m-liderazgo" value="liderazgo"><label for="m-liderazgo">Nuevos liderazgos</label>
-              <input type="radio" name="momento" id="m-colaboracion" value="colaboracion"><label for="m-colaboracion">Colaboración</label>
-              <input type="radio" name="momento" id="m-conflicto" value="conflicto"><label for="m-conflicto">Conflicto</label>
-              <input type="radio" name="momento" id="m-alineacion" value="alineacion"><label for="m-alineacion">Alineación</label>
-              <input type="radio" name="momento" id="m-etapa" value="etapa"><label for="m-etapa">Una nueva etapa</label>
-            </div>
-          </fieldset>
-          <div class="answer" aria-live="polite">
-            <div>
-              <div class="result" data-r="integracion">
-                <h3>Team Building con propósito</h3>
-                <p>Para un equipo que todavía no se conoce fuera del trabajo. Pintura, cocina, naturaleza o conversación: el formato se elige por lo que el equipo necesita vivir, no por catálogo.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=integracion">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="cambio">
-                <h3>Offsite con constelación organizacional</h3>
-                <p>Para un equipo atravesando un cambio. Salimos del día a día y observamos las relaciones y posiciones que el organigrama no muestra.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=cambio">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="crecimiento">
-                <h3>Capacitación, cultura y colaboración</h3>
-                <p>Para un equipo que creció rápido. Experiencias que ponen en práctica cómo trabajar juntos cuando ya no caben en la misma mesa.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=crecimiento">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="liderazgo">
-                <h3>Leadership Experience</h3>
-                <p>Para quien empieza a liderar o lidera de otra forma. Ejecución, comunicación, influencia y manejo de conflictos, vividos y no solo explicados.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=liderazgo">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="colaboracion">
-                <h3>Experiencia colaborativa a la medida</h3>
-                <p>Para observar y fortalecer los comportamientos cotidianos de colaboración, con una actividad que los hace visibles.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=colaboracion">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="conflicto">
-                <h3>Intervención sistémica para equipos</h3>
-                <p>Para una tensión que se repite. Constelaciones organizacionales para ver la dinámica desde fuera; no sustituyen el análisis estratégico, añaden otra perspectiva.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=conflicto">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="alineacion">
-                <h3>Offsite de alineación</h3>
-                <p>Para un equipo que necesita mirar en la misma dirección. Tiempo fuera, preguntas claras y una experiencia que deja acuerdos concretos.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=alineacion">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-              <div class="result" data-r="etapa">
-                <h3>Kickoff</h3>
-                <p>Para arrancar un año, un proyecto o una estructura nueva con la energía y la claridad correctas desde el primer día.</p>
-                <a class="btn btn--accent" href="/contacto?tipo=empresa&amp;momento=etapa">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
-              </div>
-            </div>
-            <svg class="map" viewBox="-12 -12 148 138" aria-hidden="true">
-              <g id="edges"></g><g id="nodes"></g>
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="work wrap" aria-labelledby="work-t">
-    <div class="grid">
-      <div class="names" data-reveal>
-        <h2 id="work-t">Things we’ve already made happen:</h2>
-        <ul>
-          <li><a href="/experiencias#liderazgo-estrategico" data-case="0" aria-current="true">Liderazgo estratégico para supervisores</a>, </li>
-          <li><a href="/experiencias#equipos-colaborativos" data-case="1">Equipos colaborativos de alto impacto</a>, </li>
-          <li><a href="/experiencias#paint-and-connect" data-case="2">Paint &amp; Connect</a>, </li>
-          <li><a href="/experiencias#cook-it" data-case="3">Cook it like you mean it</a> y </li>
-          <li><a href="/experiencias#intervencion-sistemica" data-case="4">una intervención sistémica para equipos</a>.</li>
-        </ul>
-      </div>
-      <div class="case" aria-live="polite">
-        <h3 id="case-t">Liderazgo estratégico para supervisores</h3>
-        <p id="case-p">Diseño y facilitación de una experiencia enfocada en ejecución, comunicación, influencia y manejo de conflictos.</p>
-      </div>
-      <div class="work-foot">
-        <a class="btn" href="/experiencias">Ver experiencias <span class="arrow" aria-hidden="true">→</span></a>
-      </div>
-    </div>
-  </section>
-
-  <section class="voices" aria-labelledby="voices-t">
-    <div class="wrap">
-      <h2 class="h2" id="voices-t">What it feels like to work with us.</h2>
-      <figure class="spread" data-reveal>
-        <blockquote style="margin:0">
-          <div class="row"><span>“Es de esas</span><span>experiencias</span></div>
-          <div class="row"><span>que sigues</span><span>pensando</span><span>días después.”</span></div>
-        </blockquote>
-        <figcaption class="attrib"><span>Paola Figueroa</span><span>Sr. HRBP</span><span>AVEVA</span></figcaption>
-      </figure>
-      <div class="more-voices">
-        <blockquote data-reveal>
-          <p>“Dani no llega con soluciones genéricas: escucha, entiende el contexto y diseña experiencias e intervenciones pensadas específicamente para lo que el equipo necesita.”</p>
+    <div class="grid voices" data-reveal>
+      <h2 class="sec-h">What it feels like to work with us.</h2>
+      <blockquote class="quote">
+        <p>“Es de esas experiencias que sigues pensando días después.”</p>
+        <cite>Paola Figueroa, Sr. HRBP, AVEVA</cite>
+      </blockquote>
+      <div class="pair">
+        <blockquote>
+          <p>“Dani no llega con soluciones genéricas: escucha, entiende el contexto y diseña experiencias pensadas específicamente para lo que el equipo necesita.”</p>
           <cite>Greg Guida, Sr. Director, Etsy</cite>
         </blockquote>
-        <blockquote data-reveal>
+        <blockquote>
           <p>“Vernos desde nuestra faceta humana nos ayudó a conectar, compartir experiencias personales y generar una confianza real para nuestro día a día.”</p>
           <cite>Sara Noemí Cervera Soto, Científica de Datos, Círculo de Crédito</cite>
         </blockquote>
       </div>
-      <a class="btn btn--light" href="/sobre-unblock">Conoce más sobre UNBLOCK <span class="arrow" aria-hidden="true">→</span></a>
+      <div style="grid-column:1/-1"><a class="btn" href="/sobre-unblock"><span>Conoce más sobre UNBLOCK <span class="arrow" aria-hidden="true">→</span></span></a></div>
     </div>
-  </section>
 
-  <section class="ask" aria-labelledby="ask-t">
-    <h2 id="ask-t"><span>What are you ready</span> <span>to see differently?</span></h2>
-    <div class="ask-mid">
-      <div class="ask-row">
-        <a class="btn btn--light" href="/contacto?tipo=personal">Para mí</a>
-        <span class="or">o</span>
-        <a class="btn btn--accent" href="/contacto?tipo=empresa">Para mi empresa</a>
+    <section class="ask" aria-labelledby="h-ask">
+      <div data-reveal>
+        <h2 id="h-ask"><span>What are you ready</span> <span>to see differently?</span></h2>
+        <div class="row">
+          <a class="btn" href="/contacto?tipo=personal"><span>Para mí</span></a>
+          <a class="btn btn--ghost" href="/contacto?tipo=empresa"><span>Para mi empresa</span></a>
+        </div>
+        <p class="note">Empezamos con una conversación sobre lo que estás imaginando.</p>
       </div>
-      <p>Empezamos con una conversación sobre lo que estás imaginando.</p>
-    </div>
+    </section>
   </section>
-
 </main>
 
 <footer class="foot">
-  <div class="foot-top">
-    <div class="foot-invite">
-      <h2>Empecemos<br>a diseñarlo.</h2>
-      <a class="btn btn--accent" href="/contacto">Contacto <span class="arrow" aria-hidden="true">→</span></a>
-    </div>
-    <ul class="foot-links" aria-label="Más de UNBLOCK">
-      <li><a class="link" href="/sobre-unblock">Sobre Daniela</a></li>
-      <li><a class="link" href="/el-libro">El libro</a></li>
-      <li><a class="link" href="/insights">Insights</a></li>
-      <li><a class="link" href="/experiencias">Experiencias realizadas</a></li>
+  <div class="grid">
+    <h2>Empecemos a diseñarlo.</h2>
+    <ul class="links" aria-label="Más de UNBLOCK">
+      <li><a href="/sobre-unblock">Sobre Daniela</a></li>
+      <li><a href="/el-libro">El libro</a></li>
+      <li><a href="/insights">Insights</a></li>
+      <li><a href="/contacto">Contacto</a></li>
     </ul>
+    <p class="about">UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.</p>
+    <div style="grid-column:1/-1"><a class="btn" href="/contacto"><span>Empecemos a diseñarlo <span class="arrow" aria-hidden="true">→</span></span></a></div>
   </div>
-  <div class="foot-about">
-    <p>UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.</p>
-    <p class="credits">Fotografías de referencia: <a href="https://commons.wikimedia.org/wiki/File:Sunset_at_Valle_de_Bravo_(Unsplash).jpg">“Sunset at Valle de Bravo”</a>, César Guadarrama Cantú, CC0; <a href="https://commons.wikimedia.org/wiki/File:Morning_Fog_on_Lake_BRoll_10s.webm">“Morning Fog on Lake”</a> (video), Alabama Extension, CC0; <a href="https://commons.wikimedia.org/wiki/File:Road_in_the_Desierto_de_los_Leones_National_Park,_Mexico.jpg">“Road in the Desierto de los Leones National Park”</a>, Ximesmp, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>; <a href="https://commons.wikimedia.org/wiki/File:Paisaje_del_Nevado_de_Toluca_(M%C3%A9xico).jpg">“Paisaje del Nevado de Toluca”</a> y <a href="https://commons.wikimedia.org/wiki/File:Exconvento_del_Desierto_de_los_Leones,_CDMX,_laguna.jpg">“Exconvento del Desierto de los Leones, laguna”</a>, Juan Carlos Fonseca Mata, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>; <a href="https://commons.wikimedia.org/w/index.php?curid=38749844">“Camino a la Pirámide del Tepozteco”</a>, R.gonzalez94, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>; <a href="https://commons.wikimedia.org/wiki/File:Lago_Valle_de_Bravo_07.jpg">“Lago Valle de Bravo 07”</a>, WendyAvilesR, <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a>; <a href="https://commons.wikimedia.org/wiki/File:Mexico_City_Skyline_(5604867225).jpg">“Mexico City Skyline”</a>, Francisco Anzola, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>; <a href="https://commons.wikimedia.org/wiki/File:EFMP_Families_Enjoy_German_Cooking_Class_(6861313).jpg">“EFMP Families Enjoy German Cooking Class”</a>, Staff Sgt. Susan Roberts, U.S. Air Force, dominio público. Todas vía Wikimedia Commons.</p>
-  </div>
-  <div class="legal">
-    <span>© 2026 UNBLOCK · Ciudad de México</span>
-    <a class="link" href="/aviso-de-privacidad">Aviso de privacidad</a>
-  </div>
+  <div class="legal"><span>© 2026 UNBLOCK · Ciudad de México</span><a href="/aviso-de-privacidad">Aviso de privacidad</a></div>
   <p class="wordmark" aria-hidden="true">UNBLOCK</p>
 </footer>
 
+<script src="vendor/three.min.js"></script>
 <script>
-// Reveal once, colour returns once. Nothing stays hidden if this fails.
 (() => {
-  const reveal = document.querySelectorAll('[data-reveal], [data-hero], .shutter');
-  const seen = document.querySelectorAll('.see');
-  if (!('IntersectionObserver' in window)) {
-    reveal.forEach(el => el.classList.add('is-in'));
-    seen.forEach(el => el.classList.add('is-seen'));
-    return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const root = document.documentElement;
+  const canvas = document.getElementById('gl');
+  const journey = document.getElementById('journey');
+  const chapters = [...document.querySelectorAll('.ch')];
+  const header = document.querySelector('.top');
+  const ask = document.querySelector('.ask'), foot = document.querySelector('.foot'), solid = document.querySelector('.solid');
+
+  // reveal for the solid sections after the journey
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -12% 0px', threshold: 0.1 }) : null;
+  document.querySelectorAll('[data-reveal]').forEach(el => io ? io.observe(el) : el.classList.add('is-in'));
+
+  let gl = null;
+  try { gl = window.THREE && (canvas.getContext('webgl2') || canvas.getContext('webgl')); } catch (e) {}
+  if (!gl) { root.classList.add('no-gl'); return; }
+
+  // ---------------- colour universes: one colour per chapter ----------------
+  const C = (h) => new THREE.Color(h);
+  const THEMES = {
+    ink:    { bg: C('#111111'), bar: C('#F7F4EF'), glow: 1.0, hdr: '#F7F4EF', inv: '#111111' },
+    yellow: { bg: C('#FFF3C6'), bar: C('#111111'), glow: 0.0, hdr: '#111111', inv: '#FFF3C6' },
+    green:  { bg: C('#0F5B4D'), bar: C('#F7F4EF'), glow: 0.75, hdr: '#F7F4EF', inv: '#0F5B4D' },
+    pink:   { bg: C('#F075C8'), bar: C('#111111'), glow: 0.0, hdr: '#111111', inv: '#F075C8' },
+    blue:   { bg: C('#2F5BFF'), bar: C('#F7F4EF'), glow: 0.8, hdr: '#F7F4EF', inv: '#2F5BFF' },
+    ivory:  { bg: C('#F7F4EF'), bar: C('#111111'), glow: 0.0, hdr: '#111111', inv: '#F7F4EF' }
+  };
+  const seq = chapters.map(c => THEMES[c.dataset.theme]);
+
+  // ---------------- renderer, scene, camera ----------------
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x111111, 10, 46);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.9));
+  const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(4, 6, 8); scene.add(key);
+  const lamp = new THREE.PointLight(0xffffff, 0.8, 30); scene.add(lamp);
+
+  // a seeded random so the constellation is the same on every visit
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  // ---------------- the mark: UNBLOCK's own constellation, in depth ----------------
+  const LOGO = [[7,27],[31,6],[65,10],[44,34],[76,43],[111,27],[117,67],[94,87],[72,107],[47,73],[14,64]];
+  const LOGO_E = [[0,1],[1,2],[1,3],[2,3],[0,3],[0,10],[10,9],[3,9],[3,4],[4,5],[5,6],[4,6],[9,4],[9,8],[8,7],[7,6]];
+  const LOGO_DEPTH = [0.3,-0.4,0.2,0.6,-0.2,0.4,-0.5,0.3,-0.3,0.5,-0.1];
+  const makeLogo = (scale) => {
+    const pts = LOGO.map(([x, y], i) => V((x - 62) * scale, -(y - 56) * scale, LOGO_DEPTH[i] * scale * 30));
+    const edges = LOGO_E.map(([a, b]) => [pts[a], pts[b]]);
+    edges.push([V((86 - 62) * scale, -(16 - 56) * scale, 0.1), V((103 - 62) * scale, -(28 - 56) * scale, 0.3)]);
+    return { pts, edges };
+  };
+
+  // ---------------- the helix: a constellation you travel through ----------------
+  const N = innerWidth < 700 ? 110 : 150, STEP = 1.32, R = 2.3, TURN = 0.38;
+  const nodes = [], bars = [];
+  const A = [], B = [];
+  for (let i = 0; i < N; i++) {
+    const z = -i * STEP, a = i * TURN;
+    const j = () => (rnd() - 0.5) * 0.5;
+    A.push(V(Math.cos(a) * R + j(), Math.sin(a) * R + j(), z + j()));
+    B.push(V(Math.cos(a + Math.PI) * R + j(), Math.sin(a + Math.PI) * R + j(), z + j()));
   }
-  const io = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    e.target.classList.add('is-in'); io.unobserve(e.target);
-  }), { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
-  reveal.forEach(el => io.observe(el));
-  const eye = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    const el = e.target;
-    setTimeout(() => el.classList.add('is-seen'), el.classList.contains('shutter') ? 600 : 300);
-    eye.unobserve(el);
-  }), { rootMargin: '0px 0px -25% 0px', threshold: 0.35 });
-  seen.forEach(el => eye.observe(el));
-  addEventListener('load', () => setTimeout(() => {
-    reveal.forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) el.classList.add('is-in'); });
-  }, 2500));
-})();
+  for (let i = 0; i < N; i++) {
+    nodes.push({ p: A[i], r: 0.12 }, { p: B[i], r: 0.12 });
+    if (i < N - 1) { bars.push([A[i], A[i + 1], 0.05], [B[i], B[i + 1], 0.05]); }
+    if (i % 2 === 0) bars.push([A[i], B[i], 0.032]);
+  }
+  // loose stars around it, linked to the helix like a wider constellation
+  const SAT = innerWidth < 700 ? 110 : 200, sats = [];
+  for (let k = 0; k < SAT; k++) {
+    const z = -rnd() * N * STEP, ang = rnd() * Math.PI * 2, rad = 8.5 + rnd() * 6;
+    const p = V(Math.cos(ang) * rad, Math.sin(ang) * rad * 0.8, z);
+    sats.push(p); nodes.push({ p, r: 0.07 + rnd() * 0.06 });
+  }
+  // each star joins its nearest neighbours: a wider constellation around the path
+  sats.forEach((p, k) => {
+    const d = sats.map((o, j) => [j, j === k ? 1e9 : o.distanceToSquared(p)]).sort((x, y) => x[1] - y[1]);
+    for (let n = 0; n < 2; n++) if (d[n][1] < 30 && d[n][0] > k) bars.push([p, sats[d[n][0]], 0.016]);
+  });
 
-// The constellation: each moment lights one point of the UNBLOCK mark.
-(() => {
-  const P = { A:[7,27], B:[31,6], C:[65,10], D:[44,34], E:[76,43], F:[111,27], G:[117,67], H:[94,87], I:[72,107], J:[47,73], K:[14,64] };
-  const E = ['AB','BC','BD','CD','AD','AK','KJ','DJ','DE','EF','FG','EG','JE','JI','IH','HG'];
-  const map = { integracion:'D', cambio:'E', crecimiento:'F', liderazgo:'B', colaboracion:'J', conflicto:'G', alineacion:'A', etapa:'I' };
-  const ns = 'http://www.w3.org/2000/svg';
-  const eg = document.getElementById('edges'), ng = document.getElementById('nodes');
-  if (!eg) return;
-  const lines = E.map(k => { const l = document.createElementNS(ns, 'line'); const [a, b] = [P[k[0]], P[k[1]]];
-    l.setAttribute('x1', a[0]); l.setAttribute('y1', a[1]); l.setAttribute('x2', b[0]); l.setAttribute('y2', b[1]); l.dataset.k = k; eg.appendChild(l); return l; });
-  const stub = document.createElementNS(ns, 'line'); stub.setAttribute('x1', 86); stub.setAttribute('y1', 16); stub.setAttribute('x2', 103); stub.setAttribute('y2', 28); eg.appendChild(stub);
-  const dots = Object.entries(P).map(([k, [x, y]]) => { const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 4.6); c.dataset.k = k; ng.appendChild(c); return c; });
-  const light = v => { const n = map[v];
-    dots.forEach(d => d.classList.toggle('on', d.dataset.k === n));
-    lines.forEach(l => l.classList.toggle('on', l.dataset.k.includes(n))); };
-  document.querySelectorAll('input[name="momento"]').forEach(r => r.addEventListener('change', () => light(r.value)));
-  light(document.querySelector('input[name="momento"]:checked').value);
-})();
+  const logoFront = makeLogo(0.062);
+  logoFront.pts.forEach(p => nodes.push({ p: p.clone().add(V(0, 0, 7)), r: 0.17, logo: 1 }));
+  logoFront.edges.forEach(([a, b]) => bars.push([a.clone().add(V(0, 0, 7)), b.clone().add(V(0, 0, 7)), 0.055, 1]));
+  const END_Z = -(N - 1) * STEP - 9;
+  const logoEnd = makeLogo(0.05);
+  logoEnd.pts.forEach(p => nodes.push({ p: p.clone().add(V(0, 0, END_Z)), r: 0.14 }));
+  logoEnd.edges.forEach(([a, b]) => bars.push([a.clone().add(V(0, 0, END_Z)), b.clone().add(V(0, 0, END_Z)), 0.045]));
 
-// Cases: the name you point at tells its story.
-(() => {
-  const cases = [
-    ['Liderazgo estratégico para supervisores', 'Diseño y facilitación de una experiencia enfocada en ejecución, comunicación, influencia y manejo de conflictos.'],
-    ['Equipos colaborativos de alto impacto', 'Experiencia diseñada para observar y fortalecer comportamientos cotidianos de colaboración.'],
-    ['Paint & Connect', 'Experiencia creativa de integración utilizando pintura como vehículo.'],
-    ['Cook it like you mean it', 'Experiencia de cocina colaborativa diseñada alrededor de comunicación, coordinación y roles.'],
-    ['Intervención sistémica para equipos', 'Trabajo diseñado alrededor de un equipo atravesando un proceso de cambio organizacional.']
-  ];
-  const t = document.getElementById('case-t'), p = document.getElementById('case-p');
-  const links = document.querySelectorAll('[data-case]');
-  const show = a => { const [h, d] = cases[+a.dataset.case]; t.textContent = h; p.textContent = d;
-    links.forEach(l => l.toggleAttribute('aria-current', l === a)); a.setAttribute('aria-current', 'true'); };
-  links.forEach(a => { a.addEventListener('mouseenter', () => show(a)); a.addEventListener('focus', () => show(a)); });
+  const mat = new THREE.MeshStandardMaterial({ color: 0xF7F4EF, roughness: 0.38, metalness: 0.15 });
+  const sphere = new THREE.SphereGeometry(1, 18, 14);
+  const cyl = new THREE.CylinderGeometry(1, 1, 1, 10, 1, false);
+  const nodeMesh = new THREE.InstancedMesh(sphere, mat, nodes.length);
+  const barMesh = new THREE.InstancedMesh(cyl, mat, bars.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V(0, 1, 0), sc = V(1, 1, 1);
+
+  // the front mark lives in its own group so it can turn slowly on the first screen
+  const logoGroup = new THREE.Group(); logoGroup.position.set(0, 0, 7); scene.add(logoGroup);
+  function placeLogo() { logoGroup.position.set(mobile ? 0 : 4.2, mobile ? 3.6 : 0.2, 7); logoGroup.scale.setScalar(mobile ? 0.72 : 1); }
+  const logoNodes = nodes.filter(n => n.logo), logoBars = bars.filter(b => b[3]);
+  const lNode = new THREE.InstancedMesh(sphere, mat, logoNodes.length);
+  const lBar = new THREE.InstancedMesh(cyl, mat, logoBars.length);
+  const placeNode = (mesh, i, p, r) => { m4.compose(p, q.identity(), sc.set(r, r, r)); mesh.setMatrixAt(i, m4); };
+  const placeBar = (mesh, i, a, b, r) => {
+    const d = b.clone().sub(a), len = d.length();
+    q.setFromUnitVectors(up, d.normalize());
+    m4.compose(a.clone().add(b).multiplyScalar(0.5), q, sc.set(r, len, r)); mesh.setMatrixAt(i, m4);
+  };
+  let ni = 0, bi = 0;
+  nodes.forEach(n => { if (!n.logo) placeNode(nodeMesh, ni++, n.p, n.r); });
+  bars.forEach(b => { if (!b[3]) placeBar(barMesh, bi++, b[0], b[1], b[2]); });
+  nodeMesh.count = ni; barMesh.count = bi;
+  logoNodes.forEach((n, i) => placeNode(lNode, i, n.p.clone().sub(V(0, 0, 7)), n.r));
+  logoBars.forEach((b, i) => placeBar(lBar, i, b[0].clone().sub(V(0, 0, 7)), b[1].clone().sub(V(0, 0, 7)), b[2]));
+  scene.add(nodeMesh, barMesh); logoGroup.add(lNode, lBar);
+
+  // soft halos on the stars, only where the field is dark enough to glow
+  const halo = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'), grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.25, 'rgba(255,255,255,.35)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+  })();
+  const hp = [];
+  nodes.forEach(n => { if (!n.logo) hp.push(n.p.x, n.p.y, n.p.z); });
+  const hg = new THREE.BufferGeometry(); hg.setAttribute('position', new THREE.Float32BufferAttribute(hp, 3));
+  const hmat = new THREE.PointsMaterial({ map: halo, size: 0.9, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.5 });
+  scene.add(new THREE.Points(hg, hmat));
+  const lhp = []; logoNodes.forEach(n => lhp.push(n.p.x, n.p.y, n.p.z - 7));
+  const lhg = new THREE.BufferGeometry(); lhg.setAttribute('position', new THREE.Float32BufferAttribute(lhp, 3));
+  logoGroup.add(new THREE.Points(lhg, hmat));
+
+  // far dust for depth
+  const dp = []; for (let k = 0; k < 900; k++) dp.push((rnd() - 0.5) * 70, (rnd() - 0.5) * 44, 14 - rnd() * (N * STEP + 40));
+  const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(dp, 3));
+  const dmat = new THREE.PointsMaterial({ color: 0xF7F4EF, size: 0.06, transparent: true, opacity: 0.6, depthWrite: false });
+  scene.add(new THREE.Points(dg, dmat));
+
+  // ---------------- scroll → camera ----------------
+  const KEYS = [];                   // camera z for each chapter
+  const startZ = 25, endZ = END_Z + (innerWidth < 700 ? 19 : 13);
+  for (let i = 0; i < chapters.length; i++) KEYS.push(i === 0 ? startZ : 4 - (i - 1) / (chapters.length - 2) * (4 - endZ));
+  const smooth = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  let w = 0, h = 0, mobile = false, tops = [];
+  const measure = () => {
+    w = innerWidth; h = innerHeight; mobile = w < 700;
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    camera.fov = mobile ? 58 : 42; camera.updateProjectionMatrix();
+    placeLogo();
+    tops = chapters.map(c => { const r = c.getBoundingClientRect(); return { top: r.top + scrollY, h: c.offsetHeight }; });
+  };
+  measure(); addEventListener('resize', measure);
+
+  // chapter position as a float: 0 = hero, 1 = next chapter, ...
+  const chapterAt = () => {
+    const y = scrollY;
+    for (let i = 0; i < tops.length; i++) {
+      const t = tops[i], span = t.h - h;
+      if (y < t.top + span || i === tops.length - 1) {
+        const local = Math.min(1, Math.max(0, (y - t.top) / Math.max(1, span)));
+        // hold in the middle of a chapter, travel near its end
+        const next = Math.min(1, Math.max(0, (y - (t.top + span)) / h));
+        return i + local * 0.55 + next * 0.45;
+      }
+    }
+    return tops.length - 1;
+  };
+
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (!reduce && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    addEventListener('pointermove', e => { pointer.tx = e.clientX / w - 0.5; pointer.ty = e.clientY / h - 0.5; }, { passive: true });
+  }
+
+  const bg = new THREE.Color(), bar = new THREE.Color();
+  let c = chapterAt(), tone = '', lastField = '';
+  const copies = chapters.map(ch => [...ch.querySelectorAll('.copy > *, .cue')]);
+  const clock = new THREE.Clock();
+  const tmp = V(0, 0, 0);
+
+  const frame = () => {
+    const dt = Math.min(clock.getDelta(), 0.05), time = clock.elapsedTime;
+    const target = chapterAt();
+    // critically damped follow: interruptible, never jumps
+    c += (target - c) * (reduce ? 1 : 1 - Math.exp(-dt * 4.2));
+    pointer.x += (pointer.tx - pointer.x) * (1 - Math.exp(-dt * 3));
+    pointer.y += (pointer.ty - pointer.y) * (1 - Math.exp(-dt * 3));
+
+    const i = Math.min(Math.floor(c), seq.length - 1), f = c - i;
+    const a = seq[i], b = seq[Math.min(i + 1, seq.length - 1)];
+    const mix = smooth(0.62, 0.92, f);           // colour turns while the words are away
+    bg.copy(a.bg).lerp(b.bg, mix); bar.copy(a.bar).lerp(b.bar, mix);
+    renderer.setClearColor(bg); scene.fog.color.copy(bg);
+    mat.color.copy(bar); dmat.color.copy(bar);
+    const glow = a.glow + (b.glow - a.glow) * mix;
+    hmat.opacity = 0.55 * glow; dmat.opacity = 0.25 + 0.35 * glow;
+    mat.emissive.copy(bar).multiplyScalar(0.18 * glow);
+
+    // after the journey the header reads the solid section beneath it
+    let near = mix < 0.5 ? a : b, hdr = near.hdr, inv = near.inv;
+    const askR = ask.getBoundingClientRect(), footR = foot.getBoundingClientRect();
+    if (footR.top < 60) { hdr = '#F7F4EF'; inv = '#111111'; }
+    else if (askR.top < 60 && askR.bottom > 60) { hdr = '#F7F4EF'; inv = '#C81016'; }
+    else if (solid.getBoundingClientRect().top < 60) { hdr = '#111111'; inv = '#F7F4EF'; }
+    if (hdr + inv !== tone) { tone = hdr + inv; header.style.setProperty('--hdr', hdr); header.style.setProperty('--hdr-inv', inv); }
+    const field = '#' + near.bg.getHexString();
+    if (field !== lastField) { lastField = field; document.body.style.backgroundColor = field; }
+
+    // camera: glide along the helix, orbiting it slowly
+    const zi = KEYS[i] + (KEYS[Math.min(i + 1, KEYS.length - 1)] - KEYS[i]) * smooth(0, 1, f);
+    const inside = smooth(0, 1, c);              // 0 on the first screen, 1 once we are in
+    const ang = zi * 0.06 + (reduce ? 0 : time * 0.05);
+    const orbit = 6.6 * inside;
+    // keep the structure on the side away from the words: S = +1 words left, -1 words right
+    // chapters alternate sides, so the camera keeps circling the same way: half a turn per chapter
+    const phi = Math.PI * (1 + i + smooth(0.45, 0.95, f)) + (reduce ? 0 : Math.sin(time * 0.3) * 0.1);
+    let cx, cy, tx, ty;
+    if (mobile) { cx = Math.sin(ang) * orbit * 0.35; cy = -orbit * 0.78; tx = 0; ty = -3.4 * inside; }
+    else { cx = Math.cos(phi) * orbit; cy = Math.sin(phi) * orbit * 0.8; tx = Math.cos(phi) * 3.4 * inside; ty = 0; }
+    camera.position.set(cx + pointer.x * 1.2, cy - pointer.y * 0.8, zi);
+    tmp.set(tx + cx * 0.12, ty + cy * 0.12, zi - 12);
+    if (inside < 1) tmp.lerp(V(0, mobile ? -1.6 : 0, 7), 1 - inside);
+    scene.fog.far = 24 + 22 * inside; scene.fog.near = 6 + 4 * inside;
+    camera.lookAt(tmp);
+    lamp.position.copy(camera.position);
+
+    logoGroup.rotation.y = (reduce ? 0 : Math.sin(time * 0.35) * 0.35) + pointer.x * 0.5 + c * 1.2;
+    logoGroup.rotation.x = (reduce ? 0 : Math.cos(time * 0.3) * 0.08) + pointer.y * 0.25;
+
+    // words: rise in as the chapter holds, leave before the colour turns
+    for (let k = 0; k < copies.length; k++) {
+      const d = c - k;
+      copies[k].forEach((el, n) => {
+        const lag = n * 0.035;
+        const vin = smooth(-0.42 + lag, -0.12 + lag, d), vout = 1 - smooth(0.34 + lag * 0.5, 0.58 + lag * 0.5, d);
+        const o = k === 0 ? Math.min(1, vout + (d < 0 ? 1 : 0)) : Math.min(vin, vout);
+        const y = reduce ? 0 : (1 - vin) * 34 - (1 - vout) * 22;
+        el.style.opacity = o.toFixed(3);
+        el.style.transform = `translate3d(0, ${(k === 0 && d < 0 ? 0 : y).toFixed(1)}px, 0)`;
+        el.style.visibility = o < 0.01 ? 'hidden' : 'visible';
+      });
+    }
+
+    const end = tops[tops.length - 1];
+    if (scrollY < end.top + end.h + h) renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  addEventListener('load', measure);
+  document.fonts && document.fonts.ready.then(measure);
 })();
 </script>
 </body>
