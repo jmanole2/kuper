@@ -21,7 +21,7 @@ test.after(() => server.close());
 const get = (u, cookie = '') => fetch(`${base}${u}`, { headers: { cookie }, redirect: 'manual' });
 
 test('inicio, privacidad y términos se ven sin sesión', async () => {
-  for (const [u, txt] of [['/', 'Kuper Social'], ['/privacidad', 'video.publish'], ['/terms', 'Terms of Service']]) {
+  for (const [u, txt] of [['/', 'Kuper Publicador'], ['/privacidad', 'video.publish'], ['/terms', 'Terms of Service']]) {
     const r = await get(u);
     assert.equal(r.status, 200, u);
     assert.match(await r.text(), new RegExp(txt), u);

@@ -43,7 +43,7 @@ export const config = {
   geminiTimeoutMs: Number(env('GEMINI_TIMEOUT_SEG', 600)) * 1000,
 
   // App de TikTok de la agencia (Content Posting API). Cada cliente la autoriza desde el panel.
-  contactoEmail: env('CONTACTO_EMAIL', 'contacto@kuper.media'),
+  contactoEmail: env('CONTACTO_EMAIL', 'contacto@kuper.mx'),
   tiktok: { clientKey: env('TIKTOK_CLIENT_KEY', ''), clientSecret: env('TIKTOK_CLIENT_SECRET', '') },
 
   metaGraphVersion: env('META_GRAPH_VERSION', 'v24.0'),
