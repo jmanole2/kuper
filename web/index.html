@@ -51,7 +51,7 @@
       <li><a href="#coverage" data-nav-section="coverage">Cobertura</a></li>
       <li><a href="#catalogo" data-nav-section="catalogo">Productos</a></li>
       <li><a href="#materiaPrima" data-nav-section="materiaPrima">Materia prima</a></li>
-      <li><a href="#clientes" data-nav-section="clientes">Clientes</a></li>
+      <!-- <li><a href="#clientes" data-nav-section="clientes">Clientes</a></li> -->
     </ul>
   </nav>
   <div class="np-nav-actions">
@@ -288,8 +288,6 @@
           <h3>ISO 9001</h3>
           <p>Sistema de gestión orientado a la calidad y a la mejora continua de nuestros procesos.</p>
         </div>
-        <button class="recognition-document-button exp-pill" type="button" data-certificate="iso">VER CERTIFICADO</button>
-        <span class="recognition-document-preview iso" aria-hidden="true">&nbsp;</span>
       </article>
       </div>
 
@@ -309,7 +307,7 @@
       <div class="recognition-card-column col-12 col-md-4 d-flex align-items-center">
       <article class="recognition-card recognition-card-fssc">
         <span class="recognition-card-number">03</span>
-        <div class="recognition-card-logo"><img src="assets/images/recognitions/fssc-22000.png" alt="Sello FSSC 22000" loading="lazy" decoding="async" fetchpriority="low"></div>
+        <div class="recognition-card-logo"><img src="assets/images/recognitions/fssc-22000-gcb.png" alt="Sello FSSC 22000 Certified, Global Certification Bureau" loading="lazy" decoding="async" fetchpriority="low"></div>
         <div class="recognition-card-copy exp-feature-text">
           <span class="recognition-card-type exp-card-tag">CERTIFICACIÓN PRINCIPAL</span>
           <h3>FSSC 22000</h3>
@@ -323,19 +321,6 @@
   </div>
 </section>
 
-<dialog class="recognition-modal" id="recognitionModal" aria-labelledby="recognitionModalTitle">
-  <div class="recognition-modal-shell">
-    <button class="recognition-modal-close" id="recognitionModalClose" type="button" aria-label="Cerrar certificado">×</button>
-    <div class="recognition-modal-copy">
-      <span>DOCUMENTO DE CERTIFICACIÓN</span>
-      <h2 id="recognitionModalTitle">Certificación ISO 9001</h2>
-      <p id="recognitionModalDescription">Consulta el documento emitido para Novaplástica.</p>
-    </div>
-    <div class="recognition-modal-document-wrap">
-      <div class="recognition-modal-document iso" id="recognitionModalDocument" role="img" aria-label="Documento de certificación ISO 9001"></div>
-    </div>
-  </div>
-</dialog>
 
 <!-- Secciones 05 y 06: Cobertura nacional e internacional -->
 <section class="coverage-section" id="coverage">
@@ -539,10 +524,9 @@
           </div>
         </article>
 
-        <article class="material-item" tabindex="0">
-          <div class="material-symbol" aria-hidden="true"><canvas class="material-icon-canvas" data-material-icon="04"></canvas><strong>04</strong></div>
-          <h3>PE-LD</h3>
-          <p>Master Batch</p>
+        <article class="material-item material-item-text" tabindex="0">
+          <div class="material-symbol" aria-hidden="true"></div>
+          <h3>Master Batch</h3>
           <div class="material-properties">
             <span>Color</span><span>Consistencia</span><span>Personalización</span>
           </div>
@@ -553,7 +537,7 @@
   </div>
 </section>
 
-<!-- Sección 09: Clientes -->
+<!-- Sección 09: Clientes (OCULTA a petición del cliente; para mostrarla de nuevo quita este comentario y el del menú)
 <section class="clients-section" id="clientes">
   <div class="clients-sticky">
     <div class="clients-eyebrow exp-eyebrow">
@@ -590,6 +574,7 @@
     </div>
   </div>
 </section>
+-->
 
 <!-- Sección 10: Contacto -->
 <section class="contact-section" id="contacto">
@@ -609,11 +594,11 @@
         <dl class="contact-details">
           <div>
             <dt>Teléfono</dt>
-            <dd><a href="tel:+525558846242">(55) 5-884-6242</a></dd>
+            <dd><a href="tel:+525558846242">+52 (55) 5-884-6242</a></dd>
           </div>
           <div>
-            <dt>Fax</dt>
-            <dd>(55) 5-884-9232</dd>
+            <dt>WhatsApp</dt>
+            <dd><a href="https://wa.me/525558846242" target="_blank" rel="noopener">+52 (55) 5-884-6242</a></dd>
           </div>
           <div class="contact-email">
             <dt>Correo</dt>

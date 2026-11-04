@@ -74,7 +74,7 @@ export const DIMS = {
     rBase: 101,    // base plana
     wall: 2.4,
     earY: 258,
-    spoutAngle: -58,   // grados desde el frente (+Z); negativo = a la izquierda
+    spoutAngle: 180,   // grados desde el frente (+Z): justo a la mitad entre las orejas del asa
     spoutW: 72,        // ancho del pico arriba
     wireR: 2.2,
     bailRise: 170,

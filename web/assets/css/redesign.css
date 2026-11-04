@@ -1584,27 +1584,34 @@ html.is-bucket-dragging * {
 
 /* Logo del menú más grande (comentario del cliente) con aire arriba y abajo,
    y el menú se compacta o pasa a hamburguesa antes de que no quepa. */
-:root { --np-nav-h: 90px; }
-.np-nav-logo { width: 168px; }                 /* ~71 px de alto: ~10 px de aire */
+:root { --np-nav-h: 106px; }
+.np-nav-logo { width: 202px; }                 /* ~85 px de alto: ~10 px de aire */
+.np-nav-logo { transition: width 0.25s ease; }
+.np-nav { transition: height 0.25s ease, top 0.25s ease, background 0.25s ease, box-shadow 0.25s ease; }
+/* al bajar, la barra se compacta un poco para no tapar los encabezados */
+@media (min-width: 992px) {
+  .np-nav.is-stuck { --np-nav-h: 88px; }
+  .np-nav.is-stuck .np-nav-logo { width: 172px; }
+}
 @media (min-width: 1280px) and (max-width: 1439.98px) {
-  :root { --np-nav-h: 82px; }
-  .np-nav-logo { width: 148px; }
+  :root { --np-nav-h: 96px; }
+  .np-nav-logo { width: 178px; }
   .np-nav-links a { padding: 10px 9px; font-size: 11px; letter-spacing: 0.13em; }
   .np-nav-cta { font-size: 11px; letter-spacing: 0.12em; }
 }
 /* Laptops chicas y tabletas horizontales: menú de hamburguesa */
 @media (min-width: 992px) and (max-width: 1279.98px) {
-  :root { --np-nav-h: 78px; }
+  :root { --np-nav-h: 92px; }
   .np-nav { grid-template-columns: 1fr auto; }
   .np-nav-menu { display: none; }
-  .np-nav-logo { width: 146px; }
+  .np-nav-logo { width: 172px; }
   .np-nav-toggle { display: block; }
   .np-nav-actions { gap: 10px; }
   .np-mobile-nav { left: auto; width: min(380px, calc(100vw - 2 * var(--np-nav-side))); }
 }
 @media (max-width: 991.98px) {
-  :root { --np-nav-h: 68px; }
-  .np-nav-logo { width: 118px; }               /* ~50 px de alto: ~9 px de aire */
+  :root { --np-nav-h: 76px; }
+  .np-nav-logo { width: 138px; }               /* ~58 px de alto: ~9 px de aire */
 }
 
 /* Cobertura (escritorio): con 21 estados la lista va en 3 columnas para que
@@ -1629,3 +1636,7 @@ html.is-bucket-dragging * {
   .coverage-copy > .coverage-phase > p { line-height: 1.55; }
   .coverage-copy .exp-title { margin-bottom: 12px; }
 }
+
+/* Sello FSSC 22000 nuevo (redondo): tamaño acorde a la tarjeta */
+.recognition-card-fssc .recognition-card-logo { padding: 6px; border-radius: 50%; }
+.recognition-card-fssc .recognition-card-logo img { width: 70px; height: 70px; object-fit: contain; }

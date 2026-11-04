@@ -530,8 +530,8 @@ if (section && mapWrap && canvas) {
 
       [
         {
-          longitude: -99.72,
-          latitude: 19.35,
+          longitude: -99.95,
+          latitude: 19.5,
           name: 'Estado de México',
           status: 'Oficinas centrales y planta de producción'
         },

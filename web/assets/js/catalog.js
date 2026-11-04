@@ -9,6 +9,8 @@ import { createBucket } from '../../bucket-model.js';
 import { createProduct, addLogo } from '../../product-models.js';
 
 
+const HANDLE_NOTE = 'Asa de plástico o metal';
+
 // kind/size forman el nombre grande ("Cubeta de" / "19 L"); line es la familia del catálogo.
 const categories = [
   {
@@ -18,10 +20,11 @@ const categories = [
     legal: '',
     items: [
       // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
-      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', lidLeaning: true, handle: true, scale: 1 },
-      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', model: 'cubeta10', handle: false, scale: 0.95 },
-      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', handle: true, scale: 0.92 },
-      { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', handle: true, scale: 0.88 },
+      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', lidLeaning: true, note: HANDLE_NOTE, handle: true, scale: 1 },
+      // 10 L: modelo provisional (la del hero) hasta tener la foto de la cubeta real
+      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.95 },
+      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: HANDLE_NOTE, handle: true, scale: 0.92 },
+      { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.88 },
       { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', model: 'envase1', handle: false, scale: 0.8 }
     ]
   },
@@ -31,11 +34,12 @@ const categories = [
     accessories: 'Tapas, tapones, asas, opciones de impresión con selección de tintas, variedad de colores y entrega a domicilio.',
     legal: '',
     items: [
-      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', note: 'Asa de metal', handle: true, scale: 1 },
-      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: 'Asa de plástico o metal', handle: true, scale: 0.92 },
-      { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: 'Asa de plástico o metal', handle: true, scale: 0.88 },
+      { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', note: HANDLE_NOTE, handle: true, scale: 1 },
+      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.95 },
+      { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: HANDLE_NOTE, handle: true, scale: 0.92 },
+      { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.88 },
       { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', model: 'envase1kg', handle: false, scale: 0.78 },
-      { kind: 'Cubeta del hogar', size: '12 L', line: 'Línea hogar', model: 'hogar12', note: 'Asa de metal', handle: true, scale: 0.96 }
+      { kind: 'Cubeta del hogar', size: '12 L', line: 'Línea hogar', model: 'hogar12', note: HANDLE_NOTE, handle: true, scale: 0.96 }
     ]
   },
   {
