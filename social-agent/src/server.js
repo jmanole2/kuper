@@ -30,6 +30,7 @@ import * as facturacion from './facturacion.js';
 import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
+import { inicioPage, privacidadPage, terminosPage } from './web/publico.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
@@ -57,7 +58,6 @@ export function createApp() {
   app.use('/media', express.static(mediaDir(), { maxAge: '1h', fallthrough: false }));
   // Tipografía del panel (Inter Tight, la misma de los videos), servida localmente.
   app.use('/fonts', express.static(path.join(path.dirname(fileURLToPath(import.meta.resolve('@fontsource/inter-tight/package.json'))), 'files'), { maxAge: '30d', fallthrough: false }));
-  app.get('/', (_req, res) => res.redirect('/admin'));
   app.get('/salud', (_req, res) => res.json({ ok: true }));
 
   const upload = multer({
@@ -229,6 +229,31 @@ export function createApp() {
     if (s?.admin) { req.sesion = s; return next(); }
     res.redirect(s?.user ? '/app' : '/entrar');
   };
+  // Páginas públicas: TikTok/Meta revisan que la app se presente a sus usuarios (negocios) con privacidad y términos.
+  app.get('/', (req, res) => { const s = session(req); if (s?.admin) return res.redirect('/admin'); if (s?.user) return res.redirect('/app'); res.send(inicioPage()); });
+  app.get(['/privacidad', '/privacy'], (_req, res) => res.send(privacidadPage()));
+  app.get(['/terminos', '/terms'], (_req, res) => res.send(terminosPage()));
+  // Regreso de TikTok. Fuera del router de admin para que también funcione cuando el cliente conecta su propia cuenta.
+  // El "state" va firmado: tiktok:<cliente>:<vence>[:app]
+  app.get('/admin/tiktok/callback', async (req, res) => {
+    const st = unsign(String(req.query.state || ''));
+    const [, cid, exp, origen] = st ? st.split(':') : [];
+    const client = cid && Number(exp) > Date.now() ? db.getClient(Number(cid)) : null;
+    if (!client) return res.status(400).send('El enlace de TikTok venció o no es válido. Vuelve a dar "Conectar TikTok".');
+    const s = session(req);
+    const esApp = origen === 'app';
+    if (!s?.admin && !(esApp && s?.user?.client_id === client.id)) return res.redirect('/entrar');
+    const volver = esApp ? '/app/cuenta' : `/admin/clientes/${client.id}`;
+    if (req.query.error) return res.redirect(`${volver}?error=${encodeURIComponent(`TikTok: ${req.query.error_description || req.query.error}`)}`);
+    try {
+      const tk = await exchangeTikTokCode(String(req.query.code || ''));
+      db.updateClient(client.id, { credentials: { ...db.clientCredentials(client), tiktok: tk } });
+      db.logEvent({ clientId: client.id, tipo: 'tiktok_conectado', detalle: `open_id ${tk.open_id}${esApp ? ' (desde la cuenta del cliente)' : ''}` });
+      res.redirect(esApp ? '/app/cuenta?ok=' + encodeURIComponent('TikTok conectado.') : volver);
+    } catch (e) {
+      res.redirect(`${volver}?error=${encodeURIComponent(e.message)}`);
+    }
+  });
   const setSession = (res, value) => {
     const secure = config.publicBaseUrl.startsWith('https') ? '; Secure' : '';
     res.append('Set-Cookie', `${COOKIE}=${encodeURIComponent(sign(value))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${secure}`);
@@ -416,7 +441,26 @@ export function createApp() {
   });
   appR.get('/cuenta', (req, res) => {
     if (!req.sesion.user) return res.send(V.cuentaMaestraPage());
-    res.send(V.cuentaPage(req.sesion.user, { client: req.sesion.user.client_id ? db.getClient(req.sesion.user.client_id) : null }));
+    res.send(V.cuentaPage(req.sesion.user, { client: req.sesion.user.client_id ? db.getClient(req.sesion.user.client_id) : null, ok: String(req.query.ok || '').slice(0, 200), error: String(req.query.error || '').slice(0, 300) }));
+  });
+  // TikTok: el propio cliente conecta su cuenta (Login Kit) y puede desconectarla cuando quiera.
+  const clienteDeCuenta = (req) => (req.sesion.user?.client_id ? db.getClient(req.sesion.user.client_id) : null);
+  appR.get('/cuenta/tiktok/conectar', (req, res) => {
+    const c = clienteDeCuenta(req);
+    if (!c) return res.redirect('/app/cuenta');
+    if (!tiktokConfigured()) return res.redirect('/app/cuenta?error=' + encodeURIComponent('TikTok todavía no está disponible. Avísale a Kuper.'));
+    res.redirect(tiktokAuthUrl(sign(`tiktok:${c.id}:${Date.now() + 15 * 60_000}:app`)));
+  });
+  appR.post('/cuenta/tiktok/desconectar', async (req, res) => {
+    const c = clienteDeCuenta(req);
+    if (!c) return res.redirect('/app/cuenta');
+    const creds = db.clientCredentials(c);
+    try { await revokeTikTok(creds.tiktok); } catch { /* se borra de todos modos */ }
+    const { tiktok, ...rest } = creds;
+    db.updateClient(c.id, { credentials: rest });
+    db.logEvent({ clientId: c.id, tipo: 'tiktok_desconectado', detalle: 'desde la cuenta del cliente' });
+    seg.auditar(req, 'tiktok_desconectado', c.nombre);
+    res.redirect('/app/cuenta?ok=' + encodeURIComponent('TikTok desconectado. Borramos el acceso y tus tokens.'));
   });
   appR.post('/cuenta', (req, res) => {
     const u = req.sesion.user;
@@ -744,21 +788,6 @@ export function createApp() {
     db.updateClient(req.client.id, { credentials: rest });
     db.logEvent({ clientId: req.client.id, tipo: 'tiktok_desconectado', detalle: '' });
     res.send(clientView(db.getClient(req.client.id), undefined, aviso, undefined, { tab: 'config' }));
-  });
-  admin.get('/tiktok/callback', async (req, res) => {
-    const st = unsign(String(req.query.state || ''));
-    const [, cid, exp] = st ? st.split(':') : [];
-    const client = cid && Number(exp) > Date.now() ? db.getClient(Number(cid)) : null;
-    if (!client) return res.status(400).send('El enlace de TikTok venció o no es válido. Vuelve a dar "Conectar TikTok".');
-    if (req.query.error) return res.status(400).send(clientView(client, `TikTok: ${req.query.error_description || req.query.error}`));
-    try {
-      const tk = await exchangeTikTokCode(String(req.query.code || ''));
-      db.updateClient(client.id, { credentials: { ...db.clientCredentials(client), tiktok: tk } });
-      db.logEvent({ clientId: client.id, tipo: 'tiktok_conectado', detalle: `open_id ${tk.open_id}` });
-      res.redirect(`/admin/clientes/${client.id}`);
-    } catch (e) {
-      res.status(400).send(clientView(client, e.message));
-    }
   });
   admin.post('/clientes/:cid/aviso-prueba', async (req, res) => {
     const to = String(req.body.to || req.client.config.notificaciones?.email || '').trim();

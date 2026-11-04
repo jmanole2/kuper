@@ -1,7 +1,7 @@
 // Vistas: tarjeta de post (compartida), portal del cliente y panel de admin.
 import path from 'node:path';
 import { html, raw, esc, page } from './html.js';
-import { STATUS, PLATFORMS, LEAD_ESTADOS, ultimaHistoria } from '../db.js';
+import { STATUS, PLATFORMS, LEAD_ESTADOS, ultimaHistoria, clientCredentials } from '../db.js';
 import { etiquetaCampana } from '../campanas.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
@@ -877,6 +877,17 @@ export function appCitasPage(client, view, posts = [], leadsN = 0) {
 export function appChatPage(client, lead, mensajes, opts = {}) {
   return leadChatPage(client, lead, mensajes, { ...opts, back: '/app/leads', sideBar: sideApp('leads', client) });
 }
+function tiktokCard(client) {
+  let tk = null; try { tk = clientCredentials(client)?.tiktok; } catch { /* sin credenciales */ }
+  return html`<div class="card" style="max-width:520px;margin-top:18px"><span class="mono">TikTok</span>
+    ${tk?.access_token
+      ? html`<p><span class="badge" style="color:#4ade80">Conectado</span> Publicamos en tu perfil solo los videos que tú apruebes, con la privacidad que elijas.</p>
+        <form method="post" action="/app/cuenta/tiktok/desconectar" onsubmit="return confirm('¿Desconectar TikTok? Borraremos el acceso.')"><button class="btn-warn">Desconectar TikTok</button></form>`
+      : html`<p class="muted small">Inicia sesión en TikTok y autoriza a Kuper Social para publicar en tu perfil los videos que apruebes. Puedes desconectarlo cuando quieras.</p>
+        <p><a class="btn-accent" href="/app/cuenta/tiktok/conectar" style="text-decoration:none;display:inline-block">Conectar TikTok</a></p>`}
+    <p class="muted small">Más información en nuestro <a href="/privacidad" target="_blank">aviso de privacidad</a>.</p></div>`;
+}
+
 export function cuentaPage(user, { error = '', ok = '', client = null, dosPasos = null } = {}) {
   const body = html`${hero({ kicker: 'Mi cuenta', title: user.nombre, letra: user.nombre, sub: user.email })}
   ${error ? html`<div class="err">${error}</div>` : ''}${ok ? html`<div class="okmsg">${ok}</div>` : ''}
@@ -886,6 +897,7 @@ export function cuentaPage(user, { error = '', ok = '', client = null, dosPasos 
     <label>Nueva contraseña (mínimo 10 caracteres)</label><input type="password" name="nueva" autocomplete="new-password" minlength="10" required>
     <label>Repite la nueva</label><input type="password" name="nueva2" autocomplete="new-password" minlength="10" required>
     <p><button class="btn-accent">Guardar</button></p></form>
+  ${client && user.rol === 'cliente' && tiene(client, 'redes') ? tiktokCard(client) : ''}
   <div class="card" style="max-width:520px;margin-top:18px"><span class="mono">Verificación en dos pasos</span>
     ${user.totp_enc ? html`<p><span class="badge" style="color:#4ade80">Activa</span> Al entrar te pedimos un código de tu app de autenticación.</p>
       <form method="post" action="/app/cuenta/2fa/quitar" class="row"><input name="codigo" inputmode="numeric" maxlength="7" required placeholder="Código actual" style="max-width:180px"><button class="btn-warn">Quitarla</button></form>`
