@@ -1640,3 +1640,5 @@ html.is-bucket-dragging * {
 /* Sello FSSC 22000 nuevo (redondo): tamaño acorde a la tarjeta */
 .recognition-card-fssc .recognition-card-logo { padding: 6px; border-radius: 50%; }
 .recognition-card-fssc .recognition-card-logo img { width: 70px; height: 70px; object-fit: contain; }
+/* Sello ISO 9001 (Global Certification Bureau): mismo formato que el de FSSC */
+.recognition-card:not(.recognition-card-fssc):not(.recognition-card-featured) .recognition-card-logo img { width: 62px; height: 62px; object-fit: contain; border-radius: 50%; }

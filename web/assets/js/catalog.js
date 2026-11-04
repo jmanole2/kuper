@@ -21,8 +21,7 @@ const categories = [
     items: [
       // Solo productos core (revisión del cliente): cubetas de 19, 10, 5 y 4 L y envase de 1 L.
       { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', lidLeaning: true, note: HANDLE_NOTE, handle: true, scale: 1 },
-      // 10 L: modelo provisional (la del hero) hasta tener la foto de la cubeta real
-      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.95 },
+      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', model: 'cubeta10L', note: HANDLE_NOTE, handle: true, scale: 0.95 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: HANDLE_NOTE, handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.88 },
       { kind: 'Envase de', size: '1 L', line: 'Envases de pared delgada', model: 'envase1', handle: false, scale: 0.8 }
@@ -35,7 +34,7 @@ const categories = [
     legal: '',
     items: [
       { kind: 'Cubeta de', size: '19 L', line: 'Cubetas', model: 'cubeta19', note: HANDLE_NOTE, handle: true, scale: 1 },
-      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.95 },
+      { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', model: 'cubeta10L', note: HANDLE_NOTE, handle: true, scale: 0.95 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: HANDLE_NOTE, handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.88 },
       { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', model: 'envase1kg', handle: false, scale: 0.78 },

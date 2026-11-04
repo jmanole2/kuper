@@ -25,6 +25,7 @@ export const DIMS = {
     wall: 2.2,
     ring1Y: 333,   // anillos bajo la tapa
     ring2Y: 312,
+    rings: 2,      // anillos bajo la tapa
     ledgeY: 262,   // escalón de estiba
     earY: 286,     // altura de las orejas del asa
     lidH: 16,      // alto de la tapa sobre el reborde
@@ -47,6 +48,15 @@ export const DIMS = {
     rodR: 4.4,     // asa redonda
     bailRise: 122,
     handleRest: 2.0,    // asa caída sobre el frente, como en la foto
+  },
+  // Cubeta de 10 L (foto del cliente): como la de 19 L pero más baja, con un
+  // solo anillo bajo la tapa y sin boquilla; se arma con el mismo modelo.
+  cubeta10L: {
+    E: 255, rTop: 130, rBase: 106, wall: 2.2,
+    rings: 1, ring1Y: 236, ring2Y: 236, ledgeY: 203, earY: 222,
+    lidH: 15, notches: 14, spout: false,
+    wireR: 2.2, bailRise: 175, gripLen: 100, gripR: 10,
+    handleRest: 2.38, logoAt: 0.22,
   },
   cubeta10: {
     E: 280,        // altura total (boca abierta, como en la foto)
@@ -196,8 +206,11 @@ function cubeta19(o) {
     [rIn, d.E - 8, 0.8], [rIn, d.ring1Y + 3, 0.8],
     [R, d.ring1Y + 2, 1.5], [R, d.ring1Y - 3, 1.5],   // anillo 1
     [rIn, d.ring1Y - 4, 0.8], [rIn, d.ring2Y + 3, 0.8],
-    [R, d.ring2Y + 2, 1.5], [R, d.ring2Y - 3, 1.5],   // anillo 2
-    [rIn, d.ring2Y - 4, 0.8], [rIn, d.ledgeY + 6, 2.5],
+    ...(d.rings > 1 ? [
+      [R, d.ring2Y + 2, 1.5], [R, d.ring2Y - 3, 1.5],   // anillo 2
+      [rIn, d.ring2Y - 4, 0.8],
+    ] : []),
+    [rIn, d.ledgeY + 6, 2.5],
     [R + 1, d.ledgeY, 2.0], [R + 1, d.ledgeY - 3, 1.2], // escalón de estiba
     [rBelow, d.ledgeY - 8, 2.5],
     [d.rBase, 0, 5],
@@ -206,7 +219,7 @@ function cubeta19(o) {
     [d.rBase - w, 0, 1], [d.rBase - w, 5, 1], [0, 5], [0, 5 + 3],
     [d.rBase - w, 8, 4],
     [rBelow - w, d.ledgeY - 8],
-    [rIn - w, d.ring2Y],
+    [rIn - w, d.rings > 1 ? d.ring2Y : d.ring1Y],
     [R - 4 - w, d.E - 8],
     [R - 4 - w, d.E],
   ];
@@ -240,7 +253,7 @@ function cubeta19(o) {
       [27, -0.5], [27, 3, 1.5], [22, 5, 1.2], [22, 6.5, 0.8], [0, 6.5],
     ]).reverse(), 64), mats.pp));
     spout.position.set(-58, yT - 3.5, -62);
-    lid.add(spout);
+    if (d.spout !== false) lid.add(spout);
     if (o.lidLeaning) {
       // Tapa recargada de lado al frente de la cubeta abierta (como en la foto):
       // boquilla abierta (hoyo oscuro) y tapa casi vertical, apoyada en el piso.
@@ -277,7 +290,7 @@ function cubeta19(o) {
     model.add(handlePivot);
   }
   // con la tapa recargada, el logo se corre a la derecha para que se vea junto a la tapa
-  if (o.logo) addLogo(body, { y: d.E * 0.3, h: d.E * 0.12, rAt: bodyR, angle: o.lidLeaning ? 1.0 : 0 });
+  if (o.logo) addLogo(body, { y: d.E * (d.logoAt ?? 0.3), h: d.E * 0.12, rAt: bodyR, angle: o.lidLeaning ? 1.0 : 0 });
   return normalize(model, o.withLid && !o.lidLeaning ? yT : d.E, o.height, o.origin, { body, lid, handlePivot }, d);
 }
 
@@ -518,7 +531,9 @@ function addWireBail(pivot, x0, d, mats) {
   pivot.add(grip);
 }
 
-const BUILDERS = { cubeta19, cubeta10, envase1kg: cubeta10, cubeta5, envase1, hogar12 };
+const cubeta10L = (o) => cubeta19({ ...o, dims: { ...DIMS.cubeta10L, ...(o.dims || {}) } });
+
+const BUILDERS = { cubeta19, cubeta10L, cubeta10, envase1kg: cubeta10, cubeta5, envase1, hogar12 };
 
 export function createProduct(kind, opts = {}) {
   const build = BUILDERS[kind];
