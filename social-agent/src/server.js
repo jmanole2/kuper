@@ -153,7 +153,18 @@ export function createApp() {
   });
   // El agente de llamadas manda aquí cada llamada que termina (resumen, transcripción y datos del cliente).
   api.post('/llamadas', (req, res) => {
-    try { const r = llamadas.registrar(req.client, req.body || {}); res.json({ ok: true, nueva: r.nueva, lead_id: r.lead?.id ?? r.llamada.lead_id ?? null }); }
+    try {
+      const r = llamadas.registrar(req.client, req.body || {});
+      // Si dejó teléfono o correo, alguien tiene que darle seguimiento: aviso por correo (y se asigna a un asesor por turnos).
+      const b = req.body || {};
+      if (r.nueva && (b.telefono || b.email)) {
+        avisosAgente.recibir(req.client, { titulo: b.cita ? 'Llamada: agendó una cita' : 'Llamada: dejó sus datos para que lo contacten', texto: String(b.resumen || '').slice(0, 1500),
+          telefono: b.telefono, nombre: b.nombre, origen: 'llamada', correo: true,
+          mensajes: (Array.isArray(b.transcripcion) ? b.transcripcion : []).slice(-8).map((t) => ({ rol: t.rol === 'agente' ? 'agente' : 'lead', texto: t.texto })) })
+          .catch((e) => console.error('[aviso llamada]', e.message));
+      }
+      res.json({ ok: true, nueva: r.nueva, lead_id: r.lead?.id ?? r.llamada.lead_id ?? null });
+    }
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   // Agente de ventas: siguiente empresa a llamar (respeta horario, intentos y REPEP) y resultado de cada llamada.
