@@ -146,7 +146,7 @@ const server = createServer(async (req, res) => {
     const demo = demoDe(new URL(req.url, 'http://x'));
     if (demo) {
       return json(res, 200, { negocio: demo.negocio, asistente: demo.asistente, tipo_de_cita: demo.tipo_de_cita, link_reservas: demo.link_reservas || '',
-        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', etiqueta: demo.pagina?.etiqueta || '' });
+        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', logo_alto: Number(demo.pagina?.logo_alto) || 0, etiqueta: demo.pagina?.etiqueta || '' });
     }
     if (esPruebaVentas(new URL(req.url, 'http://x'))) {
       return json(res, 200, { negocio: cfg.negocio, asistente: cfg.ventas.asistente, tipo_de_cita: cfg.tipo_de_cita, link_reservas: cfg.link_reservas || '', ventas: true,
