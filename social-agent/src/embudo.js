@@ -304,19 +304,49 @@ export function guardarHorario(client, body = {}) {
   return db.getClient(client.id);
 }
 
-export function analitica(client, { dias = 30, ahora = Date.now() } = {}) {
-  const desde = new Date(ahora - dias * 86400000);
-  const desdeSql = desde.toISOString().slice(0, 19).replace('T', ' ');
+// Medianoche (hora del panel) de un día "YYYY-MM-DD", como fecha UTC.
+function medianoche(ymd) {
+  const [y, m, dd] = ymd.split('-').map(Number);
+  const guess = Date.UTC(y, m - 1, dd);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(guess).map((x) => [x.type, x.value]));
+  const local = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+  return new Date(guess - (local - guess));
+}
+const hoyLocal = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone }).format(t);
+/** Rango del filtro de fechas: atajo ('7', '30', '90', 'mes', 'mes_pasado') o desde/hasta (YYYY-MM-DD). */
+export function rangoFechas({ rango = '', desde = '', hasta = '' } = {}, ahora = Date.now()) {
+  const ok = (x) => /^\d{4}-\d\d-\d\d$/.test(x || '');
+  const hoy = hoyLocal(ahora);
+  const menos = (n) => hoyLocal(ahora - n * 86400000);
+  if (ok(desde) && ok(hasta)) return desde <= hasta ? { desde, hasta, rango: 'propio' } : { desde: hasta, hasta: desde, rango: 'propio' };
+  if (rango === 'mes') return { desde: `${hoy.slice(0, 8)}01`, hasta: hoy, rango };
+  if (rango === 'mes_pasado') {
+    const [y, m] = hoy.split('-').map(Number), py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1;
+    const ult = new Date(Date.UTC(py, pm, 0)).getUTCDate();
+    return { desde: `${py}-${String(pm).padStart(2, '0')}-01`, hasta: `${py}-${String(pm).padStart(2, '0')}-${String(ult).padStart(2, '0')}`, rango };
+  }
+  const n = [7, 30, 90].includes(Number(rango)) ? Number(rango) : 30;
+  return { desde: menos(n - 1), hasta: hoy, rango: String(n) };
+}
+
+export function analitica(client, { dias = null, desde: desdeTxt = '', hasta: hastaTxt = '', rango = '', asesor = '', ahora = Date.now() } = {}) {
+  const r = rangoFechas({ rango: rango || (dias ? String(dias) : ''), desde: desdeTxt, hasta: hastaTxt }, ahora);
+  const desde = medianoche(r.desde), fin = new Date(medianoche(r.hasta).getTime() + 86400000);
+  dias = Math.max(1, Math.round((fin - desde) / 86400000));
+  const desdeSql = desde.toISOString().slice(0, 19).replace('T', ' '), finSql = fin.toISOString().slice(0, 19).replace('T', ' ');
   const d = db.getDb();
-  const leads = d.prepare('SELECT * FROM leads WHERE client_id = ?').all(client.id);
+  const asesorId = asesor === '-' ? '-' : Number(asesor) || null;
+  const leads = d.prepare('SELECT * FROM leads WHERE client_id = ?').all(client.id)
+    .filter((l) => !asesorId || (asesorId === '-' ? !l.asignado_id : l.asignado_id === asesorId));
+  const ids = new Set(leads.map((l) => l.id));
   const msgs = d.prepare(`SELECT m.lead_id, m.rol, m.autor, m.texto, m.created_at FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id
-    WHERE l.client_id = ? AND m.created_at >= ? ORDER BY m.id`).all(client.id, desdeSql);
+    WHERE l.client_id = ? AND m.created_at >= ? AND m.created_at < ? ORDER BY m.id`).all(client.id, desdeSql, finSql).filter((m) => ids.has(m.lead_id));
   const porLead = new Map();
   for (const m of msgs) { if (!porLead.has(m.lead_id)) porLead.set(m.lead_id, []); porLead.get(m.lead_id).push(m); }
   const h = horarioEquipo(client);
   const enHorario = (dt) => { const p = partes(dt); return h.dias.includes(p.dia) && p.hora >= h.de && p.hora < h.a; };
 
-  const nuevos = leads.filter((l) => utc(l.created_at) >= desde);
+  const nuevos = leads.filter((l) => utc(l.created_at) >= desde && utc(l.created_at) < fin);
   const horas = Array(24).fill(0), semana = Array(7).fill(0);
   let fuera = 0;
   const primera = [], primeraAgente = [], primeraEquipo = [], respEquipo = [], respAgente = [];
@@ -357,14 +387,14 @@ export function analitica(client, { dias = 30, ahora = Date.now() } = {}) {
   const porEmbudo = embudos(client).map((emb) => ({ ...emb, etapas: emb.etapas.map((e) => ({ ...e, n: leads.filter((l) => embudoDe(client, l).id === emb.id && etapaDe(client, l).id === e.id).length })) }));
   const porEtapa = porEmbudo[0].etapas;
   const clientes = nuevos.filter((l) => etapaDe(client, l).tipo === 'cliente').length;
-  const vendido = leads.filter((l) => l.resultado === 'vendido' && utc(l.updated_at) >= desde).reduce((a, l) => a + (Number(l.valor) || 0), 0);
+  const vendido = leads.filter((l) => l.resultado === 'vendido' && utc(l.updated_at) >= desde && utc(l.updated_at) < fin).reduce((a, l) => a + (Number(l.valor) || 0), 0);
   const canales = {};
   for (const l of nuevos) canales[l.origen] = (canales[l.origen] || 0) + 1;
   const ases = asesores(client).map((a) => ({ ...a, leads: leads.filter((l) => l.asignado_id === a.id && utc(l.updated_at) >= desde).length,
     respuestas: msgs.filter((m) => m.rol === 'humano' && m.autor === a.nombre).length }));
   const activos = new Set(msgs.map((m) => m.lead_id));
   return {
-    dias, mensajesLead: msgs.filter((m) => m.rol === 'lead').length, nuevos: nuevos.length, fuera, horas, semana,
+    dias, desde: r.desde, hasta: r.hasta, rango: r.rango, asesor: asesor || '', mensajesLead: msgs.filter((m) => m.rol === 'lead').length, nuevos: nuevos.length, fuera, horas, semana,
     primeraMediana: mediana(primera), rapidos: primera.length ? primera.filter((x) => x <= 15).length / primera.length : null,
     primeraAgente: mediana(primeraAgente), primeraEquipo: mediana(primeraEquipo), respAgente: mediana(respAgente), respEquipo: mediana(respEquipo),
     respondidosAgente: respAgente.length, respondidosEquipo: respEquipo.length,

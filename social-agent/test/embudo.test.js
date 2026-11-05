@@ -141,3 +141,16 @@ test('pausar agente desde el panel: se guarda y el agente lo lee con el conocimi
     assert.match(await (await fetch(`${base}/app/agente`, { headers: { cookie } })).text(), /Reanudar agente/);
   } finally { server.close(); }
 });
+
+test('analítica: rango de fechas (atajos y propio) y filtro por asesor', () => {
+  const ahora = Date.parse('2026-11-05T18:00:00Z');
+  assert.deepEqual(E.rangoFechas({ rango: 'mes' }, ahora), { desde: '2026-11-01', hasta: '2026-11-05', rango: 'mes' });
+  assert.deepEqual(E.rangoFechas({ rango: 'mes_pasado' }, ahora), { desde: '2026-10-01', hasta: '2026-10-31', rango: 'mes_pasado' });
+  assert.deepEqual(E.rangoFechas({ rango: '7' }, ahora), { desde: '2026-10-30', hasta: '2026-11-05', rango: '7' });
+  assert.deepEqual(E.rangoFechas({ desde: '2026-10-10', hasta: '2026-10-04' }, ahora), { desde: '2026-10-04', hasta: '2026-10-10', rango: 'propio' });
+  const a = E.analitica(c, { desde: '2026-11-03', hasta: '2026-11-03', ahora });
+  assert.equal(a.dias, 1);
+  const todos = E.analitica(c, { rango: '90', ahora }).nuevos;
+  const deAna = E.analitica(c, { rango: '90', asesor: String(ana.id), ahora }).nuevos;
+  assert.ok(deAna <= todos);
+});

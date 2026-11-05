@@ -270,7 +270,11 @@ export function fichaLead(client, lead, { base, asesores = [] }) {
 }
 
 // ------------------------------------------------------------ analítica
-const ACSS = `.an-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px}
+const ACSS = `.an-fil{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}.an-fil select{width:auto;padding:9px 14px;border-radius:99px}
+.an-cal{position:relative}.an-cal>summary{list-style:none;cursor:pointer;padding:9px 18px;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:14px}.an-cal>summary::-webkit-details-marker{display:none}
+.an-cal[open]>summary{border-color:var(--accent)}.an-pnl{position:absolute;z-index:30;top:calc(100% + 8px);left:0;min-width:340px;background:#1c1a18;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.an-pnl label{font-size:12px;display:flex;flex-direction:column;gap:4px}.an-pnl input{padding:8px 10px}
+.an-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px}
 .an-k div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px}.an-k b{display:block;font-size:34px;font-weight:300;letter-spacing:-.03em;line-height:1.1;margin:6px 0 2px}.an-k small{color:var(--muted);font-size:12px}
 .an-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}.an-g .card{margin:0}
 .an-bars{display:flex;flex-direction:column;gap:8px;margin-top:10px}.an-bars div{display:grid;grid-template-columns:150px 1fr 48px;gap:10px;align-items:center;font-size:13px}
@@ -290,7 +294,18 @@ export function analiticaSection(client, a, { base }) {
   const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
   const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   return html`<style>${raw(ACSS)}</style>
-  <div class="pills" style="margin-bottom:14px">${[7, 30, 90].map((d) => html`<a class="${a.dias === d ? 'on' : ''}" href="${base}/analitica?dias=${d}">${d} días</a>`)}</div>
+  ${(() => {
+    const f = (ymd) => new Intl.DateTimeFormat('es-MX', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${ymd}T12:00:00Z`));
+    const url = (extra) => `${base}/analitica?${new URLSearchParams(Object.entries({ asesor: a.asesor, ...extra }).filter(([, v]) => v))}`;
+    const ATAJOS = [['7', 'Últimos 7 días'], ['30', 'Últimos 30 días'], ['mes', 'Este mes'], ['mes_pasado', 'Mes pasado'], ['90', 'Últimos 90 días']];
+    return html`<div class="an-fil">
+      ${(a.listaAsesores || []).length ? html`<form method="get" action="${base}/analitica"><input type="hidden" name="desde" value="${a.desde}"><input type="hidden" name="hasta" value="${a.hasta}">
+        <select name="asesor" onchange="this.form.submit()"><option value="">Todo el equipo</option><option value="-" ${raw(a.asesor === '-' ? 'selected' : '')}>Sin asesor</option>${a.listaAsesores.map((x) => html`<option value="${x.id}" ${raw(String(x.id) === a.asesor ? 'selected' : '')}>${x.nombre}</option>`)}</select></form>` : ''}
+      <details class="an-cal"><summary>${f(a.desde)} – ${f(a.hasta)}</summary><div class="an-pnl">
+        <div class="pills" style="margin:0 0 12px;flex-wrap:wrap">${ATAJOS.map(([k, t]) => html`<a class="${a.rango === k ? 'on' : ''}" href="${url({ rango: k })}">${t}</a>`)}</div>
+        <form method="get" action="${base}/analitica" class="row" style="gap:8px;flex-wrap:wrap;align-items:end">${a.asesor ? html`<input type="hidden" name="asesor" value="${a.asesor}">` : ''}
+          <label style="margin:0">Desde<input type="date" name="desde" value="${a.desde}" required></label><label style="margin:0">Hasta<input type="date" name="hasta" value="${a.hasta}" required></label>
+          <button class="btn-accent">Aplicar</button></form></div></details></div>`; })()}
   <div class="an-k">
     <div><span class="mono">Mensajes de leads</span><b>${a.mensajesLead.toLocaleString('es-MX')}</b><small>${Math.round(a.mensajesLead / a.dias)} al día</small></div>
     <div><span class="mono">Leads nuevos</span><b>${a.nuevos}</b><small>${a.clientes} ya son clientes</small></div>

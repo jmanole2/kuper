@@ -1150,8 +1150,9 @@ export function createApp() {
       } catch (e) { res.status(400).send(`<!doctype html><meta charset="utf-8"><p style="font-family:sans-serif">${String(e.message).replace(/</g, '&lt;')} <a href="${base(req)}/embudo">Volver</a></p>`); }
     });
     router.get(`${prefix}/analitica`, (req, res) => {
-      const dias = [7, 30, 90].includes(Number(req.query.dias)) ? Number(req.query.dias) : 30;
-      const a = embudo.analitica(req.client, { dias });
+      const q = (k, n = 12) => String(req.query[k] || '').slice(0, n);
+      const a = embudo.analitica(req.client, { rango: q('rango') || q('dias'), desde: q('desde'), hasta: q('hasta'), asesor: q('asesor') });
+      a.listaAsesores = embudo.asesores(req.client);
       res.send(app ? V.appAnaliticaPage(req.client, a) : V.adminAnaliticaPage(req.client, a));
     });
   }
