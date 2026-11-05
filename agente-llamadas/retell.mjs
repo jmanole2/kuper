@@ -186,7 +186,9 @@ function herramientaDisponibilidad() {
   return {
     type: 'custom', name: 'consultar_disponibilidad', method: 'POST', url: `${base}/funciones/disponibilidad?demo=${encodeURIComponent(demoClave)}`,
     headers: { Authorization: `Bearer ${tokenFunciones(KEY)}` }, timeout_ms: 10000,
-    speak_during_execution: true, speak_after_execution: true, execution_message_type: 'static_text', execution_message_description: 'Dame un segundo, lo reviso.',
+    speak_during_execution: true, speak_after_execution: true, // La frase de "lo reviso" la escribe la IA (no es fija), para que no suene a robot.
+    execution_message_type: 'prompt',
+    execution_message_description: 'Antes de revisar, di UNA frase muy corta y natural, distinta cada vez y ligada a lo que pidió la persona, para avisar que lo vas a revisar. Ejemplos de estilo (no los repitas tal cual): "Va, déjame ver qué tenemos en Del Valle", "Claro, lo checo en este momento", "Permíteme, reviso qué hay para seis personas", "A ver, te digo qué está libre ahorita". Nunca uses dos veces la misma frase en la llamada.',
     description: 'Consulta en el sistema qué oficinas y puestos fijos están disponibles AHORA. Úsala SIEMPRE antes de decir si hay o no hay disponibilidad, y antes de ofrecer una oficina concreta.',
     parameters: { type: 'object', properties: {
       sede: { type: 'string', description: 'Sede o zona que pidió (Polanco, Roma Norte, Del Valle, Parque Hundido, San Borja, Coyoacán). Vacío si no importa.' },
