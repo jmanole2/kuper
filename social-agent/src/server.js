@@ -31,6 +31,8 @@ import * as llamadas from './llamadas.js';
 import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
 import { inicioPage, privacidadPage, terminosPage } from './web/publico.js';
+import * as embudo from './embudo.js';
+import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
@@ -163,7 +165,8 @@ export function createApp() {
   });
   api.post('/leads', (req, res) => {
     try {
-      const lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
+      let lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
+      lead = embudo.datosDelAgente(req.client, lead, req.body || {});
       campanas.completarCampana(req.client, lead); // nombre de la campaña de Meta, en segundo plano
       res.json({ ok: true, lead });
     }
@@ -428,6 +431,8 @@ export function createApp() {
   appR.get('/leads.csv', servicio('chat'), (req, res) => enviarCsv(req, res));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
   chatRoutes(appR, () => '/app', { app: true, prefix: '' });
+  appR.use(['/embudo', '/analitica'], servicio('chat'));
+  embudoRoutes(appR, () => '/app', { app: true });
   appR.use('/agente', servicio('chat'));
   conocimientoRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
@@ -806,6 +811,7 @@ export function createApp() {
     res.redirect(`/admin/clientes/${req.client.id}?tab=config&ok=Llave%20nueva%20generada`);
   });
   chatRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  embudoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   conocimientoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
@@ -1020,7 +1026,8 @@ export function createApp() {
       const lead = leadDe(req, res); if (!lead) return;
       let estado = null;
       if (agente.agenteConfigurado(req.client)) estado = await agente.llamarAgente(req.client, 'POST', '/estado', agente.identidad(lead), { timeout: 4000 }).catch(() => null);
-      const opts = { base: `${base(req)}/leads/${lead.id}`, puedeResponder: agente.agenteConfigurado(req.client), estado, ...extra };
+      const b = `${base(req)}/leads/${lead.id}`;
+      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client), estado, ficha: fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client) }), ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appChatPage(req.client, lead, db.leadMessages(lead.id), opts) : V.leadChatPage(req.client, lead, db.leadMessages(lead.id), opts));
     };
     router.get(`${prefix}/leads/:leadId/chat`, (req, res) => ver(req, res));
@@ -1041,6 +1048,14 @@ export function createApp() {
         res.redirect(`${base(req)}/leads/${lead.id}/chat`);
       } catch (e) { await ver(req, res, { error: e.message, borrador: texto }); }
     });
+    router.post(`${prefix}/leads/:leadId/ficha`, async (req, res) => {
+      const lead = leadDe(req, res); if (!lead) return;
+      try {
+        embudo.guardarFicha(req.client, lead.id, req.body || {});
+        db.logEvent({ clientId: req.client.id, tipo: 'ficha_lead', detalle: `${req.sesion?.user?.nombre || 'Kuper'} · ${lead.nombre || lead.telefono || lead.usuario || lead.id}` });
+        await ver(req, res, { ok: 'Datos guardados.' });
+      } catch (e) { await ver(req, res, { error: e.message }); }
+    });
     router.post(`${prefix}/leads/:leadId/control`, async (req, res) => {
       const lead = leadDe(req, res); if (!lead) return;
       const humano = req.body.humano === '1';
@@ -1049,6 +1064,33 @@ export function createApp() {
         db.upsertLead(req.client.id, { ...agente.identidad(lead), control: humano ? 'humano' : 'bot' });
         res.redirect(`${base(req)}/leads/${lead.id}/chat`);
       } catch (e) { await ver(req, res, { error: e.message }); }
+    });
+  }
+
+  // Embudo de ventas y analítica (admin y cliente).
+  function embudoRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const leadsDe = (c) => db.listLeads(c.id, { limit: 3000 });
+    const verEmbudo = (req, res, extra = {}) => {
+      const opts = { asesores: embudo.asesores(req.client), q: String(req.query.q || '').slice(0, 80), ...extra };
+      res.status(extra.error ? 400 : 200).send(app ? V.appEmbudoPage(req.client, leadsDe(req.client), opts) : V.adminEmbudoPage(req.client, leadsDe(req.client), opts));
+    };
+    router.get(`${prefix}/embudo`, (req, res) => verEmbudo(req, res, { aviso: req.query.ok ? 'Etapas guardadas.' : '' }));
+    router.post(`${prefix}/embudo/mover`, (req, res) => {
+      try { const l = embudo.moverLead(req.client, Number(req.body.lead), String(req.body.etapa || '')); res.json({ ok: true, etapa: l.etapa }); }
+      catch (e) { res.status(400).json({ error: e.message }); }
+    });
+    router.post(`${prefix}/embudo/etapas`, (req, res) => {
+      try {
+        const lista = embudo.parseEtapas(req.body.etapas);
+        db.updateClient(req.client.id, { config: { ...req.client.config, embudo: lista } });
+        db.logEvent({ clientId: req.client.id, tipo: 'embudo_etapas', detalle: lista.map((e) => e.nombre).join(' › ') });
+        res.redirect(`${base(req)}/embudo?ok=1`);
+      } catch (e) { res.status(400).send(`<!doctype html><meta charset="utf-8"><p style="font-family:sans-serif">${String(e.message).replace(/</g, '&lt;')} <a href="${base(req)}/embudo">Volver</a></p>`); }
+    });
+    router.get(`${prefix}/analitica`, (req, res) => {
+      const dias = [7, 30, 90].includes(Number(req.query.dias)) ? Number(req.query.dias) : 30;
+      const a = embudo.analitica(req.client, { dias });
+      res.send(app ? V.appAnaliticaPage(req.client, a) : V.adminAnaliticaPage(req.client, a));
     });
   }
 

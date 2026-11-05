@@ -88,6 +88,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
 `;
 
 const ICON = {
+  funnel: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+  bars: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
   plus: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
   out: '<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/>',

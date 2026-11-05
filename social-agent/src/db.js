@@ -214,6 +214,14 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('leads', 'campana', 'TEXT');
   ensure('leads', 'campana_json', 'TEXT');
   ensure('leads', 'email', 'TEXT'); // leads de llamadas por la web: a veces solo dejan su correo
+  // Embudo y ficha del lead (ver src/embudo.js)
+  ensure('leads', 'etapa', 'TEXT');
+  ensure('leads', 'empresa', 'TEXT');
+  ensure('leads', 'valor', 'REAL');
+  ensure('leads', 'resultado', 'TEXT'); // vendido | perdido | resuelto
+  ensure('leads', 'tags_json', 'TEXT');
+  ensure('leads', 'asignado_id', 'INTEGER');
+  ensure('leads', 'resumen', 'TEXT');
   return db;
 }
 

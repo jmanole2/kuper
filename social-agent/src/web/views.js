@@ -7,6 +7,7 @@ import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
+import { embudoSection, analiticaSection, FICHA_CSS } from './embudo.js';
 import * as CONOC from '../conocimiento.js';
 import { ESTADOS as PROS_ESTADOS, REGLAS as PROS_REGLAS } from '../prospeccion.js';
 import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro, IVAS, ivaDe, desglose, mensualidadTotal, etiquetaIva, fiscalDe, REGIMENES, USOS_CFDI } from '../plan.js';
@@ -149,7 +150,7 @@ const AYUDA = 'https://wa.me/525552173832';
 const sideApp = (on, client) => [
   { href: '/app', icon: 'home', label: 'Inicio', on: on === 'inicio', logo: true },
   ...(tiene(client, 'redes') ? [{ href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' }] : []),
-  ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }, { href: '/app/agente', icon: 'brain', label: 'Lo que sabe tu agente', on: on === 'agente' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }, { href: '/app/embudo', icon: 'funnel', label: 'Embudo de ventas', on: on === 'embudo' }, { href: '/app/analitica', icon: 'bars', label: 'Analítica', on: on === 'analitica' }, { href: '/app/agente', icon: 'brain', label: 'Lo que sabe tu agente', on: on === 'agente' }] : []),
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
@@ -312,7 +313,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -325,7 +326,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' ? `/admin/clientes/${client.id}/agente` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -582,16 +583,17 @@ export const chatBurbujas = (mensajes) => String(mensajes.length
   ? html`${mensajes.map((m) => html`<div class="burb ${m.rol}">${m.texto}<time>${m.rol === 'lead' ? 'Lead' : m.rol === 'humano' ? (m.autor || 'Equipo') : 'Agente'} · ${fmtChat(m.created_at)}</time></div>`)}`
   : html`<p class="muted">Sin mensajes todavía.</p>`);
 
-export function leadChatPage(client, lead, mensajes, { back = null, sideBar = null, base = null, puedeResponder = false, estado = null, error = '', borrador = '' } = {}) {
+export function leadChatPage(client, lead, mensajes, { back = null, sideBar = null, base = null, puedeResponder = false, estado = null, error = '', borrador = '', ficha = '', ok = '' } = {}) {
   const tel = lead.telefono ? lead.telefono.replace(/\D/g, '') : null;
   const humano = estado ? !!estado.humano : lead.control === 'humano';
-  const body = html`<style>${raw(CHAT_CSS)}</style>
+  const body = html`<style>${raw(CHAT_CSS)}${raw(FICHA_CSS)}</style>
   ${hero({ kicker: `Conversación · ${lead.origen}`, title: lead.nombre || lead.usuario || lead.telefono || 'Lead', letra: lead.nombre || 'L',
     sub: [lead.telefono, lead.usuario, lead.cita_inicio ? `cita ${fmtDate(lead.cita_inicio)}` : ''].filter(Boolean).join(' · '),
     stats: [[mensajes.filter((m) => m.rol === 'lead').length, 'Mensajes del lead', '#93b4ff'], [mensajes.filter((m) => m.rol === 'agente').length, 'Respuestas del agente', '#c9f53a'], [mensajes.filter((m) => m.rol === 'humano').length, 'Respuestas del equipo', '#93b4ff']],
     tabs: [[back || `/admin/clientes/${client.id}?tab=leads`, '← Leads', false], ...(tel ? [[`https://wa.me/${tel}`, 'Abrir en WhatsApp', false]] : [])],
     note: puedeResponder ? (humano ? ['Control', 'Tú respondes · el bot está en pausa'] : ['Control', 'El agente responde solo']) : null })}
-  ${error ? html`<div class="err" style="max-width:760px">${error}</div>` : ''}
+  ${error ? html`<div class="err" style="max-width:760px">${error}</div>` : ''}${ok ? html`<div class="okmsg" style="max-width:760px">${ok}</div>` : ''}
+  <div class="chat-wrap"><div>
   ${puedeResponder && base ? html`<div class="ctl">
     <span class="badge" style="color:${humano ? '#93b4ff' : '#c9f53a'}">${humano ? 'Tú tienes el control' : 'Responde el agente'}</span>
     ${estado && estado.ventana_abierta === false ? html`<span class="badge" style="color:#fbbf24">Ventana de 24 h cerrada</span>` : ''}
@@ -602,6 +604,7 @@ export function leadChatPage(client, lead, mensajes, { back = null, sideBar = nu
     <textarea name="texto" maxlength="4000" placeholder="Escribe tu respuesta… (al enviar, el agente se pausa en esta conversación)" required>${borrador}</textarea>
     <p class="row"><button class="btn-accent">Enviar por WhatsApp</button><span class="muted small">Sale desde el número del agente. ${humano ? 'Cuando termines, toca "Devolver al agente".' : ''}</span></p></form>`
     : html`<p class="muted small" style="max-width:760px">Para responder desde aquí, Kuper tiene que conectar este panel con tu agente (URL del agente en Configuración).</p>`}
+  </div>${raw(String(ficha || ''))}</div>
   ${raw(`<script>(()=>{const c=document.getElementById('chat');c.scrollTop=c.scrollHeight;const u=${JSON.stringify(base ? `${base}/chat.json` : '')};if(!u)return;let last=c.innerHTML;
   setInterval(async()=>{try{const r=await fetch(u,{headers:{accept:'application/json'}});if(!r.ok)return;const j=await r.json();if(j.html!==last){const abajo=c.scrollHeight-c.scrollTop-c.clientHeight<60;c.innerHTML=j.html;last=j.html;if(abajo)c.scrollTop=c.scrollHeight;}}catch{}},8000);})();</script>`)}`;
   return page({ title: `Chat · ${lead.nombre || lead.telefono || ''}`, body, side: sideBar || side('clientes') });
@@ -668,7 +671,7 @@ const appHero = (client, t, posts = [], leadsN = 0, extra = {}) => hero({
       [posts.filter((p) => p.status === 'publicado').length, 'Publicadas', '#c9f53a', '/app/posts?t=publicadas']] : []),
     ...(tiene(client, 'chat') ? [[leadsN, 'Leads', '#93b4ff', '/app/leads']] : []),
   ],
-  tabs: [['/app', 'Resumen', false], ...(tiene(client, 'redes') ? [['/app/posts', 'Publicaciones', t === 'posts']] : []), ...(tiene(client, 'chat') ? [['/app/leads', 'Leads', t === 'leads']] : []),
+  tabs: [['/app', 'Resumen', false], ...(tiene(client, 'redes') ? [['/app/posts', 'Publicaciones', t === 'posts']] : []), ...(tiene(client, 'chat') ? [['/app/leads', 'Leads', t === 'leads'], ['/app/embudo', 'Embudo', t === 'embudo'], ['/app/analitica', 'Analítica', t === 'analitica']] : []),
     ...(tiene(client, 'agenda') ? [['/app/citas', 'Citas', t === 'citas']] : []), ['/app/pagos', 'Pagos', t === 'pagos']],
   note: extra.note || null,
 });
@@ -873,6 +876,20 @@ export function appLeadsPage(client, leads, chats, posts = [], campanaSel = '') 
 }
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
   return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false, url: '/app/citas' })}` });
+}
+export function appEmbudoPage(client, leads, opts) {
+  return page({ title: `Embudo · ${client.nombre}`, side: sideApp('embudo', client), body: html`${appHero(client, 'embudo', [], leads.length)}${embudoSection(client, leads, { base: '/app', ...opts })}` });
+}
+export function appAnaliticaPage(client, a) {
+  return page({ title: `Analítica · ${client.nombre}`, side: sideApp('analitica', client), body: html`${appHero(client, 'analitica', [], a.totalLeads)}${analiticaSection(client, a, { base: '/app' })}` });
+}
+export function adminEmbudoPage(client, leads, opts) {
+  const b = `/admin/clientes/${client.id}`;
+  return page({ title: `Embudo · ${client.nombre}`, side: side('clientes'), body: html`${hero({ kicker: 'Embudo de ventas', title: client.nombre, letra: client.nombre, tabs: [[`${b}?tab=leads`, '← Leads', false], [`${b}/embudo`, 'Embudo', true], [`${b}/analitica`, 'Analítica', false]] })}${embudoSection(client, leads, { base: b, ...opts })}` });
+}
+export function adminAnaliticaPage(client, a) {
+  const b = `/admin/clientes/${client.id}`;
+  return page({ title: `Analítica · ${client.nombre}`, side: side('clientes'), body: html`${hero({ kicker: 'Analítica', title: client.nombre, letra: client.nombre, tabs: [[`${b}?tab=leads`, '← Leads', false], [`${b}/embudo`, 'Embudo', false], [`${b}/analitica`, 'Analítica', true]] })}${analiticaSection(client, a, { base: b })}` });
 }
 export function appChatPage(client, lead, mensajes, opts = {}) {
   return leadChatPage(client, lead, mensajes, { ...opts, back: '/app/leads', sideBar: sideApp('leads', client) });
