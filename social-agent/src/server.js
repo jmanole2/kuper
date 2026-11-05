@@ -33,6 +33,7 @@ import { feedHtml } from './web/control.js';
 import { inicioPage, privacidadPage, terminosPage } from './web/publico.js';
 import * as embudo from './embudo.js';
 import * as importar from './importar.js';
+import * as limpieza from './limpieza.js';
 import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -1232,5 +1233,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   app.listen(config.port, process.env.HOST || '0.0.0.0', () => {
     console.log(`Agente social en ${config.publicBaseUrl} (puerto ${config.port})${config.dryRun ? ' — DRY_RUN activo' : ''}${config.mockLlm ? ' — MOCK_LLM activo' : ''}`);
     if (config.schedulerEnabled) pipe.startScheduler();
+    limpieza.iniciar(); // borra lo pesado que ya no se usa (ver src/limpieza.js)
   });
 }
