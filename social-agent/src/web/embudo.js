@@ -1,7 +1,7 @@
 // Vistas del embudo de ventas (tablero), la ficha del lead y la analítica.
 import { html, raw } from './html.js';
 import { config } from '../config.js';
-import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto } from '../embudo.js';
+import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto, estancado } from '../embudo.js';
 
 const ORIGEN = { manual: ['Agregado a mano', '#c9c3b8'], whatsapp: ['WhatsApp', '#25d366'], instagram: ['Instagram', '#e1306c'], facebook: ['Messenger', '#4f7cff'], llamada: ['Llamada', '#c9f53a'], web: ['Página de citas', '#93b4ff'], chat_web: ['Chat web', '#fbbf24'] };
 const origen = (o) => ORIGEN[o] || [o || 'Otro', '#93b4ff'];
@@ -52,11 +52,34 @@ const TCSS = `
 .pop.add>summary{background:var(--accent);color:var(--accent-ink);font-weight:600;border-color:var(--accent)}
 .emb-card .ext{grid-column:1/-1;font-size:12px;color:#cfc9bf;border-top:1px solid var(--line);padding-top:8px;margin-top:2px;line-height:1.4}
 .emb-card .ext i{font-style:normal;display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:99px;background:rgba(147,180,255,.14);color:#93b4ff;margin:0 4px 4px 0}
-.emb-card .pri{margin-left:4px}
+.emb-card .pri{margin-left:5px}.emb-h .dots{background:none;border:0;color:var(--muted);padding:2px 4px;border-radius:8px;cursor:pointer;margin-left:6px}.emb-h .dots:hover{color:var(--ink);background:rgba(255,255,255,.08)}
+.emb-h .hd{display:flex;align-items:center}.emb-est{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:1px 7px;border-radius:99px;background:rgba(251,191,36,.14);color:#fbbf24;margin-left:4px}
+.cmenu{position:fixed;z-index:60;width:290px;background:#1c1a18;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:6px;box-shadow:0 24px 60px rgba(0,0,0,.6);font-size:14px}
+.cmenu button,.cmenu .it{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:10px 12px;border-radius:12px;cursor:pointer;font:inherit}
+.cmenu button:hover{background:rgba(255,255,255,.07)}.cmenu small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.cmenu hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+.cmenu .cap{padding:8px 12px 2px;color:var(--muted);font-size:12px}.cmenu .rojo{color:#f87171}.cmenu select{padding:5px 10px;font-size:13px;margin-top:6px;width:100%}.cmenu .on{margin-left:auto;color:var(--accent)}
+.emb.sel .emb-card{cursor:pointer}.emb-card .ck{display:none;position:absolute;left:8px;top:8px;width:18px;height:18px;border-radius:6px;border:1.5px solid var(--muted);background:#121110}
+.emb.sel .emb-card{position:relative;padding-left:34px}.emb.sel .emb-card .ck{display:block}.emb-card.elegido{border-color:var(--accent)}.emb-card.elegido .ck{background:var(--accent);border-color:var(--accent)}
+.emb-bulk{position:fixed;left:50%;bottom:22px;transform:translate(-50%,160%);transition:transform .2s;z-index:55;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#1c1a18;border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:12px 14px;box-shadow:0 24px 70px rgba(0,0,0,.6);max-width:calc(100vw - 32px)}
+.emb-bulk.on{transform:translate(-50%,0)}.emb-bulk{flex-wrap:nowrap;white-space:nowrap}.emb-bulk button{padding:8px 16px;font-size:14px}@media(max-width:1000px){.emb-bulk{flex-wrap:wrap;white-space:normal}}.emb-bulk select{width:auto;padding:7px 10px;font-size:13px}.emb-bulk b{font-size:14px}
 .emb-res{position:fixed;left:50%;bottom:22px;transform:translate(-50%,140%);transition:transform .2s;z-index:50;background:#1c1a18;border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:12px 14px 14px;box-shadow:0 24px 70px rgba(0,0,0,.6);text-align:center}
 .emb-res.on{transform:translate(-50%,0)}.emb-res p{margin:0 0 10px;font-size:13px;color:#cfc9bf}.emb-res div{display:flex;gap:10px}
 .emb-res section{width:150px;padding:16px 10px;border-radius:18px;border:2px dashed var(--c);background:color-mix(in srgb,var(--c) 10%,transparent);font-weight:600;font-size:14px;transition:.15s}
 .emb-res section span{display:block;font-size:24px;margin-bottom:4px}.emb-res section.over{background:color-mix(in srgb,var(--c) 30%,transparent);transform:scale(1.04)}`;
+
+// Íconos lineales sencillos (trazo, sin relleno).
+const ICO = {
+  filtro: '<path d="M4 5h16l-6 7v6l-4 2v-8z"/>', ojo: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  mas: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', lapiz: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',
+  campana: '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>', engrane: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  dinero: '<circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.6-.6-3-1.6M12 6v2M12 16v2"/>',
+  equis: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>', listo: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+  basura: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', puntos: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
+  persona: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>', flame: '<path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-2.5 1.5-4 3-5 0 2 1 3 2 3 0-3 1-5 1-8z"/>',
+  star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  pause: '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>', seleccion: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+};
+const ic = (k, n = 16, color = 'currentColor') => raw(`<svg viewBox="0 0 24 24" width="${n}" height="${n}" fill="none" stroke="${color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex:none">${ICO[k] || ''}</svg>`);
 
 const LADAS = [['52', '🇲🇽 +52'], ['1', '🇺🇸 +1'], ['34', '🇪🇸 +34'], ['57', '🇨🇴 +57'], ['54', '🇦🇷 +54'], ['56', '🇨🇱 +56'], ['51', '🇵🇪 +51'], ['593', '🇪🇨 +593'], ['502', '🇬🇹 +502'], ['506', '🇨🇷 +506'], ['58', '🇻🇪 +58'], ['55', '🇧🇷 +55']];
 
@@ -94,12 +117,12 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   const qs = (extra = {}) => { const p = new URLSearchParams(Object.entries({ e: emb.id, ...filtros, vista, ...extra }).filter(([, v]) => v)); return `${base}/embudo?${p}`; };
   const card = (l) => {
     const [oTxt, oCol] = origen(l.origen);
-    const n = nombreDe(l), a = nombreAsesor[l.asignado_id], pri = PRIORIDADES[l.prioridad];
+    const n = nombreDe(l), a = nombreAsesor[l.asignado_id], pri = PRIORIDADES[l.prioridad], est = estancado(client, l);
     const u = ultimos[l.id];
-    return html`<a class="emb-card" draggable="true" data-id="${l.id}" data-q="${`${n} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase()}" href="${base}/leads/${l.id}/chat">
+    return html`<a class="emb-card" draggable="true" data-id="${l.id}" data-q="${`${n} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase()}" href="${base}/leads/${l.id}/chat"><span class="ck"></span>
       <span class="emb-av" style="background:${oCol}">${iniciales(n)}<i style="background:${oCol}" title="${oTxt}"></i></span>
-      <span style="min-width:0"><strong>${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${pri[1]}</span>` : ''}</strong><small>${a ? `👤 ${a}` : 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
-        <small>${l.control === 'humano' ? raw('<span class="emb-yo">Equipo</span>') : raw('<span class="emb-ia">IA</span>')}${u && u.rol === 'lead' ? raw(' <span class="emb-yo" style="background:rgba(248,113,113,.15);color:#f87171">Espera respuesta</span>') : ''}${l.valor ? html` <span class="emb-v">${mxn(l.valor)}</span>` : ''}</small></span>
+      <span style="min-width:0"><strong>${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${ic(pri[1], 14, pri[2])}</span>` : ''}</strong><small>${ic('persona', 12)} ${a || 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
+        <small>${l.control === 'humano' ? raw('<span class="emb-yo">Equipo</span>') : raw('<span class="emb-ia">IA</span>')}${u && u.rol === 'lead' ? raw(' <span class="emb-yo" style="background:rgba(248,113,113,.15);color:#f87171">Espera respuesta</span>') : ''}${est ? html`<span class="emb-est">${ic('campana', 11)} Estancado</span>` : ''}${l.valor ? html` <span class="emb-v">${mxn(l.valor)}</span>` : ''}</small></span>
       <time>${cuando(l.updated_at)}</time>
       ${vista === 'extendida' ? html`<span class="ext">${tagsDe(l).map((t) => html`<i>${t}</i>`)}${tagsDe(l).length ? html`<br>` : ''}${u ? html`<b>${u.rol === 'lead' ? 'Lead' : u.rol === 'humano' ? 'Equipo' : 'IA'}:</b> ${u.texto}` : l.nota ? String(l.nota).slice(0, 160) : html`<span class="muted">${l.telefono || l.email || ''}</span>`}</span>` : ''}</a>`;
   };
@@ -109,21 +132,21 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   ${todos.length > 1 ? html`<div class="pills" style="margin-bottom:12px">${todos.map((x) => html`<a class="${x.id === emb.id ? 'on' : ''}" href="${base}/embudo?e=${encodeURIComponent(x.id)}&vista=${vista}">${x.nombre} <em>${cuenta[x.id].toLocaleString('es-MX')}</em></a>`)}</div>` : ''}
   <div class="emb-tools">
     <input type="search" id="emb-q" placeholder="Buscar nombre, teléfono, empresa…" value="${filtros.q || ''}">
-    <details class="pop"><summary>⏷ Filtros${activos ? html` <span class="dot"></span> ${activos}` : ''}</summary><form class="pnl" method="get" action="${base}/embudo" style="width:340px">
+    <details class="pop"><summary>${ic('filtro')} Filtros${activos ? html` <span class="dot"></span> ${activos}` : ''}</summary><form class="pnl" method="get" action="${base}/embudo" style="width:340px">
       <input type="hidden" name="e" value="${emb.id}"><input type="hidden" name="vista" value="${vista}">
       <h4>Mensajes</h4>${radio('mensajes', [['', 'Todos'], ['esperando', 'Esperan respuesta'], ['respondidos', 'Respondidos']], filtros.mensajes)}
       <h4 style="margin-top:12px">Fecha</h4>
       <select name="fecha"><option value="">Fecha en que llegó</option><option value="actividad" ${raw(filtros.fecha === 'actividad' ? 'selected' : '')}>Última actividad</option></select>
       <div class="row" style="gap:8px;margin-top:6px"><input type="date" name="desde" value="${filtros.desde || ''}"><input type="date" name="hasta" value="${filtros.hasta || ''}"></div>
-      <h4 style="margin-top:12px">Estatus</h4>${radio('estatus', [['', 'Todos'], ...Object.entries(PRIORIDADES).map(([k, [t, e]]) => [k, `${e} ${t}`.trim()])], filtros.estatus)}
+      <h4 style="margin-top:12px">Estatus</h4>${radio('estatus', [['', 'Todos'], ...Object.entries(PRIORIDADES).map(([k, [t, i, c]]) => [k, i ? html`${ic(i, 14, c)} ${t}` : t])], filtros.estatus)}
       <h4 style="margin-top:12px">Canal</h4>${radio('canal', [['', 'Todos'], ...origenes.map((o) => [o, origen(o)[0]])], filtros.canal)}
       ${asesores.length ? html`<h4 style="margin-top:12px">Asesor</h4><select name="asesor"><option value="">Todos</option><option value="-" ${raw(filtros.asesor === '-' ? 'selected' : '')}>No asignados</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(String(a.id) === filtros.asesor ? 'selected' : '')}>${a.nombre}</option>`)}</select>` : ''}
       <p class="row" style="gap:8px;margin-top:14px"><button class="btn-accent">Aplicar</button><a class="btn btn-ghost" href="${base}/embudo?e=${emb.id}&vista=${vista}">Limpiar filtros</a></p></form></details>
-    <details class="pop"><summary>👁 Vista</summary><div class="pnl opc" style="min-width:220px">
-      <a class="${vista === 'compacta' ? 'on' : ''}" href="${qs({ vista: 'compacta' })}">Vista compacta ${vista === 'compacta' ? '✓' : ''}</a>
-      <a class="${vista === 'extendida' ? 'on' : ''}" href="${qs({ vista: 'extendida' })}">Vista extendida ${vista === 'extendida' ? '✓' : ''}</a>
+    <details class="pop"><summary>${ic('ojo')} Vista</summary><div class="pnl opc" style="min-width:220px">
+      <a class="${vista === 'compacta' ? 'on' : ''}" href="${qs({ vista: 'compacta' })}">Vista compacta ${vista === 'compacta' ? ic('check') : ''}</a>
+      <a class="${vista === 'extendida' ? 'on' : ''}" href="${qs({ vista: 'extendida' })}">Vista extendida ${vista === 'extendida' ? ic('check') : ''}</a>
       <p class="muted small" style="margin:6px 12px 2px">La extendida muestra etiquetas y el último mensaje.</p></div></details>
-    <details class="pop add der" style="margin-left:auto"><summary>＋ Agregar lead</summary><form class="pnl" method="post" action="${base}/embudo/nuevo" style="width:340px">
+    <details class="pop add der" style="margin-left:auto"><summary>${ic('mas')} Agregar lead</summary><form class="pnl" method="post" action="${base}/embudo/nuevo" style="width:340px">
       <label style="margin-top:0">Nombre</label><input name="nombre" maxlength="80" placeholder="Ingresar nombre">
       <label>Teléfono</label><div style="display:flex;gap:8px"><select name="lada" style="width:120px;flex:none">${LADAS.map(([v, t]) => html`<option value="${v}">${t}</option>`)}</select><input name="telefono" inputmode="tel" placeholder="55 1234 5678" style="flex:1;min-width:0"></div>
       <label>Correo (opcional)</label><input name="email" type="email" placeholder="correo@empresa.com">
@@ -132,14 +155,20 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
     ${importar ? html`<a class="btn btn-warn" href="${base}/importar">Importar contactos</a>` : ''}
   </div>
   <div class="emb" id="emb" data-embudo="${emb.id}">
-    ${cols.map(({ e, leads: ls }) => html`<section class="emb-col" data-etapa="${e.id}" style="--c:${colorTipo(e.tipo)}">
-      <div class="emb-h"><b>${e.nombre}</b><em data-n>${ls.length}</em></div>
+    ${cols.map(({ e, leads: ls }) => html`<section class="emb-col" data-etapa="${e.id}" data-nombre="${e.nombre}" data-tipo="${e.tipo}" data-est="${e.estancado_dias || ''}" data-al="${e.al_entrar || ''}" style="--c:${colorTipo(e.tipo)}">
+      <div class="emb-h"><b>${e.nombre}</b><span class="hd"><em data-n>${ls.length}</em><button type="button" class="dots" title="Opciones de la etapa">${ic('puntos', 18)}</button></span></div>
       <div class="emb-list">${ls.slice(0, 150).map(card)}${ls.length > 150 ? html`<p class="muted small" style="text-align:center">y ${ls.length - 150} más (usa el buscador o los filtros)</p>` : ''}</div>
       <div class="emb-f"><span>Valor</span><b data-v>${mxn(ls.reduce((s, l) => s + (Number(l.valor) || 0), 0))}</b></div>
     </section>`)}
   </div>
   <div class="emb-res" id="emb-res"><p>Suelta el lead aquí y suma su resultado a tus números</p><div>
-    <section data-r="vendido" style="--c:#4ade80"><span>💰</span>Vendido</section><section data-r="perdido" style="--c:#f87171"><span>✖</span>Perdido</section><section data-r="resuelto" style="--c:#93b4ff"><span>✔</span>Resuelto</section></div></div>
+    <section data-r="vendido" style="--c:#4ade80"><span>${ic('dinero', 26, '#4ade80')}</span>Vendido</section><section data-r="perdido" style="--c:#f87171"><span>${ic('equis', 26, '#f87171')}</span>Perdido</section><section data-r="resuelto" style="--c:#93b4ff"><span>${ic('listo', 26, '#93b4ff')}</span>Resuelto</section></div></div>
+  <div class="emb-bulk" id="emb-bulk"><b><span id="bulk-n">0</span> seleccionados</b>
+    <select id="bulk-destino"><option value="">Mover a…</option>${todos.map((x) => html`<optgroup label="${x.nombre}">${x.etapas.map((et) => html`<option value="${x.id}/${et.id}">${et.nombre}</option>`)}</optgroup>`)}</select>
+    ${asesores.length ? html`<select id="bulk-asesor"><option value="">Asesor…</option><option value="-">Sin asesor</option>${asesores.map((a) => html`<option value="${a.id}">${a.nombre}</option>`)}</select>` : ''}
+    <select id="bulk-prioridad"><option value="">Estatus…</option>${Object.entries(PRIORIDADES).map(([k, [t]]) => html`<option value="${k}">${t}</option>`)}</select>
+    <select id="bulk-resultado"><option value="">Resultado…</option>${Object.entries(RESULTADOS).map(([k, t]) => html`<option value="${k}">${t}</option>`)}</select>
+    <button type="button" class="btn-accent" id="bulk-ok">Aplicar</button><button type="button" class="btn-ghost" id="bulk-x">Cancelar</button></div>
   <details class="emb-cfg card"><summary><b>Ajustar embudos y etapas</b> <span class="muted small">(nombre = tipo, una por línea)</span></summary>
     <form method="post" action="${base}/embudo/etapas">
       <p class="muted small">Cada embudo empieza con una línea <b># Nombre del embudo</b> y debajo sus etapas. El tipo dice qué significa la etapa: <b>nuevo</b>, <b>conversacion</b>, <b>cita</b> (visita), <b>cliente</b>, <b>perdido</b> o <b>archivo</b> (base de datos). Los leads nuevos entran al primer embudo.</p>
@@ -147,6 +176,48 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   ${raw(`<script>(()=>{const B=${JSON.stringify(base)};const emb=document.getElementById('emb');let arr=null;
   const contar=()=>emb.querySelectorAll('.emb-col').forEach(c=>{c.querySelector('[data-n]').textContent=[...c.querySelectorAll('.emb-card')].filter(x=>x.style.display!=='none').length;});
   const res=document.getElementById('emb-res');document.body.appendChild(res); // fuera del contenedor para que quede fija abajo
+  const bulk=document.getElementById('emb-bulk');document.body.appendChild(bulk);
+  const EMB=emb.dataset.embudo;const post=(u,d)=>fetch(B+u,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(d)}).then(async r=>{if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'No se pudo guardar');}return r;});
+  const etapa=(col,accion,valor='')=>post('/embudo/etapa',{embudo:EMB,etapa:col.dataset.etapa,accion,valor}).then(()=>location.reload()).catch(e=>alert(e.message));
+  // Selección de varios leads (Shift = rango dentro de la columna)
+  let sel=false,ultimo=null;const elegidos=()=>[...emb.querySelectorAll('.emb-card.elegido')];
+  const pintar=()=>{document.getElementById('bulk-n').textContent=elegidos().length;bulk.classList.toggle('on',sel);};
+  const salirSel=()=>{sel=false;emb.classList.remove('sel');elegidos().forEach(c=>c.classList.remove('elegido'));pintar();};
+  emb.addEventListener('click',e=>{if(!sel)return;const c=e.target.closest('.emb-card');if(!c)return;e.preventDefault();
+    if(e.shiftKey&&ultimo&&ultimo.parentNode===c.parentNode){const l=[...c.parentNode.querySelectorAll('.emb-card')];const[a,b]=[l.indexOf(ultimo),l.indexOf(c)].sort((x,y)=>x-y);l.slice(a,b+1).forEach(x=>x.classList.add('elegido'));}
+    else c.classList.toggle('elegido');ultimo=c;pintar();});
+  document.getElementById('bulk-x').onclick=salirSel;
+  document.getElementById('bulk-ok').onclick=()=>{const ids=elegidos().map(c=>c.dataset.id);if(!ids.length)return alert('Elige al menos un lead.');
+    const v=(id)=>{const x=document.getElementById(id);return x?x.value:'';};const d={ids:ids.join(','),destino:v('bulk-destino'),asesor:v('bulk-asesor'),prioridad:v('bulk-prioridad'),resultado:v('bulk-resultado')};
+    if(!d.destino&&!d.asesor&&!d.prioridad&&!d.resultado)return alert('Elige qué hacer con los leads.');
+    post('/embudo/masivo',d).then(()=>location.reload()).catch(e=>alert(e.message));};
+  // Menú de cada columna
+  const TIPOS=${JSON.stringify(TIPOS)};let menu=null;const cerrar=()=>{menu&&menu.remove();menu=null;};
+  const ICS=${JSON.stringify({ sel: String(ic('seleccion', 18)), lapiz: String(ic('lapiz', 18)), mas: String(ic('mas', 18)), campana: String(ic('campana', 18)), engrane: String(ic('engrane', 18)), dinero: String(ic('dinero', 18, '#4ade80')), equis: String(ic('equis', 18)), listo: String(ic('listo', 18, '#93b4ff')), basura: String(ic('basura', 18)), check: String(ic('check', 16)) })};
+  emb.querySelectorAll('.dots').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();cerrar();const col=b.closest('.emb-col'),al=col.dataset.al,est=col.dataset.est;
+    menu=document.createElement('div');menu.className='cmenu';
+    const op=(k,ic,t,sub='',cls='')=>'<button type="button" data-k="'+k+'" class="'+cls+'">'+ic+'<span>'+t+(sub?'<small>'+sub+'</small>':'')+'</span></button>';
+    menu.innerHTML=op('sel',ICS.sel,'Seleccionar leads','Elige varios · Shift para un rango')+op('ren',ICS.lapiz,'Cambiar nombre')+op('add',ICS.mas,'Agregar etapa','Se agrega después de esta')
+      +op('est',ICS.campana,'Marcar lead estancado',est?'Después de '+est+' días sin moverse':'Avisa si se queda quieto varios días')
+      +'<div class="it">'+ICS.engrane+'<span style="flex:1">Configuración de la etapa<small>Qué significa esta etapa</small><select data-k="tipo">'+Object.entries(TIPOS).map(([k,t])=>'<option value="'+k+'"'+(k===col.dataset.tipo?' selected':'')+'>'+t+'</option>').join('')+'</select></span></div>'
+      +'<hr><div class="cap">Al entrar un lead, abrir el formulario de</div>'
+      +[['vendido',ICS.dinero,'Vendido'],['perdido',ICS.equis,'Perdido'],['resuelto',ICS.listo,'Resuelto']].map(([k,i,t])=>'<button type="button" data-k="al" data-v="'+k+'">'+i+'<span>'+t+'</span>'+(al===k?'<span class="on">'+ICS.check+'</span>':'')+'</button>').join('')
+      +'<hr>'+op('del',ICS.basura,'Eliminar etapa','Sus leads pasan a la etapa de al lado','rojo');
+    document.body.appendChild(menu);const r=b.getBoundingClientRect();menu.style.top=Math.min(r.bottom+6,innerHeight-menu.offsetHeight-10)+'px';menu.style.left=Math.max(10,Math.min(r.right-290,innerWidth-300))+'px';
+    menu.addEventListener('click',ev=>ev.stopPropagation());
+    menu.querySelector('select').addEventListener('change',ev=>etapa(col,'tipo',ev.target.value));
+    menu.querySelectorAll('button').forEach(x=>x.addEventListener('click',()=>{const k=x.dataset.k;cerrar();
+      if(k==='sel'){sel=true;emb.classList.add('sel');pintar();}
+      else if(k==='ren'){const v=prompt('Nuevo nombre de la etapa',col.dataset.nombre);if(v)etapa(col,'renombrar',v);}
+      else if(k==='add'){const v=prompt('Nombre de la nueva etapa');if(v)etapa(col,'agregar',v);}
+      else if(k==='est'){const v=prompt('¿Después de cuántos días sin moverse se marca como estancado? (vacío = no marcar)',est||'3');if(v!==null)etapa(col,'estancado',v);}
+      else if(k==='al')etapa(col,'al_entrar',x.dataset.v);
+      else if(k==='del'){if(confirm('¿Eliminar la etapa "'+col.dataset.nombre+'"? Sus leads pasan a la etapa de al lado.'))etapa(col,'eliminar');}}));}));
+  document.addEventListener('click',cerrar);addEventListener('scroll',cerrar,true);
+  // Al soltar en una etapa que pide un formulario (Vendido, Perdido, Resuelto)
+  const alEntrar=async(col,c)=>{const r=col.dataset.al;if(!r)return;let valor='';if(r==='vendido'){valor=prompt('¿De cuánto fue la venta? (opcional, en pesos)','');if(valor===null)return;}
+    else if(!confirm('¿Marcar este lead como '+(r==='perdido'?'perdido':'resuelto')+'?'))return;
+    await post('/embudo/resultado',{lead:c.dataset.id,resultado:r,valor,mover:'0'}).catch(e=>alert(e.message));};
   emb.addEventListener('dragstart',e=>{const c=e.target.closest('.emb-card');if(!c)return;arr=c;c.classList.add('drag');e.dataTransfer.effectAllowed='move';res.classList.add('on');});
   emb.addEventListener('dragend',()=>{arr&&arr.classList.remove('drag');document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));setTimeout(()=>res.classList.remove('on'),150);});
   // Barra de resultados: Vendido (pide el valor), Perdido, Resuelto.
@@ -158,7 +229,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   emb.querySelectorAll('.emb-col').forEach(col=>{col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over');});col.addEventListener('dragleave',()=>col.classList.remove('over'));
     col.addEventListener('drop',async e=>{e.preventDefault();col.classList.remove('over');if(!arr)return;const antes=arr.parentNode;const lista=col.querySelector('.emb-list');if(antes===lista)return;
       lista.prepend(arr);contar();const r=await fetch(B+'/embudo/mover',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({lead:arr.dataset.id,etapa:col.dataset.etapa,embudo:emb.dataset.embudo})}).catch(()=>null);
-      if(!r||!r.ok){antes.prepend(arr);contar();alert('No se pudo mover. Intenta de nuevo.');}});});
+      if(!r||!r.ok){antes.prepend(arr);contar();alert('No se pudo mover. Intenta de nuevo.');return;}await alEntrar(col,arr);});});
   // Buscador: filtra al momento lo que se ve; con Enter busca en todo el embudo.
   const q=document.getElementById('emb-q');
   q.addEventListener('input',()=>{const t=q.value.toLowerCase().trim();emb.querySelectorAll('.emb-card').forEach(c=>{c.style.display=!t||c.dataset.q.includes(t)?'':'none';});contar();});
@@ -188,7 +259,7 @@ export function fichaLead(client, lead, { base, asesores = [] }) {
       return todos.length > 1 ? todos.map((emb) => html`<optgroup label="${emb.nombre}">${op(emb)}</optgroup>`) : op(todos[0]); })()}</select>
     <label>Asesor</label><select name="asignado_id"><option value="">No asignado</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(a.id === lead.asignado_id ? 'selected' : '')}>${a.nombre}</option>`)}</select>
     ${!asesores.length ? html`<span class="muted small">Da de alta a tus asesores como usuarios del panel para asignarles leads.</span>` : ''}
-    <label>Estatus</label><select name="prioridad">${Object.entries(PRIORIDADES).map(([k, [t, e]]) => html`<option value="${k}" ${raw((lead.prioridad || 'neutral') === k ? 'selected' : '')}>${`${e} ${t}`.trim()}</option>`)}</select>
+    <label>Estatus</label><select name="prioridad">${Object.entries(PRIORIDADES).map(([k, [t, e]]) => html`<option value="${k}" ${raw((lead.prioridad || 'neutral') === k ? 'selected' : '')}>${t}</option>`)}</select>
     <label>Valor (MXN)</label><input name="valor" inputmode="decimal" value="${lead.valor ?? ''}" placeholder="0">
     <label>Resultado</label><div class="res">${[['', 'Abierto'], ...Object.entries(RESULTADOS)].map(([k, t]) => html`<label><input type="radio" name="resultado" value="${k}" ${raw((lead.resultado || '') === k ? 'checked' : '')}><span>${t}</span></label>`)}</div>
     <label>Etiquetas (separadas por coma)</label><input name="tags" value="${tags.join(', ')}" placeholder="oficina, polanco, 6 personas">

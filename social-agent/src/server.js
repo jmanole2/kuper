@@ -1108,10 +1108,24 @@ export function createApp() {
       : req.query.nuevo ? 'Lead agregado.' : req.query.existe ? 'Ese contacto ya existía: lo moví a la etapa que elegiste.' : req.query.ok ? 'Etapas guardadas.' : '' }));
     router.post(`${prefix}/embudo/resultado`, (req, res) => {
       try {
-        const l = embudo.marcarResultado(req.client, Number(req.body.lead), String(req.body.resultado || ''), req.body.valor);
+        const l = embudo.marcarResultado(req.client, Number(req.body.lead), String(req.body.resultado || ''), req.body.valor, { mover: req.body.mover !== '0' });
         db.logEvent({ clientId: req.client.id, tipo: 'resultado_lead', detalle: `${l.nombre || l.telefono || l.id}: ${req.body.resultado}${l.valor ? ` $${l.valor}` : ''}` });
         res.json({ ok: true, etapa: l.etapa });
       } catch (e) { res.status(400).json({ error: e.message }); }
+    });
+    // Menú de cada columna (renombrar, agregar etapa, tipo, estancado, al entrar, eliminar).
+    router.post(`${prefix}/embudo/etapa`, (req, res) => {
+      try {
+        const b = req.body || {};
+        embudo.editarEtapa(req.client, String(b.embudo || ''), String(b.etapa || ''), String(b.accion || ''), b.valor);
+        db.logEvent({ clientId: req.client.id, tipo: 'embudo_etapa', detalle: `${b.accion} ${b.etapa}${b.valor ? `: ${String(b.valor).slice(0, 40)}` : ''}` });
+        res.json({ ok: true });
+      } catch (e) { res.status(400).json({ error: e.message }); }
+    });
+    // Varios leads a la vez (seleccionar leads).
+    router.post(`${prefix}/embudo/masivo`, (req, res) => {
+      try { res.json({ ok: true, n: embudo.accionMasiva(req.client, String(req.body.ids || '').split(','), req.body || {}) }); }
+      catch (e) { res.status(400).json({ error: e.message }); }
     });
     // Agregar un lead a mano (nombre, teléfono con lada y a qué embudo/etapa).
     router.post(`${prefix}/embudo/nuevo`, (req, res) => {

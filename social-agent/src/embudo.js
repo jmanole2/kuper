@@ -67,7 +67,19 @@ export function parseEmbudos(texto, anteriores = []) {
     let id = anteriores.find((e) => e.nombre === b.nombre)?.id || (bloques.length === 1 && anteriores[0]?.id) || slug(b.nombre) || `embudo-${i + 1}`;
     while (vistos.has(id)) id += '-2';
     vistos.add(id);
-    try { return { id, nombre: b.nombre, etapas: parseEtapas(b.lineas.join('\n')) }; } catch (e) { throw new Error(`${b.nombre}: ${e.message}`); }
+    let et;
+    try { et = parseEtapas(b.lineas.join('\n')); } catch (e) { throw new Error(`${b.nombre}: ${e.message}`); }
+    const prev = anteriores.find((e) => e.id === id)?.etapas || [];
+    // Se conserva el id y la configuración de la etapa que ya existía con ese nombre (los leads guardan el id).
+    const usados = new Set();
+    const etapas = et.map((x) => {
+      const v = prev.find((y) => !usados.has(y.id) && y.nombre.toLowerCase() === x.nombre.toLowerCase()) || prev.find((y) => !usados.has(y.id) && y.id === x.id);
+      if (v) usados.add(v.id);
+      return v ? { ...v, nombre: x.nombre, tipo: x.tipo } : x;
+    });
+    const ids = new Set();
+    for (const x of etapas) { while (ids.has(x.id)) x.id += '-2'; ids.add(x.id); }
+    return { id, nombre: b.nombre, etapas };
   });
 }
 export const etapasTexto = (lista) => lista.map((e) => `${e.nombre} = ${e.tipo}`).join('\n');
@@ -124,7 +136,8 @@ export function datosDelAgente(client, lead, body = {}) {
   return lead;
 }
 
-export const PRIORIDADES = { neutral: ['Neutral', ''], urgente: ['Urgente', '🔥'], importante: ['Importante', '⭐'], pendiente: ['Pendiente', '⏳'], atorado: ['Atorado', '🧊'] };
+// [nombre, ícono (lineal), color]
+export const PRIORIDADES = { neutral: ['Neutral', '', ''], urgente: ['Urgente', 'flame', '#f87171'], importante: ['Importante', 'star', '#fbbf24'], pendiente: ['Pendiente', 'clock', '#93b4ff'], atorado: ['Atorado', 'pause', '#a5b4fc'] };
 
 /** Lead agregado a mano desde el embudo. body: { nombre, lada, telefono, email, destino: "embudo/etapa" } */
 export function agregarLead(client, body = {}, autor = '') {
@@ -175,7 +188,7 @@ export function guardarFicha(client, leadId, body = {}) {
 }
 
 /** Resultado al soltar el lead en la barra de abajo del embudo. Vendido/Perdido lo pasan a esa etapa si el embudo la tiene. */
-export function marcarResultado(client, leadId, resultado, valor) {
+export function marcarResultado(client, leadId, resultado, valor, { mover = true } = {}) {
   if (!RESULTADOS[resultado]) throw new Error('Resultado no válido');
   const lead = db.getLead(client.id, leadId);
   if (!lead) throw new Error('Lead no encontrado');
@@ -184,8 +197,67 @@ export function marcarResultado(client, leadId, resultado, valor) {
   db.getDb().prepare("UPDATE leads SET resultado = ?, valor = COALESCE(?, valor), updated_at = datetime('now') WHERE id = ?").run(resultado, v ? Number(v) : null, leadId);
   const lista = embudoDe(client, lead).etapas;
   const destino = resultado === 'vendido' ? lista.find((x) => x.tipo === 'cliente') : resultado === 'perdido' ? lista.find((x) => x.tipo === 'perdido') : null;
-  if (destino && etapaDe(client, lead).id !== destino.id) moverLead(client, leadId, destino.id);
+  if (mover && destino && etapaDe(client, lead).id !== destino.id) moverLead(client, leadId, destino.id);
   return db.getLead(client.id, leadId);
+}
+
+// ------------------------------------------------------------ menú de cada columna y acciones en grupo
+function guardarEmbudos(client, lista) {
+  const { embudo: _v, ...resto } = client.config;
+  db.updateClient(client.id, { config: { ...resto, embudos: lista } });
+  return db.getClient(client.id);
+}
+/** accion: renombrar | agregar | tipo | estancado | al_entrar | eliminar */
+export function editarEtapa(client, embudoId, etapaId, accion, valor = '') {
+  const lista = embudos(client).map((e) => ({ ...e, etapas: e.etapas.map((x) => ({ ...x })) }));
+  const emb = lista.find((e) => e.id === embudoId) || lista[0];
+  const i = emb.etapas.findIndex((x) => x.id === etapaId);
+  if (i < 0) throw new Error('Etapa no encontrada');
+  const et = emb.etapas[i];
+  const v = String(valor ?? '').trim();
+  if (accion === 'renombrar') { if (!v) throw new Error('Escribe el nombre.'); et.nombre = v.slice(0, 40); }
+  else if (accion === 'agregar') {
+    if (!v) throw new Error('Escribe el nombre de la etapa.');
+    if (emb.etapas.length >= 16) throw new Error('Máximo 16 etapas por embudo.');
+    let id = slug(v) || `etapa-${emb.etapas.length + 1}`;
+    while (emb.etapas.some((x) => x.id === id)) id += '-2';
+    emb.etapas.splice(i + 1, 0, { id, nombre: v.slice(0, 40), tipo: et.tipo === 'nuevo' ? 'conversacion' : et.tipo });
+  } else if (accion === 'tipo') { if (!TIPOS[v]) throw new Error('Tipo no válido'); et.tipo = v; }
+  else if (accion === 'estancado') { const d = Number(v); if (v && !(d >= 1 && d <= 365)) throw new Error('Pon un número de días entre 1 y 365.'); if (d) et.estancado_dias = d; else delete et.estancado_dias; }
+  else if (accion === 'al_entrar') { if (v && !RESULTADOS[v]) throw new Error('Opción no válida'); if (v && et.al_entrar !== v) et.al_entrar = v; else delete et.al_entrar; }
+  else if (accion === 'eliminar') {
+    if (emb.etapas.length <= 2) throw new Error('Un embudo necesita al menos dos etapas.');
+    const destino = emb.etapas[i === 0 ? 1 : i - 1];
+    emb.etapas.splice(i, 1);
+    // Sus leads pasan a la etapa de al lado (no se pierde ninguno).
+    db.getDb().prepare("UPDATE leads SET etapa = ?, estado = ? WHERE client_id = ? AND COALESCE(embudo, ?) = ? AND etapa = ?")
+      .run(destino.id, ESTADO_DE[destino.tipo] || destino.tipo, client.id, lista[0].id, emb.id, et.id);
+  } else throw new Error('Acción no válida');
+  return guardarEmbudos(client, lista);
+}
+/** ¿El lead lleva más días sin moverse de los que permite su etapa? */
+export function estancado(client, lead, ahora = Date.now()) {
+  const d = etapaDe(client, lead).estancado_dias;
+  return !!d && ahora - new Date(String(lead.updated_at).replace(' ', 'T') + 'Z').getTime() > d * 86400000;
+}
+/** Acciones con varios leads a la vez: mover, asesor, estatus o resultado. */
+export function accionMasiva(client, ids, body = {}) {
+  const lista = [...new Set([].concat(ids || []).map(Number).filter(Boolean))].slice(0, 2000);
+  if (!lista.length) throw new Error('No elegiste leads.');
+  let n = 0;
+  for (const id of lista) {
+    if (!db.getLead(client.id, id)) continue;
+    if (body.destino) { const [e, et] = String(body.destino).split('/'); moverLead(client, id, et, e); }
+    if (body.asesor) {
+      const a = body.asesor === '-' ? null : Number(body.asesor);
+      if (a && !asesores(client).some((x) => x.id === a)) throw new Error('Ese asesor no es de esta cuenta');
+      db.getDb().prepare('UPDATE leads SET asignado_id = ? WHERE id = ?').run(a, id);
+    }
+    if (body.prioridad && PRIORIDADES[body.prioridad]) db.getDb().prepare('UPDATE leads SET prioridad = ? WHERE id = ?').run(body.prioridad === 'neutral' ? null : body.prioridad, id);
+    if (body.resultado && RESULTADOS[body.resultado]) marcarResultado(client, id, body.resultado);
+    n++;
+  }
+  return n;
 }
 
 /** Asigna el lead al siguiente asesor, por turnos (si no tiene ya uno). */

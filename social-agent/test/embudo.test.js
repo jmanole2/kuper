@@ -100,3 +100,29 @@ test('agregar lead a mano y marcar resultado desde la barra', () => {
   assert.equal(v.resultado, 'vendido'); assert.equal(v.valor, 15500); assert.equal(E.etapaDe(c, v).tipo, 'cliente');
   assert.throws(() => E.agregarLead(c, { nombre: 'Sin datos' }), /teléfono/);
 });
+
+test('menú de la columna: renombrar, agregar, estancado, al entrar y eliminar; acciones en grupo', () => {
+  const emb = E.embudos(c)[0];
+  let c2 = E.editarEtapa(c, emb.id, 'contestado', 'renombrar', 'Respondido');
+  assert.equal(E.etapas(c2, emb.id).find((x) => x.id === 'contestado').nombre, 'Respondido');
+  c2 = E.editarEtapa(c2, emb.id, 'contestado', 'agregar', 'Cotización enviada');
+  const lista = E.etapas(c2, emb.id);
+  assert.equal(lista[lista.findIndex((x) => x.id === 'contestado') + 1].nombre, 'Cotización enviada');
+  c2 = E.editarEtapa(c2, emb.id, 'contestado', 'estancado', '3');
+  c2 = E.editarEtapa(c2, emb.id, 'contestado', 'al_entrar', 'vendido');
+  const et = E.etapas(c2, emb.id).find((x) => x.id === 'contestado');
+  assert.equal(et.estancado_dias, 3); assert.equal(et.al_entrar, 'vendido');
+  // editar el texto del embudo no borra esa configuración
+  c2 = db.updateClient(c2.id, { config: { ...c2.config, embudos: E.parseEmbudos(E.embudosTexto(c2), E.embudos(c2)) } }) || db.getClient(c2.id);
+  c2 = db.getClient(c.id);
+  assert.equal(E.etapas(c2, emb.id).find((x) => x.id === 'contestado').estancado_dias, 3);
+  const l = db.upsertLead(c2.id, { telefono: '5500009999', origen: 'whatsapp' });
+  E.moverLead(c2, l.id, 'contestado');
+  db.getDb().prepare("UPDATE leads SET updated_at = datetime('now', '-5 days') WHERE id = ?").run(l.id);
+  assert.equal(E.estancado(c2, db.getLead(c2.id, l.id)), true);
+  c2 = E.editarEtapa(c2, emb.id, 'contestado', 'eliminar');
+  assert.ok(!E.etapas(c2, emb.id).some((x) => x.id === 'contestado'));
+  assert.notEqual(db.getLead(c2.id, l.id).etapa, 'contestado', 'sus leads pasan a otra etapa');
+  const n = E.accionMasiva(c2, [l.id], { prioridad: 'urgente', asesor: String(ana.id) });
+  assert.equal(n, 1); assert.equal(db.getLead(c2.id, l.id).prioridad, 'urgente'); assert.equal(db.getLead(c2.id, l.id).asignado_id, ana.id);
+});
