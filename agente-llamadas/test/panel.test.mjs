@@ -61,3 +61,22 @@ test('si el panel falla, no la marca como enviada', async () => {
   assert.match(r.error, /panel 500/);
   assert.equal(s.enviadas.size, 0);
 });
+
+test('las llamadas de una demo de prospecto llegan al panel marcadas', async () => {
+  const demo = { ...web, call_id: 'c9', agent_id: 'agDemo' };
+  const pedidos = [];
+  hooks.fetch = async (url, opt) => {
+    pedidos.push({ url, opt });
+    const j = (x) => ({ ok: true, status: 200, json: async () => x, text: async () => '' });
+    if (url.endsWith('/v3/list-calls')) return j({ items: [demo], has_more: false });
+    if (url.includes('/v2/get-call/')) return j(demo);
+    return j({ ok: true });
+  };
+  const archivo = join(mkdtempSync(join(tmpdir(), 'll-')), 'enviadas.json');
+  const s = crearSincronizador({ key: 'rk', agenteId: async () => 'ag1', demosIds: async () => [{ id: 'agDemo', etiqueta: 'Inhouse Work' }], panel: { url: 'https://p.mx', slug: 'kuper', key: 'pk' }, archivo, log: { error() {} } });
+  assert.deepEqual(await s.sincronizar(ahora), { enviadas: 1 });
+  assert.deepEqual(JSON.parse(pedidos[0].opt.body).filter_criteria.agent, [{ agent_id: 'ag1' }, { agent_id: 'agDemo' }]);
+  const cuerpo = JSON.parse(pedidos.find((p) => p.url.endsWith('/llamadas')).opt.body);
+  assert.equal(cuerpo.nombre, 'Laura (demo Inhouse Work)');
+  assert.match(cuerpo.resumen, /^\[Demo Inhouse Work\] Quiere un agente/);
+});

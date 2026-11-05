@@ -54,7 +54,9 @@ export function resultadoVentas(call) {
   };
 }
 
-export function crearSincronizador({ key, agenteId, ventasId = null, panel, archivo, log = console }) {
+const conEtiqueta = (datos, etiqueta) => (etiqueta ? { ...datos, nombre: datos.nombre ? `${datos.nombre} (demo ${etiqueta})` : `Demo ${etiqueta}`, resumen: `[Demo ${etiqueta}] ${datos.resumen || ''}`.trim() } : datos);
+
+export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = null, panel, archivo, log = console }) {
   let enviadas = new Set();
   try { enviadas = new Set(JSON.parse(readFileSync(archivo, 'utf8'))); } catch { /* primera vez */ }
   const guardar = () => {
@@ -75,8 +77,11 @@ export function crearSincronizador({ key, agenteId, ventasId = null, panel, arch
     try {
       const id = await agenteId();
       const idVentas = ventasId ? await ventasId().catch(() => null) : null;
+      // Demos de prospectos: sus llamadas también llegan al panel de Kuper, marcadas con el nombre de la demo.
+      const demos = demosIds ? await demosIds().catch(() => []) : [];
+      const etiquetaDe = new Map(demos.map((d) => [d.id, d.etiqueta]));
       const lista = await retell('POST', '/v3/list-calls', {
-        filter_criteria: { agent: [id, idVentas].filter(Boolean).map((agent_id) => ({ agent_id })), call_status: { type: 'enum', op: 'in', value: ['ended', 'not_connected', 'error'] },
+        filter_criteria: { agent: [id, idVentas, ...demos.map((d) => d.id)].filter(Boolean).map((agent_id) => ({ agent_id })), call_status: { type: 'enum', op: 'in', value: ['ended', 'not_connected', 'error'] },
           start_timestamp: { type: 'number', op: 'ge', value: ahora - VENTANA_MS } },
         sort_order: 'descending', limit: 100,
       });
@@ -89,7 +94,7 @@ export function crearSincronizador({ key, agenteId, ventasId = null, panel, arch
         const call = await retell('GET', `/v2/get-call/${encodeURIComponent(resumen.call_id)}`);
         const [ruta, cuerpo] = prospecto
           ? [`prospectos/${encodeURIComponent(prospecto)}/resultado`, resultadoVentas({ ...resumen, ...call })]
-          : ['llamadas', aPanel(call)];
+          : ['llamadas', conEtiqueta(aPanel(call), etiquetaDe.get(call.agent_id || resumen.agent_id))];
         const r = await hooks.fetch(`${panel.url}/api/${encodeURIComponent(panel.slug)}/${ruta}`, {
           method: 'POST', headers: { Authorization: `Bearer ${panel.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
         });
@@ -107,10 +112,10 @@ export function crearSincronizador({ key, agenteId, ventasId = null, panel, arch
 }
 
 /** Arranca la sincronización cada minuto. Devuelve null si el panel no está configurado. */
-export function iniciar({ key, agenteId, ventasId = null, dirDatos }) {
+export function iniciar({ key, agenteId, ventasId = null, demosIds = null, dirDatos }) {
   const panel = configPanel();
   if (!panel || !key) return null;
-  const s = crearSincronizador({ key, agenteId, ventasId, panel, archivo: join(dirDatos, 'enviadas.json') });
+  const s = crearSincronizador({ key, agenteId, ventasId, demosIds, panel, archivo: join(dirDatos, 'enviadas.json') });
   setTimeout(() => s.sincronizar(), 5000);
   setInterval(() => s.sincronizar(), 60 * 1000).unref();
   console.log(`Llamadas -> panel ${panel.url} (${panel.slug})`);

@@ -176,7 +176,8 @@ const server = createServer(async (req, res) => {
 });
 
 // Cada llamada terminada se manda al panel de Kuper como lead (si el .env tiene PANEL_URL, PANEL_SLUG y PANEL_API_KEY).
-const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
+const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio })))).filter((d) => d.id);
+const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, demosIds, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
 // Agente de ventas: marca a la siguiente empresa de la lista del panel (necesita RETELL_FROM_NUMBER).
 const marcando = sincro && buscarVentas ? marcador.iniciar({ key: KEY, ventasId: buscarVentas }) : null;
 
