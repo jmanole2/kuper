@@ -888,6 +888,26 @@ export function adminEmbudoPage(client, leads, opts) {
   const b = `/admin/clientes/${client.id}`;
   return page({ title: `Embudo · ${client.nombre}`, side: side('clientes'), body: html`${hero({ kicker: 'Embudo de ventas', title: client.nombre, letra: client.nombre, tabs: [[`${b}?tab=leads`, '← Leads', false], [`${b}/embudo`, 'Embudo', true], [`${b}/analitica`, 'Analítica', false]] })}${embudoSection(client, leads, { base: b, ...opts })}` });
 }
+export function importarPage(client, { leido = null, token = '', error = '' } = {}) {
+  const b = `/admin/clientes/${client.id}`;
+  const n = (x) => Number(x).toLocaleString('es-MX');
+  const TIPO = { nuevo: 'Nuevo', conversacion: 'En conversación', cita: 'Cita o visita', cliente: 'Cliente', perdido: 'Perdido', archivo: 'Base de datos' };
+  const body = html`${hero({ kicker: 'Importar contactos', title: client.nombre, letra: client.nombre, sub: 'Sube el CSV que se exporta de Leadsales. Primero ves cómo va a quedar y luego confirmas.',
+    tabs: [[`${b}/embudo`, '← Embudo', false]] })}
+  ${error ? html`<div class="err">${error}</div>` : ''}
+  ${leido ? html`<div class="card"><span class="mono">Vista previa</span>
+      <h3 style="margin:8px 0 4px">${n(leido.contactos.length)} contactos listos${leido.raros.length ? html` · <span style="color:#fbbf24">${n(leido.raros.length)} filas con datos incompletos (no se importan)</span>` : ''}</h3>
+      <p class="muted small">${Object.entries(leido.canales).map(([k, v]) => `${({ whatsapp: 'WhatsApp', instagram: 'Instagram', facebook: 'Messenger' })[k] || k}: ${n(v)}`).join(' · ')}. Los que ya existan (mismo teléfono o usuario) se actualizan, no se duplican.</p>
+      <p class="muted small">Se van a crear estos embudos (reemplazan las etapas que tenga ahora el cliente). Después puedes renombrar etapas o cambiar su tipo en "Ajustar embudos y etapas".</p>
+      <div class="an-g" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:10px">${leido.embudos.map((e) => html`<div class="card" style="margin:0"><b>${e.nombre}</b>
+        <table style="margin-top:6px">${e.etapas.map((x) => html`<tr><td class="small">${x.nombre}</td><td class="small muted">${TIPO[x.tipo]}</td><td class="small" style="text-align:right">${n(x.n)}</td></tr>`)}</table></div>`)}</div>
+      <form method="post" action="${b}/importar/confirmar" style="margin-top:16px"><input type="hidden" name="token" value="${token}"><button class="btn-accent">Importar ${n(leido.contactos.length)} contactos</button>
+        <span class="muted small" style="margin-left:10px">Tarda unos segundos. El archivo se borra del servidor al terminar.</span></form></div>`
+    : html`<form class="card" method="post" action="${b}/importar" enctype="multipart/form-data" style="max-width:620px"><span class="mono">Archivo de Leadsales</span>
+      <p class="muted small">En Leadsales: Directorio → Exportar. Sube el archivo .csv tal cual.</p>
+      <input type="file" name="archivo" accept=".csv,text/csv" required><p><button class="btn-accent">Ver vista previa</button></p></form>`}`;
+  return page({ title: `Importar · ${client.nombre}`, side: side('clientes'), body });
+}
 export function adminAnaliticaPage(client, a) {
   const b = `/admin/clientes/${client.id}`;
   return page({ title: `Analítica · ${client.nombre}`, side: side('clientes'), body: html`${hero({ kicker: 'Analítica', title: client.nombre, letra: client.nombre, tabs: [[`${b}?tab=leads`, '← Leads', false], [`${b}/embudo`, 'Embudo', false], [`${b}/analitica`, 'Analítica', true]] })}${analiticaSection(client, a, { base: b })}` });

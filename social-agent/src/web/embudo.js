@@ -1,7 +1,7 @@
 // Vistas del embudo de ventas (tablero), la ficha del lead y la analítica.
 import { html, raw } from './html.js';
 import { config } from '../config.js';
-import { etapas, etapaDe, tagsDe, TIPOS, RESULTADOS, colorTipo, etapasTexto } from '../embudo.js';
+import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, colorTipo, embudosTexto } from '../embudo.js';
 
 const ORIGEN = { whatsapp: ['WhatsApp', '#25d366'], instagram: ['Instagram', '#e1306c'], facebook: ['Messenger', '#4f7cff'], llamada: ['Llamada', '#c9f53a'], web: ['Página de citas', '#93b4ff'], chat_web: ['Chat web', '#fbbf24'] };
 const origen = (o) => ORIGEN[o] || [o || 'Otro', '#93b4ff'];
@@ -39,8 +39,13 @@ const CSS = `
 details.emb-cfg{margin-top:18px}details.emb-cfg textarea{min-height:190px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
 `;
 
-export function embudoSection(client, leads, { base, asesores = [], q = '', aviso = '' } = {}) {
-  const lista = etapas(client);
+export function embudoSection(client, leads, { base, asesores = [], q = '', aviso = '', embudo = '', importar = false } = {}) {
+  const todos = embudos(client);
+  const emb = todos.find((x) => x.id === embudo) || todos[0];
+  const cuenta = Object.fromEntries(todos.map((x) => [x.id, 0]));
+  for (const l of leads) cuenta[embudoDe(client, l).id] += 1;
+  leads = leads.filter((l) => embudoDe(client, l).id === emb.id);
+  const lista = emb.etapas;
   const nombreAsesor = Object.fromEntries(asesores.map((a) => [a.id, a.nombre]));
   const cols = lista.map((e) => ({ e, leads: leads.filter((l) => etapaDe(client, l).id === e.id) }));
   const card = (l) => {
@@ -55,30 +60,31 @@ export function embudoSection(client, leads, { base, asesores = [], q = '', avis
   const origenes = [...new Set(leads.map((l) => l.origen))];
   return html`<style>${raw(CSS)}</style>
   ${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}
+  ${todos.length > 1 ? html`<div class="pills" style="margin-bottom:12px">${todos.map((x) => html`<a class="${x.id === emb.id ? 'on' : ''}" href="${base}/embudo?e=${encodeURIComponent(x.id)}">${x.nombre} <em>${cuenta[x.id].toLocaleString('es-MX')}</em></a>`)}</div>` : ''}
   <div class="emb-bar">
     <input type="search" id="emb-q" placeholder="Buscar nombre, teléfono, empresa…" value="${q}">
     ${asesores.length ? html`<select id="emb-as"><option value="">Todos los asesores</option><option value="-">No asignados</option>${asesores.map((a) => html`<option value="${a.id}">${a.nombre}</option>`)}</select>` : ''}
     ${origenes.length > 1 ? html`<select id="emb-or"><option value="">Todos los canales</option>${origenes.map((o) => html`<option value="${o}">${origen(o)[0]}</option>`)}</select>` : ''}
-    <span class="muted small">Arrastra una tarjeta para cambiarla de etapa.</span>
+    <span class="muted small">Arrastra una tarjeta para cambiarla de etapa.</span>${importar ? html` <a class="btn btn-warn" style="margin-left:auto" href="${base}/importar">Importar de Leadsales</a>` : ''}
   </div>
-  <div class="emb" id="emb">
+  <div class="emb" id="emb" data-embudo="${emb.id}">
     ${cols.map(({ e, leads: ls }) => html`<section class="emb-col" data-etapa="${e.id}" style="--c:${colorTipo(e.tipo)}">
       <div class="emb-h"><b>${e.nombre}</b><em data-n>${ls.length}</em></div>
       <div class="emb-list">${ls.slice(0, 150).map(card)}${ls.length > 150 ? html`<p class="muted small" style="text-align:center">y ${ls.length - 150} más (usa el buscador)</p>` : ''}</div>
       <div class="emb-f"><span>Valor</span><b data-v>${mxn(ls.reduce((s, l) => s + (Number(l.valor) || 0), 0))}</b></div>
     </section>`)}
   </div>
-  <details class="emb-cfg card"><summary><b>Ajustar etapas del embudo</b> <span class="muted small">(nombre = tipo, una por línea)</span></summary>
+  <details class="emb-cfg card"><summary><b>Ajustar embudos y etapas</b> <span class="muted small">(nombre = tipo, una por línea)</span></summary>
     <form method="post" action="${base}/embudo/etapas">
-      <p class="muted small">El tipo dice qué significa la etapa: <b>nuevo</b>, <b>conversacion</b>, <b>cita</b> (visita), <b>cliente</b> o <b>perdido</b>. Los leads que ya estaban se quedan en la primera etapa de su tipo.</p>
-      <textarea name="etapas">${etapasTexto(lista)}</textarea><p><button class="btn-accent">Guardar etapas</button></p></form></details>
+      <p class="muted small">Cada embudo empieza con una línea <b># Nombre del embudo</b> y debajo sus etapas. El tipo dice qué significa la etapa: <b>nuevo</b>, <b>conversacion</b>, <b>cita</b> (visita), <b>cliente</b>, <b>perdido</b> o <b>archivo</b> (base de datos). Los leads nuevos entran al primer embudo.</p>
+      <textarea name="etapas" style="min-height:260px">${embudosTexto(client)}</textarea><p><button class="btn-accent">Guardar</button></p></form></details>
   ${raw(`<script>(()=>{const B=${JSON.stringify(base)};const emb=document.getElementById('emb');let arr=null;
   const contar=()=>emb.querySelectorAll('.emb-col').forEach(c=>{c.querySelector('[data-n]').textContent=[...c.querySelectorAll('.emb-card')].filter(x=>x.style.display!=='none').length;});
   emb.addEventListener('dragstart',e=>{const c=e.target.closest('.emb-card');if(!c)return;arr=c;c.classList.add('drag');e.dataTransfer.effectAllowed='move';});
   emb.addEventListener('dragend',()=>{arr&&arr.classList.remove('drag');emb.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));});
   emb.querySelectorAll('.emb-col').forEach(col=>{col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over');});col.addEventListener('dragleave',()=>col.classList.remove('over'));
     col.addEventListener('drop',async e=>{e.preventDefault();col.classList.remove('over');if(!arr)return;const antes=arr.parentNode;const lista=col.querySelector('.emb-list');if(antes===lista)return;
-      lista.prepend(arr);contar();const r=await fetch(B+'/embudo/mover',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({lead:arr.dataset.id,etapa:col.dataset.etapa})}).catch(()=>null);
+      lista.prepend(arr);contar();const r=await fetch(B+'/embudo/mover',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({lead:arr.dataset.id,etapa:col.dataset.etapa,embudo:emb.dataset.embudo})}).catch(()=>null);
       if(!r||!r.ok){antes.prepend(arr);contar();alert('No se pudo mover. Intenta de nuevo.');}});});
   const q=document.getElementById('emb-q'),as=document.getElementById('emb-as'),or=document.getElementById('emb-or');
   const filtrar=()=>{const t=(q.value||'').toLowerCase().trim(),a=as?as.value:'',o=or?or.value:'';emb.querySelectorAll('.emb-card').forEach(c=>{const ok=(!t||c.dataset.q.includes(t))&&(!a||(a==='-'?!c.dataset.asesor:c.dataset.asesor===a))&&(!o||c.dataset.origen===o);c.style.display=ok?'':'none';});contar();};
@@ -102,7 +108,9 @@ export function fichaLead(client, lead, { base, asesores = [] }) {
     <label>Teléfono / usuario</label><input value="${[lead.telefono, lead.usuario ? '@' + lead.usuario : ''].filter(Boolean).join(' · ') || '—'}" disabled>
     <label>Correo</label><input name="email" type="email" value="${lead.email || ''}" placeholder="correo@empresa.com">
     <label>Empresa</label><input name="empresa" value="${lead.empresa || ''}" maxlength="120">
-    <label>Etapa</label><select name="etapa">${etapas(client).map((x) => html`<option value="${x.id}" ${raw(x.id === e.id ? 'selected' : '')}>${x.nombre}</option>`)}</select>
+    <label>Etapa</label><select name="etapa">${(() => { const todos = embudos(client), mio = embudoDe(client, lead);
+      const op = (emb) => emb.etapas.map((x) => html`<option value="${emb.id}/${x.id}" ${raw(emb.id === mio.id && x.id === e.id ? 'selected' : '')}>${x.nombre}</option>`);
+      return todos.length > 1 ? todos.map((emb) => html`<optgroup label="${emb.nombre}">${op(emb)}</optgroup>`) : op(todos[0]); })()}</select>
     <label>Asesor</label><select name="asignado_id"><option value="">No asignado</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(a.id === lead.asignado_id ? 'selected' : '')}>${a.nombre}</option>`)}</select>
     ${!asesores.length ? html`<span class="muted small">Da de alta a tus asesores como usuarios del panel para asignarles leads.</span>` : ''}
     <label>Valor (MXN)</label><input name="valor" inputmode="decimal" value="${lead.valor ?? ''}" placeholder="0">
@@ -152,7 +160,7 @@ export function analiticaSection(client, a, { base }) {
       <p class="muted small">Tiempo típico (mediana) en contestar cada mensaje. Agente: ${a.respondidosAgente} respuestas · Equipo: ${a.respondidosEquipo} respuestas. Primera respuesta a un lead nuevo: agente ${minTxt(a.primeraAgente)}, equipo ${minTxt(a.primeraEquipo)}.</p></div>
     <div class="card"><span class="mono">Qué preguntan</span><h3 style="margin:6px 0 0">Temas del primer mensaje</h3>${barras(a.temas.map(([t, n]) => [t, n]), '#c9f53a')}
       <p class="muted small">De ${a.conPrimerMsg} conversaciones nuevas; un mensaje puede tocar varios temas.</p></div>
-    <div class="card"><span class="mono">Embudo</span><h3 style="margin:6px 0 0">Leads por etapa</h3>${barras(a.porEtapa.map((e) => [e.nombre, e.n, colorTipo(e.tipo)]))}</div>
+    ${(a.porEmbudo || [{ nombre: 'Leads por etapa', etapas: a.porEtapa }]).filter((emb, i) => i === 0 || emb.etapas.some((e) => e.n)).map((emb) => html`<div class="card"><span class="mono">Embudo</span><h3 style="margin:6px 0 0">${(a.porEmbudo || []).length > 1 ? emb.nombre : 'Leads por etapa'}</h3>${barras(emb.etapas.map((e) => [e.nombre, e.n, colorTipo(e.tipo)]))}</div>`)}
     <div class="card"><span class="mono">Canales</span><h3 style="margin:6px 0 0">De dónde llegan</h3>${a.canales.length ? barras(a.canales.map(([o, n]) => [origen(o)[0], n, origen(o)[1]])) : html`<p class="muted">Sin leads nuevos en el periodo.</p>`}</div>
     <div class="card"><span class="mono">Días</span><h3 style="margin:6px 0 0">Leads nuevos por día</h3>${barras(a.semana.map((n, i) => [DIAS[i], n]).slice(1).concat([[DIAS[0], a.semana[0]]]), '#93b4ff')}</div>
     <div class="card"><span class="mono">Equipo</span><h3 style="margin:6px 0 0">Asesores</h3>

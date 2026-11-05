@@ -4,9 +4,9 @@
 import * as db from './db.js';
 import { config } from './config.js';
 
-export const TIPOS = { nuevo: 'Nuevo', conversacion: 'En conversación', cita: 'Cita o visita', cliente: 'Cliente', perdido: 'Perdido' };
+export const TIPOS = { nuevo: 'Nuevo', conversacion: 'En conversación', cita: 'Cita o visita', cliente: 'Cliente', perdido: 'Perdido', archivo: 'Base de datos' };
 export const RESULTADOS = { vendido: 'Vendido', perdido: 'Perdido', resuelto: 'Resuelto' };
-const COLORES = { nuevo: '#93b4ff', conversacion: '#fbbf24', cita: '#c9f53a', cliente: '#4ade80', perdido: '#f87171' };
+const COLORES = { nuevo: '#93b4ff', conversacion: '#fbbf24', cita: '#c9f53a', cliente: '#4ade80', perdido: '#f87171', archivo: '#8a857c' };
 export const colorTipo = (t) => COLORES[t] || '#93b4ff';
 
 export const ETAPAS_BASE = [
@@ -19,58 +19,93 @@ export const ETAPAS_BASE = [
 ];
 
 const slug = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+const etapasValidas = (l) => (Array.isArray(l) ? l.filter((x) => x && x.id && x.nombre && TIPOS[x.tipo]) : []);
 
-export function etapas(client) {
-  const e = Array.isArray(client?.config?.embudo) ? client.config.embudo.filter((x) => x && x.id && x.nombre && TIPOS[x.tipo]) : [];
-  return e.length >= 2 ? e : ETAPAS_BASE;
+/** Embudos del cliente: config.embudos = [{ id, nombre, etapas }]. Los de antes (config.embudo) son un solo embudo. */
+export function embudos(client) {
+  const lista = Array.isArray(client?.config?.embudos) ? client.config.embudos.map((e) => ({ ...e, etapas: etapasValidas(e.etapas) })).filter((e) => e.id && e.nombre && e.etapas.length >= 2) : [];
+  if (lista.length) return lista;
+  const viejas = etapasValidas(client?.config?.embudo);
+  return [{ id: 'principal', nombre: 'Embudo de ventas', etapas: viejas.length >= 2 ? viejas : ETAPAS_BASE }];
 }
+export const embudoDe = (client, lead) => { const l = embudos(client); return l.find((e) => e.id === lead?.embudo) || l[0]; };
+/** Etapas de un embudo (por defecto, el primero). */
+export const etapas = (client, embudoId) => { const l = embudos(client); return (l.find((e) => e.id === embudoId) || l[0]).etapas; };
 
+const ALIAS = { nuevo: 'nuevo', nuevos: 'nuevo', conversacion: 'conversacion', seguimiento: 'conversacion', contestado: 'conversacion',
+  cita: 'cita', visita: 'cita', citas: 'cita', cliente: 'cliente', clientes: 'cliente', vendido: 'cliente', perdido: 'perdido', perdidos: 'perdido',
+  archivo: 'archivo', base: 'archivo', basededatos: 'archivo', crm: 'archivo' };
 /** "Nombre = tipo" por línea → etapas. El tipo puede ir en texto ("visita", "cliente"…). */
 export function parseEtapas(texto) {
-  const alias = { nuevo: 'nuevo', nuevos: 'nuevo', conversacion: 'conversacion', conversación: 'conversacion', seguimiento: 'conversacion', contestado: 'conversacion',
-    cita: 'cita', visita: 'cita', citas: 'cita', cliente: 'cliente', clientes: 'cliente', vendido: 'cliente', perdido: 'perdido', perdidos: 'perdido' };
   const out = [], vistos = new Set();
   for (const linea of String(texto || '').split('\n')) {
     const [n, t = ''] = linea.split('=').map((x) => x.trim());
     if (!n) continue;
-    const tipo = alias[slug(t).replace(/-/g, '')] || alias[t.toLowerCase()] || (TIPOS[t] ? t : 'conversacion');
+    const tipo = ALIAS[slug(t).replace(/-/g, '')] || (TIPOS[t] ? t : 'conversacion');
     let id = slug(n) || `etapa-${out.length + 1}`;
     while (vistos.has(id)) id += '-2';
     vistos.add(id);
     out.push({ id, nombre: n.slice(0, 40), tipo });
   }
   if (out.length < 2) throw new Error('Pon al menos dos etapas, una por línea.');
-  if (out.length > 14) throw new Error('Máximo 14 etapas.');
+  if (out.length > 16) throw new Error('Máximo 16 etapas por embudo.');
   return out;
 }
+/** Varios embudos en un solo texto: "# Nombre del embudo" y debajo sus etapas. Sin "#", es un solo embudo. */
+export function parseEmbudos(texto, anteriores = []) {
+  const bloques = [];
+  for (const linea of String(texto || '').split('\n')) {
+    const m = /^\s*#\s*(.+)$/.exec(linea);
+    if (m) bloques.push({ nombre: m[1].trim().slice(0, 40), lineas: [] });
+    else if (linea.trim()) { if (!bloques.length) bloques.push({ nombre: 'Embudo de ventas', lineas: [] }); bloques.at(-1).lineas.push(linea); }
+  }
+  if (!bloques.length) throw new Error('Pon al menos un embudo con dos etapas.');
+  if (bloques.length > 8) throw new Error('Máximo 8 embudos.');
+  const vistos = new Set();
+  return bloques.map((b, i) => {
+    // Se conserva el id del embudo que ya existía con ese nombre (los leads lo tienen guardado).
+    let id = anteriores.find((e) => e.nombre === b.nombre)?.id || (bloques.length === 1 && anteriores[0]?.id) || slug(b.nombre) || `embudo-${i + 1}`;
+    while (vistos.has(id)) id += '-2';
+    vistos.add(id);
+    try { return { id, nombre: b.nombre, etapas: parseEtapas(b.lineas.join('\n')) }; } catch (e) { throw new Error(`${b.nombre}: ${e.message}`); }
+  });
+}
 export const etapasTexto = (lista) => lista.map((e) => `${e.nombre} = ${e.tipo}`).join('\n');
+export const embudosTexto = (client) => { const l = embudos(client); return l.length === 1 && l[0].id === 'principal' && l[0].nombre === 'Embudo de ventas' ? etapasTexto(l[0].etapas) : l.map((e) => `# ${e.nombre}\n${etapasTexto(e.etapas)}`).join('\n\n'); };
 
-/** Etapa en la que se ve el lead: la que tiene guardada o, si no, la primera de su estado. */
+/** Etapa en la que se ve el lead: la que tiene guardada en su embudo o, si no, la primera de su estado. */
 export function etapaDe(client, lead) {
-  const lista = etapas(client);
+  const lista = embudoDe(client, lead).etapas;
   return lista.find((e) => e.id === lead.etapa) || lista.find((e) => e.tipo === lead.estado) || lista[0];
 }
 
-export function moverLead(client, leadId, etapaId) {
-  const e = etapas(client).find((x) => x.id === etapaId);
-  if (!e) throw new Error('Etapa no válida');
+const ESTADO_DE = { archivo: 'conversacion' };
+/** Mueve el lead a una etapa (de su embudo, o de otro si se da embudoId). */
+export function moverLead(client, leadId, etapaId, embudoId) {
   const lead = db.getLead(client.id, leadId);
   if (!lead) throw new Error('Lead no encontrado');
+  const emb = embudoId ? embudos(client).find((x) => x.id === embudoId) : embudoDe(client, lead);
+  if (!emb) throw new Error('Embudo no válido');
+  const e = emb.etapas.find((x) => x.id === etapaId);
+  if (!e) throw new Error('Etapa no válida');
   const resultado = e.tipo === 'cliente' ? 'vendido' : e.tipo === 'perdido' ? 'perdido' : lead.resultado === 'vendido' || lead.resultado === 'perdido' ? null : lead.resultado;
-  db.getDb().prepare("UPDATE leads SET etapa = ?, estado = ?, resultado = ?, updated_at = datetime('now') WHERE id = ? AND client_id = ?").run(e.id, e.tipo, resultado, leadId, client.id);
+  db.getDb().prepare("UPDATE leads SET embudo = ?, etapa = ?, estado = ?, resultado = ?, updated_at = datetime('now') WHERE id = ? AND client_id = ?")
+    .run(emb.id, e.id, ESTADO_DE[e.tipo] || e.tipo, resultado, leadId, client.id);
   return db.getLead(client.id, leadId);
 }
 
-/** El agente (o la API) mueve el lead: solo hacia adelante, y nunca saca a un lead de Clientes o Perdidos. */
+/** El agente (o la API) mueve el lead dentro de su embudo: solo hacia adelante, nunca saca a un lead de Clientes o Perdidos.
+ *  Si estaba en la base de datos (tipo archivo) y vuelve a escribir, sí se mueve. */
 export function avanzarPorAgente(client, lead, etapaId) {
-  const lista = etapas(client);
+  const lista = embudoDe(client, lead).etapas;
   const actual = etapaDe(client, lead);
+  const archivado = actual.tipo === 'archivo';
   // El agente puede mandar el tipo ("conversacion", "cita", "perdido"): va a la primera etapa de ese tipo que esté adelante.
   const destino = lista.find((x) => x.id === etapaId || slug(x.nombre) === slug(etapaId || ''))
-    || (TIPOS[etapaId] ? lista.slice(lista.indexOf(actual) + 1).find((x) => x.tipo === etapaId) || (etapaId === 'perdido' ? lista.find((x) => x.tipo === 'perdido') : null) : null);
-  if (!destino) return lead;
+    || (TIPOS[etapaId] ? (archivado ? lista : lista.slice(lista.indexOf(actual) + 1)).find((x) => x.tipo === etapaId) || (etapaId === 'perdido' ? lista.find((x) => x.tipo === 'perdido') : null) : null);
+  if (!destino || destino === actual) return lead;
   if (actual.tipo === 'cliente' || actual.tipo === 'perdido') return lead;
-  if (lista.indexOf(destino) <= lista.indexOf(actual) && destino.tipo !== 'perdido') return lead;
+  if (!archivado && lista.indexOf(destino) <= lista.indexOf(actual) && destino.tipo !== 'perdido') return lead;
   return moverLead(client, lead.id, destino.id);
 }
 
@@ -109,10 +144,14 @@ export function guardarFicha(client, leadId, body = {}) {
     WHERE id = ? AND client_id = ?`).run(txt(body.nombre, 80), email ? email.toLowerCase() : null, txt(body.empresa, 120), valor ? Number(valor) : null, txt(body.nota, 1000),
     JSON.stringify(tags), asignado, resultado, leadId, client.id);
   // Vendido / Perdido mueve el lead a la etapa correspondiente.
-  const lista = etapas(client);
+  const lista = embudoDe(client, db.getLead(client.id, leadId)).etapas;
   if (resultado === 'vendido' && lead.resultado !== 'vendido') { const e = lista.find((x) => x.tipo === 'cliente'); if (e) moverLead(client, leadId, e.id); }
   if (resultado === 'perdido' && lead.resultado !== 'perdido') { const e = lista.find((x) => x.tipo === 'perdido'); if (e) moverLead(client, leadId, e.id); }
-  if (body.etapa && body.etapa !== etapaDe(client, lead).id) moverLead(client, leadId, String(body.etapa));
+  if (body.etapa) {
+    const [embId, etId] = String(body.etapa).includes('/') ? String(body.etapa).split('/') : [embudoDe(client, lead).id, String(body.etapa)];
+    const ahora = db.getLead(client.id, leadId);
+    if (etId !== etapaDe(client, ahora).id || embId !== embudoDe(client, ahora).id) moverLead(client, leadId, etId, embId);
+  }
   return db.getLead(client.id, leadId);
 }
 
@@ -210,8 +249,8 @@ export function analitica(client, { dias = 30, ahora = Date.now() } = {}) {
     const ult = ms[ms.length - 1];
     if (ult && ult.rol !== 'lead' && ahora - utc(ult.created_at) > 3 * 86400000) sinSeguimiento += 1;
   }
-  const lista = etapas(client);
-  const porEtapa = lista.map((e) => ({ ...e, n: leads.filter((l) => etapaDe(client, l).id === e.id).length }));
+  const porEmbudo = embudos(client).map((emb) => ({ ...emb, etapas: emb.etapas.map((e) => ({ ...e, n: leads.filter((l) => embudoDe(client, l).id === emb.id && etapaDe(client, l).id === e.id).length })) }));
+  const porEtapa = porEmbudo[0].etapas;
   const clientes = nuevos.filter((l) => etapaDe(client, l).tipo === 'cliente').length;
   const vendido = leads.filter((l) => l.resultado === 'vendido' && utc(l.updated_at) >= desde).reduce((a, l) => a + (Number(l.valor) || 0), 0);
   const canales = {};
@@ -225,7 +264,7 @@ export function analitica(client, { dias = 30, ahora = Date.now() } = {}) {
     primeraAgente: mediana(primeraAgente), primeraEquipo: mediana(primeraEquipo), respAgente: mediana(respAgente), respEquipo: mediana(respEquipo),
     respondidosAgente: respAgente.length, respondidosEquipo: respEquipo.length,
     temas: Object.entries(conteoTemas).sort((a, b) => b[1] - a[1]), conPrimerMsg,
-    porEtapa, clientes, vendido, canales: Object.entries(canales).sort((a, b) => b[1] - a[1]),
+    porEtapa, porEmbudo, clientes, vendido, canales: Object.entries(canales).sort((a, b) => b[1] - a[1]),
     sinSeguimiento, sinAsignar: leads.filter((l) => activos.has(l.id) && !l.asignado_id).length, conversaciones: activos.size,
     asesores: ases, horario: h, totalLeads: leads.length,
   };

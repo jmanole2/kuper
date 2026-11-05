@@ -32,6 +32,7 @@ import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
 import { inicioPage, privacidadPage, terminosPage } from './web/publico.js';
 import * as embudo from './embudo.js';
+import * as importar from './importar.js';
 import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -813,6 +814,31 @@ export function createApp() {
   });
   chatRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   embudoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  // Importar contactos de Leadsales (CSV): primero vista previa, después se confirma. Solo administradores.
+  const subirCsv = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } });
+  const dirImport = () => { const d = path.join(config.dataDir, 'importaciones'); fs.mkdirSync(d, { recursive: true }); return d; };
+  admin.get('/clientes/:cid/importar', (req, res) => res.send(V.importarPage(req.client, {})));
+  admin.post('/clientes/:cid/importar', (req, res, next) => subirCsv.single('archivo')(req, res, (e) => (e ? res.status(400).send(V.importarPage(req.client, { error: e.message })) : next())), (req, res) => {
+    try {
+      if (!req.file) throw new Error('Sube el archivo CSV que exportaste de Leadsales.');
+      const texto = req.file.buffer.toString('utf8');
+      const leido = importar.leerLeadsales(texto);
+      const token = randomToken(12);
+      fs.writeFileSync(path.join(dirImport(), `${req.client.id}-${token}.csv`), texto);
+      res.send(V.importarPage(req.client, { leido, token }));
+    } catch (e) { res.status(400).send(V.importarPage(req.client, { error: e.message })); }
+  });
+  admin.post('/clientes/:cid/importar/confirmar', (req, res) => {
+    const token = String(req.body.token || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const archivo = path.join(dirImport(), `${req.client.id}-${token}.csv`);
+    try {
+      if (!token || !fs.existsSync(archivo)) throw new Error('La vista previa venció. Sube el archivo otra vez.');
+      const r = importar.importar(req.client, importar.leerLeadsales(fs.readFileSync(archivo, 'utf8')));
+      fs.rmSync(archivo, { force: true }); // el CSV no se queda en el servidor
+      seg.auditar(req, 'importacion_leadsales', `${req.client.nombre}: ${r.nuevos} nuevos, ${r.actualizados} actualizados`);
+      res.redirect(`/admin/clientes/${req.client.id}/embudo?ok=1&importados=${r.nuevos + r.actualizados}`);
+    } catch (e) { res.status(400).send(V.importarPage(req.client, { error: e.message })); }
+  });
   conocimientoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
@@ -1070,21 +1096,22 @@ export function createApp() {
 
   // Embudo de ventas y analítica (admin y cliente).
   function embudoRoutes(router, base, { app = false, prefix = '' } = {}) {
-    const leadsDe = (c) => db.listLeads(c.id, { limit: 3000 });
+    const leadsDe = (c) => db.listLeads(c.id, { limit: 20000 });
     const verEmbudo = (req, res, extra = {}) => {
-      const opts = { asesores: embudo.asesores(req.client), q: String(req.query.q || '').slice(0, 80), ...extra };
+      const opts = { asesores: embudo.asesores(req.client), q: String(req.query.q || '').slice(0, 80), embudo: String(req.query.e || ''), ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appEmbudoPage(req.client, leadsDe(req.client), opts) : V.adminEmbudoPage(req.client, leadsDe(req.client), opts));
     };
-    router.get(`${prefix}/embudo`, (req, res) => verEmbudo(req, res, { aviso: req.query.ok ? 'Etapas guardadas.' : '' }));
+    router.get(`${prefix}/embudo`, (req, res) => verEmbudo(req, res, { aviso: req.query.importados ? `Listo: ${Number(req.query.importados).toLocaleString('es-MX')} contactos importados.` : req.query.ok ? 'Etapas guardadas.' : '', importar: !app }));
     router.post(`${prefix}/embudo/mover`, (req, res) => {
-      try { const l = embudo.moverLead(req.client, Number(req.body.lead), String(req.body.etapa || '')); res.json({ ok: true, etapa: l.etapa }); }
+      try { const l = embudo.moverLead(req.client, Number(req.body.lead), String(req.body.etapa || ''), req.body.embudo ? String(req.body.embudo) : undefined); res.json({ ok: true, etapa: l.etapa }); }
       catch (e) { res.status(400).json({ error: e.message }); }
     });
     router.post(`${prefix}/embudo/etapas`, (req, res) => {
       try {
-        const lista = embudo.parseEtapas(req.body.etapas);
-        db.updateClient(req.client.id, { config: { ...req.client.config, embudo: lista } });
-        db.logEvent({ clientId: req.client.id, tipo: 'embudo_etapas', detalle: lista.map((e) => e.nombre).join(' › ') });
+        const lista = embudo.parseEmbudos(req.body.etapas, embudo.embudos(req.client));
+        const { embudo: _viejo, ...resto } = req.client.config;
+        db.updateClient(req.client.id, { config: { ...resto, embudos: lista } });
+        db.logEvent({ clientId: req.client.id, tipo: 'embudo_etapas', detalle: lista.map((e) => `${e.nombre}: ${e.etapas.map((x) => x.nombre).join(' › ')}`).join(' | ') });
         res.redirect(`${base(req)}/embudo?ok=1`);
       } catch (e) { res.status(400).send(`<!doctype html><meta charset="utf-8"><p style="font-family:sans-serif">${String(e.message).replace(/</g, '&lt;')} <a href="${base(req)}/embudo">Volver</a></p>`); }
     });

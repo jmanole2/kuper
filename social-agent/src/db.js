@@ -215,6 +215,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('leads', 'campana_json', 'TEXT');
   ensure('leads', 'email', 'TEXT'); // leads de llamadas por la web: a veces solo dejan su correo
   // Embudo y ficha del lead (ver src/embudo.js)
+  ensure('leads', 'embudo', 'TEXT');
   ensure('leads', 'etapa', 'TEXT');
   ensure('leads', 'empresa', 'TEXT');
   ensure('leads', 'valor', 'REAL');
