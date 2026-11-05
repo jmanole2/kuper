@@ -346,11 +346,13 @@ const HERO_CSS = `
 .kh-tabs a:hover{background:rgba(255,255,255,.12)}.kh-tabs a.on{background:#f4f1eb;color:#1d1b18;font-weight:600}
 .kh-orb{position:absolute;right:28px;bottom:-90px;width:290px;height:290px;border-radius:50%;background:radial-gradient(circle at 50% 45%,#141210,#060505 70%);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 0 14px rgba(255,255,255,.03),0 0 0 15px rgba(255,255,255,.07),0 30px 80px rgba(0,0,0,.6);overflow:hidden}
 .kh-orb canvas{width:100%;height:100%;display:block}
+/* Encabezados: la esfera completa (sin cortarse), abajo a la derecha, con aire para su anillo */
+.kh-orb.kh-orb-in{position:relative;right:auto;bottom:auto;align-self:flex-end;flex:none;width:190px;height:190px;margin:18px 18px 18px 0}
 .kh-orb::after{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid rgba(215,255,63,.35);animation:ccpulse 3.2s ease-out infinite}
 .kh-note{position:relative;z-index:1;text-shadow:0 2px 12px rgba(0,0,0,.8);max-width:46%;font-size:13px;color:#cfc9bf}.kh-note b{display:block;color:#f4efe6;font-weight:400;font-size:17px;margin-top:6px}
 @keyframes ccpulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.22);opacity:0}}
 @media (max-width:900px){.kh{grid-template-columns:1fr}.kh-r{min-height:220px}.kh-r .kh-tabs{justify-content:flex-start}.kh-note{max-width:55%}}
-@media (max-width:600px){.kh{border-radius:24px}.kh-l{padding:20px 16px}.kh-l h1{font-size:34px}.kh-orb{width:210px;height:210px;right:-40px;bottom:-50px}.kh-note{max-width:50%}}
+@media (max-width:600px){.kh-orb.kh-orb-in{width:140px;height:140px;margin:14px 14px 14px 0}.kh{border-radius:24px}.kh-l{padding:20px 16px}.kh-l h1{font-size:34px}.kh-orb{width:210px;height:210px;right:-40px;bottom:-50px}.kh-note{max-width:50%}}
 `;
 export function hero({ kicker = '', title, sub = '', avatar = null, letra = null, stats = [], tabs = [], note = null }) {
   return html`<style>${raw(HERO_CSS)}</style>
@@ -365,7 +367,7 @@ export function hero({ kicker = '', title, sub = '', avatar = null, letra = null
   <div class="kh-r">
     ${tabs.length ? html`<nav class="kh-tabs">${tabs.map(([href, label, on]) => html`<a class="${on ? 'on' : ''}" href="${href}">${label}</a>`)}</nav>
     ${note ? html`<div class="kh-note"><span class="mono">${note[0]}</span><b>${note[1]}</b></div>` : ''}` : html`${note ? html`<div class="kh-note"><span class="mono">${note[0]}</span><b>${note[1]}</b></div>` : ''}<span></span>`}
-    <div class="kh-orb"><canvas class="k-orb" data-puntos="1500" aria-hidden="true"></canvas></div>
+    <div class="kh-orb kh-orb-in"><canvas class="k-orb" data-puntos="1500" aria-hidden="true"></canvas></div>
   </div>
 </section>${orbTag()}`;
 }
