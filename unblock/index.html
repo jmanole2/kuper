@@ -6,12 +6,12 @@
 <title>UNBLOCK · Experiencias para personas y empresas en CDMX</title>
 <meta name="description" content="UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos, constelaciones y retiros en Ciudad de México y otros destinos de México.">
 <link rel="canonical" href="https://unblock.mx/">
-<meta name="theme-color" content="#0b3a40">
+<meta name="theme-color" content="#2fb8d6">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 136 126'%3E%3Cg stroke='%23111' stroke-width='6' fill='none' stroke-linecap='round'%3E%3Cpath d='M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="media/sea-wide.jpg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="media/sea.jpg">
 <script>document.documentElement.classList.add('js')</script>
 <script type="application/ld+json">
 {
@@ -35,221 +35,201 @@
   --blue: #2F5BFF;
   --green: #0F5B4D;
 
-  --serif: "Instrument Serif", "Times New Roman", serif;
   --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Instrument Serif", "Times New Roman", serif;
 
-  --t-display: clamp(54px, 7.6vw, 132px);
-  --t-head: clamp(38px, 4.6vw, 76px);
-  --t-state: clamp(22px, 2.2vw, 32px);
+  --t-display: clamp(52px, 7vw, 120px);
+  --t-head: clamp(40px, 4.8vw, 84px);
+  --t-sub: clamp(17px, 1.5vw, 22px);
   --t-body: 17px;
   --t-small: 14px;
-  --m: clamp(16px, 2.6vw, 40px);
+  --m: clamp(16px, 3vw, 48px);
 
-  /* glass */
-  --glass: rgba(247, 244, 239, 0.10);
-  --glass-strong: rgba(247, 244, 239, 0.16);
-  --glass-edge: rgba(247, 244, 239, 0.26);
-  --glass-blur: blur(22px) saturate(150%);
+  --glass: rgba(247, 244, 239, 0.12);
+  --glass-strong: rgba(247, 244, 239, 0.2);
+  --glass-edge: rgba(247, 244, 239, 0.34);
+  --glass-blur: blur(20px) saturate(160%);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; background: #071a24; color: var(--ivory);
-  font: 400 var(--t-body)/1.55 var(--sans);
-  -webkit-font-smoothing: antialiased; overflow-x: hidden;
-}
+body { margin: 0; background: #06202c; color: #fff; font: 400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; }
 p, h1, h2, h3, ul, figure, blockquote { margin: 0; }
-h1, h2, h3 { font-weight: 400; }
+h1, h2, h3 { font-weight: 300; }
 ul { padding: 0; list-style: none; }
-::selection { background: var(--ivory); color: var(--ink); }
-:focus-visible { outline: 2px solid var(--ivory); outline-offset: 4px; border-radius: 999px; }
+::selection { background: #fff; color: #0a3b4a; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 999px; }
 
-/* ---------- the sea: three fixed layers ---------- */
+/* type, as in the mockups: light words, the last line bold */
+.ttl { font-family: var(--sans); font-weight: 300; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; }
+.ttl b { display: block; font-weight: 700; letter-spacing: -0.035em; }
+.sub { font-size: var(--t-sub); font-weight: 400; letter-spacing: .12em; line-height: 1.6; }
+.rule { display: block; width: 128px; height: 1px; background: rgba(255,255,255,.7); margin: 28px 0; }
+.body { color: rgba(255,255,255,.92); max-width: 34em; }
+.shade { text-shadow: 0 1px 24px rgba(0, 40, 60, .28); }
+
+/* ---------- the sea: fixed layers ---------- */
 .world { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-#water, #stars { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-#water { background: linear-gradient(#0f6f6c, #06222e); }
-.surface { position: absolute; inset: -2%; will-change: transform, opacity; transform-origin: 50% 85%; }
-.surface video, .surface img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.surface .tall { display: none; }
-/* a soft fall-off under the text so the words always read on the water */
-.surface::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,20,28,0) 35%, rgba(4,20,28,.55) 100%); }
+.world > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+#water { display: block; }
+.still { opacity: 0; background: linear-gradient(180deg, #2f7491 0%, #1b4a5e 45%, #163a4a 100%); }
+.still::before { content: ""; position: absolute; top: -8%; bottom: -8%; left: 0; width: min(68vw, calc(116vh * .862)); background: url(media/still.jpg) 50% 100% / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 100%); mask-image: linear-gradient(90deg, #000 62%, transparent 100%); }
+.still::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,52,68,0) 40%, rgba(14,52,68,.35) 70%, rgba(14,52,68,.55) 100%); }
+.surface { will-change: transform, opacity; transform-origin: 50% 70%; }
+.surface video, .surface img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 66%; display: block; }
+/* a soft pool of shade under the words so the water never fights them */
+.surface::after { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 42% at 50% 62%, rgba(6, 70, 100, .30), rgba(6, 70, 100, 0) 70%); }
+#stars { display: block; }
 
 /* ---------- glass ---------- */
-.glass {
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-edge);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 24px 60px -24px rgba(0,10,18,.45);
-  border-radius: 28px;
-}
+.glass { background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 20px 50px -28px rgba(0, 30, 45, .5); border-radius: 26px; }
 
-/* header: a floating glass bar */
-.top { position: fixed; top: 16px; left: var(--m); right: var(--m); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 20px; border-radius: 999px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 500 15px/1 var(--sans); letter-spacing: .05em; }
-.brand svg { width: 30px; height: 28px; }
-.nav { display: flex; align-items: center; gap: clamp(16px, 2vw, 30px); font-size: var(--t-small); }
-.nav a:not(.pill) { text-decoration: none; opacity: .86; transition: opacity 200ms ease; }
-@media (hover: hover) and (pointer: fine) { .nav a:not(.pill):hover { opacity: 1; } }
+.top { background: rgba(12, 74, 96, .2); position: fixed; top: 18px; left: var(--m); right: var(--m); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 22px; border-radius: 999px; }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font: 400 17px/1 var(--sans); letter-spacing: .06em; }
+.brand svg { width: 34px; height: 32px; }
+.nav { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 40px); font-size: 16px; }
+.nav a:not(.pill) { text-decoration: none; opacity: .92; position: relative; transition: opacity 200ms ease; }
+.nav a:not(.pill)::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .nav a:not(.pill):hover::after { transform: scaleX(1); } }
 .menu { display: none; }
 
-/* pills: the one button shape */
-.pill {
-  display: inline-flex; align-items: center; justify-content: center; gap: .55em;
-  min-height: 48px; padding: 0 24px; border-radius: 999px; border: 0; cursor: pointer;
-  font: 500 15px/1 var(--sans); text-decoration: none;
-  background: var(--ivory); color: var(--ink);
-  transition: transform 160ms var(--ease-out), background-color 200ms ease, box-shadow 200ms ease;
-}
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: .7em; min-height: 56px; padding: 0 30px; border-radius: 999px; cursor: pointer; font: 500 16px/1 var(--sans); text-decoration: none; color: #fff; border: 1.5px solid rgba(255,255,255,.85); background: transparent; transition: transform 160ms var(--ease-out), background-color 220ms ease, color 220ms ease; }
+.pill--glass { border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.22); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+.pill--solid { background: var(--ivory); color: #0a3b4a; border-color: var(--ivory); }
+.pill--accent { background: var(--acc); color: var(--acc-ink); border-color: var(--acc); }
 .pill:active { transform: scale(.97); }
-.pill .arrow { display: inline-block; transition: transform 240ms var(--ease-out); }
-.pill--glass { background: var(--glass-strong); color: var(--ivory); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 0 0 1px var(--glass-edge); }
-.pill--accent { background: var(--acc); color: var(--acc-ink); }
+.pill .arrow { width: 22px; height: 12px; flex: none; transition: transform 240ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
   .pill:hover .arrow { transform: translateX(4px); }
-  .pill--glass:hover { background: rgba(247,244,239,.24); }
+  .pill:not(.pill--solid):not(.pill--accent):hover { background: rgba(255,255,255,.3); }
 }
-.top .pill { min-height: 42px; padding: 0 20px; }
+.top .pill { min-height: 46px; padding: 0 26px; }
 
 /* ---------- sections ---------- */
 main { position: relative; z-index: 2; }
-.sec { position: relative; min-height: 120vh; display: flex; align-items: center; padding: 120px var(--m); }
+.sec { position: relative; min-height: 115vh; display: flex; align-items: center; padding: 140px var(--m); }
 .sec.right { justify-content: flex-end; }
-.card { width: min(560px, 100%); padding: clamp(28px, 3vw, 44px); }
-.sec h2 { font-family: var(--serif); font-size: var(--t-head); line-height: 1; letter-spacing: -0.015em; text-wrap: balance; }
-.lead { font-family: var(--serif); font-size: var(--t-state); line-height: 1.2; margin-top: 18px; }
-.body { margin-top: 18px; color: rgba(247,244,239,.86); }
-.card .pill, .card .row { margin-top: 28px; }
-.row { display: flex; flex-wrap: wrap; gap: 10px; }
-/* each chapter carries one brand colour, never two */
-.mark { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-small); margin-bottom: 22px; }
-.mark i { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 28%, transparent); }
+.col { width: min(600px, 100%); }
+.sec h2 { font-size: var(--t-head); }
+.sec .sub { margin-top: 22px; }
+.row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 36px; }
 [data-acc="yellow"] { --acc: var(--yellow); --acc-ink: var(--ink); }
 [data-acc="green"]  { --acc: var(--green);  --acc-ink: var(--ivory); }
 [data-acc="pink"]   { --acc: var(--pink);   --acc-ink: var(--ink); }
 [data-acc="blue"]   { --acc: var(--blue);   --acc-ink: var(--ivory); }
 [data-acc="red"]    { --acc: var(--red);    --acc-ink: var(--ivory); }
-[data-acc="green"] .mark i { background: #3fae8f; }
+/* the chapter's one colour, as a line */
+[data-acc] .rule { background: var(--acc); height: 2px; }
+[data-acc="green"] .rule { background: #47b394; }
 
-/* hero */
-.hero { min-height: 100vh; min-height: 100svh; align-items: flex-end; padding-bottom: clamp(28px, 6vh, 64px); }
-.hero h1 { font-family: var(--serif); font-size: var(--t-display); line-height: .95; letter-spacing: -0.028em; text-shadow: 0 2px 30px rgba(0,20,30,.35); }
-.hero h1 span { display: block; }
-.hero-in { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; align-items: end; }
-.hero .card { margin-top: 28px; width: min(520px, 100%); padding: 22px 22px 22px 26px; }
-.hero .card p { font-size: 16px; }
-.hero .row { margin-top: 18px; }
-.trust { display: flex; align-items: center; gap: 12px; font-size: var(--t-small); padding: 12px 18px 12px 12px; border-radius: 999px; }
-.trust .dots { display: flex; }
-.trust .dots span { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--ivory); margin-left: -8px; box-shadow: 0 0 0 2px rgba(7,40,48,.6); }
-.trust .dots span:first-child { margin-left: 0; }
-/* hotspots on the water, like points of a constellation */
-.spot { position: absolute; display: flex; align-items: center; gap: 12px; font: 500 15px/1.25 var(--sans); text-decoration: none; text-shadow: 0 1px 14px rgba(0,20,30,.5); }
-.spot b { position: relative; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 6px rgba(255,255,255,.18), 0 0 24px 6px rgba(255,255,255,.55); flex: none; }
-.spot b::after { content: ""; position: absolute; inset: -10px; border-radius: 50%; border: 1px solid rgba(255,255,255,.6); animation: ping 2.8s var(--ease-out) infinite; }
-.spot em { font-style: normal; display: block; font-size: 13px; opacity: .8; font-weight: 400; }
-@keyframes ping { from { transform: scale(.6); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
-.cue { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); font-size: 13px; opacity: .8; display: none; }
+/* hero: centred over calm water, the foam stays above */
+.hero { min-height: 100vh; min-height: 100svh; justify-content: center; align-items: flex-end; text-align: center; padding-bottom: clamp(70px, 13vh, 150px); }
+.hero .col { width: min(900px, 100%); }
+.hero h1 { font-size: var(--t-display); }
+.hero .sub { max-width: 46ch; margin: 30px auto 0; font-size: clamp(16px, 1.35vw, 20px); }
+.hero .row { justify-content: center; margin-top: 44px; gap: 22px; }
+.cue { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); width: 26px; height: 42px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.7); }
+.cue::after { content: ""; position: absolute; left: 50%; top: 8px; width: 3px; height: 8px; margin-left: -1.5px; border-radius: 2px; background: #fff; animation: cue 2s var(--ease-out) infinite; }
+@keyframes cue { from { transform: translateY(0); opacity: 1; } to { transform: translateY(14px); opacity: 0; } }
 
-/* empresas */
-.svc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
-.svc a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-radius: 16px; text-decoration: none; font-size: 15px; background: rgba(247,244,239,.07); box-shadow: inset 0 0 0 1px rgba(247,244,239,.14); transition: background-color 200ms ease, transform 160ms var(--ease-out); }
+/* meditation: the picture on the left, words on the right */
+.calm h2 { font-size: var(--t-head); }
+.ring { position: absolute; right: -16vw; top: 50%; width: 60vw; height: 60vw; max-width: 900px; max-height: 900px; transform: translateY(-50%); border-radius: 50%; border: 1px solid rgba(255,255,255,.22); pointer-events: none; }
+.ring::after { content: ""; position: absolute; inset: 7%; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); }
+
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 30px; }
+.duo div { padding: 22px 24px; }
+.duo b { display: block; font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
+.duo span { display: block; margin-top: 6px; font-size: 15px; color: rgba(255,255,255,.88); }
+
+.svc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; }
+.svc a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; border-radius: 18px; text-decoration: none; font-size: 15px; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); transition: background-color 200ms ease, transform 160ms var(--ease-out); }
 .svc a::after { content: "→"; transition: transform 240ms var(--ease-out); }
 .svc a:active { transform: scale(.98); }
-@media (hover: hover) and (pointer: fine) { .svc a:hover { background: rgba(247,244,239,.16); } .svc a:hover::after { transform: translateX(3px); } }
-.card.wide { width: min(640px, 100%); }
+@media (hover: hover) and (pointer: fine) { .svc a:hover { background: rgba(255,255,255,.18); } .svc a:hover::after { transform: translateX(3px); } }
 
-/* casos y voces: a stack of glass */
-.deep { display: block; min-height: 0; padding-top: 160px; }
-.deep h2 { max-width: 12em; }
-.cases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 44px; }
-.case { padding: 26px; border-radius: 24px; min-height: 230px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: transform 300ms var(--ease-out), background-color 200ms ease; }
-.case h3 { font-family: var(--serif); font-size: 26px; line-height: 1.1; }
-.case p { font-size: 15px; color: rgba(247,244,239,.82); margin-top: 18px; }
+.deep { display: block; min-height: 0; padding-top: 180px; }
+.deep h2 { max-width: 13em; }
+.cases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 48px; }
+.case { padding: 28px; min-height: 240px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: transform 300ms var(--ease-out), background-color 200ms ease; }
+.case h3 { font-weight: 700; font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; }
+.case p { font-size: 15px; color: rgba(255,255,255,.85); margin-top: 18px; }
 @media (hover: hover) and (pointer: fine) { .case:hover { transform: translateY(-4px); background: var(--glass-strong); } }
-.voices { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; margin-top: 120px; align-items: stretch; }
-.voice { padding: 30px; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
-.voice p { font-size: 17px; }
-.voice.big p { font-family: var(--serif); font-size: clamp(28px, 2.8vw, 40px); line-height: 1.12; }
-.voice cite { font-style: normal; font-size: var(--t-small); color: rgba(247,244,239,.8); }
-.deep .more { margin-top: 26px; }
+.voices { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; margin-top: 130px; }
+.voice { padding: 32px; display: flex; flex-direction: column; justify-content: space-between; gap: 26px; }
+.voice.big p { font-family: var(--serif); font-size: clamp(30px, 2.9vw, 42px); line-height: 1.12; }
+.voice cite { font-style: normal; font-size: var(--t-small); letter-spacing: .06em; color: rgba(255,255,255,.82); }
+.deep .row { margin-top: 30px; }
 
 .ask { min-height: 100vh; justify-content: center; text-align: center; }
-.ask .card { width: min(880px, 100%); padding: clamp(40px, 6vw, 80px); }
-.ask h2 { font-size: var(--t-display); line-height: .98; letter-spacing: -0.028em; }
-.ask h2 span { display: block; }
-.ask .row { justify-content: center; margin-top: 40px; }
-.ask .pill { min-width: 200px; min-height: 54px; font-size: 16px; }
-.ask .note { margin-top: 18px; font-size: var(--t-small); color: rgba(247,244,239,.8); }
+.ask .col { width: min(980px, 100%); }
+.ask h2 { font-size: var(--t-display); }
+.ask .rule { margin: 30px auto; }
+.ask .row { justify-content: center; }
+.ask .note { margin-top: 22px; font-size: var(--t-small); letter-spacing: .1em; color: rgba(255,255,255,.82); }
 
-.foot { position: relative; z-index: 2; padding: 0 var(--m) 0; overflow: hidden; }
-.foot .card { width: 100%; padding: clamp(28px, 3vw, 44px); display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; }
-.foot h2 { font-family: var(--serif); font-size: var(--t-head); line-height: 1; }
-.foot .links { display: flex; flex-wrap: wrap; gap: 10px 22px; align-content: start; justify-content: flex-end; }
-.foot .links a { text-decoration: none; opacity: .88; }
-.foot .about { grid-column: 1 / -1; font-size: 15px; color: rgba(247,244,239,.82); max-width: 70ch; }
-.legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: rgba(247,244,239,.7); padding: 22px 4px 0; }
-.wordmark { font: 600 clamp(110px, 26vw, 500px)/.8 var(--sans); letter-spacing: -0.055em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); color: rgba(247,244,239,.92); user-select: none; }
+.foot { position: relative; z-index: 2; padding: 0 var(--m); overflow: hidden; }
+.foot .glass { padding: clamp(28px, 3vw, 46px); display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; }
+.foot h2 { font-size: var(--t-head); }
+.foot .links { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: flex-end; align-content: start; }
+.foot .links a { text-decoration: none; }
+.foot .about { grid-column: 1 / -1; font-size: 15px; color: rgba(255,255,255,.85); max-width: 72ch; }
+.legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: rgba(255,255,255,.72); padding: 22px 4px 0; letter-spacing: .04em; }
+.wordmark { font: 700 clamp(110px, 25vw, 480px)/.8 var(--sans); letter-spacing: -0.06em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); color: rgba(255,255,255,.9); user-select: none; }
 
-/* entrances: the parts of each card rise in, one after another */
+/* entrances */
 @media (prefers-reduced-motion: no-preference) {
-  .js [data-reveal] { opacity: 0; transform: translateY(28px) scale(.985); transition: opacity 900ms var(--ease-out), transform 1000ms var(--ease-out); }
-  .js [data-reveal].is-in { opacity: 1; transform: none; }
-  .js [data-reveal] > * { opacity: 0; transform: translateY(14px); transition: opacity 700ms var(--ease-out), transform 800ms var(--ease-out); }
+  .js [data-reveal] > * { opacity: 0; transform: translateY(22px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); }
   .js [data-reveal].is-in > * { opacity: 1; transform: none; }
   .js [data-reveal].is-in > *:nth-child(2) { transition-delay: 70ms; }
   .js [data-reveal].is-in > *:nth-child(3) { transition-delay: 140ms; }
   .js [data-reveal].is-in > *:nth-child(4) { transition-delay: 210ms; }
   .js [data-reveal].is-in > *:nth-child(5) { transition-delay: 280ms; }
-  .js .hero h1 span { opacity: 0; transform: translateY(.2em); transition: opacity 1000ms var(--ease-out), transform 1100ms var(--ease-out); }
-  .js .loaded .hero h1 span { opacity: 1; transform: none; }
-  .js .loaded .hero h1 span + span { transition-delay: 120ms; }
-  .js .hero .card, .js .trust, .js .spot { opacity: 0; transform: translateY(14px); transition: opacity 900ms var(--ease-out) 450ms, transform 900ms var(--ease-out) 450ms; }
-  .js .loaded .hero .card, .js .loaded .trust, .js .loaded .spot { opacity: 1; transform: none; }
+  .js [data-reveal].is-in > *:nth-child(6) { transition-delay: 350ms; }
+  .js .rule { transform-origin: left; }
+  .js .ask .rule, .js .hero .rule { transform-origin: center; }
 }
 
 @media (max-width: 960px) {
   .nav a.opt { display: none; }
   .cases { grid-template-columns: 1fr 1fr; }
   .voices { grid-template-columns: 1fr; }
-  .spot { display: none; }
+  .still::before { top: 0; bottom: auto; height: 64vh; width: 100%; background-position: 50% 88%; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%); mask-image: linear-gradient(180deg, #000 70%, transparent 100%); }
+  .still::after { background: linear-gradient(180deg, rgba(8,64,90,0) 30%, rgba(8,64,90,.75) 78%); }
+  .ring { display: none; }
 }
 @media (max-width: 700px) {
   :root { --t-body: 16px; }
-  .surface .wide { display: none; }
-  .surface .tall { display: block; }
   .top { padding: 8px 8px 8px 16px; top: 12px; }
   .nav { display: none; }
   .menu { display: block; position: relative; }
-  .menu summary { list-style: none; cursor: pointer; font: 500 15px/1 var(--sans); padding: 12px 16px; border-radius: 999px; background: var(--ivory); color: var(--ink); }
+  .menu summary { list-style: none; cursor: pointer; font: 500 15px/1 var(--sans); padding: 13px 18px; border-radius: 999px; background: rgba(255,255,255,.9); color: #0a3b4a; }
   .menu summary::-webkit-details-marker { display: none; }
-  .menu ul { position: absolute; right: 0; top: calc(100% + 10px); min-width: 220px; padding: 10px; border-radius: 22px; background: rgba(12,40,48,.72); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 0 0 1px var(--glass-edge); }
+  .menu ul { position: absolute; right: 0; top: calc(100% + 10px); min-width: 220px; padding: 10px; border-radius: 22px; background: rgba(10,70,92,.7); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 0 0 1px var(--glass-edge); }
   .menu li a { display: block; padding: 12px 14px; text-decoration: none; }
-  .sec { padding: 100px 16px; min-height: 110vh; align-items: flex-end; }
+  .sec { padding: 110px 18px; align-items: flex-end; min-height: 110vh; }
   .sec.right { justify-content: flex-start; }
-  .hero { padding-bottom: 20px; }
-  .hero-in { grid-template-columns: 1fr; }
-  .hero h1 { font-size: 13.4vw; }
-  .trust { display: none; }
-  .hero .row { flex-direction: column; }
+  .hero { padding-bottom: 80px; }
+  .hero h1 { font-size: 12.6vw; }
+  .hero .sub { letter-spacing: .08em; }
+  .hero .row { flex-direction: column; gap: 12px; }
   .hero .row .pill { width: 100%; }
-  .sec h2 { font-size: 10.4vw; }
-  .svc { grid-template-columns: 1fr; }
-  .cases { grid-template-columns: 1fr; }
+  .sec h2, .calm h2 { font-size: 11vw; }
+  .sub { letter-spacing: .08em; }
+  .duo, .svc, .cases { grid-template-columns: 1fr; }
   .case { min-height: 0; }
   .ask h2 { font-size: 12vw; }
   .ask .row { flex-direction: column; }
   .ask .pill { width: 100%; }
-  .foot .card { grid-template-columns: 1fr; }
+  .foot .glass { grid-template-columns: 1fr; }
   .foot .links { justify-content: flex-start; }
   .legal { flex-direction: column; gap: 4px; }
   .wordmark { font-size: 33vw; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .spot b::after { animation: none; }
+  .cue::after { animation: none; }
   *, *::before, *::after { transition-duration: 1ms !important; }
 }
 </style>
@@ -257,10 +237,10 @@ main { position: relative; z-index: 2; }
 <body>
 
 <div class="world" aria-hidden="true">
+  <div class="still" id="still"></div>
   <canvas id="water"></canvas>
   <div class="surface" id="surface">
-    <video class="wide" muted loop playsinline autoplay preload="auto" poster="media/sea-wide.jpg"><source src="media/sea-wide.webm" type="video/webm"><source src="media/sea-wide.mp4" type="video/mp4"></video>
-    <video class="tall" muted loop playsinline autoplay preload="metadata" poster="media/sea-tall.jpg"><source src="media/sea-tall.webm" type="video/webm"><source src="media/sea-tall.mp4" type="video/mp4"></video>
+    <video muted loop playsinline autoplay preload="auto" poster="media/sea.jpg"><source src="media/sea.webm" type="video/webm"><source src="media/sea.mp4" type="video/mp4"></video>
   </div>
   <canvas id="stars"></canvas>
 </div>
@@ -270,6 +250,7 @@ main { position: relative; z-index: 2; }
     <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28"/></g>
     <g fill="currentColor"><circle cx="7" cy="27" r="6"/><circle cx="31" cy="6" r="6"/><circle cx="65" cy="10" r="6"/><circle cx="44" cy="34" r="6"/><circle cx="76" cy="43" r="6"/><circle cx="111" cy="27" r="6"/><circle cx="117" cy="67" r="6"/><circle cx="94" cy="87" r="6"/><circle cx="72" cy="107" r="6"/><circle cx="47" cy="73" r="6"/><circle cx="14" cy="64" r="6"/></g>
   </symbol>
+  <symbol id="arrow" viewBox="0 0 22 12"><path d="M0 6h20M15 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
 <header class="top glass">
@@ -280,7 +261,7 @@ main { position: relative; z-index: 2; }
     <a href="/experiencias">Experiencias</a>
     <a class="opt" href="/sobre-unblock">Sobre UNBLOCK</a>
     <a class="opt" href="/el-libro">El libro</a>
-    <a class="pill" href="/contacto">Contacto</a>
+    <a class="pill pill--glass" href="/contacto">Contacto</a>
   </nav>
   <details class="menu">
     <summary>Menú</summary>
@@ -297,68 +278,65 @@ main { position: relative; z-index: 2; }
 
 <main>
   <section class="sec hero" data-depth="0" aria-labelledby="h-hero">
-    <a class="spot" href="#slow-morning" style="left:58%; top:44%"><b></b><span>Slow Morning<em>Una mañana para mirar despacio</em></span></a>
-    <a class="spot" href="#slow-weekend" style="left:76%; top:58%"><b></b><span>Slow Weekend<em>Una noche fuera de la rutina</em></span></a>
-    <a class="spot" href="#empresas" style="left:64%; top:72%"><b></b><span>Para empresas<em>Team buildings, offsites y más</em></span></a>
-    <div class="hero-in">
-      <div>
-        <h1 id="h-hero"><span>See what you’ve</span> <span>stopped seeing.</span></h1>
-        <div class="card glass">
-          <p>UNBLOCK diseña experiencias para personas y organizaciones que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
-          <div class="row">
-            <a class="pill" href="#slow-morning">Experiencias para mí</a>
-            <a class="pill pill--glass" href="#empresas">Para mi empresa <span class="arrow" aria-hidden="true">→</span></a>
-          </div>
-        </div>
+    <div class="col shade" data-reveal>
+      <h1 class="ttl" id="h-hero">See what you’ve <b>stopped seeing.</b></h1>
+      <p class="sub">UNBLOCK diseña experiencias para personas y organizaciones que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
+      <div class="row">
+        <a class="pill pill--glass" href="#slow-morning">Explorar experiencias para mí <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="pill" href="#empresas">Explorar experiencias para empresas <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
-      <div class="trust glass"><div class="dots"><span>A</span><span>E</span><span>C</span></div>Equipos de AVEVA, Etsy y Círculo de Crédito</div>
     </div>
+    <span class="cue" aria-hidden="true"></span>
   </section>
 
-  <section class="sec right" data-depth="0.2" aria-labelledby="h-que">
-    <div class="card glass" data-reveal>
-      <h2 id="h-que">A veces no necesitamos hacer más.</h2>
-      <p class="lead">Necesitamos mirar diferente.</p>
+  <section class="sec right calm" data-depth="0.16" aria-labelledby="h-que">
+    <span class="ring" aria-hidden="true"></span>
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-que">A veces no necesitamos <b>hacer más.</b></h2>
+      <p class="sub">Necesitamos mirar diferente.</p>
+      <span class="rule" aria-hidden="true"></span>
       <p class="body">Podemos cambiar de rutina, estrategia, equipo o relación y seguir llegando al mismo lugar. No porque la solución haya fallado, sino porque seguimos respondiendo desde algo que ya dejamos de ver.</p>
     </div>
   </section>
 
   <section class="sec" id="slow-morning" data-depth="0.36" data-acc="yellow" aria-labelledby="h-morning">
-    <div class="card glass" data-reveal>
-      <p class="mark"><i></i>Para ti · bajo la primera luz</p>
-      <h2 id="h-morning">Slow Morning</h2>
-      <p class="lead">Hike, fotografía y presencia en la naturaleza.</p>
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-morning">Slow <b>Morning</b></h2>
+      <p class="sub">Hike, fotografía y presencia en la naturaleza.</p>
+      <span class="rule" aria-hidden="true"></span>
       <p class="body">Una mañana para salir del ruido cotidiano. No necesitas saber fotografía: la cámara es solo una forma de mirar con más atención.</p>
-      <a class="pill pill--accent" href="/para-ti#slow-morning">Conocer Slow Morning <span class="arrow" aria-hidden="true">→</span></a>
+      <div class="row"><a class="pill pill--accent" href="/para-ti#slow-morning">Conocer Slow Morning <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
   <section class="sec right" id="slow-weekend" data-depth="0.54" data-acc="green" aria-labelledby="h-weekend">
-    <div class="card glass" data-reveal>
-      <p class="mark"><i></i>Para ti · donde empiezan las luces</p>
-      <h2 id="h-weekend">Slow Weekend &amp; Slow Retreat</h2>
-      <div class="svc" style="grid-template-columns:1fr 1fr">
-        <div class="glass" style="padding:18px;border-radius:18px"><p class="lead" style="margin:0">Una noche</p><p class="body" style="margin-top:6px;font-size:15px">fuera de la rutina para crear espacio, perspectiva y conexión</p></div>
-        <div class="glass" style="padding:18px;border-radius:18px"><p class="lead" style="margin:0">Dos noches</p><p class="body" style="margin-top:6px;font-size:15px">para bajar el ruido y observar con más profundidad</p></div>
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-weekend">Slow Weekend <b>&amp; Slow Retreat</b></h2>
+      <p class="sub">Para cuando necesitas más que una mañana.</p>
+      <span class="rule" aria-hidden="true"></span>
+      <div class="duo">
+        <div class="glass"><b>Una noche</b><span>fuera de la rutina para crear espacio, perspectiva y conexión</span></div>
+        <div class="glass"><b>Dos noches</b><span>para bajar el ruido y observar con más profundidad</span></div>
       </div>
-      <a class="pill pill--accent" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <span class="arrow" aria-hidden="true">→</span></a>
+      <div class="row"><a class="pill pill--accent" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
   <section class="sec" data-depth="0.72" data-acc="pink" aria-labelledby="h-const">
-    <div class="card glass" data-reveal>
-      <p class="mark"><i></i>Constelaciones</p>
-      <h2 id="h-const">Sometimes the pattern started long before you noticed it.</h2>
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-const">Sometimes the pattern started <b>long before you noticed it.</b></h2>
+      <p class="sub">Constelaciones.</p>
+      <span class="rule" aria-hidden="true"></span>
       <p class="body">Workshops grupales de 3 o 4 sesiones y retiros inmersivos para observar dinámicas, relaciones y patrones desde una perspectiva sistémica.</p>
-      <a class="pill pill--accent" href="/para-ti#proximas">Ver próximas experiencias <span class="arrow" aria-hidden="true">→</span></a>
+      <div class="row"><a class="pill pill--accent" href="/para-ti#proximas">Ver próximas experiencias <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
   <section class="sec right" id="empresas" data-depth="0.86" data-acc="blue" aria-labelledby="h-emp">
-    <div class="card glass wide" data-reveal>
-      <p class="mark"><i></i>Para empresas · CDMX y otros destinos de México</p>
-      <h2 id="h-emp">Different moments need different experiences.</h2>
-      <p class="body">Algunas experiencias ayudan a trabajar diferente. Otras están hechas para conectar. Otras, para celebrar.</p>
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-emp">Different moments need <b>different experiences.</b></h2>
+      <p class="sub">Para empresas, en CDMX y otros destinos de México.</p>
+      <span class="rule" aria-hidden="true"></span>
       <ul class="svc">
         <li><a href="/team-building-cdmx">Team Building</a></li>
         <li><a href="/offsites-empresas">Offsites</a></li>
@@ -369,12 +347,12 @@ main { position: relative; z-index: 2; }
         <li><a href="/eventos-corporativos-cdmx">Eventos 360</a></li>
         <li><a href="/fiestas-fin-de-ano-empresas">Fiestas de fin de año</a></li>
       </ul>
-      <a class="pill pill--accent" href="/contacto?tipo=empresa">Diseñar una experiencia para mi equipo <span class="arrow" aria-hidden="true">→</span></a>
+      <div class="row"><a class="pill pill--accent" href="/contacto?tipo=empresa">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
   <section class="sec deep" data-depth="0.94" aria-labelledby="h-cases">
-    <h2 id="h-cases" data-reveal>Things we’ve already made happen.</h2>
+    <div data-reveal><h2 class="ttl" id="h-cases">Things we’ve already <b>made happen.</b></h2></div>
     <div class="cases">
       <a class="case glass" href="/experiencias#liderazgo-estrategico" data-reveal><h3>Liderazgo estratégico para supervisores</h3><p>Ejecución, comunicación, influencia y manejo de conflictos.</p></a>
       <a class="case glass" href="/experiencias#equipos-colaborativos" data-reveal><h3>Equipos colaborativos de alto impacto</h3><p>Observar y fortalecer comportamientos cotidianos de colaboración.</p></a>
@@ -386,15 +364,16 @@ main { position: relative; z-index: 2; }
       <blockquote class="voice glass" data-reveal><p>“Dani no llega con soluciones genéricas: escucha, entiende el contexto y diseña experiencias pensadas específicamente para lo que el equipo necesita.”</p><cite>Greg Guida, Sr. Director, Etsy</cite></blockquote>
       <blockquote class="voice glass" data-reveal><p>“Vernos desde nuestra faceta humana nos ayudó a conectar y generar una confianza real para nuestro día a día.”</p><cite>Sara Noemí Cervera Soto, Científica de Datos, Círculo de Crédito</cite></blockquote>
     </div>
-    <div class="more" data-reveal><a class="pill pill--glass" href="/sobre-unblock">Conoce más sobre UNBLOCK <span class="arrow" aria-hidden="true">→</span></a></div>
+    <div class="row" data-reveal><a class="pill pill--glass" href="/sobre-unblock">Conoce más sobre UNBLOCK <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
   </section>
 
   <section class="sec ask" data-depth="1" data-acc="red" aria-labelledby="h-ask">
-    <div class="card glass" data-reveal>
-      <h2 id="h-ask"><span>What are you ready</span> <span>to see differently?</span></h2>
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-ask">What are you ready <b>to see differently?</b></h2>
+      <span class="rule" aria-hidden="true"></span>
       <div class="row">
-        <a class="pill" href="/contacto?tipo=personal">Para mí</a>
-        <a class="pill pill--accent" href="/contacto?tipo=empresa">Para mi empresa <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="pill pill--solid" href="/contacto?tipo=personal">Para mí</a>
+        <a class="pill pill--accent" href="/contacto?tipo=empresa">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
       <p class="note">Empezamos con una conversación sobre lo que estás imaginando.</p>
     </div>
@@ -402,8 +381,8 @@ main { position: relative; z-index: 2; }
 </main>
 
 <footer class="foot">
-  <div class="card glass">
-    <h2>Empecemos a diseñarlo.</h2>
+  <div class="glass">
+    <h2 class="ttl">Empecemos <b>a diseñarlo.</b></h2>
     <ul class="links" aria-label="Más de UNBLOCK">
       <li><a href="/sobre-unblock">Sobre Daniela</a></li>
       <li><a href="/el-libro">El libro</a></li>
@@ -420,18 +399,14 @@ main { position: relative; z-index: 2; }
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = (s) => document.querySelector(s);
-  addEventListener('load', () => document.body.classList.add('loaded'));
-  setTimeout(() => document.body.classList.add('loaded'), 900);
 
-  // cards rise in once
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
-  }), { rootMargin: '0px 0px -10% 0px', threshold: 0.15 }) : null;
+  }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }) : null;
   document.querySelectorAll('[data-reveal]').forEach(el => io ? io.observe(el) : el.classList.add('is-in'));
-
   if (reduce) document.querySelectorAll('video').forEach(v => { v.removeAttribute('autoplay'); v.pause(); });
 
-  // ---------------- depth: where are we in the sea? ----------------
+  // ---------------- depth ----------------
   const secs = [...document.querySelectorAll('[data-depth]')];
   let marks = [], vh = innerHeight, vw = innerWidth;
   const measure = () => {
@@ -441,55 +416,54 @@ main { position: relative; z-index: 2; }
     sizeStars(); sizeWater();
   };
   const depthAt = (y) => {
-    if (y <= marks[0].y) return 0;
+    if (y <= 0) return 0;
     for (let i = 1; i < marks.length; i++) if (y < marks[i].y) {
-      const a = marks[i - 1], b = marks[i], t = (y - a.y) / (b.y - a.y);
-      return a.d + (b.d - a.d) * t;
+      const a = marks[i - 1], b = marks[i]; return a.d + (b.d - a.d) * (y - a.y) / (b.y - a.y);
     }
     return 1;
   };
   const smooth = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-  // ---------------- water: light shafts, caustics, drifting particles ----------------
+  // ---------------- water: moving light, caustics, drifting particles ----------------
   const wc = $('#water');
-  const gl = wc.getContext('webgl', { antialias: false, premultipliedAlpha: false });
+  const gl = wc.getContext('webgl', { antialias: false, premultipliedAlpha: false, alpha: true });
   let prog = null, U = {};
-  const SCALE = 0.5;                       // water is soft; half resolution keeps it light
-  function sizeWater() { if (!gl) return; wc.width = Math.round(vw * SCALE * Math.min(devicePixelRatio, 2)); wc.height = Math.round(vh * SCALE * Math.min(devicePixelRatio, 2)); gl.viewport(0, 0, wc.width, wc.height); }
+  const SCALE = 0.5;
+  function sizeWater() { if (!gl) return; const r = Math.min(devicePixelRatio, 2) * SCALE; wc.width = Math.round(vw * r); wc.height = Math.round(vh * r); gl.viewport(0, 0, wc.width, wc.height); }
   if (gl) {
     const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
     const fs = `precision mediump float;
-uniform vec2 r;uniform float t,d,sun;
+uniform vec2 r;uniform float t,d,sun,pm;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
 float fb(vec2 p){float v=0.,a=.5;for(int k=0;k<5;k++){v+=a*n(p);p*=2.02;a*=.5;}return v;}
 void main(){
   vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=vec2((uv.x-.5)*asp,uv.y);
-  vec3 c0=vec3(.10,.55,.55), c1=vec3(.03,.30,.36), c2=vec3(.015,.11,.19), c3=vec3(.008,.03,.065);
+  vec3 c0=vec3(.13,.62,.74), c1=vec3(.04,.34,.46), c2=vec3(.015,.12,.20), c3=vec3(.008,.03,.065);
   vec3 top = d<.33? mix(c0,c1,d/.33) : d<.66? mix(c1,c2,(d-.33)/.33) : mix(c2,c3,(d-.66)/.34);
   vec3 bot = mix(top*.55, c3, .35+.6*d);
   vec3 col = mix(bot, top, pow(uv.y,1.2));
-  // light shafts slanting down from the surface
   float sx = p.x*1.4 + (1.-uv.y)*.45;
   float rays = fb(vec2(sx*2.6, t*.05)) + .5*fb(vec2(sx*6.0+3., t*.08));
   rays = smoothstep(.62,1.15,rays);
-  float vis = (1.-smoothstep(.10,.80,d));
-  vec3 rayc = mix(vec3(.78,.98,.94), vec3(1.,.95,.72), sun);
-  col += rayc*rays*pow(uv.y,1.8)*vis*.62;
-  // caustic shimmer near the top
+  float vis = 1.-smoothstep(.10,.80,d);
+  vec3 rayc = mix(vec3(.82,.98,1.), vec3(1.,.95,.72), sun);
+  float R = rays*pow(uv.y,1.6)*vis*.65;
   float ca = fb(p*5.+vec2(t*.12,-t*.07)); ca = pow(abs(sin(ca*14.)),10.);
-  col += vec3(.7,.95,.9)*ca*.16*pow(uv.y,2.5)*(1.-smoothstep(0.,.45,d));
-  // marine snow, drifting up as we sink
+  R += ca*.18*pow(uv.y,2.5)*(1.-smoothstep(0.,.45,d));
+  float S = 0.;
   for(int L=0;L<2;L++){
     float z=float(L)*1.7+1.;
     vec2 g=p*vec2(22.,22.)*z+vec2(t*.03*z, t*.35/z + d*30.*z);
     vec2 id=floor(g), f=fract(g)-.5; float k=h(id+z);
     vec2 o=vec2(h(id+3.1)-.5,h(id+7.7)-.5)*.7;
-    float s=smoothstep(.07/z,.0,length(f-o))*step(.9,k);
-    col += vec3(.85,.95,.95)*s*(.18+.22*(1.-d))/z;
+    S += smoothstep(.07/z,.0,length(f-o))*step(.9,k)*(.2+.25*(1.-d))/z;
   }
-  col *= 1.-.42*pow(length(uv-vec2(.5,.62)),1.6);
-  gl_FragColor=vec4(col,1.);
+  vec3 water = (col + rayc*R + vec3(.85,.95,.95)*S) * (1.-.42*pow(length(uv-vec2(.5,.62)),1.6));
+  // over the photograph only the light and the particles are drawn
+  float a = mix(1., clamp(R*1.1 + S, 0., .9), pm);
+  vec3 c = mix(water, rayc, pm);
+  gl_FragColor = vec4(c, a);
 }`;
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
     prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog);
@@ -499,11 +473,12 @@ void main(){
       const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
       const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['r', 't', 'd', 'sun'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
+      ['r', 't', 'd', 'sun', 'pm'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
+      gl.clearColor(0, 0, 0, 0);
     }
   }
 
-  // ---------------- constellations: small figures that blink and draw themselves ----------------
+  // ---------------- constellations ----------------
   const sc = $('#stars'), cx = sc.getContext('2d');
   let dpr = 1, figs = [], dust = [], logo = null;
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -516,9 +491,7 @@ void main(){
     sc.width = vw * dpr; sc.height = vh * dpr;
     seed = 11; figs = []; dust = [];
     const small = vw < 700;
-    const spots = small
-      ? [[.18,.16],[.72,.12],[.5,.34],[.2,.5],[.8,.46]]
-      : [[.12,.2],[.36,.12],[.6,.22],[.86,.16],[.18,.62],[.5,.5],[.72,.7],[.9,.52]];
+    const spots = small ? [[.18,.16],[.72,.12],[.5,.34],[.2,.5],[.8,.46]] : [[.12,.2],[.36,.12],[.6,.22],[.86,.16],[.18,.62],[.5,.5],[.72,.7],[.9,.52]];
     spots.forEach(([x, y], k) => {
       const n = 4 + Math.floor(rnd() * 4), size = (small ? 70 : 120) * (0.7 + rnd() * 0.6);
       const pts = []; let px = 0, py = 0;
@@ -528,7 +501,7 @@ void main(){
     });
     for (let i = 0; i < (small ? 140 : 260); i++) dust.push({ x: rnd() * vw, y: rnd() * vh, r: .4 + rnd() * 1.1, ph: rnd() * 6.28, w: .6 + rnd() * 2.2, th: .4 + rnd() * .28 });
     const s = small ? 1.7 : 2.6;
-    logo = { x: small ? vw * .5 : vw * .7, y: small ? vh * .26 : vh * .48, s, pts: LOGO.map(([a, b]) => [(a - 62) * s, (b - 56) * s]) };
+    logo = { x: small ? vw * .5 : vw * .72, y: small ? vh * .26 : vh * .48, pts: LOGO.map(([a, b]) => [(a - 62) * s, (b - 56) * s]) };
   }
   function star(x, y, r, a) {
     cx.globalAlpha = a; const g = r * 7; cx.drawImage(glow, x - g, y - g, g * 2, g * 2);
@@ -561,7 +534,6 @@ void main(){
       cx.globalAlpha = v * .6 * draw; cx.font = '400 12px "DM Sans", sans-serif';
       cx.fillText(f.name, f.x + f.pts[0][0] + 10, y0 + f.pts[0][1] - 10);
     }
-    // the UNBLOCK mark assembles as a constellation around Constelaciones
     const lv = smooth(.6, .7, d) * (1 - smooth(.86, .94, d));
     if (lv > 0) {
       const ld = smooth(.6, .74, d);
@@ -577,7 +549,7 @@ void main(){
   }
 
   // ---------------- the loop ----------------
-  const surface = $('#surface');
+  const surface = $('#surface'), still = $('#still');
   let dS = 0, t0 = performance.now(), last = t0;
   measure(); addEventListener('resize', measure); addEventListener('load', measure);
   document.fonts && document.fonts.ready.then(measure);
@@ -586,18 +558,23 @@ void main(){
     const dt = Math.min((now - last) / 1000, .1); last = now;
     const t = reduce ? 0 : (now - t0) / 1000;
     const y = scrollY;
-    const dTarget = depthAt(y);
-    dS += (dTarget - dS) * (reduce ? 1 : 1 - Math.exp(-dt * 5));   // damped: you glide, never jump
+    dS += (depthAt(y) - dS) * (reduce ? 1 : 1 - Math.exp(-dt * 5));
 
-    // diving: the surface comes closer, then you pass through it
-    const k = Math.min(1, y / (vh * 1.1));
+    // dive: the water comes up to meet you, then you are under it
+    const k = Math.min(1, y / (vh * 1.0));
     const sink = smooth(0, 1, k);
-    surface.style.transform = `translate3d(0, ${(-sink * 14).toFixed(2)}vh, 0) scale(${(1 + sink * 1.35).toFixed(4)})`;
-    surface.style.opacity = (1 - smooth(.45, .95, k)).toFixed(3);
+    surface.style.transform = `translate3d(0, ${(-sink * 10).toFixed(2)}vh, 0) scale(${(1 + sink * 1.2).toFixed(4)})`;
+    surface.style.opacity = (1 - smooth(.5, .95, k)).toFixed(3);
+
+    // the photograph lives just under the surface
+    const pm = smooth(.05, .12, dS) * (1 - smooth(.24, .32, dS));
+    still.style.opacity = Math.min(1, pm * 2.5).toFixed(3);
 
     if (prog) {
+      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform2f(U.r, wc.width, wc.height); gl.uniform1f(U.t, t); gl.uniform1f(U.d, dS);
-      gl.uniform1f(U.sun, smooth(.24, .34, dS) * (1 - smooth(.42, .5, dS)));   // warm first light for Slow Morning
+      gl.uniform1f(U.sun, smooth(.26, .34, dS) * (1 - smooth(.42, .5, dS)));
+      gl.uniform1f(U.pm, pm);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
     drawStars(dS, t, y);
