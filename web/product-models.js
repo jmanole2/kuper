@@ -90,7 +90,7 @@ export const DIMS = {
     bailRise: 170,
     gripLen: 95,
     gripR: 10,
-    handleRest: 2.25,  // asa caída al frente, como en la foto
+    handleRest: 1.95,  // asa caída al frente sin tocar la pared
   },
   envase1: {
     E: 150,

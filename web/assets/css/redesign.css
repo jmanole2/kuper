@@ -1637,8 +1637,31 @@ html.is-bucket-dragging * {
   .coverage-copy .exp-title { margin-bottom: 12px; }
 }
 
-/* Sello FSSC 22000 nuevo (redondo): tamaño acorde a la tarjeta */
-.recognition-card-fssc .recognition-card-logo { padding: 6px; border-radius: 50%; }
-.recognition-card-fssc .recognition-card-logo img { width: 70px; height: 70px; object-fit: contain; }
-/* Sello ISO 9001 (Global Certification Bureau): mismo formato que el de FSSC */
-.recognition-card:not(.recognition-card-fssc):not(.recognition-card-featured) .recognition-card-logo img { width: 62px; height: 62px; object-fit: contain; border-radius: 50%; }
+/* Sellos ISO 9001 y FSSC 22000 (Global Certification Bureau): completos, con
+   su texto, del lado derecho de la tarjeta; el texto de la tarjeta a la izquierda. */
+.recognition-card.has-seal { padding-right: 150px; min-height: 300px; }
+.recognition-card.has-seal .recognition-card-logo {
+  top: 50%; right: 18px; left: auto;
+  display: block; width: 116px; height: auto;
+  padding: 10px 8px; border: 0; border-radius: 14px;
+  background: #fff; box-shadow: 0 10px 26px rgba(50,29,35,0.12);
+  transform: translateY(-50%);
+}
+.recognition-card.has-seal .recognition-card-logo img { display: block; width: 100%; height: auto; border-radius: 0; }
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .recognition-card.has-seal { padding-right: 112px; }
+  .recognition-card.has-seal .recognition-card-logo { width: 86px; right: 14px; padding: 7px 6px; }
+}
+@media (max-width: 767.98px) {
+  .recognition-card.has-seal { padding-right: 140px; min-height: 230px; }
+}
+
+/* Contacto: invitación a escribir por WhatsApp */
+.contact-details .contact-wa-cta { margin-top: 8px; }
+.contact-details .contact-wa-cta a {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  background: #25d366; color: #fff !important;
+  font-size: 13px !important; font-weight: 600; letter-spacing: 0.04em; text-decoration: none;
+}
+.contact-details .contact-wa-cta a:hover { background: #1ebe5a; }
