@@ -152,15 +152,22 @@
   const $ = (id) => document.getElementById(id);
   const app = $('app'), boton = $('boton'), estado = $('estado'), nota = $('nota'), charla = $('charla');
   const clave = new URLSearchParams(location.search).get('c') || '';
+  // llamadas.kuper.media/<demo> es la demo de un prospecto: se manda como ?demo=<demo> a la API.
+  const qs = (() => { const p = new URLSearchParams(location.search); const d = location.pathname.replace(/^\/+|\/+$/g, ''); if (d && !p.has('demo')) p.set('demo', d); const t = p.toString(); return t ? `?${t}` : ''; })();
   const cliente = new RetellWebClient();
   let enLlamada = false;
 
-  fetch(`/api/config${location.search}`).then((r) => r.json()).then((c) => {
+  fetch(`/api/config${qs}`).then((r) => r.json()).then((c) => {
     document.title = `Habla con ${c.asistente} · ${c.negocio}`;
     $('titulo').textContent = `Habla con ${c.asistente}`;
     window.__asistente = c.asistente;
     $('sub').textContent = c.sub || `${c.asistente} es la asistente virtual de ${c.negocio}. Pídele ${c.tipo_de_cita} como si llamaras por teléfono.`;
-    if (c.link_reservas) $('reservar').href = c.link_reservas;
+    if (c.link_reservas) $('reservar').href = c.link_reservas; else $('reservar').style.display = 'none';
+    if (c.logo) { document.querySelector('.logo').src = c.logo; document.querySelector('link[rel=icon]').href = c.logo; }
+    if (c.etiqueta) document.querySelector('.marca .mono').textContent = c.etiqueta;
+    const pon = (sel, items, fn) => { if (Array.isArray(items) && items.length) document.querySelector(sel).replaceChildren(...items.map(fn)); };
+    pon('.datos', c.datos, ([b, small]) => { const d = document.createElement('div'); d.append(Object.assign(document.createElement('b'), { textContent: b }), Object.assign(document.createElement('small'), { textContent: small })); return d; });
+    pon('.pasos', c.pasos, (t, i) => { const li = document.createElement('li'); li.append(Object.assign(document.createElement('span'), { textContent: String(i + 1).padStart(2, '0') }), t); return li; });
   }).catch(() => {});
 
   function mostrar(texto, esError = false) {
@@ -217,7 +224,7 @@
     $('reservar').classList.remove('visible');
     mostrar('Conectando…');
     try {
-      const r = await fetch(`/api/llamada${location.search}`, { method: 'POST' });
+      const r = await fetch(`/api/llamada${qs}`, { method: 'POST' });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'No se pudo iniciar la llamada.');
       await cliente.startCall(d);

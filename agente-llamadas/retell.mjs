@@ -59,7 +59,7 @@ ${lista(cfg.preguntas_frecuentes)}
 
 ## Objetivo
 Tu meta principal es agendar ${cfg.tipo_de_cita}.
-
+${cfg.instrucciones ? `\n## Cómo atender\n${cfg.instrucciones}\n\n## Reglas\n- Respuestas cortas: una o dos frases por turno. Es una llamada telefónica, no un correo.\n- Todo lo que escribes se lee en voz alta: nunca uses símbolos, barras, abreviaturas ni viñetas. Di "pesos" en vez de "$" y los correos como "arroba" y "punto".\n- Nunca inventes precios, horarios ni datos que no estén aquí; si no sabes algo, dilo y ofrece que un asesor le contacte.\n- Si la persona pide hablar con un humano, toma su nombre y teléfono y dile que un asesor le llamará.` : `
 ## Cómo agendar
 1. Entiende qué necesita la persona en una o dos preguntas.
 2. Pregunta qué día y en qué horario le acomoda.
@@ -84,7 +84,7 @@ ${configFunciones() ? `Si la persona ya tiene una cita y quiere moverla o cancel
 - Di fechas y horas de forma natural ("el martes 4 a las 10 de la mañana"), nunca en formato técnico.
 - Si no sabes algo, dilo y ofrece que un asesor le contacte en la cita.
 - Si es una llamada saliente, presenta el motivo en la primera frase y pregunta si es buen momento para hablar. Si la persona no quiere, agradece y termina la llamada sin insistir.
-- Si la persona pide hablar con un humano${cfg.numero_transferencia ? ', transfiere la llamada' : ', toma su nombre y dile que un asesor le devolverá la llamada'}.`;
+- Si la persona pide hablar con un humano${cfg.numero_transferencia ? ', transfiere la llamada' : ', toma su nombre y dile que un asesor le devolverá la llamada'}.`}`;
 }
 
 function herramientas() {
@@ -146,7 +146,7 @@ async function crear() {
     await api('PATCH', `/update-retell-llm/${llmId}`, llm);
     await api('PATCH', `/update-agent/${previo.agent_id}`, agente);
     console.log(`Agente actualizado: ${previo.agent_id} (LLM ${llmId})`);
-    await sincronizarFunciones(llmId);
+    if (!cfg.instrucciones) await sincronizarFunciones(llmId);
     return;
   }
 
@@ -156,6 +156,7 @@ async function crear() {
     response_engine: { type: 'retell-llm', llm_id: nuevoLlm.llm_id },
   });
   console.log(`Agente creado: ${nuevo.agent_id} (LLM ${nuevoLlm.llm_id})`);
+  if (cfg.instrucciones) return; // demo de prospecto: toma los datos, sin calendario
   await sincronizarFunciones(nuevoLlm.llm_id);
   console.log('Siguiente paso: en el panel de Retell agrega las funciones de Cal.com (ver LEEME.md).');
 }

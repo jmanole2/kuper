@@ -6,7 +6,7 @@
 // La clave de Retell se queda en el servidor: el navegador solo recibe un token de un solo uso por llamada.
 
 import { createServer } from 'node:http';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as panel from './panel.mjs';
@@ -15,6 +15,14 @@ import * as marcador from './marcador.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
+
+// Demos para prospectos: cada archivo demos/<nombre>.json es otra asistente (llamadas.kuper.media/<nombre>).
+const demos = new Map();
+const dirDemos = join(aqui, 'demos');
+if (existsSync(dirDemos)) for (const f of readdirSync(dirDemos).filter((x) => /^[a-z0-9-]+\.json$/.test(x))) {
+  try { demos.set(f.slice(0, -5), JSON.parse(readFileSync(join(dirDemos, f), 'utf8'))); } catch (e) { console.error(`demos/${f}: ${e.message}`); }
+}
+const demoDe = (url) => demos.get(String(url.searchParams.get('demo') || '')) || null;
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -74,9 +82,10 @@ function json(res, codigo, datos) {
 
 async function crearLlamada(req, res) {
   const url = new URL(req.url, 'http://x');
-  const ventas = esPruebaVentas(url);
+  const demo = demoDe(url);
+  const ventas = !demo && esPruebaVentas(url);
   if (url.searchParams.has('ventas') && !ventas) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
-  if (!ventas && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
+  if (!ventas && !demo && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
   if (!KEY) return json(res, 500, { error: 'El servidor no tiene configurada la clave de Retell.' });
   const ip = ipDe(req);
   const limite = permitir(ip);
@@ -89,7 +98,8 @@ async function crearLlamada(req, res) {
         agent_id: await buscarVentas(), metadata: { origen: 'prueba-ventas' },
         // Empresa de mentira para probar: ?ventas=CLAVE&empresa=Clínica Sonrisa&giro=dentista&ciudad=Puebla
         retell_llm_dynamic_variables: Object.fromEntries(['empresa', 'giro', 'ciudad'].map((k) => [k, String(url.searchParams.get(k) || { empresa: 'Clínica Dental Sonrisa', giro: 'dentista', ciudad: 'Ciudad de México' }[k]).slice(0, 80)])),
-      } : { agent_id: await buscarAgente(), metadata: { origen: 'demo-web' } }),
+      } : demo ? { agent_id: await agentePorNombre(demo.nombre_agente), metadata: { origen: `demo-${url.searchParams.get('demo')}` } }
+        : { agent_id: await buscarAgente(), metadata: { origen: 'demo-web' } }),
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(`create-web-call ${r.status}: ${JSON.stringify(d)}`);
@@ -134,6 +144,11 @@ const server = createServer(async (req, res) => {
   const ruta = new URL(req.url, 'http://x').pathname;
   if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro), citas: Boolean(funciones), ventas: marcando ? 'marcando' : buscarVentas ? 'solo_pruebas' : false });
   if (ruta === '/api/config') {
+    const demo = demoDe(new URL(req.url, 'http://x'));
+    if (demo) {
+      return json(res, 200, { negocio: demo.negocio, asistente: demo.asistente, tipo_de_cita: demo.tipo_de_cita, link_reservas: demo.link_reservas || '',
+        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', etiqueta: demo.pagina?.etiqueta || '' });
+    }
     if (esPruebaVentas(new URL(req.url, 'http://x'))) {
       return json(res, 200, { negocio: cfg.negocio, asistente: cfg.ventas.asistente, tipo_de_cita: cfg.tipo_de_cita, link_reservas: cfg.link_reservas || '', ventas: true,
         sub: `Prueba del agente de ventas: ${cfg.ventas.asistente} te llama como si fueras la empresa. Contesta como lo haría el negocio.` });
@@ -149,11 +164,11 @@ const server = createServer(async (req, res) => {
   if (ruta === '/api/llamada' && req.method === 'POST') return crearLlamada(req, res);
   const fn = /^\/funciones\/([a-z_]+)$/.exec(ruta);
   if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
-  const archivo = archivos[ruta];
+  const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null);
   if (archivo && req.method === 'GET') {
     const p = resolve(aqui, archivo[0]);
     if (existsSync(p)) {
-      res.writeHead(200, { 'Content-Type': archivo[1], 'Cache-Control': ruta === '/' ? 'no-cache' : 'public, max-age=86400' });
+      res.writeHead(200, { 'Content-Type': archivo[1], 'Cache-Control': archivo === archivos['/'] ? 'no-cache' : 'public, max-age=86400' });
       return res.end(readFileSync(p));
     }
   }

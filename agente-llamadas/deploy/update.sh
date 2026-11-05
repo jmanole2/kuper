@@ -11,6 +11,12 @@ sudo -u agente git -C "$DIR" checkout -B "$RAMA" "origin/$RAMA"
 if grep -q '^RETELL_API_KEY=.\+' "$APP/.env"; then
   sudo -u agente env PATH="$DIR/node/bin:/usr/bin:/bin" HOME=/home/agente \
     bash -c "cd '$DIR' && node --env-file='$APP/.env' agente-llamadas/retell.mjs crear" || true
+  # Demos de prospectos (agente-llamadas/demos/*.json)
+  for f in "$APP"/demos/*.json; do
+    [ -e "$f" ] || continue
+    sudo -u agente env PATH="$DIR/node/bin:/usr/bin:/bin" HOME=/home/agente \
+      bash -c "cd '$DIR' && node --env-file='$APP/.env' agente-llamadas/retell.mjs crear --config '$f'" || true
+  done
 fi
 systemctl restart agente-llamadas
 systemctl --no-pager status agente-llamadas | head -5
