@@ -80,6 +80,8 @@ export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = 
       // Demos de prospectos: sus llamadas también llegan al panel de Kuper, marcadas con el nombre de la demo.
       const demos = demosIds ? await demosIds().catch(() => []) : [];
       const etiquetaDe = new Map(demos.map((d) => [d.id, d.etiqueta]));
+      // Demos que ya son clientes: sus llamadas van a SU panel (sin etiqueta de demo).
+      const panelDe = new Map(demos.filter((d) => d.panel?.slug && d.panel?.key).map((d) => [d.id, d.panel]));
       const lista = await retell('POST', '/v3/list-calls', {
         filter_criteria: { agent: [id, idVentas, ...demos.map((d) => d.id)].filter(Boolean).map((agent_id) => ({ agent_id })), call_status: { type: 'enum', op: 'in', value: ['ended', 'not_connected', 'error'] },
           start_timestamp: { type: 'number', op: 'ge', value: ahora - VENTANA_MS } },
@@ -94,9 +96,10 @@ export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = 
         const call = await retell('GET', `/v2/get-call/${encodeURIComponent(resumen.call_id)}`);
         const [ruta, cuerpo] = prospecto
           ? [`prospectos/${encodeURIComponent(prospecto)}/resultado`, resultadoVentas({ ...resumen, ...call })]
-          : ['llamadas', conEtiqueta(aPanel(call), etiquetaDe.get(call.agent_id || resumen.agent_id))];
-        const r = await hooks.fetch(`${panel.url}/api/${encodeURIComponent(panel.slug)}/${ruta}`, {
-          method: 'POST', headers: { Authorization: `Bearer ${panel.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
+          : ['llamadas', panelDe.has(call.agent_id || resumen.agent_id) ? aPanel(call) : conEtiqueta(aPanel(call), etiquetaDe.get(call.agent_id || resumen.agent_id))];
+        const destino = panelDe.get(call.agent_id || resumen.agent_id) || panel;
+        const r = await hooks.fetch(`${panel.url}/api/${encodeURIComponent(destino.slug)}/${ruta}`, {
+          method: 'POST', headers: { Authorization: `Bearer ${destino.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
         });
         if (r.status === 404 && prospecto) { log.error(`[panel] prospecto ${prospecto} ya no existe`); enviadas.add(resumen.call_id); guardar(); continue; }
         if (!r.ok) throw new Error(`panel ${r.status}: ${(await r.text()).slice(0, 200)}`);

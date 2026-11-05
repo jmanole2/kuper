@@ -64,10 +64,13 @@ Horario de citas: ${cfg.horario} (hora del centro de México).
 
 ## Preguntas frecuentes
 ${lista(cfg.preguntas_frecuentes)}
-
+${cfg.panel_slug ? `
+## Información actualizada por el equipo (tiene prioridad sobre todo lo anterior si algo no coincide)
+{{info_panel}}
+` : ''}
 ## Objetivo
 Tu meta principal es agendar ${cfg.tipo_de_cita}.
-${cfg.instrucciones ? `\n## Cómo atender\n${cfg.instrucciones}\n\n## Reglas\n- Respuestas cortas: una o dos frases por turno. Es una llamada telefónica, no un correo.\n- Todo lo que escribes se lee en voz alta: nunca uses símbolos, barras, abreviaturas ni viñetas. Di "pesos" en vez de "$" y los correos como "arroba" y "punto".\n- Nunca inventes precios, horarios ni datos que no estén aquí; si no sabes algo, dilo y ofrece que un asesor le contacte.\n- Si la persona pide hablar con un humano, toma su nombre y teléfono y dile que un asesor le llamará.` : `
+${cfg.instrucciones ? `\n## Cómo atender\n${cfg.instrucciones}\n\n## Reglas\n- Respuestas cortas: una o dos frases por turno. Es una llamada telefónica, no un correo.\n- Todo lo que escribes se lee en voz alta: nunca uses símbolos, barras, abreviaturas ni viñetas. Di "pesos" en vez de "$" y los correos como "arroba" y "punto". Las cifras dilas con palabras y completas: "$15,500 / 6 meses" se dice "quince mil quinientos pesos al mes con contrato de seis meses".\n- Nunca inventes precios, horarios ni datos que no estén aquí; si no sabes algo, dilo y ofrece que un asesor le contacte.\n- Si la persona pide hablar con un humano, toma su nombre y teléfono y dile que un asesor le llamará.` : `
 ## Cómo agendar
 1. Entiende qué necesita la persona en una o dos preguntas.
 2. Pregunta qué día y en qué horario le acomoda.
@@ -127,13 +130,15 @@ async function crear() {
     begin_message: '{{saludo}}',
     start_speaker: 'agent',
     model_config: { type: 'cascading', primary: { model: cfg.modelo }, temperature: 0.2 },
-    default_dynamic_variables: { saludo: saludoEntrante, nombre_cliente: 'desconocido', motivo_llamada: 'ninguno' },
+    default_dynamic_variables: { saludo: saludoEntrante, nombre_cliente: 'desconocido', motivo_llamada: 'ninguno', ...(cfg.panel_slug ? { info_panel: 'Sin cambios recientes.' } : {}) },
   };
   const agente = {
     agent_name: cfg.nombre_agente,
     language: 'es-419',
     voice_id: await elegirVoz(),
     // Topes para no gastar créditos si alguien deja la llamada abierta.
+    // Qué tanto lo interrumpe un ruido o una palabra suelta (0 a 1; 1 = se calla con cualquier sonido).
+    interruption_sensitivity: Number.isFinite(Number(cfg.interrupcion)) ? Number(cfg.interrupcion) : 0.6,
     max_call_duration_ms: 10 * 60 * 1000,
     end_call_after_silence_ms: 30 * 1000,
     post_call_analysis_data: [
@@ -234,6 +239,8 @@ async function crearVentas() {
     agent_name: V.nombre_agente,
     language: 'es-419',
     voice_id: await elegirVoz(V.voz_id, V.genero_voz || 'male'),
+    // Qué tanto lo interrumpe un ruido o una palabra suelta (0 a 1; 1 = se calla con cualquier sonido).
+    interruption_sensitivity: Number.isFinite(Number(cfg.interrupcion)) ? Number(cfg.interrupcion) : 0.6,
     max_call_duration_ms: 6 * 60 * 1000,
     end_call_after_silence_ms: 20 * 1000,
     voicemail_option: { action: { type: 'hangup' } },

@@ -97,7 +97,8 @@ async function crearLlamada(req, res) {
         agent_id: await buscarVentas(), metadata: { origen: 'prueba-ventas' },
         // Empresa de mentira para probar: ?ventas=CLAVE&empresa=Clínica Sonrisa&giro=dentista&ciudad=Puebla
         retell_llm_dynamic_variables: Object.fromEntries(['empresa', 'giro', 'ciudad'].map((k) => [k, String(url.searchParams.get(k) || { empresa: 'Clínica Dental Sonrisa', giro: 'dentista', ciudad: 'Ciudad de México' }[k]).slice(0, 80)])),
-      } : demo ? { agent_id: await agentePorNombre(demo.nombre_agente), metadata: { origen: `demo-${url.searchParams.get('demo')}` } }
+      } : demo ? { agent_id: await agentePorNombre(demo.nombre_agente), metadata: { origen: `demo-${url.searchParams.get('demo')}` },
+        ...(await infoDelPanel(demo).then((t) => (t ? { retell_llm_dynamic_variables: { info_panel: t } } : {}))) }
         : { agent_id: await buscarAgente(), metadata: { origen: 'demo-web' } }),
     });
     const d = await r.json().catch(() => ({}));
@@ -176,7 +177,25 @@ const server = createServer(async (req, res) => {
 });
 
 // Cada llamada terminada se manda al panel de Kuper como lead (si el .env tiene PANEL_URL, PANEL_SLUG y PANEL_API_KEY).
-const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio })))).filter((d) => d.id);
+// "panel_slug" en la demo + PANEL_KEY_<SLUG> en el .env: sus llamadas van al panel de ese cliente.
+const llaveDe = (slug) => process.env[`PANEL_KEY_${String(slug).toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`] || '';
+// Lo que el cliente escribió en su panel ("Lo que sabe tu agente"), para la llamada (se guarda 5 min).
+const infoCache = new Map();
+async function infoDelPanel(demo) {
+  const key = llaveDe(demo.panel_slug), base = String(process.env.PANEL_URL || '').replace(/\/+$/, '');
+  if (!demo.panel_slug || !key || !base) return null;
+  const c = infoCache.get(demo.panel_slug);
+  if (c && Date.now() - c.t < 5 * 60000) return c.texto;
+  try {
+    const r = await fetch(`${base}/api/${encodeURIComponent(demo.panel_slug)}/conocimiento`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(3000) });
+    const j = r.ok ? await r.json() : null;
+    const texto = j && typeof j.texto === 'string' && j.texto.trim() ? j.texto.trim().slice(0, 14000) : null;
+    infoCache.set(demo.panel_slug, { t: Date.now(), texto });
+    return texto;
+  } catch { return c?.texto || null; }
+}
+const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio,
+  panel: d.panel_slug && llaveDe(d.panel_slug) ? { slug: d.panel_slug, key: llaveDe(d.panel_slug) } : null })))).filter((d) => d.id);
 const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, demosIds, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
 // Agente de ventas: marca a la siguiente empresa de la lista del panel (necesita RETELL_FROM_NUMBER).
 const marcando = sincro && buscarVentas ? marcador.iniciar({ key: KEY, ventasId: buscarVentas }) : null;
