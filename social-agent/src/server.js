@@ -141,6 +141,11 @@ export function createApp() {
     if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado });
     res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
   });
+  // El agente pregunta en el momento qué oficinas hay libres (sale de su Airtable). ?sede=&personas=&tipo=
+  api.get('/disponibilidad', (req, res) => {
+    const q = (k) => String(req.query[k] || '').slice(0, 60);
+    res.set('Cache-Control', 'no-store').json(airtable.consultar(req.client, { sede: q('sede'), personas: q('personas'), tipo: q('tipo') }));
+  });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
     try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor }); res.json({ ok: true }); }

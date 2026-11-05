@@ -47,3 +47,15 @@ test('sincroniza con paginación y va al final de lo que sabe el agente', async 
   const st2 = await AT.sincronizar(c);
   assert.match(st2.error, /token/); assert.match(st2.texto, /EL NIDO/);
 });
+
+test('consulta en el momento: por sede, personas y tipo; si no hay, lo dice y da alternativas', async () => {
+  AT.hooks.fetch = async () => new Response(JSON.stringify({ records: regs }), { status: 200 });
+  const c = db.createClient({ slug: 'ih2', nombre: 'Inhouse 2', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, config: {}, credentials: { airtable: { token: 't', base: 'appHoGG9LpHgG3WUa', tabla: 'tblGCmTx96WptEpqK' } } });
+  await AT.sincronizar(c);
+  const coy = AT.consultar(c, { sede: 'Coyoacán', personas: 5 });
+  assert.match(coy.resultado, /^NO hay disponibilidad en Coyoacán para 5 personas/);
+  assert.doesNotMatch(coy.resultado, /SANDIA/);
+  const roma = AT.consultar(c, { sede: 'roma' });
+  assert.match(roma.resultado, /Roma Norte: EL NIDO/);
+  assert.equal(AT.consultar(db.createClient({ slug: 'x3', nombre: 'X', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, config: {}, credentials: {} }), {}).conectado, false);
+});

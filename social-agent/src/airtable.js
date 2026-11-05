@@ -40,7 +40,7 @@ export async function leerRegistros({ token, base, tabla, vista }) {
 }
 
 /** Registros → texto para el agente, agrupado por sede. Solo lo disponible (o que se libera). */
-export function aTexto(registros, ahora = new Date()) {
+export function aTexto(registros, ahora = new Date(), { soloFilas = false } = {}) {
   const filas = [];
   for (const r of registros) {
     const f = r.fields || {};
@@ -54,8 +54,9 @@ export function aTexto(registros, ahora = new Date()) {
     const pax = Number(campo(f, 'capacidad')) || null, m2 = Number(campo(f, 'metro')) || null;
     const precio = Number(String(campo(f, 'ideal estrategia', 'precio') ?? '').replace(/[$,\s]/g, '')) || null;
     const cuando = ocup === 'disponible' ? 'disponible ya' : libera ? `se libera el ${fecha(libera)}` : 'disponible';
-    filas.push({ sede, linea: `- ${[nombre && num ? `${nombre} (${num})` : nombre || num, tipo.toLowerCase()].filter(Boolean).join(', ')}${pax ? `, para ${pax} ${pax === 1 ? 'persona' : 'personas'}` : ''}${m2 ? `, ${m2} m²` : ''}${precio ? `, ${mxn(precio)} al mes + IVA` : ''}: ${cuando}` });
+    filas.push({ sede, nombre: nombre || num, num, tipo: /puesto/i.test(tipo) ? 'puesto fijo' : 'oficina privada', pax, m2, precio, libre_ya: ocup === 'disponible', se_libera: ocup === 'disponible' ? null : libera.slice(0, 10) || null, linea: `- ${[nombre && num ? `${nombre} (${num})` : nombre || num, tipo.toLowerCase()].filter(Boolean).join(', ')}${pax ? `, para ${pax} ${pax === 1 ? 'persona' : 'personas'}` : ''}${m2 ? `, ${m2} m²` : ''}${precio ? `, ${mxn(precio)} al mes + IVA` : ''}: ${cuando}` });
   }
+  if (soloFilas) return filas.map(({ linea, ...x }) => ({ ...x, texto: linea.replace(/^- /, '') }));
   const sello = new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(ahora);
   if (!filas.length) return `## Oficinas y puestos fijos disponibles ahora (actualizado ${sello})\nPor ahora no hay oficinas ni puestos fijos disponibles. Si preguntan precios, da los de referencia de la lista general, aclara que hoy no hay disponible, ofrece anotarlos con prioridad para cuando se libere uno de su tamaño y zona, y pásalo con un asesor.`;
   const porSede = {};
@@ -79,7 +80,7 @@ export async function sincronizar(client) {
   try {
     const regs = await leerRegistros(a);
     const t = aTexto(regs);
-    const st = { texto: t, n: (t.match(/^- /gm) || []).length, total: regs.length, at: new Date().toISOString(), error: null };
+    const st = { texto: t, items: aTexto(regs, new Date(), { soloFilas: true }), n: (t.match(/^- /gm) || []).length, total: regs.length, at: new Date().toISOString(), error: null };
     db.kvSet(clave(client.id), JSON.stringify(st));
     return st;
   } catch (e) {
@@ -103,4 +104,28 @@ export function iniciar() {
   const correr = async () => { for (const c of db.listClients()) if (configurado(c)) await sincronizar(c).catch(() => {}); };
   setTimeout(correr, 30000).unref?.();
   return setInterval(correr, CADA_MS).unref?.();
+}
+
+const n2 = (x) => norm(x).replace(/\s+/g, ' ');
+const ALIAS_SEDE = { roma: 'roma norte', 'la roma': 'roma norte', hundido: 'parque hundido', borja: 'san borja', 'insurgentes san borja': 'san borja', valle: 'del valle' };
+/** Lo que el agente pregunta en el momento: ¿qué hay libre? Filtra por sede, personas y tipo. */
+export function consultar(client, { sede = '', personas = 0, tipo = '' } = {}) {
+  if (!configurado(client)) return { conectado: false, resultado: 'No hay un sistema de disponibilidad conectado: no digas que hay o que no hay lugar; ofrece que un asesor lo confirme.' };
+  bloque(client); // si ya pasaron 15 minutos, se vuelve a leer en segundo plano
+  const st = estado(client);
+  const items = Array.isArray(st?.items) ? st.items : [];
+  let s = n2(sede); s = ALIAS_SEDE[s] || s;
+  const p = Number(personas) || 0;
+  const t = /puesto/i.test(tipo) ? 'puesto fijo' : /oficina/i.test(tipo) ? 'oficina privada' : '';
+  const enSede = (x) => !s || n2(x.sede).includes(s) || s.includes(n2(x.sede));
+  const cabe = (x) => !p || (x.pax || 0) >= p;
+  const del = (x) => !t || x.tipo === t;
+  const exactas = items.filter((x) => enSede(x) && cabe(x) && del(x)).sort((a, b) => (a.pax || 0) - (b.pax || 0));
+  const otras = exactas.length || !s ? [] : items.filter((x) => cabe(x) && del(x)).sort((a, b) => (a.pax || 0) - (b.pax || 0)).slice(0, 4);
+  const linea = (x) => `${x.sede}: ${x.texto}`;
+  const hace = st?.at ? Math.round((Date.now() - new Date(st.at).getTime()) / 60000) : null;
+  const resultado = exactas.length
+    ? `Disponibles que cumplen lo que pidió (dato real, actualizado hace ${hace ?? '?'} min):\n${exactas.slice(0, 6).map(linea).join('\n')}`
+    : `NO hay disponibilidad${s ? ` en ${sede}` : ''}${p ? ` para ${p} personas` : ''}${t ? ` (${t})` : ''} en este momento. Díselo con claridad, ofrece anotarlo con prioridad para cuando se libere y pásalo con un asesor.${otras.length ? `\nAlternativas disponibles en otras sedes:\n${otras.map(linea).join('\n')}` : ''}`;
+  return { conectado: true, actualizado: st?.at || null, opciones: exactas.slice(0, 6), alternativas: otras, resultado };
 }
