@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import * as panel from './panel.mjs';
 import { configFunciones, crearFunciones, eventoDeLink } from './funciones.mjs';
 import * as marcador from './marcador.mjs';
+import { agentePorNombre as buscarEnRetell } from './agentes.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -42,9 +43,7 @@ const archivos = {
 const idsAgentes = new Map(process.env.RETELL_AGENT_ID ? [[cfg.nombre_agente, process.env.RETELL_AGENT_ID]] : []);
 async function agentePorNombre(nombre) {
   if (idsAgentes.has(nombre)) return idsAgentes.get(nombre);
-  const r = await fetch('https://api.retellai.com/list-agents', { headers: { Authorization: `Bearer ${KEY}` } });
-  if (!r.ok) throw new Error(`list-agents ${r.status}: ${await r.text()}`);
-  const a = (await r.json()).find((x) => x.agent_name === nombre);
+  const a = await buscarEnRetell(KEY, nombre);
   if (!a) throw new Error(`No existe el agente "${nombre}". Córrelo primero: node agente-llamadas/retell.mjs crear`);
   idsAgentes.set(nombre, a.agent_id);
   return a.agent_id;

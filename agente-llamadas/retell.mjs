@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configFunciones, definiciones } from './funciones.mjs';
+import { agentePorNombre } from './agentes.mjs';
 
 const API = 'https://api.retellai.com';
 const aqui = dirname(fileURLToPath(import.meta.url));
@@ -32,6 +33,13 @@ async function api(metodo, ruta, cuerpo) {
   const texto = await r.text();
   if (!r.ok) throw new Error(`${metodo} ${ruta} -> ${r.status}: ${texto}`);
   return texto ? JSON.parse(texto) : null;
+}
+
+// Agente completo (con response_engine) por nombre, o null.
+async function buscar(nombre) {
+  if (!KEY) throw new Error('Falta RETELL_API_KEY. Agrégala como variable de entorno (ver agente-llamadas/LEEME.md).');
+  const a = await agentePorNombre(KEY, nombre);
+  return a ? api('GET', `/get-agent/${a.agent_id}`) : null;
 }
 
 const tz = cfg.zona_horaria;
@@ -137,8 +145,7 @@ async function crear() {
     ],
   };
 
-  const existentes = await api('GET', '/list-agents');
-  const previo = existentes.find((a) => a.agent_name === cfg.nombre_agente);
+  const previo = await buscar(cfg.nombre_agente);
 
   if (previo) {
     // No mandamos general_tools: así no se borran las funciones de Cal.com agregadas en el panel.
@@ -238,7 +245,7 @@ async function crearVentas() {
       { type: 'string', name: 'correo_contacto', description: 'Correo que dio la persona, si lo dio.' },
     ],
   };
-  const previo = (await api('GET', '/list-agents')).find((a) => a.agent_name === V.nombre_agente);
+  const previo = await buscar(V.nombre_agente);
   let llmId;
   if (previo) {
     llmId = previo.response_engine?.llm_id;
@@ -271,8 +278,7 @@ async function llamar() {
   }
   const nombre = args[2] || 'desconocido';
   const motivo = args[3] || `ofrecerle ${cfg.tipo_de_cita}`;
-  const agentes = await api('GET', '/list-agents');
-  const agente = agentes.find((a) => a.agent_name === cfg.nombre_agente);
+  const agente = await buscar(cfg.nombre_agente);
   if (!agente) throw new Error('Primero crea el agente con el comando "crear".');
   const quien = nombre !== 'desconocido' ? `¿Hablo con ${nombre}? ` : '';
   const r = await api('POST', '/v2/create-phone-call', {
