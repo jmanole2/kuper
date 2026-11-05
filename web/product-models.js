@@ -5,7 +5,7 @@
 //   'cubeta5'  → cubeta de 5 L (tapa de borde redondeado, collar, asa redonda translúcida)
 //   'envase1'  → envase de 1 L de pared delgada (cónico, con tapa plana a presión)
 //   'cubeta10' → cubeta de 10 L de boca roscada (borde, rosca, anillo de soporte, sin asa);
-//                'envase1kg' es el mismo envase (grado industrial, 1 kg)
+//   'envase1kg' → envase de 1 kg: como el de 1 L, más bajo y ancho, sin rosca
 //   'hogar12'  → cubeta del hogar de 12 L (boca ancha con pico, escalón, base redondeada,
 //                asa de alambre con agarradera negra)
 // La cubeta de 4 L es la del hero (bucket-model.js).
@@ -91,6 +91,10 @@ export const DIMS = {
     gripLen: 95,
     gripR: 10,
     handleRest: 1.95,  // asa caída al frente sin tocar la pared
+  },
+  // Envase de 1 kg (grado industrial): como el de 1 L pero más bajo y ancho, sin rosca.
+  envase1kg: {
+    E: 128, rTop: 58, rBase: 47, wall: 0.9, beadY: 112, lidH: 6,
   },
   envase1: {
     E: 150,
@@ -533,7 +537,9 @@ function addWireBail(pivot, x0, d, mats) {
 
 const cubeta10L = (o) => cubeta19({ ...o, dims: { ...DIMS.cubeta10L, ...(o.dims || {}) } });
 
-const BUILDERS = { cubeta19, cubeta10L, cubeta10, envase1kg: cubeta10, cubeta5, envase1, hogar12 };
+const envase1kg = (o) => envase1({ ...o, dims: { ...DIMS.envase1kg, ...(o.dims || {}) } });
+
+const BUILDERS = { cubeta19, cubeta10L, cubeta10, cubeta5, envase1, envase1kg, hogar12 };
 
 export function createProduct(kind, opts = {}) {
   const build = BUILDERS[kind];

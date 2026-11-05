@@ -37,7 +37,7 @@ const categories = [
       { kind: 'Cubeta de', size: '10 L', line: 'Cubetas', model: 'cubeta10L', note: HANDLE_NOTE, handle: true, scale: 0.95 },
       { kind: 'Cubeta de', size: '5 L', line: 'Cubetas', model: 'cubeta5', note: HANDLE_NOTE, handle: true, scale: 0.92 },
       { kind: 'Cubeta de', size: '4 L', line: 'Cubetas', note: HANDLE_NOTE, handle: true, scale: 0.88 },
-      { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', model: 'envase1', handle: false, scale: 0.78 },
+      { kind: 'Envase de', size: '1 kg', line: 'Envases de pared ancha', model: 'envase1kg', handle: false, scale: 0.7 },
       { kind: 'Cubeta del hogar', size: '12 L', line: 'Línea hogar', model: 'hogar12', note: HANDLE_NOTE, handle: true, scale: 0.96 }
     ]
   },
