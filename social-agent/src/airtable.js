@@ -57,11 +57,11 @@ export function aTexto(registros, ahora = new Date()) {
     filas.push({ sede, linea: `- ${[nombre && num ? `${nombre} (${num})` : nombre || num, tipo.toLowerCase()].filter(Boolean).join(', ')}${pax ? `, para ${pax} ${pax === 1 ? 'persona' : 'personas'}` : ''}${m2 ? `, ${m2} m²` : ''}${precio ? `, ${mxn(precio)} al mes + IVA` : ''}: ${cuando}` });
   }
   const sello = new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(ahora);
-  if (!filas.length) return `## Oficinas y puestos fijos disponibles ahora (actualizado ${sello})\nPor ahora no hay oficinas ni puestos fijos disponibles. Ofrece anotar a la persona con prioridad para cuando se libere uno de su tamaño y zona, y pásalo con un asesor.`;
+  if (!filas.length) return `## Oficinas y puestos fijos disponibles ahora (actualizado ${sello})\nPor ahora no hay oficinas ni puestos fijos disponibles. Si preguntan precios, da los de referencia de la lista general, aclara que hoy no hay disponible, ofrece anotarlos con prioridad para cuando se libere uno de su tamaño y zona, y pásalo con un asesor.`;
   const porSede = {};
   for (const x of filas) (porSede[x.sede] ||= []).push(x.linea);
   return `## Oficinas y puestos fijos disponibles ahora (actualizado ${sello})
-Esta es la ÚNICA lista de disponibilidad: solo ofrece oficinas y puestos fijos que estén aquí. La lista general de precios sirve de referencia, no dice qué está libre. Si no hay de su tamaño o zona, ofrece anotarlo con prioridad para cuando se libere y pásalo con un asesor. La visita y el apartado siempre los confirma un asesor.
+Esta lista manda sobre la disponibilidad: ofrece como disponibles solo las oficinas y puestos fijos que estén aquí, con el precio que trae aquí. La lista general de precios (más arriba) sigue sirviendo de respaldo: si una oficina de aquí no trae precio, usa el de referencia; y si preguntan por el precio de algo que no está en esta lista, dales el precio de referencia, aclara que hoy no hay disponible y ofrece anotarlos con prioridad para cuando se libere, y pásalo con un asesor. La visita y el apartado siempre los confirma un asesor.
 ${Object.entries(porSede).map(([s, l]) => `### ${s}\n${l.join('\n')}`).join('\n')}`;
 }
 
