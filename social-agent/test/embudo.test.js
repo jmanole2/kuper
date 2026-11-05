@@ -78,3 +78,16 @@ test('las páginas se ven y mover por fetch funciona', async () => {
     assert.match(await (await fetch(`${base}/app/leads/${l.id}/chat`, { headers: { cookie } })).text(), /Datos del lead/);
   } finally { server.close(); }
 });
+
+test('horario de la IA: siempre por defecto, y se guarda el del equipo', () => {
+  assert.equal(E.horarioIA(c).modo, 'siempre');
+  const c2 = E.guardarHorario(c, { ia_modo: 'fuera_de_horario', de: '9', a: '18', dias: ['1', '2', '3', '4', '5'] });
+  assert.deepEqual(E.horarioIA(c2), { modo: 'fuera_de_horario', dias: [1, 2, 3, 4, 5], de: 9, a: 18, tz: 'America/Mexico_City' });
+  assert.throws(() => E.guardarHorario(c, { de: '18', a: '9', dias: ['1'] }), /después/);
+});
+
+test('el agente puede mandar el tipo de etapa', () => {
+  const l = db.upsertLead(c.id, { telefono: '5500000123', origen: 'whatsapp' });
+  assert.equal(E.datosDelAgente(c, l, { etapa: 'conversacion' }).etapa, 'contestado');
+  assert.equal(E.datosDelAgente(c, db.getLead(c.id, l.id), { etapa: 'cita' }).etapa, 'en-visita');
+});

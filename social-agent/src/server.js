@@ -130,7 +130,8 @@ export function createApp() {
     const archivos = (Array.isArray(req.client.config.archivos_agente) ? req.client.config.archivos_agente : [])
       .filter((a) => fs.existsSync(a.archivo))
       .map((a) => ({ clave: `archivo-${a.id}`, nombre: a.nombre, cuando: a.cuando, tipo: a.tipo, url: mediaUrl(a.archivo), nombre_archivo: `${a.nombre.replace(/[\\/:*?"<>|]/g, '')}${path.extname(a.archivo)}` }));
-    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos } : { version: 0, texto: '', datos: {}, archivos });
+    const ia = embudo.horarioIA(req.client); // cuándo contesta la IA (lo elige el cliente en el panel)
+    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia } : { version: 0, texto: '', datos: {}, archivos, ia });
   });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
@@ -1102,6 +1103,13 @@ export function createApp() {
       const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));
       try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
+    });
+    router.post(`${prefix}/agente/horario`, (req, res) => {
+      try {
+        const c = embudo.guardarHorario(req.client, req.body || {});
+        db.logEvent({ clientId: c.id, tipo: 'horario_ia', detalle: `${embudo.MODOS_IA[c.config.ia_modo]} · equipo ${c.config.horario_equipo.de}-${c.config.horario_equipo.a}` });
+        res.redirect(`${base(req)}/agente?ok=1`);
+      } catch (e) { vista(req, res, { error: e.message }); }
     });
     // Archivos que el agente puede mandar por WhatsApp (brochure, catálogo, menú…).
     router.post(`${prefix}/agente/archivos`, (req, res, next) => uploadDoc.single('archivo')(req, res, (e) => (e ? vista(req, res, { error: e.message }) : next())), (req, res) => {

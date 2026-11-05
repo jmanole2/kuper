@@ -64,9 +64,11 @@ export function moverLead(client, leadId, etapaId) {
 /** El agente (o la API) mueve el lead: solo hacia adelante, y nunca saca a un lead de Clientes o Perdidos. */
 export function avanzarPorAgente(client, lead, etapaId) {
   const lista = etapas(client);
-  const destino = lista.find((x) => x.id === etapaId || slug(x.nombre) === slug(etapaId || ''));
-  if (!destino) return lead;
   const actual = etapaDe(client, lead);
+  // El agente puede mandar el tipo ("conversacion", "cita", "perdido"): va a la primera etapa de ese tipo que esté adelante.
+  const destino = lista.find((x) => x.id === etapaId || slug(x.nombre) === slug(etapaId || ''))
+    || (TIPOS[etapaId] ? lista.slice(lista.indexOf(actual) + 1).find((x) => x.tipo === etapaId) || (etapaId === 'perdido' ? lista.find((x) => x.tipo === 'perdido') : null) : null);
+  if (!destino) return lead;
   if (actual.tipo === 'cliente' || actual.tipo === 'perdido') return lead;
   if (lista.indexOf(destino) <= lista.indexOf(actual) && destino.tipo !== 'perdido') return lead;
   return moverLead(client, lead.id, destino.id);
@@ -144,6 +146,19 @@ export const temas = (client) => (Array.isArray(client?.config?.temas) && client
 
 /** Horario del equipo (para "fuera de horario"): client.config.horario_equipo = { dias: [1..5], de: 8, a: 18 }. */
 export const horarioEquipo = (client) => ({ dias: [1, 2, 3, 4, 5], de: 8, a: 18, ...(client?.config?.horario_equipo || {}) });
+
+/** Cuándo contesta la IA: 'siempre' (por defecto) o 'fuera_de_horario' (el equipo atiende en su horario). */
+export const MODOS_IA = { siempre: 'Siempre (las 24 horas)', fuera_de_horario: 'Solo fuera del horario del equipo' };
+export const horarioIA = (client) => ({ modo: MODOS_IA[client?.config?.ia_modo] ? client.config.ia_modo : 'siempre', ...horarioEquipo(client), tz: config.timezone });
+export function guardarHorario(client, body = {}) {
+  const dias = [].concat(body.dias || []).map(Number).filter((d) => d >= 0 && d <= 6);
+  const de = Number(body.de), a = Number(body.a);
+  if (!dias.length) throw new Error('Elige al menos un día del equipo.');
+  if (!(de >= 0 && de <= 23 && a >= 1 && a <= 24 && a > de)) throw new Error('La hora de salida debe ser después de la de entrada.');
+  const modo = MODOS_IA[body.ia_modo] ? body.ia_modo : 'siempre';
+  db.updateClient(client.id, { config: { ...client.config, ia_modo: modo, horario_equipo: { dias: [...new Set(dias)].sort(), de, a } } });
+  return db.getClient(client.id);
+}
 
 export function analitica(client, { dias = 30, ahora = Date.now() } = {}) {
   const desde = new Date(ahora - dias * 86400000);

@@ -8,6 +8,7 @@ import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
 import { embudoSection, analiticaSection, FICHA_CSS } from './embudo.js';
+import { horarioIA, MODOS_IA } from '../embudo.js';
 import * as CONOC from '../conocimiento.js';
 import { ESTADOS as PROS_ESTADOS, REGLAS as PROS_REGLAS } from '../prospeccion.js';
 import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro, IVAS, ivaDe, desglose, mensualidadTotal, etiquetaIva, fiscalDe, REGIMENES, USOS_CFDI } from '../plan.js';
@@ -955,6 +956,17 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
       </div>
     </div>
   </form>
+  ${(() => { const h = horarioIA(client); const DIAS = [[1, 'Lun'], [2, 'Mar'], [3, 'Mié'], [4, 'Jue'], [5, 'Vie'], [6, 'Sáb'], [0, 'Dom']];
+    const hora = (n) => `${n}:00`;
+    return html`<form class="card" method="post" action="${base}/agente/horario" style="margin-top:18px"><span class="mono">Horario de la IA</span>
+    <p class="muted small" style="margin:6px 0 10px">Si eliges "solo fuera del horario del equipo", en ese horario la IA no contesta: los mensajes te llegan aquí al panel para que tu equipo responda. Si nadie contesta, la IA retoma al terminar el horario. Así está ahora: <b>${MODOS_IA[h.modo]}</b>.</p>
+    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end">
+      <div><label>La IA contesta</label><select name="ia_modo">${Object.entries(MODOS_IA).map(([k, t]) => html`<option value="${k}" ${raw(k === h.modo ? 'selected' : '')}>${t}</option>`)}</select></div>
+      <div><label>Entra el equipo</label><select name="de">${Array.from({ length: 24 }, (_, i) => html`<option value="${i}" ${raw(i === h.de ? 'selected' : '')}>${hora(i)}</option>`)}</select></div>
+      <div><label>Sale el equipo</label><select name="a">${Array.from({ length: 24 }, (_, i) => i + 1).map((i) => html`<option value="${i}" ${raw(i === h.a ? 'selected' : '')}>${hora(i)}</option>`)}</select></div>
+    </div>
+    <label>Días del equipo</label><div class="row" style="gap:12px;flex-wrap:wrap">${DIAS.map(([d, t]) => html`<label style="font-weight:400;margin:0"><input type="checkbox" name="dias" value="${d}" style="width:auto" ${raw(h.dias.includes(d) ? 'checked' : '')}> ${t}</label>`)}</div>
+    <p><button class="btn-accent">Guardar horario</button></p></form>`; })()}
   <div class="card" style="margin-top:18px"><span class="mono">Archivos para compartir</span>
     <p class="muted small" style="margin:6px 0 12px">Brochure, catálogo, menú, lista de precios… Tu agente los manda por WhatsApp cuando alguien los pide. PDF, imagen o video (máx. 16 MB para documentos).</p>
     ${(client.config?.archivos_agente || []).length ? html`<table style="margin-bottom:14px">${(client.config.archivos_agente).map((a) => html`<tr>
