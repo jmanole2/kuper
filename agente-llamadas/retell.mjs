@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { configFunciones, definiciones } from './funciones.mjs';
+import { configFunciones, definiciones, tokenFunciones } from './funciones.mjs';
 import { agentePorNombre } from './agentes.mjs';
 
 const API = 'https://api.retellai.com';
@@ -65,6 +65,9 @@ Horario de citas: ${cfg.horario} (hora del centro de México).
 ## Preguntas frecuentes
 ${lista(cfg.preguntas_frecuentes)}
 ${cfg.panel_slug ? `
+## Disponibilidad (regla más importante)
+Para saber si hay oficinas o puestos fijos libres usa SIEMPRE la función consultar_disponibilidad, aunque creas saber la respuesta. Nunca digas que hay o que no hay disponibilidad sin consultarla, y ofrece solo lo que te devuelva. Los precios de las listas son de referencia y NO quieren decir que esa oficina esté libre. Si la persona duda o pregunta "¿estás segura?", vuelve a consultar.
+
 ## Información actualizada por el equipo (tiene prioridad sobre todo lo anterior si algo no coincide)
 {{info_panel}}
 ` : ''}
@@ -159,6 +162,7 @@ async function crear() {
     await api('PATCH', `/update-agent/${previo.agent_id}`, agente);
     console.log(`Agente actualizado: ${previo.agent_id} (LLM ${llmId})`);
     if (!cfg.instrucciones) await sincronizarFunciones(llmId);
+    await sincronizarDisponibilidad(llmId);
     return;
   }
 
@@ -168,9 +172,37 @@ async function crear() {
     response_engine: { type: 'retell-llm', llm_id: nuevoLlm.llm_id },
   });
   console.log(`Agente creado: ${nuevo.agent_id} (LLM ${nuevoLlm.llm_id})`);
+  await sincronizarDisponibilidad(nuevoLlm.llm_id);
   if (cfg.instrucciones) return; // demo de prospecto: toma los datos, sin calendario
   await sincronizarFunciones(nuevoLlm.llm_id);
   console.log('Siguiente paso: en el panel de Retell agrega las funciones de Cal.com (ver LEEME.md).');
+}
+
+// Disponibilidad en el momento (Airtable del cliente vía su panel): la asistente dice "dame un segundo" y consulta.
+const demoClave = rutaCfg.split('/').pop().replace(/\.json$/, '');
+function herramientaDisponibilidad() {
+  if (!cfg.panel_slug) return null;
+  const base = String(process.env.PUBLIC_URL || 'https://llamadas.kuper.media').replace(/\/+$/, '');
+  return {
+    type: 'custom', name: 'consultar_disponibilidad', method: 'POST', url: `${base}/funciones/disponibilidad?demo=${encodeURIComponent(demoClave)}`,
+    headers: { Authorization: `Bearer ${tokenFunciones(KEY)}` }, timeout_ms: 10000,
+    speak_during_execution: true, speak_after_execution: true, execution_message_type: 'static_text', execution_message_description: 'Dame un segundo, lo reviso.',
+    description: 'Consulta en el sistema qué oficinas y puestos fijos están disponibles AHORA. Úsala SIEMPRE antes de decir si hay o no hay disponibilidad, y antes de ofrecer una oficina concreta.',
+    parameters: { type: 'object', properties: {
+      sede: { type: 'string', description: 'Sede o zona que pidió (Polanco, Roma Norte, Del Valle, Parque Hundido, San Borja, Coyoacán). Vacío si no importa.' },
+      personas: { type: 'number', description: 'Cuántas personas, si lo dijo.' },
+      tipo: { type: 'string', enum: ['oficina privada', 'puesto fijo', ''], description: 'Qué busca, si lo dijo.' } } },
+  };
+}
+async function sincronizarDisponibilidad(llmId) {
+  const t = herramientaDisponibilidad();
+  if (!t) return;
+  try {
+    const llm = await api('GET', `/get-retell-llm/${llmId}`);
+    const otras = (llm.general_tools || []).filter((x) => x.name !== t.name);
+    await api('PATCH', `/update-retell-llm/${llmId}`, { general_tools: [...otras, t] });
+    console.log(`Disponibilidad en el momento lista para ${cfg.asistente} (${demoClave}).`);
+  } catch (e) { console.error(`No pude agregar consultar_disponibilidad: ${e.message}`); }
 }
 
 // Agrega (o actualiza) nuestras funciones de citas sin tocar las demás (p. ej. las de Cal.com del panel).

@@ -10,7 +10,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as panel from './panel.mjs';
-import { configFunciones, crearFunciones, eventoDeLink } from './funciones.mjs';
+import { configFunciones, crearFunciones, eventoDeLink, tokenFunciones } from './funciones.mjs';
 import * as marcador from './marcador.mjs';
 import { agentePorNombre as buscarEnRetell } from './agentes.mjs';
 
@@ -162,6 +162,7 @@ const server = createServer(async (req, res) => {
     });
   }
   if (ruta === '/api/llamada' && req.method === 'POST') return crearLlamada(req, res);
+  if (ruta === '/funciones/disponibilidad' && req.method === 'POST') return consultarDisponibilidad(req, res);
   const fn = /^\/funciones\/([a-z_]+)$/.exec(ruta);
   if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
   const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null);
@@ -193,6 +194,26 @@ async function infoDelPanel(demo) {
     infoCache.set(demo.panel_slug, { t: Date.now(), texto });
     return texto;
   } catch { return c?.texto || null; }
+}
+// consultar_disponibilidad (Retell): pregunta al panel del cliente qué hay libre en este momento.
+async function consultarDisponibilidad(req, res) {
+  const tok = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!KEY || tok !== tokenFunciones(KEY)) return json(res, 401, { error: 'no autorizado' });
+  const demo = demos.get(String(new URL(req.url, 'http://x').searchParams.get('demo') || ''));
+  const key = demo && llaveDe(demo.panel_slug), base = String(process.env.PANEL_URL || '').replace(/\/+$/, '');
+  if (!demo || !key || !base) return json(res, 200, { resultado: 'No pude revisar el sistema de disponibilidad. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.' });
+  let args = {};
+  try { const b = JSON.parse(await leerCuerpo(req) || '{}'); args = b.args || b; } catch { /* sin argumentos */ }
+  const qs = new URLSearchParams(Object.entries({ sede: args.sede, personas: args.personas, tipo: args.tipo }).filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => [k, String(v)]));
+  try {
+    const r = await fetch(`${base}/api/${encodeURIComponent(demo.panel_slug)}/disponibilidad?${qs}`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(6000) });
+    const j = await r.json();
+    console.log(`${new Date().toISOString()} disponibilidad ${demo.panel_slug} ${qs}: ${String(j.resultado || '').slice(0, 80)}`);
+    return json(res, 200, { resultado: j.resultado || 'Sin datos de disponibilidad: ofrece que un asesor lo confirme.' });
+  } catch (e) {
+    console.error('[disponibilidad]', e.message);
+    return json(res, 200, { resultado: 'El sistema de disponibilidad no respondió. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.' });
+  }
 }
 const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio,
   panel: d.panel_slug && llaveDe(d.panel_slug) ? { slug: d.panel_slug, key: llaveDe(d.panel_slug) } : null })))).filter((d) => d.id);
