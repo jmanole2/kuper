@@ -34,6 +34,7 @@ import { inicioPage, privacidadPage, terminosPage } from './web/publico.js';
 import * as embudo from './embudo.js';
 import * as importar from './importar.js';
 import * as limpieza from './limpieza.js';
+import * as airtable from './airtable.js';
 import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -134,6 +135,10 @@ export function createApp() {
       .map((a) => ({ clave: `archivo-${a.id}`, nombre: a.nombre, cuando: a.cuando, tipo: a.tipo, url: mediaUrl(a.archivo), nombre_archivo: `${a.nombre.replace(/[\\/:*?"<>|]/g, '')}${path.extname(a.archivo)}` }));
     const ia = embudo.horarioIA(req.client); // cuándo contesta la IA (lo elige el cliente en el panel)
     const pausado = req.client.config.agente_pausado === true; // botón "Pausar agente" del panel
+    // Disponibilidad leída de su Airtable (si lo conectaron): va al final, con prioridad sobre la lista general.
+    const disp = airtable.bloque(req.client);
+    if (disp && k) k.texto = `${k.texto}\n\n${disp}`;
+    if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado });
     res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
   });
   api.post('/mensajes', (req, res) => {
@@ -1193,6 +1198,27 @@ export function createApp() {
       } else aviso += ' (El agente lo toma en los próximos 5 minutos.)';
       res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(aviso)}`);
     });
+    // Airtable del cliente (solo lectura) para la disponibilidad de oficinas.
+    router.post(`${prefix}/agente/airtable`, async (req, res) => {
+      try {
+        const creds = db.clientCredentials(req.client);
+        const prev = creds.airtable || {};
+        const link = airtable.leerLink(req.body.link);
+        const token = String(req.body.token || '').trim() || prev.token;
+        if (!token) throw new Error('Pega el token de Airtable.');
+        await airtable.leerRegistros({ token, ...link }); // prueba antes de guardar
+        db.updateClient(req.client.id, { credentials: { ...creds, airtable: { token, ...link } } });
+        const st = await airtable.sincronizar(db.getClient(req.client.id));
+        seg.auditar(req, 'airtable_conectado', req.client.nombre);
+        res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(`Airtable conectado: ${st?.n ?? 0} oficinas o puestos disponibles. Se actualiza cada 15 minutos.`)}`);
+      } catch (e) { vista(req, res, { error: `Airtable: ${e.message}` }); }
+    });
+    router.post(`${prefix}/agente/airtable/quitar`, (req, res) => {
+      const { airtable: _a, ...rest } = db.clientCredentials(req.client);
+      db.updateClient(req.client.id, { credentials: rest });
+      db.kvSet(`airtable:${req.client.id}`, 'null');
+      res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent('Airtable desconectado.')}`);
+    });
     router.post(`${prefix}/agente/horario`, (req, res) => {
       try {
         const c = embudo.guardarHorario(req.client, req.body || {});
@@ -1263,5 +1289,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(`Agente social en ${config.publicBaseUrl} (puerto ${config.port})${config.dryRun ? ' — DRY_RUN activo' : ''}${config.mockLlm ? ' — MOCK_LLM activo' : ''}`);
     if (config.schedulerEnabled) pipe.startScheduler();
     limpieza.iniciar(); // borra lo pesado que ya no se usa (ver src/limpieza.js)
+    airtable.iniciar(); // disponibilidad de oficinas desde el Airtable de cada cliente
   });
 }

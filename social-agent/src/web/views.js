@@ -9,6 +9,7 @@ import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
 import { embudoSection, analiticaSection, FICHA_CSS } from './embudo.js';
 import { horarioIA, MODOS_IA } from '../embudo.js';
+import * as AT from '../airtable.js';
 import * as CONOC from '../conocimiento.js';
 import { ESTADOS as PROS_ESTADOS, REGLAS as PROS_REGLAS } from '../prospeccion.js';
 import { SERVICIOS, COBROS, planDe, tiene, tabActiva, mxn, conceptosTexto, mensualidad, modoCobro, IVAS, ivaDe, desglose, mensualidadTotal, etiquetaIva, fiscalDe, REGIMENES, USOS_CFDI } from '../plan.js';
@@ -995,6 +996,19 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
     </div>
     <label>Días del equipo</label><div class="row" style="gap:12px;flex-wrap:wrap">${DIAS.map(([d, t]) => html`<label style="font-weight:400;margin:0"><input type="checkbox" name="dias" value="${d}" style="width:auto" ${raw(h.dias.includes(d) ? 'checked' : '')}> ${t}</label>`)}</div>
     <p><button class="btn-accent">Guardar horario</button></p></form>`; })()}
+  ${(() => { const on = AT.configurado(client), st = on ? AT.estado(client) : null; let a = {}; try { a = clientCredentials(client)?.airtable || {}; } catch { /* sin credenciales */ }
+    const fmt = (iso) => (iso ? new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)) : '—');
+    return html`<div class="card" style="margin-top:18px"><span class="mono">Disponibilidad desde Airtable</span>
+    <p class="muted small" style="margin:6px 0 10px">Conecta la tabla (o la vista) donde llevan qué oficinas están libres. Cada 15 minutos se lee y tus agentes solo ofrecen lo que esté disponible. El token debe ser de <b>solo lectura</b>.</p>
+    ${on ? html`<p style="margin:0 0 10px">${st?.error ? html`<span class="badge" style="color:#f87171">Error</span> ${st.error}` : html`<span class="badge" style="color:#4ade80">Conectado</span> ${st?.n ?? 0} disponibles de ${st?.total ?? '—'} registros`} <span class="muted small">· última lectura ${fmt(st?.at)}</span></p>` : ''}
+    <form method="post" action="${base}/agente/airtable" style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));align-items:end">
+      <div><label>Link de la tabla o vista</label><input name="link" required placeholder="https://airtable.com/app…/tbl…/viw…" value="${a.base ? `https://airtable.com/${a.base}/${a.tabla}${a.vista ? `/${a.vista}` : ''}` : ''}"></div>
+      <div><label>Token de acceso${on ? ' (déjalo vacío para conservar el actual)' : ''}</label><input name="token" type="password" autocomplete="off" ${raw(on ? '' : 'required')} placeholder="${on ? '•••••••• guardado' : 'pat…'}"></div>
+      <div class="row" style="gap:8px"><button class="btn-accent">${on ? 'Guardar y leer ahora' : 'Conectar'}</button></div>
+    </form>
+    ${on ? html`<form method="post" action="${base}/agente/airtable/quitar" style="margin-top:8px" onsubmit="return confirm('¿Desconectar Airtable?')"><button class="btn-ghost" style="padding:6px 12px;font-size:13px">Desconectar</button></form>
+      ${st?.texto ? html`<details style="margin-top:10px"><summary class="small">Ver lo que reciben los agentes</summary><pre style="white-space:pre-wrap;font-size:12.5px;color:#cfc9bf">${st.texto}</pre></details>` : ''}` : ''}
+    </div>`; })()}
   <div class="card" style="margin-top:18px"><span class="mono">Archivos para compartir</span>
     <p class="muted small" style="margin:6px 0 12px">Brochure, catálogo, menú, lista de precios… Tu agente los manda por WhatsApp cuando alguien los pide. PDF, imagen o video (máx. 16 MB para documentos).</p>
     ${(client.config?.archivos_agente || []).length ? html`<table style="margin-bottom:14px">${(client.config.archivos_agente).map((a) => html`<tr>
