@@ -23,7 +23,7 @@ test('lee el CSV con comillas y saltos de línea, y arma los embudos', () => {
   assert.deepEqual(l.embudos.map((e) => e.nombre), ['Principal', 'Salas de juntas']);
   assert.deepEqual(l.embudos[0].etapas.map((e) => [e.nombre, e.tipo]), [['Nuevos', 'nuevo'], ['CRM - base datos', 'archivo']]);
   assert.equal(l.contactos[1].nota.includes('con salto de línea'), true);
-  assert.throws(() => I.leerLeadsales('a,b\n1,2'), /Leadsales/);
+  assert.throws(() => I.leerLeadsales('a,b\n1,2'), /teléfono o correo/);
 });
 
 test('importa sin duplicar y respeta etapa, valor, etiquetas y fechas', () => {

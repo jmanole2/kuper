@@ -1,9 +1,9 @@
 // Vistas del embudo de ventas (tablero), la ficha del lead y la analítica.
 import { html, raw } from './html.js';
 import { config } from '../config.js';
-import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, colorTipo, embudosTexto } from '../embudo.js';
+import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto } from '../embudo.js';
 
-const ORIGEN = { whatsapp: ['WhatsApp', '#25d366'], instagram: ['Instagram', '#e1306c'], facebook: ['Messenger', '#4f7cff'], llamada: ['Llamada', '#c9f53a'], web: ['Página de citas', '#93b4ff'], chat_web: ['Chat web', '#fbbf24'] };
+const ORIGEN = { manual: ['Agregado a mano', '#c9c3b8'], whatsapp: ['WhatsApp', '#25d366'], instagram: ['Instagram', '#e1306c'], facebook: ['Messenger', '#4f7cff'], llamada: ['Llamada', '#c9f53a'], web: ['Página de citas', '#93b4ff'], chat_web: ['Chat web', '#fbbf24'] };
 const origen = (o) => ORIGEN[o] || [o || 'Otro', '#93b4ff'];
 const mxn = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-MX')}`;
 const nombreDe = (l) => l.nombre || (l.usuario ? `@${l.usuario}` : l.telefono || l.email || 'Lead');
@@ -39,56 +39,131 @@ const CSS = `
 details.emb-cfg{margin-top:18px}details.emb-cfg textarea{min-height:190px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
 `;
 
-export function embudoSection(client, leads, { base, asesores = [], q = '', aviso = '', embudo = '', importar = false } = {}) {
+const TCSS = `
+.emb-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 16px}.emb-tools input[type=search]{width:auto;min-width:220px;padding:9px 14px;border-radius:99px}
+.pop{position:relative}.pop>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:14px;user-select:none}
+.pop>summary::-webkit-details-marker{display:none}.pop[open]>summary,.pop>summary:hover{background:rgba(255,255,255,.12)}.pop>summary .dot{width:7px;height:7px;border-radius:50%;background:#f87171}
+.pop .pnl{position:absolute;z-index:30;top:calc(100% + 8px);left:0;min-width:300px;background:#1c1a18;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.pop.der .pnl{left:auto;right:0}.pop .pnl label{font-size:12px;margin-top:10px}.pop .pnl h4{margin:0 0 4px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pop .rad{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}.pop .rad label{margin:0}.pop .rad input{display:none}.pop .rad span{display:block;padding:6px 11px;border-radius:99px;border:1px solid var(--line);font-size:13px;cursor:pointer}
+.pop .rad input:checked+span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.pop .opc a{display:flex;justify-content:space-between;padding:10px 12px;border-radius:12px;text-decoration:none}.pop .opc a:hover,.pop .opc a.on{background:rgba(255,255,255,.08)}
+.btn-add{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:14px;border:0}
+.pop.add>summary{background:var(--accent);color:var(--accent-ink);font-weight:600;border-color:var(--accent)}
+.emb-card .ext{grid-column:1/-1;font-size:12px;color:#cfc9bf;border-top:1px solid var(--line);padding-top:8px;margin-top:2px;line-height:1.4}
+.emb-card .ext i{font-style:normal;display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:99px;background:rgba(147,180,255,.14);color:#93b4ff;margin:0 4px 4px 0}
+.emb-card .pri{margin-left:4px}
+.emb-res{position:fixed;left:50%;bottom:22px;transform:translate(-50%,140%);transition:transform .2s;z-index:50;background:#1c1a18;border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:12px 14px 14px;box-shadow:0 24px 70px rgba(0,0,0,.6);text-align:center}
+.emb-res.on{transform:translate(-50%,0)}.emb-res p{margin:0 0 10px;font-size:13px;color:#cfc9bf}.emb-res div{display:flex;gap:10px}
+.emb-res section{width:150px;padding:16px 10px;border-radius:18px;border:2px dashed var(--c);background:color-mix(in srgb,var(--c) 10%,transparent);font-weight:600;font-size:14px;transition:.15s}
+.emb-res section span{display:block;font-size:24px;margin-bottom:4px}.emb-res section.over{background:color-mix(in srgb,var(--c) 30%,transparent);transform:scale(1.04)}`;
+
+const LADAS = [['52', '🇲🇽 +52'], ['1', '🇺🇸 +1'], ['34', '🇪🇸 +34'], ['57', '🇨🇴 +57'], ['54', '🇦🇷 +54'], ['56', '🇨🇱 +56'], ['51', '🇵🇪 +51'], ['593', '🇪🇨 +593'], ['502', '🇬🇹 +502'], ['506', '🇨🇷 +506'], ['58', '🇻🇪 +58'], ['55', '🇧🇷 +55']];
+
+function filtrarLeads(client, leads, f, ultimos) {
+  const t = (f.q || '').toLowerCase().trim();
+  const desde = /^\d{4}-\d\d-\d\d$/.test(f.desde || '') ? f.desde : '', hasta = /^\d{4}-\d\d-\d\d$/.test(f.hasta || '') ? f.hasta : '';
+  return leads.filter((l) => {
+    if (t && !`${nombreDe(l)} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase().includes(t)) return false;
+    if (f.asesor && (f.asesor === '-' ? l.asignado_id : String(l.asignado_id) !== f.asesor)) return false;
+    if (f.canal && l.origen !== f.canal) return false;
+    if (f.estatus && (l.prioridad || 'neutral') !== f.estatus) return false;
+    const u = ultimos[l.id];
+    if (f.mensajes === 'esperando' && !(u && u.rol === 'lead')) return false;
+    if (f.mensajes === 'respondidos' && !(u && u.rol !== 'lead')) return false;
+    if (desde || hasta) {
+      const d = new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone }).format(utc(f.fecha === 'actividad' ? l.updated_at : l.created_at));
+      if ((desde && d < desde) || (hasta && d > hasta)) return false;
+    }
+    return true;
+  });
+}
+
+export function embudoSection(client, leads, { base, asesores = [], aviso = '', error = '', embudo = '', importar = false, filtros = {}, vista = 'compacta', ultimos = {} } = {}) {
   const todos = embudos(client);
   const emb = todos.find((x) => x.id === embudo) || todos[0];
   const cuenta = Object.fromEntries(todos.map((x) => [x.id, 0]));
   for (const l of leads) cuenta[embudoDe(client, l).id] += 1;
-  leads = leads.filter((l) => embudoDe(client, l).id === emb.id);
+  const origenes = [...new Set(leads.map((l) => l.origen))];
+  leads = filtrarLeads(client, leads.filter((l) => embudoDe(client, l).id === emb.id), filtros, ultimos);
+  const activos = ['asesor', 'canal', 'estatus', 'mensajes', 'desde', 'hasta'].filter((k) => filtros[k]).length;
   const lista = emb.etapas;
   const nombreAsesor = Object.fromEntries(asesores.map((a) => [a.id, a.nombre]));
   const cols = lista.map((e) => ({ e, leads: leads.filter((l) => etapaDe(client, l).id === e.id) }));
+  // Enlaces que conservan embudo, filtros y vista.
+  const qs = (extra = {}) => { const p = new URLSearchParams(Object.entries({ e: emb.id, ...filtros, vista, ...extra }).filter(([, v]) => v)); return `${base}/embudo?${p}`; };
   const card = (l) => {
     const [oTxt, oCol] = origen(l.origen);
-    const n = nombreDe(l), a = nombreAsesor[l.asignado_id];
-    return html`<a class="emb-card" draggable="true" data-id="${l.id}" data-q="${`${n} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase()}" data-asesor="${l.asignado_id || ''}" data-origen="${l.origen}" href="${base}/leads/${l.id}/chat">
+    const n = nombreDe(l), a = nombreAsesor[l.asignado_id], pri = PRIORIDADES[l.prioridad];
+    const u = ultimos[l.id];
+    return html`<a class="emb-card" draggable="true" data-id="${l.id}" data-q="${`${n} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase()}" href="${base}/leads/${l.id}/chat">
       <span class="emb-av" style="background:${oCol}">${iniciales(n)}<i style="background:${oCol}" title="${oTxt}"></i></span>
-      <span style="min-width:0"><strong>${n}</strong><small>${a ? `👤 ${a}` : 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
-        <small>${l.control === 'humano' ? raw('<span class="emb-yo">Equipo</span>') : raw('<span class="emb-ia">IA</span>')}${l.valor ? html` <span class="emb-v">${mxn(l.valor)}</span>` : ''}</small></span>
-      <time>${cuando(l.updated_at)}</time></a>`;
+      <span style="min-width:0"><strong>${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${pri[1]}</span>` : ''}</strong><small>${a ? `👤 ${a}` : 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
+        <small>${l.control === 'humano' ? raw('<span class="emb-yo">Equipo</span>') : raw('<span class="emb-ia">IA</span>')}${u && u.rol === 'lead' ? raw(' <span class="emb-yo" style="background:rgba(248,113,113,.15);color:#f87171">Espera respuesta</span>') : ''}${l.valor ? html` <span class="emb-v">${mxn(l.valor)}</span>` : ''}</small></span>
+      <time>${cuando(l.updated_at)}</time>
+      ${vista === 'extendida' ? html`<span class="ext">${tagsDe(l).map((t) => html`<i>${t}</i>`)}${tagsDe(l).length ? html`<br>` : ''}${u ? html`<b>${u.rol === 'lead' ? 'Lead' : u.rol === 'humano' ? 'Equipo' : 'IA'}:</b> ${u.texto}` : l.nota ? String(l.nota).slice(0, 160) : html`<span class="muted">${l.telefono || l.email || ''}</span>`}</span>` : ''}</a>`;
   };
-  const origenes = [...new Set(leads.map((l) => l.origen))];
-  return html`<style>${raw(CSS)}</style>
-  ${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}
-  ${todos.length > 1 ? html`<div class="pills" style="margin-bottom:12px">${todos.map((x) => html`<a class="${x.id === emb.id ? 'on' : ''}" href="${base}/embudo?e=${encodeURIComponent(x.id)}">${x.nombre} <em>${cuenta[x.id].toLocaleString('es-MX')}</em></a>`)}</div>` : ''}
-  <div class="emb-bar">
-    <input type="search" id="emb-q" placeholder="Buscar nombre, teléfono, empresa…" value="${q}">
-    ${asesores.length ? html`<select id="emb-as"><option value="">Todos los asesores</option><option value="-">No asignados</option>${asesores.map((a) => html`<option value="${a.id}">${a.nombre}</option>`)}</select>` : ''}
-    ${origenes.length > 1 ? html`<select id="emb-or"><option value="">Todos los canales</option>${origenes.map((o) => html`<option value="${o}">${origen(o)[0]}</option>`)}</select>` : ''}
-    <span class="muted small">Arrastra una tarjeta para cambiarla de etapa.</span>${importar ? html` <a class="btn btn-warn" style="margin-left:auto" href="${base}/importar">Importar de Leadsales</a>` : ''}
+  const radio = (name, opciones, actual) => html`<div class="rad">${opciones.map(([v, t]) => html`<label><input type="radio" name="${name}" value="${v}" ${raw((actual || '') === v ? 'checked' : '')}><span>${t}</span></label>`)}</div>`;
+  return html`<style>${raw(CSS)}${raw(TCSS)}</style>
+  ${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+  ${todos.length > 1 ? html`<div class="pills" style="margin-bottom:12px">${todos.map((x) => html`<a class="${x.id === emb.id ? 'on' : ''}" href="${base}/embudo?e=${encodeURIComponent(x.id)}&vista=${vista}">${x.nombre} <em>${cuenta[x.id].toLocaleString('es-MX')}</em></a>`)}</div>` : ''}
+  <div class="emb-tools">
+    <input type="search" id="emb-q" placeholder="Buscar nombre, teléfono, empresa…" value="${filtros.q || ''}">
+    <details class="pop"><summary>⏷ Filtros${activos ? html` <span class="dot"></span> ${activos}` : ''}</summary><form class="pnl" method="get" action="${base}/embudo" style="width:340px">
+      <input type="hidden" name="e" value="${emb.id}"><input type="hidden" name="vista" value="${vista}">
+      <h4>Mensajes</h4>${radio('mensajes', [['', 'Todos'], ['esperando', 'Esperan respuesta'], ['respondidos', 'Respondidos']], filtros.mensajes)}
+      <h4 style="margin-top:12px">Fecha</h4>
+      <select name="fecha"><option value="">Fecha en que llegó</option><option value="actividad" ${raw(filtros.fecha === 'actividad' ? 'selected' : '')}>Última actividad</option></select>
+      <div class="row" style="gap:8px;margin-top:6px"><input type="date" name="desde" value="${filtros.desde || ''}"><input type="date" name="hasta" value="${filtros.hasta || ''}"></div>
+      <h4 style="margin-top:12px">Estatus</h4>${radio('estatus', [['', 'Todos'], ...Object.entries(PRIORIDADES).map(([k, [t, e]]) => [k, `${e} ${t}`.trim()])], filtros.estatus)}
+      <h4 style="margin-top:12px">Canal</h4>${radio('canal', [['', 'Todos'], ...origenes.map((o) => [o, origen(o)[0]])], filtros.canal)}
+      ${asesores.length ? html`<h4 style="margin-top:12px">Asesor</h4><select name="asesor"><option value="">Todos</option><option value="-" ${raw(filtros.asesor === '-' ? 'selected' : '')}>No asignados</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(String(a.id) === filtros.asesor ? 'selected' : '')}>${a.nombre}</option>`)}</select>` : ''}
+      <p class="row" style="gap:8px;margin-top:14px"><button class="btn-accent">Aplicar</button><a class="btn btn-ghost" href="${base}/embudo?e=${emb.id}&vista=${vista}">Limpiar filtros</a></p></form></details>
+    <details class="pop"><summary>👁 Vista</summary><div class="pnl opc" style="min-width:220px">
+      <a class="${vista === 'compacta' ? 'on' : ''}" href="${qs({ vista: 'compacta' })}">Vista compacta ${vista === 'compacta' ? '✓' : ''}</a>
+      <a class="${vista === 'extendida' ? 'on' : ''}" href="${qs({ vista: 'extendida' })}">Vista extendida ${vista === 'extendida' ? '✓' : ''}</a>
+      <p class="muted small" style="margin:6px 12px 2px">La extendida muestra etiquetas y el último mensaje.</p></div></details>
+    <details class="pop add der" style="margin-left:auto"><summary>＋ Agregar lead</summary><form class="pnl" method="post" action="${base}/embudo/nuevo" style="width:340px">
+      <label style="margin-top:0">Nombre</label><input name="nombre" maxlength="80" placeholder="Ingresar nombre">
+      <label>Teléfono</label><div style="display:flex;gap:8px"><select name="lada" style="width:120px;flex:none">${LADAS.map(([v, t]) => html`<option value="${v}">${t}</option>`)}</select><input name="telefono" inputmode="tel" placeholder="55 1234 5678" style="flex:1;min-width:0"></div>
+      <label>Correo (opcional)</label><input name="email" type="email" placeholder="correo@empresa.com">
+      <label>¿A dónde mandamos tu nuevo lead?</label><select name="destino">${todos.map((x) => html`<optgroup label="${x.nombre}">${x.etapas.map((et) => html`<option value="${x.id}/${et.id}" ${raw(x.id === emb.id && et === x.etapas[0] ? 'selected' : '')}>${et.nombre}</option>`)}</optgroup>`)}</select>
+      <p><button class="btn-accent" style="width:100%;justify-content:center">Crear lead</button></p></form></details>
+    ${importar ? html`<a class="btn btn-warn" href="${base}/importar">Importar contactos</a>` : ''}
   </div>
   <div class="emb" id="emb" data-embudo="${emb.id}">
     ${cols.map(({ e, leads: ls }) => html`<section class="emb-col" data-etapa="${e.id}" style="--c:${colorTipo(e.tipo)}">
       <div class="emb-h"><b>${e.nombre}</b><em data-n>${ls.length}</em></div>
-      <div class="emb-list">${ls.slice(0, 150).map(card)}${ls.length > 150 ? html`<p class="muted small" style="text-align:center">y ${ls.length - 150} más (usa el buscador)</p>` : ''}</div>
+      <div class="emb-list">${ls.slice(0, 150).map(card)}${ls.length > 150 ? html`<p class="muted small" style="text-align:center">y ${ls.length - 150} más (usa el buscador o los filtros)</p>` : ''}</div>
       <div class="emb-f"><span>Valor</span><b data-v>${mxn(ls.reduce((s, l) => s + (Number(l.valor) || 0), 0))}</b></div>
     </section>`)}
   </div>
+  <div class="emb-res" id="emb-res"><p>Suelta el lead aquí y suma su resultado a tus números</p><div>
+    <section data-r="vendido" style="--c:#4ade80"><span>💰</span>Vendido</section><section data-r="perdido" style="--c:#f87171"><span>✖</span>Perdido</section><section data-r="resuelto" style="--c:#93b4ff"><span>✔</span>Resuelto</section></div></div>
   <details class="emb-cfg card"><summary><b>Ajustar embudos y etapas</b> <span class="muted small">(nombre = tipo, una por línea)</span></summary>
     <form method="post" action="${base}/embudo/etapas">
       <p class="muted small">Cada embudo empieza con una línea <b># Nombre del embudo</b> y debajo sus etapas. El tipo dice qué significa la etapa: <b>nuevo</b>, <b>conversacion</b>, <b>cita</b> (visita), <b>cliente</b>, <b>perdido</b> o <b>archivo</b> (base de datos). Los leads nuevos entran al primer embudo.</p>
       <textarea name="etapas" style="min-height:260px">${embudosTexto(client)}</textarea><p><button class="btn-accent">Guardar</button></p></form></details>
   ${raw(`<script>(()=>{const B=${JSON.stringify(base)};const emb=document.getElementById('emb');let arr=null;
   const contar=()=>emb.querySelectorAll('.emb-col').forEach(c=>{c.querySelector('[data-n]').textContent=[...c.querySelectorAll('.emb-card')].filter(x=>x.style.display!=='none').length;});
-  emb.addEventListener('dragstart',e=>{const c=e.target.closest('.emb-card');if(!c)return;arr=c;c.classList.add('drag');e.dataTransfer.effectAllowed='move';});
-  emb.addEventListener('dragend',()=>{arr&&arr.classList.remove('drag');emb.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));});
+  const res=document.getElementById('emb-res');document.body.appendChild(res); // fuera del contenedor para que quede fija abajo
+  emb.addEventListener('dragstart',e=>{const c=e.target.closest('.emb-card');if(!c)return;arr=c;c.classList.add('drag');e.dataTransfer.effectAllowed='move';res.classList.add('on');});
+  emb.addEventListener('dragend',()=>{arr&&arr.classList.remove('drag');document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));setTimeout(()=>res.classList.remove('on'),150);});
+  // Barra de resultados: Vendido (pide el valor), Perdido, Resuelto.
+  res.querySelectorAll('section').forEach(z=>{z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('over');});z.addEventListener('dragleave',()=>z.classList.remove('over'));
+    z.addEventListener('drop',async e=>{e.preventDefault();z.classList.remove('over');res.classList.remove('on');if(!arr)return;const c=arr;let valor='';
+      if(z.dataset.r==='vendido'){valor=prompt('¿De cuánto fue la venta? (opcional, en pesos)','');if(valor===null)return;}
+      const r=await fetch(B+'/embudo/resultado',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({lead:c.dataset.id,resultado:z.dataset.r,valor})}).catch(()=>null);
+      if(!r||!r.ok){alert('No se pudo guardar. Intenta de nuevo.');return;}location.reload();});});
   emb.querySelectorAll('.emb-col').forEach(col=>{col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over');});col.addEventListener('dragleave',()=>col.classList.remove('over'));
     col.addEventListener('drop',async e=>{e.preventDefault();col.classList.remove('over');if(!arr)return;const antes=arr.parentNode;const lista=col.querySelector('.emb-list');if(antes===lista)return;
       lista.prepend(arr);contar();const r=await fetch(B+'/embudo/mover',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({lead:arr.dataset.id,etapa:col.dataset.etapa,embudo:emb.dataset.embudo})}).catch(()=>null);
       if(!r||!r.ok){antes.prepend(arr);contar();alert('No se pudo mover. Intenta de nuevo.');}});});
-  const q=document.getElementById('emb-q'),as=document.getElementById('emb-as'),or=document.getElementById('emb-or');
-  const filtrar=()=>{const t=(q.value||'').toLowerCase().trim(),a=as?as.value:'',o=or?or.value:'';emb.querySelectorAll('.emb-card').forEach(c=>{const ok=(!t||c.dataset.q.includes(t))&&(!a||(a==='-'?!c.dataset.asesor:c.dataset.asesor===a))&&(!o||c.dataset.origen===o);c.style.display=ok?'':'none';});contar();};
-  [q,as,or].forEach(x=>x&&x.addEventListener('input',filtrar));if(q.value)filtrar();})();</script>`)}`;
+  // Buscador: filtra al momento lo que se ve; con Enter busca en todo el embudo.
+  const q=document.getElementById('emb-q');
+  q.addEventListener('input',()=>{const t=q.value.toLowerCase().trim();emb.querySelectorAll('.emb-card').forEach(c=>{c.style.display=!t||c.dataset.q.includes(t)?'':'none';});contar();});
+  q.addEventListener('keydown',e=>{if(e.key==='Enter'){const u=new URL(location.href);u.searchParams.set('q',q.value);location.href=u;}});
+  document.addEventListener('click',e=>{document.querySelectorAll('details.pop[open]').forEach(d=>{if(!d.contains(e.target))d.removeAttribute('open');});});})();</script>`)}`;
 }
 
 // ------------------------------------------------------------ ficha del lead (columna del chat)
@@ -113,6 +188,7 @@ export function fichaLead(client, lead, { base, asesores = [] }) {
       return todos.length > 1 ? todos.map((emb) => html`<optgroup label="${emb.nombre}">${op(emb)}</optgroup>`) : op(todos[0]); })()}</select>
     <label>Asesor</label><select name="asignado_id"><option value="">No asignado</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(a.id === lead.asignado_id ? 'selected' : '')}>${a.nombre}</option>`)}</select>
     ${!asesores.length ? html`<span class="muted small">Da de alta a tus asesores como usuarios del panel para asignarles leads.</span>` : ''}
+    <label>Estatus</label><select name="prioridad">${Object.entries(PRIORIDADES).map(([k, [t, e]]) => html`<option value="${k}" ${raw((lead.prioridad || 'neutral') === k ? 'selected' : '')}>${`${e} ${t}`.trim()}</option>`)}</select>
     <label>Valor (MXN)</label><input name="valor" inputmode="decimal" value="${lead.valor ?? ''}" placeholder="0">
     <label>Resultado</label><div class="res">${[['', 'Abierto'], ...Object.entries(RESULTADOS)].map(([k, t]) => html`<label><input type="radio" name="resultado" value="${k}" ${raw((lead.resultado || '') === k ? 'checked' : '')}><span>${t}</span></label>`)}</div>
     <label>Etiquetas (separadas por coma)</label><input name="tags" value="${tags.join(', ')}" placeholder="oficina, polanco, 6 personas">

@@ -91,3 +91,12 @@ test('el agente puede mandar el tipo de etapa', () => {
   assert.equal(E.datosDelAgente(c, l, { etapa: 'conversacion' }).etapa, 'contestado');
   assert.equal(E.datosDelAgente(c, db.getLead(c.id, l.id), { etapa: 'cita' }).etapa, 'en-visita');
 });
+
+test('agregar lead a mano y marcar resultado desde la barra', () => {
+  const r = E.agregarLead(c, { nombre: 'Nuevo', lada: '52', telefono: '55 1111 2222', destino: `${E.embudos(c)[0].id}/contestado` }, 'Ana');
+  assert.equal(r.lead.telefono, '+525511112222'); assert.equal(r.lead.etapa, 'contestado'); assert.equal(r.existia, false);
+  assert.equal(E.agregarLead(c, { lada: '52', telefono: '5511112222' }).existia, true);
+  const v = E.marcarResultado(c, r.lead.id, 'vendido', '$15,500');
+  assert.equal(v.resultado, 'vendido'); assert.equal(v.valor, 15500); assert.equal(E.etapaDe(c, v).tipo, 'cliente');
+  assert.throws(() => E.agregarLead(c, { nombre: 'Sin datos' }), /teléfono/);
+});

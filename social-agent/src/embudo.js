@@ -124,6 +124,24 @@ export function datosDelAgente(client, lead, body = {}) {
   return lead;
 }
 
+export const PRIORIDADES = { neutral: ['Neutral', ''], urgente: ['Urgente', '🔥'], importante: ['Importante', '⭐'], pendiente: ['Pendiente', '⏳'], atorado: ['Atorado', '🧊'] };
+
+/** Lead agregado a mano desde el embudo. body: { nombre, lada, telefono, email, destino: "embudo/etapa" } */
+export function agregarLead(client, body = {}, autor = '') {
+  const lada = String(body.lada || '52').replace(/\D/g, '').slice(0, 4) || '52';
+  const num = String(body.telefono || '').replace(/\D/g, '');
+  const email = String(body.email || '').trim();
+  if (num.length < 7 && !email) throw new Error('Pon el teléfono (o un correo) del lead.');
+  const tel = num ? (num.startsWith(lada) && num.length > 10 ? num : `${lada}${num}`) : null;
+  const antes = tel ? db.getDb().prepare('SELECT id FROM leads WHERE client_id = ? AND telefono = ?').get(client.id, `+${tel}`) : null;
+  const lead = db.upsertLead(client.id, { nombre: String(body.nombre || '').trim().slice(0, 80) || undefined, telefono: tel ? `+${tel}` : undefined, email: email || undefined, origen: 'manual',
+    nota: antes ? undefined : `Agregado a mano${autor ? ` por ${autor}` : ''}` });
+  const [embId, etId] = String(body.destino || '').split('/');
+  const emb = embudos(client).find((x) => x.id === embId) || embudos(client)[0];
+  moverLead(client, lead.id, emb.etapas.find((x) => x.id === etId)?.id || emb.etapas[0].id, emb.id);
+  return { lead: db.getLead(client.id, lead.id), embudo: emb.id, existia: !!antes };
+}
+
 // ------------------------------------------------------------ ficha del lead
 export const tagsDe = (lead) => { try { return JSON.parse(lead.tags_json || '[]'); } catch { return []; } };
 export const asesores = (client) => db.getDb().prepare("SELECT id, nombre, email FROM users WHERE client_id = ? AND rol = 'cliente' AND activo = 1 ORDER BY nombre").all(client.id);
@@ -140,6 +158,7 @@ export function guardarFicha(client, leadId, body = {}) {
   if (asignado && !asesores(client).some((a) => a.id === asignado)) throw new Error('Ese asesor no es de esta cuenta');
   const tags = String(body.tags || '').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 12).map((t) => t.slice(0, 30));
   const resultado = RESULTADOS[body.resultado] ? body.resultado : null;
+  if (body.prioridad !== undefined) db.getDb().prepare('UPDATE leads SET prioridad = ? WHERE id = ?').run(PRIORIDADES[body.prioridad] && body.prioridad !== 'neutral' ? body.prioridad : null, leadId);
   db.getDb().prepare(`UPDATE leads SET nombre = COALESCE(?, nombre), email = ?, empresa = ?, valor = ?, nota = ?, tags_json = ?, asignado_id = ?, resultado = ?, updated_at = datetime('now')
     WHERE id = ? AND client_id = ?`).run(txt(body.nombre, 80), email ? email.toLowerCase() : null, txt(body.empresa, 120), valor ? Number(valor) : null, txt(body.nota, 1000),
     JSON.stringify(tags), asignado, resultado, leadId, client.id);
@@ -152,6 +171,20 @@ export function guardarFicha(client, leadId, body = {}) {
     const ahora = db.getLead(client.id, leadId);
     if (etId !== etapaDe(client, ahora).id || embId !== embudoDe(client, ahora).id) moverLead(client, leadId, etId, embId);
   }
+  return db.getLead(client.id, leadId);
+}
+
+/** Resultado al soltar el lead en la barra de abajo del embudo. Vendido/Perdido lo pasan a esa etapa si el embudo la tiene. */
+export function marcarResultado(client, leadId, resultado, valor) {
+  if (!RESULTADOS[resultado]) throw new Error('Resultado no válido');
+  const lead = db.getLead(client.id, leadId);
+  if (!lead) throw new Error('Lead no encontrado');
+  const v = String(valor ?? '').replace(/[$,\s]/g, '');
+  if (v && !(Number(v) >= 0)) throw new Error('El valor debe ser un número');
+  db.getDb().prepare("UPDATE leads SET resultado = ?, valor = COALESCE(?, valor), updated_at = datetime('now') WHERE id = ?").run(resultado, v ? Number(v) : null, leadId);
+  const lista = embudoDe(client, lead).etapas;
+  const destino = resultado === 'vendido' ? lista.find((x) => x.tipo === 'cliente') : resultado === 'perdido' ? lista.find((x) => x.tipo === 'perdido') : null;
+  if (destino && etapaDe(client, lead).id !== destino.id) moverLead(client, leadId, destino.id);
   return db.getLead(client.id, leadId);
 }
 

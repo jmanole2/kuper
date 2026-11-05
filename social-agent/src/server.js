@@ -822,7 +822,7 @@ export function createApp() {
     try {
       if (!req.file) throw new Error('Sube el archivo CSV que exportaste de Leadsales.');
       const texto = req.file.buffer.toString('utf8');
-      const leido = importar.leerLeadsales(texto);
+      const leido = importar.leerContactos(texto, req.client);
       const token = randomToken(12);
       fs.writeFileSync(path.join(dirImport(), `${req.client.id}-${token}.csv`), texto);
       res.send(V.importarPage(req.client, { leido, token }));
@@ -833,9 +833,9 @@ export function createApp() {
     const archivo = path.join(dirImport(), `${req.client.id}-${token}.csv`);
     try {
       if (!token || !fs.existsSync(archivo)) throw new Error('La vista previa venció. Sube el archivo otra vez.');
-      const r = importar.importar(req.client, importar.leerLeadsales(fs.readFileSync(archivo, 'utf8')));
+      const r = importar.importar(req.client, importar.leerContactos(fs.readFileSync(archivo, 'utf8'), req.client));
       fs.rmSync(archivo, { force: true }); // el CSV no se queda en el servidor
-      seg.auditar(req, 'importacion_leadsales', `${req.client.nombre}: ${r.nuevos} nuevos, ${r.actualizados} actualizados`);
+      seg.auditar(req, 'importacion_contactos', `${req.client.nombre}: ${r.nuevos} nuevos, ${r.actualizados} actualizados`);
       res.redirect(`/admin/clientes/${req.client.id}/embudo?ok=1&importados=${r.nuevos + r.actualizados}`);
     } catch (e) { res.status(400).send(V.importarPage(req.client, { error: e.message })); }
   });
@@ -1098,10 +1098,28 @@ export function createApp() {
   function embudoRoutes(router, base, { app = false, prefix = '' } = {}) {
     const leadsDe = (c) => db.listLeads(c.id, { limit: 20000 });
     const verEmbudo = (req, res, extra = {}) => {
-      const opts = { asesores: embudo.asesores(req.client), q: String(req.query.q || '').slice(0, 80), embudo: String(req.query.e || ''), ...extra };
+      const f = (k, n = 40) => String(req.query[k] || '').slice(0, n);
+      const opts = { asesores: embudo.asesores(req.client), embudo: f('e'), ultimos: db.ultimosMensajes(req.client.id), importar: !app,
+        filtros: { q: f('q', 80), asesor: f('asesor'), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10) },
+        vista: f('vista') === 'extendida' ? 'extendida' : 'compacta', ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appEmbudoPage(req.client, leadsDe(req.client), opts) : V.adminEmbudoPage(req.client, leadsDe(req.client), opts));
     };
-    router.get(`${prefix}/embudo`, (req, res) => verEmbudo(req, res, { aviso: req.query.importados ? `Listo: ${Number(req.query.importados).toLocaleString('es-MX')} contactos importados.` : req.query.ok ? 'Etapas guardadas.' : '', importar: !app }));
+    router.get(`${prefix}/embudo`, (req, res) => verEmbudo(req, res, { aviso: req.query.importados ? `Listo: ${Number(req.query.importados).toLocaleString('es-MX')} contactos importados.`
+      : req.query.nuevo ? 'Lead agregado.' : req.query.existe ? 'Ese contacto ya existía: lo moví a la etapa que elegiste.' : req.query.ok ? 'Etapas guardadas.' : '' }));
+    router.post(`${prefix}/embudo/resultado`, (req, res) => {
+      try {
+        const l = embudo.marcarResultado(req.client, Number(req.body.lead), String(req.body.resultado || ''), req.body.valor);
+        db.logEvent({ clientId: req.client.id, tipo: 'resultado_lead', detalle: `${l.nombre || l.telefono || l.id}: ${req.body.resultado}${l.valor ? ` $${l.valor}` : ''}` });
+        res.json({ ok: true, etapa: l.etapa });
+      } catch (e) { res.status(400).json({ error: e.message }); }
+    });
+    // Agregar un lead a mano (nombre, teléfono con lada y a qué embudo/etapa).
+    router.post(`${prefix}/embudo/nuevo`, (req, res) => {
+      try {
+        const r = embudo.agregarLead(req.client, req.body || {}, req.sesion?.user?.nombre || 'Kuper');
+        res.redirect(`${base(req)}/embudo?e=${encodeURIComponent(r.embudo)}&${r.existia ? 'existe' : 'nuevo'}=1`);
+      } catch (e) { verEmbudo(req, res, { error: e.message, aviso: '' }); }
+    });
     router.post(`${prefix}/embudo/mover`, (req, res) => {
       try { const l = embudo.moverLead(req.client, Number(req.body.lead), String(req.body.etapa || ''), req.body.embudo ? String(req.body.embudo) : undefined); res.json({ ok: true, etapa: l.etapa }); }
       catch (e) { res.status(400).json({ error: e.message }); }

@@ -223,6 +223,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('leads', 'tags_json', 'TEXT');
   ensure('leads', 'asignado_id', 'INTEGER');
   ensure('leads', 'resumen', 'TEXT');
+  ensure('leads', 'prioridad', 'TEXT'); // neutral | urgente | importante | pendiente | atorado
   return db;
 }
 
@@ -491,6 +492,9 @@ export function addLeadMessage(clientId, ident, { rol, texto, autor = null }) {
 }
 export const leadMessages = (leadId, limit = 400) => getDb()
   .prepare('SELECT * FROM (SELECT * FROM lead_mensajes WHERE lead_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id').all(leadId, limit);
+/** Último mensaje de cada lead del cliente: { lead_id: { rol, texto, created_at } } (para el embudo). */
+export const ultimosMensajes = (clientId) => Object.fromEntries(getDb().prepare(`SELECT m.lead_id, m.rol, substr(m.texto, 1, 160) texto, m.created_at FROM lead_mensajes m
+  JOIN (SELECT lead_id, MAX(m2.id) mid FROM lead_mensajes m2 JOIN leads l ON l.id = m2.lead_id WHERE l.client_id = ? GROUP BY lead_id) u ON u.mid = m.id`).all(clientId).map((r) => [r.lead_id, r]));
 export const leadMessageCounts = (clientId) => Object.fromEntries(getDb()
   .prepare('SELECT m.lead_id, COUNT(*) n FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ? GROUP BY m.lead_id').all(clientId).map((r) => [r.lead_id, r.n]));
 
