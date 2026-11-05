@@ -126,3 +126,18 @@ test('menú de la columna: renombrar, agregar, estancado, al entrar y eliminar; 
   const n = E.accionMasiva(c2, [l.id], { prioridad: 'urgente', asesor: String(ana.id) });
   assert.equal(n, 1); assert.equal(db.getLead(c2.id, l.id).prioridad, 'urgente'); assert.equal(db.getLead(c2.id, l.id).asignado_id, ana.id);
 });
+
+test('pausar agente desde el panel: se guarda y el agente lo lee con el conocimiento', async () => {
+  const { createApp } = await import('../src/server.js');
+  const server = createApp().listen(0);
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const r = await fetch(`${base}/entrar`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'ana@inhouse.mx', password: 'clave-larga-123' }) });
+    const cookie = (r.headers.get('set-cookie') || '').split(';')[0];
+    assert.match(await (await fetch(`${base}/app/agente`, { headers: { cookie } })).text(), /Pausar agente/);
+    const p = await fetch(`${base}/app/agente/pausa`, { method: 'POST', redirect: 'manual', headers: { cookie, 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ pausado: '1' }) });
+    assert.equal(p.status, 302);
+    assert.equal(db.getClient(c.id).config.agente_pausado, true);
+    assert.match(await (await fetch(`${base}/app/agente`, { headers: { cookie } })).text(), /Reanudar agente/);
+  } finally { server.close(); }
+});

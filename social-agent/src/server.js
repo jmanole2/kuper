@@ -133,7 +133,8 @@ export function createApp() {
       .filter((a) => fs.existsSync(a.archivo))
       .map((a) => ({ clave: `archivo-${a.id}`, nombre: a.nombre, cuando: a.cuando, tipo: a.tipo, url: mediaUrl(a.archivo), nombre_archivo: `${a.nombre.replace(/[\\/:*?"<>|]/g, '')}${path.extname(a.archivo)}` }));
     const ia = embudo.horarioIA(req.client); // cuándo contesta la IA (lo elige el cliente en el panel)
-    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia } : { version: 0, texto: '', datos: {}, archivos, ia });
+    const pausado = req.client.config.agente_pausado === true; // botón "Pausar agente" del panel
+    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
   });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
@@ -1158,11 +1159,27 @@ export function createApp() {
   // Editor de lo que sabe el agente (admin y cliente).
   function conocimientoRoutes(router, base, { app = false, prefix = '' } = {}) {
     const vista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, ...extra }));
-    router.get(`${prefix}/agente`, (req, res) => vista(req, res, { ok: req.query.ok ? 'Guardado. Tu agente lo usa desde su siguiente respuesta.' : '' }));
+    router.get(`${prefix}/agente`, (req, res) => vista(req, res, { ok: req.query.aviso ? String(req.query.aviso).slice(0, 300) : req.query.ok ? 'Guardado. Tu agente lo usa desde su siguiente respuesta.' : '' }));
     router.post(`${prefix}/agente`, (req, res) => {
       const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));
       try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
+    });
+    // Pausar o reanudar el agente: se guarda aquí (el agente lo lee cada 5 min) y se le avisa al momento.
+    router.post(`${prefix}/agente/pausa`, async (req, res) => {
+      const pausado = req.body.pausado === '1';
+      const autor = req.sesion?.user?.nombre || 'Kuper';
+      db.updateClient(req.client.id, { config: { ...req.client.config, agente_pausado: pausado } });
+      db.logEvent({ clientId: req.client.id, tipo: pausado ? 'agente_pausado' : 'agente_reanudado', detalle: autor });
+      seg.auditar(req, pausado ? 'agente_pausado' : 'agente_reanudado', req.client.nombre);
+      let aviso = pausado ? 'Agente en pausa: ya no contesta ni manda seguimientos. Los mensajes siguen llegando aquí.' : 'Agente activo otra vez.';
+      if (agente.agenteConfigurado(req.client)) {
+        try {
+          const r = await agente.llamarAgente(req.client, 'POST', '/pausa', { pausado, autor }, { timeout: 6000 });
+          if (!pausado && r?.por_env) aviso = 'Lo reanudé aquí, pero el agente sigue en pausa desde el servidor (AGENTE_PAUSADO=1 en su .env). Kuper tiene que quitarlo.';
+        } catch { aviso += ' (El agente lo toma en los próximos 5 minutos.)'; }
+      } else aviso += ' (El agente lo toma en los próximos 5 minutos.)';
+      res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(aviso)}`);
     });
     router.post(`${prefix}/agente/horario`, (req, res) => {
       try {

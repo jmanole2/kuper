@@ -961,6 +961,13 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
     tabs: app ? [] : [[`/admin/clientes/${client.id}?tab=leads`, '← ' + client.nombre, false]],
     note: k ? ['Última versión', `${k.autor || '—'} · ${fmtDate(k.actualizado.replace(' ', 'T') + 'Z')}`] : ['Sin información', 'Escribe lo básico y guarda'] })}
   ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+  ${(() => { const p = client.config?.agente_pausado === true;
+    return html`<form class="card" method="post" action="${base}/agente/pausa" style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px;${p ? 'border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.06)' : ''}">
+      <input type="hidden" name="pausado" value="${p ? '0' : '1'}">
+      <div><span class="mono">Estado del agente</span>
+        <p style="margin:6px 0 0;font-size:17px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:${p ? '#fbbf24' : '#4ade80'}"></span>${p ? 'En pausa: no contesta ni manda seguimientos' : 'Activo: contesta solo'}</p>
+        <p class="muted small" style="margin:4px 0 0">${p ? 'Los mensajes siguen llegando a Leads para que tu equipo conteste. Al reanudar no responde lo que llegó en la pausa.' : 'Si lo pausas, deja de contestar al momento; los mensajes siguen llegando aquí y te avisamos por correo.'}</p></div>
+      <button class="${p ? 'btn-accent' : 'btn-warn'}" onclick="return confirm('${p ? '¿Reanudar el agente?' : '¿Pausar el agente? Dejará de contestar a todos.'}')">${p ? 'Reanudar agente' : 'Pausar agente'}</button></form>`; })()}
   <form method="post" action="${base}/agente" style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);align-items:start" class="kn">
     <style>@media (max-width:900px){.kn{grid-template-columns:1fr!important}}</style>
     <div class="card"><span class="mono">Información para tu agente</span>
