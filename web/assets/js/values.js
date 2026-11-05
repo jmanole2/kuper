@@ -10,7 +10,7 @@ const ITEMS = [
     title: 'Propósito',
     text: '<mark>FABRICAMOS CONFIANZA.</mark>',
     pillars: [],
-    photo: 0, caption: 'Nuestra gente'
+    photo: 4, caption: 'Seguridad'
   },
   {
     title: 'Misión',
