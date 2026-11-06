@@ -216,6 +216,83 @@ main { position: relative; z-index: 2; }
 .legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; opacity: .7; padding-top: 40px; letter-spacing: .04em; }
 .wordmark { font: 700 clamp(110px, 25vw, 480px)/.8 var(--sans); letter-spacing: -0.06em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); user-select: none; }
 
+/* team building & offsites */
+.teams { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
+.teams h2 { font-size: var(--t-head); max-width: 15em; }
+.teams h2 b { color: var(--green); }
+.moments { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+.moments span { font-size: 13px; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(15,91,77,.35); color: var(--green); }
+.offer { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(24px, 4vw, 64px); align-items: center; margin-top: clamp(70px, 8vw, 120px); }
+.offer + .offer { margin-top: clamp(60px, 7vw, 110px); }
+.offer.flip .ph { order: 2; }
+.offer .ph { position: relative; border-radius: 26px; overflow: hidden; aspect-ratio: 5 / 4; background: var(--green); }
+.offer .ph img { width: 100%; height: 100%; object-fit: cover; }
+.offer .ph .tag { position: absolute; top: 16px; left: 16px; font-size: 11px; letter-spacing: .1em; padding: 6px 11px; border-radius: 999px; color: var(--ivory); border: 1px solid rgba(247,244,239,.75); }
+.offer h3 { font-weight: 300; font-size: clamp(34px, 3.4vw, 56px); line-height: 1.02; letter-spacing: -0.03em; }
+.offer h3 b { font-weight: 700; color: var(--green); }
+.offer .txt > p { margin-top: 18px; color: #333; max-width: 34em; }
+.incl { display: grid; gap: 0; margin-top: 24px; }
+.incl li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(15,91,77,.16); font-size: 15px; color: #333; }
+.incl li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-top: 8px; }
+.offer .row { margin-top: 28px; }
+
+/* cases open into a detail sheet */
+.case { cursor: pointer; text-align: left; font: inherit; color: inherit; border: 0; padding: 0; overflow: hidden; }
+.case .thumb { height: 150px; overflow: hidden; }
+.case .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease-out); }
+.case .cbody { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.case .open { margin-top: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--green); }
+.case .open i { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-style: normal; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .case:hover .thumb img { transform: scale(1.06); } .case:hover .open i { transform: rotate(90deg); } }
+.cases { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.case { min-height: 0; }
+.case .ct { display: block; font-weight: 700; font-size: 19px; line-height: 1.2; color: var(--green); }
+.sheet { border: 0; padding: 0; max-width: min(980px, calc(100vw - 32px)); width: 100%; border-radius: 28px; background: var(--ivory); color: var(--ink); overflow: hidden; box-shadow: 0 40px 120px -30px rgba(0,0,0,.55); }
+.sheet::backdrop { background: rgba(8, 22, 16, .55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.sheet[open] { animation: sheetIn 280ms var(--ease-out); }
+.sheet.closing { animation: sheetOut 180ms ease-in forwards; }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes sheetOut { to { opacity: 0; transform: translateY(8px) scale(.98); } }
+.sheet .in { display: grid; grid-template-columns: 1fr 1.1fr; }
+.sheet .ph { min-height: 420px; background: var(--green); }
+.sheet .ph img { width: 100%; height: 100%; object-fit: cover; }
+.sheet .tx { padding: clamp(28px, 3.4vw, 48px); display: flex; flex-direction: column; gap: 18px; }
+.sheet .kind { font-size: 12px; letter-spacing: .12em; color: var(--green); }
+.sheet h3 { font-weight: 300; font-size: clamp(30px, 3vw, 44px); line-height: 1.04; letter-spacing: -0.03em; }
+.sheet h3 b { font-weight: 700; color: var(--green); }
+.sheet dl { margin: 0; display: grid; gap: 0; }
+.sheet dl div { display: grid; grid-template-columns: 9em 1fr; gap: 14px; padding: 12px 0; border-top: 1px solid rgba(15,91,77,.16); font-size: 15px; }
+.sheet dt { color: #666; }
+.sheet dd { margin: 0; color: #222; }
+.sheet .x { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(247,244,239,.9); color: var(--green); font-size: 22px; cursor: pointer; transition: transform 160ms var(--ease-out); }
+.sheet .x:active { transform: scale(.94); }
+
+/* contact */
+.contact { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(100px, 11vw, 170px) var(--m); }
+.contact .wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
+.contact h2 { font-size: var(--t-head); }
+.contact h2 b { color: var(--green); }
+.contact .lead { margin-top: 22px; color: #333; max-width: 30em; }
+.wa { display: grid; gap: 12px; }
+.wa a { display: grid; grid-template-columns: 52px 1fr auto; gap: 16px; align-items: center; padding: 18px 22px; border-radius: 22px; text-decoration: none; background: var(--green); color: var(--ivory); transition: transform 160ms var(--ease-out), background-color 200ms ease; }
+.wa a.alt { background: #EDE9E1; color: var(--green); }
+.wa a:active { transform: scale(.98); }
+.wa .ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: rgba(247,244,239,.14); }
+.wa a.alt .ic { background: var(--ivory); }
+.wa .ic svg { width: 26px; height: 26px; }
+.wa b { display: block; font-weight: 500; font-size: 18px; }
+.wa span span { display: block; font-size: 14px; opacity: .85; margin-top: 2px; }
+.wa .arrow { width: 22px; height: 12px; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .wa a:hover .arrow { transform: translateX(4px); } .wa a:hover { background: #0c4d41; } .wa a.alt:hover { background: #E6E1D7; } }
+.social { display: flex; gap: 10px; margin-top: 26px; }
+.social a { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid rgba(15,91,77,.4); color: var(--green); transition: background-color 200ms ease, color 200ms ease, transform 160ms var(--ease-out); }
+.social a svg { width: 22px; height: 22px; }
+.social a:active { transform: scale(.95); }
+@media (hover: hover) and (pointer: fine) { .social a:hover { background: var(--green); color: var(--ivory); } }
+.phone { margin-top: 18px; font-size: 15px; color: #444; }
+.phone a { color: var(--green); font-weight: 500; }
+.foot .social a { border-color: rgba(247,244,239,.4); color: var(--ivory); }
+
 /* entrances */
 @media (prefers-reduced-motion: no-preference) {
   .js [data-reveal] > * { opacity: 0; transform: translateY(24px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); }
@@ -230,6 +307,10 @@ main { position: relative; z-index: 2; }
 }
 
 @media (max-width: 980px) {
+  .offer, .contact .wrap, .sheet .in { grid-template-columns: 1fr; }
+  .offer.flip .ph { order: 0; }
+  .cases { grid-template-columns: 1fr 1fr; }
+  .sheet .ph { min-height: 220px; height: 34vh; }
   .nav a.opt { display: none; }
   .hero { grid-template-columns: 1fr; grid-template-rows: auto auto auto; align-items: end; }
   .hero .lede { display: none; }
@@ -263,6 +344,12 @@ main { position: relative; z-index: 2; }
   .cards { grid-template-columns: 1fr; }
   .card { aspect-ratio: 5 / 4; }
   .duo, .svc, .cases { grid-template-columns: 1fr; }
+  .teams h2, .contact h2 { font-size: 10.6vw; }
+  .sheet { max-width: 100vw; width: 100vw; max-height: 92vh; margin: auto 0 0; border-radius: 26px 26px 0 0; }
+  .sheet .tx { padding: 24px 20px 32px; }
+  .sheet dl div { grid-template-columns: 1fr; gap: 2px; }
+  .wa a { grid-template-columns: 44px 1fr auto; padding: 16px; }
+  .wa .ic { width: 44px; height: 44px; }
   .svc .card { aspect-ratio: 5 / 4; }
   .ask h2 { font-size: 11.6vw; }
   .ask .row { flex-direction: column; }
@@ -294,6 +381,10 @@ main { position: relative; z-index: 2; }
     <g fill="currentColor"><circle cx="7" cy="27" r="6"/><circle cx="31" cy="6" r="6"/><circle cx="65" cy="10" r="6"/><circle cx="44" cy="34" r="6"/><circle cx="76" cy="43" r="6"/><circle cx="111" cy="27" r="6"/><circle cx="117" cy="67" r="6"/><circle cx="94" cy="87" r="6"/><circle cx="72" cy="107" r="6"/><circle cx="47" cy="73" r="6"/><circle cx="14" cy="64" r="6"/></g>
   </symbol>
   <symbol id="arrow" viewBox="0 0 22 12"><path d="M0 6h20M15 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8.2c.2-.4.5-.4.8-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.3 0 .5-.1.7l-.5.6c-.1.2-.1.4 0 .6.6 1 1.4 1.8 2.4 2.3.2.1.4.1.6-.1l.6-.6c.2-.2.4-.2.7-.1l1.6.7c.3.1.4.3.4.6v.5c0 .4-.2.7-.6.9-.7.3-1.6.4-2.6 0-2.2-.8-4-2.7-4.8-4.8-.4-1-.3-1.9 0-2.6Z" fill="currentColor"/></symbol>
+  <symbol id="i-in" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V17M8 7.4v.1M11.5 17v-3.7c0-1.6 1-2.6 2.3-2.6 1.3 0 2.2.9 2.2 2.6V17M11.5 10.5V17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-fb" viewBox="0 0 24 24"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4A21 21 0 0 0 14.3 4c-2.3 0-3.8 1.4-3.8 3.9v2.6H8v3h2.5V21" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
   <symbol id="diag" viewBox="0 0 18 18"><path d="M3 15L15 3M6 3h9v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
@@ -305,7 +396,7 @@ main { position: relative; z-index: 2; }
     <a href="/experiencias">Experiencias</a>
     <a class="opt" href="/sobre-unblock">Sobre UNBLOCK</a>
     <a class="opt" href="/el-libro">El libro</a>
-    <a class="btn btn--cream" href="/contacto">Contacto</a>
+    <a class="btn btn--cream" href="#contacto">Contacto</a>
   </nav>
   <details class="menu">
     <summary>Menú</summary>
@@ -315,7 +406,7 @@ main { position: relative; z-index: 2; }
       <li><a href="/experiencias">Experiencias</a></li>
       <li><a href="/sobre-unblock">Sobre UNBLOCK</a></li>
       <li><a href="/el-libro">El libro</a></li>
-      <li><a href="/contacto">Contacto</a></li>
+      <li><a href="#contacto">Contacto</a></li>
     </ul>
   </details>
 </header>
@@ -411,25 +502,63 @@ main { position: relative; z-index: 2; }
       <p class="intro">UNBLOCK diseña experiencias para empresas, equipos y líderes en Ciudad de México y otros destinos de México. Empezamos siempre por la misma pregunta: ¿qué queremos que las personas vivan aquí?</p>
     </div>
     <div class="svc" data-reveal>
-      <a class="card" href="/team-building-cdmx"><img src="media/c/hikers.jpg" alt="Un equipo caminando junto por el bosque"><span class="tag">EQUIPOS</span><span class="tx"><b>Team Building</b><span>Con propósito, nunca de catálogo.</span></span></a>
-      <a class="card" href="/offsites-empresas"><img src="media/c/retreat.jpg" alt="Casa de retiro con mesa larga entre árboles"><span class="tag">LIDERAZGO</span><span class="tx"><b>Offsites</b><span>Salir de la oficina para pensar distinto.</span></span></a>
+      <a class="card" href="#team-building"><img src="media/c/hikers.jpg" alt="Un equipo caminando junto por el bosque"><span class="tag">EQUIPOS</span><span class="tx"><b>Team Building</b><span>Con propósito, nunca de catálogo.</span></span></a>
+      <a class="card" href="#offsites"><img src="media/c/retreat.jpg" alt="Casa de retiro con mesa larga entre árboles"><span class="tag">LIDERAZGO</span><span class="tx"><b>Offsites</b><span>Salir de la oficina para pensar distinto.</span></span></a>
       <a class="card" href="/constelaciones-organizacionales"><img src="media/c/pines.jpg" alt="Copas de pinos vistas desde abajo"><span class="tag">SISTÉMICO</span><span class="tx"><b>Constelaciones organizacionales</b><span>Lo que el organigrama no cuenta.</span></span></a>
       <a class="card" href="/family-day-cdmx"><img src="media/c/garden.jpg" alt="Jardín al aire libre con cojines"><span class="tag">EVENTOS</span><span class="tx"><b>Family Days &amp; Eventos 360</b><span>Para reunir, conectar y celebrar.</span></span></a>
     </div>
     <nav class="more-svc tags" aria-label="Más servicios">
       <a href="/para-empresas#liderazgo">Leadership Experiences</a><a href="/para-empresas#kickoffs">Kickoffs</a><a href="/eventos-corporativos-cdmx">Eventos 360</a><a href="/fiestas-fin-de-ano-empresas">Fiestas de fin de año</a><a href="/para-empresas#medida">Experiencias a la medida</a>
     </nav>
-    <div class="row"><a class="btn btn--cream" href="/contacto?tipo=empresa">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    <div class="row"><a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20una%20experiencia%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+  </section>
+
+  <!-- 6b · team building & offsites -->
+  <section class="teams" id="equipos" aria-labelledby="h-teams">
+    <div data-reveal>
+      <h2 class="ttl" id="h-teams">Your team doesn’t need another activity. <b>It needs the right experience for this moment.</b></h2>
+      <p class="intro" style="margin-top:22px;max-width:36em;color:#333">Diseñamos alrededor de lo que el equipo está viviendo:</p>
+      <div class="moments"><span>Integración</span><span>Cambio</span><span>Crecimiento</span><span>Nuevos liderazgos</span><span>Colaboración</span><span>Conflicto</span><span>Alineación</span><span>Inicio de una nueva etapa</span></div>
+    </div>
+
+    <article class="offer" id="team-building" data-reveal>
+      <div class="ph"><img src="media/c/hikers.jpg" alt="Un equipo caminando junto por un sendero del bosque" loading="lazy"><span class="tag">TEAM BUILDING</span></div>
+      <div class="txt">
+        <h3>Team Building <b>con propósito.</b></h3>
+        <p>Diseñamos experiencias alrededor del objetivo del equipo. Podemos incorporar pintura, cocina, fotografía, naturaleza, conversación, movimiento o storytelling. No trabajamos desde un catálogo rígido: primero entendemos qué está viviendo el equipo y después construimos la experiencia.</p>
+        <ul class="incl">
+          <li>Equipos pequeños, grupos medianos o experiencias de mayor escala.</li>
+          <li>Diseño, facilitación, materiales, fotografía, música, alimentos, venue y producción, según el proyecto.</li>
+          <li>Base en Ciudad de México y experiencias en otros destinos de México.</li>
+        </ul>
+        <div class="row"><a class="btn" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20cotizar%20un%20team%20building%20para%20mi%20equipo." target="_blank" rel="noopener">Cotizar un team building <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      </div>
+    </article>
+
+    <article class="offer flip" id="offsites" data-reveal>
+      <div class="ph"><img src="media/c/retreat.jpg" alt="Casa de retiro con una mesa larga entre los árboles" loading="lazy"><span class="tag">OFFSITES</span></div>
+      <div class="txt">
+        <h3>Offsites <b>para pensar distinto.</b></h3>
+        <p>Salir del día a día para que un equipo o un grupo de líderes pueda alinearse, abrir una conversación difícil o empezar una nueva etapa. Diseñamos el espacio, la agenda y la experiencia alrededor de la pregunta que la organización necesita responder.</p>
+        <ul class="incl">
+          <li>Para equipos en cambio, nuevos liderazgos, kickoffs o planeación.</li>
+          <li>Pueden incluir constelaciones organizacionales para ver relaciones y dinámicas desde otra perspectiva.</li>
+          <li>Venue, hospedaje, alimentos, facilitación y logística en un solo diseño.</li>
+        </ul>
+        <div class="row"><a class="btn" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20un%20offsite%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar un offsite <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      </div>
+    </article>
   </section>
 
   <!-- 7 · proof -->
   <section class="voices-sec" aria-labelledby="h-cases">
     <div data-reveal><h2 class="ttl" id="h-cases">Things we’ve already <b>made happen.</b></h2></div>
     <div class="cases" data-reveal>
-      <a class="case" href="/experiencias#liderazgo-estrategico"><h3>Liderazgo estratégico para supervisores</h3><p>Ejecución, comunicación, influencia y manejo de conflictos.</p></a>
-      <a class="case" href="/experiencias#equipos-colaborativos"><h3>Equipos colaborativos de alto impacto</h3><p>Observar y fortalecer comportamientos cotidianos de colaboración.</p></a>
-      <a class="case" href="/experiencias#paint-and-connect"><h3>Paint &amp; Connect</h3><p>Integración creativa utilizando la pintura como vehículo.</p></a>
-      <a class="case" href="/experiencias#cook-it"><h3>Cook it like you mean it</h3><p>Cocina colaborativa alrededor de comunicación, coordinación y roles.</p></a>
+      <button class="case" type="button" data-case="liderazgo" aria-haspopup="dialog"><span class="thumb"><img src="media/c/pines.jpg" alt="Copas de pinos vistas desde abajo" loading="lazy"></span><span class="cbody"><strong class="ct">Liderazgo estratégico para supervisores</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="colaborativos" aria-haspopup="dialog"><span class="thumb"><img src="media/c/hikers.jpg" alt="Personas caminando juntas en el bosque" loading="lazy"></span><span class="cbody"><strong class="ct">Equipos colaborativos de alto impacto</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="paint" aria-haspopup="dialog"><span class="thumb"><img src="media/c/leaf.jpg" alt="Hoja con gotas de rocío" loading="lazy"></span><span class="cbody"><strong class="ct">Paint &amp; Connect</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="cook" aria-haspopup="dialog"><span class="thumb"><img src="media/c/coffee.jpg" alt="Taza de café humeante sobre una piedra" loading="lazy"></span><span class="cbody"><strong class="ct">Cook it like you mean it</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="sistemica" aria-haspopup="dialog"><span class="thumb"><img src="media/c/garden.jpg" alt="Jardín con cojines bajo los árboles" loading="lazy"></span><span class="cbody"><strong class="ct">Intervención sistémica para equipos</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
     </div>
     <div class="voices" aria-label="Testimoniales" data-reveal>
       <blockquote class="voice big"><p>“Es de esas experiencias que sigues pensando días después.”</p><cite>Paola Figueroa, Sr. HRBP, AVEVA</cite></blockquote>
@@ -443,13 +572,42 @@ main { position: relative; z-index: 2; }
     <div data-reveal>
       <h2 class="ttl" id="h-ask"><span>What are you ready</span> <span><b>to see differently?</b></span></h2>
       <div class="row">
-        <a class="btn btn--cream" href="/contacto?tipo=personal">Para mí</a>
-        <a class="btn btn--cream" href="/contacto?tipo=empresa">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20m%C3%AD." target="_blank" rel="noopener">Para mí</a>
+        <a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20mi%20empresa." target="_blank" rel="noopener">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
       <p class="note">Empezamos con una conversación sobre lo que estás imaginando.</p>
     </div>
   </section>
+
+  <section class="contact" id="contacto" aria-labelledby="h-contact">
+    <div class="wrap">
+      <div data-reveal>
+        <h2 class="ttl" id="h-contact">Hablemos <b>por WhatsApp.</b></h2>
+        <p class="lead">Cuéntanos qué estás imaginando o qué está viviendo tu equipo. Te respondemos para empezar a diseñarlo.</p>
+        <nav class="social" aria-label="Redes de UNBLOCK"><a href="https://www.linkedin.com/" aria-label="UNBLOCK en LinkedIn" data-todo="linkedin" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/" aria-label="UNBLOCK en Instagram" data-todo="instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/" aria-label="UNBLOCK en Facebook" data-todo="facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
+        <p class="phone">WhatsApp: <a href="https://wa.me/525543938152" target="_blank" rel="noopener">55 4393 8152</a></p>
+      </div>
+      <div class="wa" data-reveal>
+        <a href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20mi%20empresa." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Para mi empresa</b><span>Team building, offsites, Family Days, eventos</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="alt" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20m%C3%AD." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Para mí</b><span>Slow Morning, Slow Weekend, retiros, constelaciones</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="alt" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20saber%20las%20pr%C3%B3ximas%20fechas%20de%20experiencias." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Próximas fechas</b><span>Recibe el calendario de experiencias</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </div>
+    </div>
+  </section>
 </main>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-t">
+  <div class="in">
+    <div class="ph"><img id="sheet-img" src="" alt=""></div>
+    <div class="tx">
+      <p class="kind" id="sheet-kind">EXPERIENCIA REALIZADA</p>
+      <h3 id="sheet-t"></h3>
+      <dl id="sheet-dl"></dl>
+      <div class="row" style="margin-top:6px"><a class="btn" id="sheet-wa" href="https://wa.me/525543938152" target="_blank" rel="noopener">Quiero algo así para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    </div>
+  </div>
+  <button class="x" type="button" id="sheet-x" aria-label="Cerrar">×</button>
+</dialog>
 
 <footer class="foot">
   <div class="grid">
@@ -458,8 +616,9 @@ main { position: relative; z-index: 2; }
       <li><a href="/sobre-unblock">Sobre Daniela</a></li>
       <li><a href="/el-libro">El libro</a></li>
       <li><a href="/insights">Insights</a></li>
-      <li><a href="/contacto">Contacto</a></li>
+      <li><a href="#contacto">Contacto</a></li>
     </ul>
+    <nav class="social" aria-label="Redes de UNBLOCK" style="grid-column:1/-1;margin-top:0"><a href="https://www.linkedin.com/" aria-label="UNBLOCK en LinkedIn" data-todo="linkedin" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/" aria-label="UNBLOCK en Instagram" data-todo="instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/" aria-label="UNBLOCK en Facebook" data-todo="facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
     <p class="about">UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.</p>
     <p class="credits">Paisajes: “Morning Clouds Over North Van Mountain Valley”, David Zhang, CC BY-SA 2.0 · “Looking up at a pine tree”, Simkinseled, CC0 · “Black Forest Trail Vista”, Nicholas A. Tonelli, CC BY 2.0 · “Spruce forest night sky stars”, ForestWander, CC BY-SA 3.0 · vía Wikimedia Commons.</p>
   </div>
@@ -476,10 +635,34 @@ main { position: relative; z-index: 2; }
   }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }) : null;
   document.querySelectorAll('[data-reveal]').forEach(el => io ? io.observe(el) : el.classList.add('is-in'));
 
+  // ---------------- case detail sheet ----------------
+  const CASES = {
+    liderazgo: { img: 'pines', kind: 'LIDERAZGO · EMPRESA', t: 'Liderazgo estratégico <b>para supervisores</b>', rows: [['Para quién', 'Supervisores y líderes de equipo'], ['Enfoque', 'Ejecución, comunicación, influencia y manejo de conflictos'], ['Experiencia diseñada', 'Diseño y facilitación de una experiencia de liderazgo a la medida del equipo']] },
+    colaborativos: { img: 'hikers', kind: 'EQUIPOS · EMPRESA', t: 'Equipos colaborativos <b>de alto impacto</b>', rows: [['Para quién', 'Equipos de trabajo'], ['Enfoque', 'Comportamientos cotidianos de colaboración'], ['Experiencia diseñada', 'Una experiencia para observarlos y fortalecerlos en la práctica']] },
+    paint: { img: 'leaf', kind: 'EXPERIENCIA CREATIVA', t: 'Paint <b>&amp; Connect</b>', rows: [['Para quién', 'Equipos que buscan integrarse'], ['Formato', 'Experiencia creativa con la pintura como vehículo'], ['Enfoque', 'Integración, conversación y conexión fuera de lo cotidiano']] },
+    cook: { img: 'coffee', kind: 'EXPERIENCIA CREATIVA', t: 'Cook it <b>like you mean it</b>', rows: [['Para quién', 'Equipos de trabajo'], ['Formato', 'Cocina colaborativa'], ['Enfoque', 'Comunicación, coordinación y roles']] },
+    sistemica: { img: 'garden', kind: 'INTERVENCIÓN SISTÉMICA', t: 'Intervención sistémica <b>para equipos</b>', rows: [['Situación', 'Un equipo atravesando un proceso de cambio organizacional'], ['Experiencia diseñada', 'Trabajo sistémico diseñado alrededor de ese momento'], ['Enfoque', 'Relaciones, posiciones y dinámicas del equipo']] }
+  };
+  const sheet = $('#sheet');
+  if (sheet && sheet.showModal) {
+    const close = () => { if (reduce) return sheet.close(); sheet.classList.add('closing'); setTimeout(() => { sheet.classList.remove('closing'); sheet.close(); }, 170); };
+    document.querySelectorAll('[data-case]').forEach(b => b.addEventListener('click', () => {
+      const c = CASES[b.dataset.case]; if (!c) return;
+      $('#sheet-img').src = 'media/c/' + c.img + '.jpg'; $('#sheet-img').alt = '';
+      $('#sheet-kind').textContent = c.kind; $('#sheet-t').innerHTML = c.t;
+      $('#sheet-dl').innerHTML = c.rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+      $('#sheet-wa').href = 'https://wa.me/525543938152?text=' + encodeURIComponent('Hola UNBLOCK, vi la experiencia "' + b.querySelector('.ct').textContent + '" y quiero algo así para mi equipo.');
+      sheet.showModal();
+    }));
+    $('#sheet-x').addEventListener('click', close);
+    sheet.addEventListener('click', e => { if (e.target === sheet) close(); });
+    sheet.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  }
+
   // ---------------- which scene, how much fog and light ----------------
   const secs = [...document.querySelectorAll('[data-scene]')];
   const scenes = {}; document.querySelectorAll('.scene').forEach(s => scenes[s.dataset.s] = s);
-  const lights = [...document.querySelectorAll('.paper, .voices-sec')];
+  const lights = [...document.querySelectorAll('.paper, .voices-sec, .teams, .contact')];
   const top = $('#top');
   let vw = innerWidth, vh = innerHeight, keys = [];
   const smooth = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
