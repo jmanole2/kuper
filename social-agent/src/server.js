@@ -32,6 +32,7 @@ import * as prospeccion from './prospeccion.js';
 import { feedHtml } from './web/control.js';
 import { inicioPage, privacidadPage, terminosPage } from './web/publico.js';
 import * as embudo from './embudo.js';
+import * as waSignup from './whatsappSignup.js';
 import * as importar from './importar.js';
 import * as limpieza from './limpieza.js';
 import * as airtable from './airtable.js';
@@ -1183,7 +1184,26 @@ export function createApp() {
 
   // Editor de lo que sabe el agente (admin y cliente).
   function conocimientoRoutes(router, base, { app = false, prefix = '' } = {}) {
-    const vista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, ...extra }));
+    const vista = (req, res, extra = {}) => {
+      const wa = { listo: waSignup.configurado(), appId: config.whatsappApp.id, configId: config.whatsappApp.configId, graph: config.whatsappApp.graph, estado: waSignup.estado(req.client),
+        agente: Boolean(db.clientCredentials(req.client).agente_url) };
+      // El botón de Meta abre una ventana de Facebook que tiene que poder hablar con esta página.
+      if (wa.listo) {
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+        res.setHeader('Content-Security-Policy', String(res.getHeader('Content-Security-Policy') || '')
+          .replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https://connect.facebook.net")
+          .replace("connect-src 'self'", "connect-src 'self' https://*.facebook.com https://connect.facebook.net") + "; frame-src https://*.facebook.com");
+      }
+      res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, wa, ...extra }));
+    };
+    // "Conectar WhatsApp": la ventana de Meta regresa el código y el número elegido.
+    router.post(`${prefix}/agente/whatsapp`, async (req, res) => {
+      try {
+        const r = await waSignup.conectar(req.client, { code: String(req.body.code || ''), waba_id: req.body.waba_id, phone_number_id: req.body.phone_number_id, evento: String(req.body.evento || '') });
+        seg.auditar(req, 'whatsapp_conectado', `${req.client.nombre}: ${r.numero}`);
+        res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(`WhatsApp conectado: ${r.numero}${r.nombre ? ` (${r.nombre})` : ''}. Tu agente ya contesta en ese número.${r.coexistencia ? ' Sigues pudiendo usar tu app de WhatsApp Business.' : ''}${r.avisos.length ? ` Ojo: ${r.avisos.join(' ')}` : ''}`)}`);
+      } catch (e) { console.error('[whatsapp conectar]', e.message); vista(req, res, { error: `WhatsApp: ${e.message}` }); }
+    });
     router.get(`${prefix}/agente`, (req, res) => vista(req, res, { ok: req.query.aviso ? String(req.query.aviso).slice(0, 300) : req.query.ok ? 'Guardado. Tu agente lo usa desde su siguiente respuesta.' : '' }));
     router.post(`${prefix}/agente`, (req, res) => {
       const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));

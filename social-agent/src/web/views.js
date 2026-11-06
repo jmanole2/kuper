@@ -954,14 +954,70 @@ export function cuentaPage(user, { error = '', ok = '', client = null, dosPasos 
 export const adminSide = () => side('clientes');
 export const appSide = (on, client) => sideApp(on, client);
 
+// ------------------------------------------------------------ conectar WhatsApp (Embedded Signup de Meta)
+// Dos caminos: conservar la app de WhatsApp Business en el celular (coexistencia) o un número nuevo solo para el agente.
+function conectarWhatsapp(wa, { base, app }) {
+  if (!wa || (!wa.listo && app && !wa.estado?.conectado)) return '';
+  const e = wa.estado || {};
+  const titulo = html`<span class="mono">WhatsApp</span>`;
+  if (!wa.listo) return html`<div class="card" style="margin-bottom:18px">${titulo}<p class="muted small" style="margin:6px 0 0">Para mostrar el botón "Conectar WhatsApp", pon en el .env del panel META_APP_ID, META_CONFIG_ID y META_APP_SECRET de la app de Kuper (Tech Provider).</p></div>`;
+  const id = String(wa.appId).replace(/\D/g, ''), cfgId = String(wa.configId).replace(/\D/g, ''), ver = String(wa.graph).replace(/[^v0-9.]/g, '');
+  const estado = e.conectado
+    ? html`<p style="margin:6px 0 0;font-size:17px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:#4ade80"></span>Conectado: ${e.numero || e.phone_id}${e.nombre ? ` · ${e.nombre}` : ''}</p>
+      <p class="muted small" style="margin:4px 0 0">${e.coexistencia ? 'Sigues usando tu app de WhatsApp Business en el celular; el agente contesta y tú ves todo en los dos lados.' : 'Número dedicado al agente: los mensajes se ven y se contestan aquí en el panel.'}</p>`
+    : html`<p style="margin:6px 0 0;font-size:17px">Conecta tu WhatsApp para que tu agente conteste</p>
+      <p class="muted small" style="margin:4px 0 0">Se abre una ventana de Meta: inicias sesión con la cuenta de Facebook de tu negocio y eliges tu número. Toma unos minutos.</p>`;
+  if (!wa.agente) return html`<div class="card" style="margin-bottom:18px">${titulo}${estado}<p class="muted small" style="margin:8px 0 0">${app ? 'Kuper está terminando de preparar tu agente; en cuanto esté listo aparece aquí el botón.' : 'Falta la URL del agente de WhatsApp de esta marca (Configuración) para poder conectar.'}</p></div>`;
+  return html`<div class="card" style="margin-bottom:18px">${titulo}${estado}
+    <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:12px">
+      <button type="button" class="btn-accent" onclick="waConectar(true)">${e.conectado ? 'Volver a conectar' : 'Conectar mi WhatsApp Business'}</button>
+      <button type="button" class="btn-warn" onclick="waConectar(false)">Usar un número nuevo</button></div>
+    <p class="muted small" style="margin:8px 0 0"><strong>Mi WhatsApp Business:</strong> conservas tu número y tu app en el celular (escanearás un código QR). <strong>Número nuevo:</strong> un número que no tenga WhatsApp; te llega un código por SMS.</p>
+    <p class="muted small" id="wa-msg" style="margin:6px 0 0"></p>
+    <form id="wa-form" method="post" action="${base}/agente/whatsapp" hidden><input name="code"><input name="waba_id"><input name="phone_number_id"><input name="evento"></form>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
+    <script>${raw(`(function () {
+      var sesion = null, msg = function (t) { document.getElementById('wa-msg').textContent = t; };
+      window.fbAsyncInit = function () { FB.init({ appId: '${id}', autoLogAppEvents: true, xfbml: false, version: '${ver}' }); };
+      window.addEventListener('message', function (ev) {
+        try { if (!/(^|\.)facebook\.com$/.test(new URL(ev.origin).hostname)) return; } catch (e) { return; }
+        var d; try { d = JSON.parse(ev.data); } catch (e) { return; }
+        if (!d || d.type !== 'WA_EMBEDDED_SIGNUP') return;
+        if (/^FINISH/.test(d.event)) sesion = { waba_id: d.data && d.data.waba_id, phone_number_id: d.data && d.data.phone_number_id, evento: d.event };
+        else if (d.event === 'CANCEL') msg('Se cerró la ventana antes de terminar' + (d.data && d.data.current_step ? ' (paso: ' + d.data.current_step + ')' : '') + '. Intenta otra vez.');
+        else if (d.event === 'ERROR') msg('Meta marcó un error: ' + ((d.data && d.data.error_message) || 'intenta otra vez.'));
+      });
+      window.waConectar = function (coex) {
+        if (!window.FB) return msg('La ventana de Meta todavía está cargando. Espera un segundo y vuelve a tocar el botón.');
+        sesion = null; msg('Abriendo la ventana de Meta…');
+        var extras = { setup: {}, sessionInfoVersion: '3' };
+        if (coex) extras.featureType = 'whatsapp_business_app_onboarding';
+        FB.login(function (r) {
+          var code = r && r.authResponse && r.authResponse.code;
+          if (!code) return msg('No se completó la conexión. Si cerraste la ventana, intenta otra vez.');
+          var n = 0, esperar = setInterval(function () {
+            if (sesion || ++n > 20) {
+              clearInterval(esperar);
+              if (!sesion || !sesion.phone_number_id) return msg('Meta no nos dijo qué número elegiste. Intenta otra vez y termina todos los pasos.');
+              var f = document.getElementById('wa-form');
+              f.code.value = code; f.waba_id.value = sesion.waba_id; f.phone_number_id.value = sesion.phone_number_id; f.evento.value = sesion.evento;
+              msg('Conectando tu número…'); f.submit();
+            }
+          }, 250);
+        }, { config_id: '${cfgId}', response_type: 'code', override_default_response_type: true, extras: extras });
+      };
+    })();`)}</script></div>`;
+}
+
 // ------------------------------------------------------------ lo que sabe el agente
-export function conocimientoPage(client, k, versiones, { base, app = false, ok = '', error = '', borrador = null } = {}) {
+export function conocimientoPage(client, k, versiones, { base, app = false, ok = '', error = '', borrador = null, wa = null } = {}) {
   const texto = borrador?.texto ?? k?.texto ?? CONOC.PLANTILLA, datos = borrador?.datos ?? k?.datos ?? {};
   const body = html`${hero({ kicker: 'Agente de IA', title: 'Lo que sabe tu agente', letra: client.nombre,
     sub: 'Servicios, precios, preguntas frecuentes, horarios y dirección. Tu agente lo usa para contestar; lo que no esté aquí, no lo inventa.',
     tabs: app ? [] : [[`/admin/clientes/${client.id}?tab=leads`, '← ' + client.nombre, false]],
     note: k ? ['Última versión', `${k.autor || '—'} · ${fmtDate(k.actualizado.replace(' ', 'T') + 'Z')}`] : ['Sin información', 'Escribe lo básico y guarda'] })}
   ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+  ${conectarWhatsapp(wa, { base, app })}
   ${(() => { const p = client.config?.agente_pausado === true;
     return html`<form class="card" method="post" action="${base}/agente/pausa" style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px;${p ? 'border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.06)' : ''}">
       <input type="hidden" name="pausado" value="${p ? '0' : '1'}">
