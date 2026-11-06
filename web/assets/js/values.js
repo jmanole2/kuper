@@ -93,18 +93,27 @@ if (section && list && statement) {
     `<button class="mv-item" type="button" role="tab" data-i="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${item.title}</button>`
   ).join('');
 
+  // En escritorio el clic hace scroll hasta el tramo de esa declaración
+  // (el scroll ya cambia el contenido); en teléfono solo cambia la declaración.
+  const scrollToItem = (i) => {
+    const range = Math.max(section.offsetHeight - window.innerHeight, 1);
+    const top = section.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: top + range * ((i + 0.5) / ITEMS.length), behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
   list.addEventListener('click', (e) => {
     const button = e.target.closest('.mv-item');
     if (!button) return;
+    const i = Number(button.dataset.i);
+    if (!window.matchMedia('(max-width: 820px)').matches) { scrollToItem(i); return; }
     manualUntil = performance.now() + 1500;
-    paint(Number(button.dataset.i), true);
+    paint(i, true);
   });
   list.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
     const next = (active + (e.key === 'ArrowDown' ? 1 : -1) + ITEMS.length) % ITEMS.length;
-    manualUntil = performance.now() + 1500;
-    paint(next, true);
+    if (!window.matchMedia('(max-width: 820px)').matches) scrollToItem(next);
+    else { manualUntil = performance.now() + 1500; paint(next, true); }
     list.children[next].focus();
   });
 

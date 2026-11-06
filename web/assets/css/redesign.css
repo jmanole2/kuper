@@ -1672,3 +1672,8 @@ html.is-bucket-dragging * {
 @media (min-width: 821px) and (max-height: 880px) {
   .exp-card-image { aspect-ratio: auto; height: max(140px, calc(100vh - 500px)); }
 }
+
+/* Experiencia (escritorio): queda fija menos tiempo para que Nosotros entre antes */
+@media (min-width: 821px) {
+  html.panel-transitions-ready .exp-section { height: 145vh; min-height: 1000px; }
+}
