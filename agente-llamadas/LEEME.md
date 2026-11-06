@@ -103,3 +103,22 @@ La lista de empresas vive en el panel (cliente → pestaña **Ventas**): se busc
 - **Llamar de verdad:** compra un número en Retell (Phone Numbers), ponlo en `RETELL_FROM_NUMBER` y activa las llamadas en el panel. `marcador.mjs` pide cada 2 minutos la siguiente empresa.
 
 Pruebas: `node --test agente-llamadas/test/*.test.mjs`.
+
+## Número de teléfono real (Telnyx) con pausa y horario del panel
+
+El cliente conserva su número de siempre y **desvía** sus llamadas a un número de Telnyx; ese número entra a la asistente.
+
+1. **Telnyx**: compra un número de México y crea un *SIP trunk* tipo **FQDN** con `sip.retellai.com` (registro SRV), autenticación por **credenciales** (usuario y contraseña), formato **+E.164**, códecs G722/G711, transporte TCP y un *outbound voice profile*. Asigna el número a ese trunk.
+2. **`.env`** del servidor (con `sudo bash deploy/clave.sh …` o editándolo):
+   - `TELNYX_SIP_URI` (p. ej. `sip.telnyx.com`), `TELNYX_SIP_USUARIO`, `TELNYX_SIP_CLAVE`: las credenciales del trunk.
+   - `TRANSFERIR_<DEMO>`: el número del equipo al que se pasan las llamadas, con +52 (p. ej. `TRANSFERIR_INHOUSEWORK=+5255…`). No va en el repo porque es público. Debe ser **otro** número, no el que está desviado.
+3. `sudo bash agente-llamadas/deploy/update.sh` (agrega `transferir_a_humano` a la asistente) y luego:
+   ```
+   node --env-file=agente-llamadas/.env agente-llamadas/retell.mjs conectar-numero +5255XXXXXXXX --config agente-llamadas/demos/inhousework.json
+   ```
+4. En su línea de siempre activan el desvío al número de Telnyx (siempre, si no contestan o si está ocupado).
+
+En cada llamada, Retell pregunta a `/retell/entrante` y el panel decide (`/api/<slug>/llamadas/turno`):
+- **Pausar llamadas** (en "Lo que sabe tu agente"): la asistente solo saluda y pasa la llamada al equipo.
+- **Horario de la IA = solo fuera del horario del equipo**: en horario del equipo, la pasa; fuera de horario, contesta ella.
+- Si el panel no responde o no hay `TRANSFERIR_<DEMO>`, contesta la asistente (nunca se pierde una llamada).

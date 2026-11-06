@@ -13,6 +13,7 @@ import * as panel from './panel.mjs';
 import { configFunciones, crearFunciones, eventoDeLink, tokenFunciones } from './funciones.mjs';
 import * as marcador from './marcador.mjs';
 import { agentePorNombre as buscarEnRetell } from './agentes.mjs';
+import { numeroTransferencia, respuestaEntrante } from './entrante.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -163,6 +164,7 @@ const server = createServer(async (req, res) => {
   }
   if (ruta === '/api/llamada' && req.method === 'POST') return crearLlamada(req, res);
   if (ruta === '/funciones/disponibilidad' && req.method === 'POST') return consultarDisponibilidad(req, res);
+  if (ruta === '/retell/entrante' && req.method === 'POST') return llamadaEntrante(req, res);
   const fn = /^\/funciones\/([a-z_]+)$/.exec(ruta);
   if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
   const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null);
@@ -214,6 +216,29 @@ async function consultarDisponibilidad(req, res) {
     console.error('[disponibilidad]', e.message);
     return json(res, 200, { resultado: 'El sistema de disponibilidad no respondió. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.' });
   }
+}
+// Llamada por teléfono que entra: Retell pregunta antes de contestar si atiende la asistente o la pasa al equipo.
+// URL (la pone "retell.mjs conectar-numero"): /retell/entrante?demo=<demo>&t=<token>
+async function turnoDelPanel(demo) {
+  const key = llaveDe(demo.panel_slug), base = String(process.env.PANEL_URL || '').replace(/\/+$/, '');
+  if (!demo.panel_slug || !key || !base) return null;
+  try {
+    const r = await fetch(`${base}/api/${encodeURIComponent(demo.panel_slug)}/llamadas/turno`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(3000) });
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
+}
+async function llamadaEntrante(req, res) {
+  const url = new URL(req.url, 'http://x');
+  if (!KEY || url.searchParams.get('t') !== tokenFunciones(KEY)) return json(res, 401, { error: 'no autorizado' });
+  const clave = String(url.searchParams.get('demo') || '');
+  const demo = demos.get(clave);
+  let cuerpo = {};
+  try { cuerpo = JSON.parse(await leerCuerpo(req) || '{}'); } catch { /* sin cuerpo: se contesta igual */ }
+  if (!demo) return json(res, 200, { call_inbound: {} }); // agente principal: contesta normal
+  const [turno, infoPanel] = await Promise.all([turnoDelPanel(demo), infoDelPanel(demo)]);
+  const r = respuestaEntrante({ demo, clave, turno, infoPanel, transferencia: numeroTransferencia(demo, clave) });
+  console.log(`${new Date().toISOString()} llamada entrante ${clave} de ${String(cuerpo.call_inbound?.from_number || '?').slice(0, 6)}…: ${r.call_inbound.metadata.atiende} (${r.call_inbound.metadata.motivo})`);
+  json(res, 200, r);
 }
 const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio,
   panel: d.panel_slug && llaveDe(d.panel_slug) ? { slug: d.panel_slug, key: llaveDe(d.panel_slug) } : null })))).filter((d) => d.id);

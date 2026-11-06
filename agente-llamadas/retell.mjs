@@ -12,6 +12,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configFunciones, definiciones, tokenFunciones } from './funciones.mjs';
 import { agentePorNombre } from './agentes.mjs';
+import { numeroTransferencia, variableTransferencia } from './entrante.mjs';
 
 const API = 'https://api.retellai.com';
 const aqui = dirname(fileURLToPath(import.meta.url));
@@ -20,6 +21,9 @@ const comando = args[0];
 const iCfg = args.indexOf('--config');
 const rutaCfg = iCfg >= 0 ? resolve(args[iCfg + 1]) : resolve(aqui, 'negocio.json');
 const cfg = JSON.parse(readFileSync(rutaCfg, 'utf8'));
+const demoClave = rutaCfg.split('/').pop().replace(/\.json$/, '');
+// Número del asesor al que se pasan las llamadas (numero_transferencia o TRANSFERIR_<DEMO> en el .env).
+const TRANSFERIR = numeroTransferencia(cfg, demoClave);
 
 const KEY = process.env.RETELL_API_KEY;
 
@@ -56,7 +60,12 @@ Eres ${cfg.asistente}, asistente virtual de ${cfg.negocio}, ${cfg.giro}. Hablas 
 - Tipo de llamada: {{direction}} (inbound = el cliente nos llamó, outbound = nosotros llamamos).
 - Nombre del cliente si lo conocemos: {{nombre_cliente}}
 - Motivo de la llamada saliente, si aplica: {{motivo_llamada}}
-
+${TRANSFERIR ? `
+## Llamadas que pasan al equipo (va antes que todo lo demás)
+Modo de esta llamada: {{modo_llamada}}.
+Si el modo es "transferir", ya saludaste diciendo que le comunicas con un asesor: no hagas preguntas ni des información, usa de inmediato la función transferir_a_humano. Si la transferencia no se puede, discúlpate, atiende tú la llamada normalmente y ofrece que un asesor le devuelva la llamada.
+Si el modo es "atender", atiende tú la llamada como se indica abajo.
+` : ''}
 ## Servicios
 ${lista(cfg.servicios)}
 
@@ -73,7 +82,7 @@ Para saber si hay oficinas o puestos fijos libres usa SIEMPRE la función consul
 ` : ''}
 ## Objetivo
 Tu meta principal es agendar ${cfg.tipo_de_cita}.
-${cfg.instrucciones ? `\n## Cómo atender\n${cfg.instrucciones}\n\n## Reglas\n- Respuestas cortas: una o dos frases por turno. Es una llamada telefónica, no un correo.\n- Todo lo que escribes se lee en voz alta: nunca uses símbolos, barras, abreviaturas ni viñetas. Di "pesos" en vez de "$" y los correos como "arroba" y "punto". Las cifras dilas con palabras y completas: "$15,500 / 6 meses" se dice "quince mil quinientos pesos al mes con contrato de seis meses".\n- Nunca inventes precios, horarios ni datos que no estén aquí; si no sabes algo, dilo y ofrece que un asesor le contacte.\n- Si la persona pide hablar con un humano, toma su nombre y teléfono y dile que un asesor le llamará.` : `
+${cfg.instrucciones ? `\n## Cómo atender\n${cfg.instrucciones}\n\n## Reglas\n- Respuestas cortas: una o dos frases por turno. Es una llamada telefónica, no un correo.\n- Todo lo que escribes se lee en voz alta: nunca uses símbolos, barras, abreviaturas ni viñetas. Di "pesos" en vez de "$" y los correos como "arroba" y "punto". Las cifras dilas con palabras y completas: "$15,500 / 6 meses" se dice "quince mil quinientos pesos al mes con contrato de seis meses".\n- Nunca inventes precios, horarios ni datos que no estén aquí; si no sabes algo, dilo y ofrece que un asesor le contacte.\n- ${TRANSFERIR ? 'Si la persona pide hablar con un humano, usa transferir_a_humano; si la transferencia no se puede, toma su nombre y teléfono y dile que un asesor le llamará.' : 'Si la persona pide hablar con un humano, toma su nombre y teléfono y dile que un asesor le llamará.'}` : `
 ## Cómo agendar
 1. Entiende qué necesita la persona en una o dos preguntas.
 2. Pregunta qué día y en qué horario le acomoda.
@@ -98,23 +107,38 @@ ${configFunciones() ? `Si la persona ya tiene una cita y quiere moverla o cancel
 - Di fechas y horas de forma natural ("el martes 4 a las 10 de la mañana"), nunca en formato técnico.
 - Si no sabes algo, dilo y ofrece que un asesor le contacte en la cita.
 - Si es una llamada saliente, presenta el motivo en la primera frase y pregunta si es buen momento para hablar. Si la persona no quiere, agradece y termina la llamada sin insistir.
-- Si la persona pide hablar con un humano${cfg.numero_transferencia ? ', transfiere la llamada' : ', toma su nombre y dile que un asesor le devolverá la llamada'}.`}`;
+- Si la persona pide hablar con un humano${TRANSFERIR ? ', transfiere la llamada con transferir_a_humano' : ', toma su nombre y dile que un asesor le devolverá la llamada'}.`}`;
 }
 
 function herramientas() {
   const tools = [
     { type: 'end_call', name: 'terminar_llamada', description: 'Termina la llamada cuando la conversación concluyó y ya te despediste.' },
   ];
-  if (cfg.numero_transferencia) {
-    tools.push({
-      type: 'transfer_call',
-      name: 'transferir_a_humano',
-      description: 'Transfiere la llamada a una persona del equipo cuando el cliente lo pida.',
-      transfer_destination: { type: 'predefined', number: cfg.numero_transferencia },
-      transfer_option: { type: 'cold_transfer' },
-    });
-  }
+  const t = herramientaTransferir();
+  if (t) tools.push(t);
   return tools;
+}
+function herramientaTransferir() {
+  if (!TRANSFERIR) return null;
+  return {
+    type: 'transfer_call',
+    name: 'transferir_a_humano',
+    description: 'Pasa la llamada a una persona del equipo: cuando el cliente lo pida, o de inmediato si el modo de la llamada es "transferir".',
+    transfer_destination: { type: 'predefined', number: TRANSFERIR },
+    transfer_option: { type: 'cold_transfer' },
+  };
+}
+// Agrega, actualiza o quita transferir_a_humano sin tocar las demás funciones.
+async function sincronizarTransferencia(llmId) {
+  try {
+    const llm = await api('GET', `/get-retell-llm/${llmId}`);
+    const antes = llm.general_tools || [];
+    const otras = antes.filter((x) => x.name !== 'transferir_a_humano');
+    const t = herramientaTransferir();
+    if (!t && otras.length === antes.length) return;
+    await api('PATCH', `/update-retell-llm/${llmId}`, { general_tools: t ? [...otras, t] : otras });
+    console.log(t ? `${cfg.asistente} puede pasar llamadas al equipo.` : `${cfg.asistente}: sin número para pasar llamadas (${variableTransferencia(demoClave)}).`);
+  } catch (e) { console.error(`No pude actualizar transferir_a_humano: ${e.message}`); }
 }
 
 async function elegirVoz(vozId = cfg.voz_id, genero = 'female') {
@@ -133,7 +157,7 @@ async function crear() {
     begin_message: '{{saludo}}',
     start_speaker: 'agent',
     model_config: { type: 'cascading', primary: { model: cfg.modelo }, temperature: 0.2 },
-    default_dynamic_variables: { saludo: saludoEntrante, nombre_cliente: 'desconocido', motivo_llamada: 'ninguno', ...(cfg.panel_slug ? { info_panel: 'Sin cambios recientes.' } : {}) },
+    default_dynamic_variables: { saludo: saludoEntrante, nombre_cliente: 'desconocido', motivo_llamada: 'ninguno', modo_llamada: 'atender', ...(cfg.panel_slug ? { info_panel: 'Sin cambios recientes.' } : {}) },
   };
   const agente = {
     agent_name: cfg.nombre_agente,
@@ -163,6 +187,7 @@ async function crear() {
     console.log(`Agente actualizado: ${previo.agent_id} (LLM ${llmId})`);
     if (!cfg.instrucciones) await sincronizarFunciones(llmId);
     await sincronizarDisponibilidad(llmId);
+    await sincronizarTransferencia(llmId);
     return;
   }
 
@@ -179,7 +204,6 @@ async function crear() {
 }
 
 // Disponibilidad en el momento (Airtable del cliente vía su panel): la asistente dice "dame un segundo" y consulta.
-const demoClave = rutaCfg.split('/').pop().replace(/\.json$/, '');
 function herramientaDisponibilidad() {
   if (!cfg.panel_slug) return null;
   const base = String(process.env.PUBLIC_URL || 'https://llamadas.kuper.media').replace(/\/+$/, '');
@@ -335,6 +359,31 @@ async function llamar() {
   console.log(`Llamada iniciada: ${r.call_id}`);
 }
 
+// Conecta un número de teléfono (de Telnyx, por SIP) a esta asistente: las llamadas que entran pasan antes por
+// /retell/entrante para decidir si contesta ella o las pasa al equipo. Si el número ya está en Retell, lo actualiza.
+//   node --env-file=agente-llamadas/.env agente-llamadas/retell.mjs conectar-numero +5255XXXXXXXX --config agente-llamadas/demos/inhousework.json
+// .env: TELNYX_SIP_URI (p. ej. sip.telnyx.com), TELNYX_SIP_USUARIO y TELNYX_SIP_CLAVE (credenciales del SIP trunk de Telnyx).
+async function conectarNumero() {
+  const numero = String(args[1] || '').replace(/[^+\d]/g, '');
+  if (!/^\+\d{11,15}$/.test(numero)) throw new Error('Uso: retell.mjs conectar-numero +5255XXXXXXXX [--config demos/x.json] (con lada y +52)');
+  const agente = await buscar(cfg.nombre_agente);
+  if (!agente) throw new Error(`Primero crea el agente "${cfg.nombre_agente}" con el comando "crear".`);
+  const base = String(process.env.PUBLIC_URL || 'https://llamadas.kuper.media').replace(/\/+$/, '');
+  const webhook = `${base}/retell/entrante?demo=${encodeURIComponent(demoClave)}&t=${tokenFunciones(KEY)}`;
+  const datos = { inbound_agents: [{ agent_id: agente.agent_id, weight: 1 }], nickname: `${cfg.negocio} · ${cfg.asistente}`, inbound_webhook_url: webhook };
+  const existentes = await api('GET', '/list-phone-numbers').catch(() => []);
+  if ((existentes || []).some((n) => n.phone_number === numero)) {
+    await api('PATCH', `/update-phone-number/${encodeURIComponent(numero)}`, datos);
+    console.log(`Número ${numero} actualizado: contesta ${cfg.asistente}.`);
+  } else {
+    const { TELNYX_SIP_URI: uri, TELNYX_SIP_USUARIO: usuario, TELNYX_SIP_CLAVE: clave } = process.env;
+    if (!uri || !usuario || !clave) throw new Error('Faltan TELNYX_SIP_URI, TELNYX_SIP_USUARIO y TELNYX_SIP_CLAVE en el .env (credenciales del SIP trunk de Telnyx).');
+    await api('POST', '/import-phone-number', { phone_number: numero, termination_uri: uri, sip_trunk_auth_username: usuario, sip_trunk_auth_password: clave, transport: 'TCP', ...datos });
+    console.log(`Número ${numero} conectado: contesta ${cfg.asistente}.`);
+  }
+  console.log(TRANSFERIR ? 'Pasa llamadas al equipo según el panel (pausa y horario de la IA).' : `Ojo: sin número del equipo (${variableTransferencia(demoClave)} en el .env), ${cfg.asistente} contesta todas las llamadas.`);
+}
+
 async function verPrompt() {
   console.log(prompt());
 }
@@ -343,9 +392,9 @@ async function crearTodo() {
   await crear();
   try { await crearVentas(); } catch (e) { console.error(`No pude crear el agente de ventas: ${e.message}`); }
 }
-const comandos = { crear: crearTodo, voces, llamar, prompt: verPrompt, 'prompt-ventas': async () => console.log(V ? promptVentas() : 'No hay "ventas" en negocio.json') };
+const comandos = { crear: crearTodo, voces, llamar, 'conectar-numero': conectarNumero, prompt: verPrompt, 'prompt-ventas': async () => console.log(V ? promptVentas() : 'No hay "ventas" en negocio.json') };
 if (!comandos[comando]) {
-  console.error('Comandos: prompt | prompt-ventas | voces | crear | llamar <número> [nombre] [motivo]');
+  console.error('Comandos: prompt | prompt-ventas | voces | crear | llamar <número> [nombre] [motivo] | conectar-numero <número>');
   process.exit(1);
 }
 comandos[comando]().catch((e) => {
