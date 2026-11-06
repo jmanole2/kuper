@@ -216,6 +216,40 @@ main { position: relative; z-index: 2; }
 .legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; opacity: .7; padding-top: 40px; letter-spacing: .04em; }
 .wordmark { font: 700 clamp(110px, 25vw, 480px)/.8 var(--sans); letter-spacing: -0.06em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); user-select: none; }
 
+/* equipos & liderazgo: a night scene in 3D */
+.night3d { position: relative; z-index: 3; height: 420vh; background: #0a1420; color: var(--ivory); }
+.night3d .pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+#gl3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.night3d .step { position: absolute; inset: 0; display: flex; align-items: center; padding: 120px var(--m) 60px; pointer-events: none; opacity: 0; }
+.night3d .step.on { pointer-events: auto; }
+.night3d .step > div { width: 100%; }
+.stag { font-weight: 500; text-transform: uppercase; letter-spacing: -0.02em; line-height: .96; font-size: clamp(40px, 6.2vw, 108px); }
+.stag span { display: block; will-change: transform, opacity; }
+.stag span:nth-child(2) { padding-left: 1.6em; }
+.stag span:nth-child(3) { padding-left: .8em; }
+.stag em { font-style: normal; color: var(--cream); }
+.night3d .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .14em; margin-bottom: 26px; padding: 7px 14px; border-radius: 999px; background: var(--cream); color: var(--green); font-weight: 500; }
+.step-1 > div { max-width: 1100px; margin: 0 auto; }
+.step-2 > div { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: end; }
+.step-2 .side { font-size: 15px; max-width: 26em; justify-self: end; }
+.step-2 .side p { opacity: .92; margin-bottom: 18px; }
+.mlist { display: flex; flex-wrap: wrap; gap: 8px; }
+.mlist span { font-size: 13px; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,243,198,.5); color: var(--cream); }
+.step-3 > div { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.slist { display: grid; gap: 0; align-self: center; }
+.slist a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid rgba(247,244,239,.22); text-decoration: none; font-size: clamp(17px, 1.5vw, 22px); transition: padding-left 260ms var(--ease-out), color 200ms ease; }
+.slist a:last-child { border-bottom: 1px solid rgba(247,244,239,.22); }
+.slist a::after { content: "→"; color: var(--cream); transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .slist a:hover { padding-left: 10px; color: var(--cream); } .slist a:hover::after { transform: translateX(4px); } }
+.step-3 .btn { margin-top: 30px; }
+.night3d .hud { position: absolute; left: var(--m); bottom: 28px; display: flex; gap: 8px; z-index: 2; }
+.night3d .hud i { width: 28px; height: 3px; border-radius: 2px; background: rgba(247,244,239,.25); overflow: hidden; position: relative; }
+.night3d .hud i b { position: absolute; inset: 0; background: var(--cream); transform-origin: left; transform: scaleX(0); }
+.no3d .night3d { height: auto; }
+.no3d .night3d .pin { position: relative; height: auto; }
+.no3d .night3d .step { position: relative; opacity: 1; min-height: 80vh; }
+.no3d #gl3d, .no3d .night3d .hud { display: none; }
+
 /* team building & offsites */
 .teams { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
 .teams h2 { font-size: var(--t-head); max-width: 15em; }
@@ -307,6 +341,9 @@ main { position: relative; z-index: 2; }
 }
 
 @media (max-width: 980px) {
+  .step-2 > div, .step-3 > div { grid-template-columns: 1fr; gap: 26px; }
+  .step-2 .side { justify-self: start; }
+  .night3d .step { align-items: flex-end; padding-bottom: 70px; }
   .offer, .contact .wrap, .sheet .in { grid-template-columns: 1fr; }
   .offer.flip .ph { order: 0; }
   .cases { grid-template-columns: 1fr 1fr; }
@@ -345,6 +382,10 @@ main { position: relative; z-index: 2; }
   .card { aspect-ratio: 5 / 4; }
   .duo, .svc, .cases { grid-template-columns: 1fr; }
   .teams h2, .contact h2 { font-size: 10.6vw; }
+  .stag { font-size: 10.4vw; }
+  .stag span:nth-child(2) { padding-left: .9em; }
+  .stag span:nth-child(3) { padding-left: .4em; }
+  .slist a { padding: 11px 0; font-size: 16px; }
   .sheet { max-width: 100vw; width: 100vw; max-height: 92vh; margin: auto 0 0; border-radius: 26px 26px 0 0; }
   .sheet .tx { padding: 24px 20px 32px; }
   .sheet dl div { grid-template-columns: 1fr; gap: 2px; }
@@ -513,14 +554,48 @@ main { position: relative; z-index: 2; }
     <div class="row"><a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20una%20experiencia%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
   </section>
 
-  <!-- 6b · team building & offsites -->
-  <section class="teams" id="equipos" aria-labelledby="h-teams">
-    <div data-reveal>
-      <h2 class="ttl" id="h-teams">Your team doesn’t need another activity. <b>It needs the right experience for this moment.</b></h2>
-      <p class="intro" style="margin-top:22px;max-width:36em;color:#333">Diseñamos alrededor de lo que el equipo está viviendo:</p>
-      <div class="moments"><span>Integración</span><span>Cambio</span><span>Crecimiento</span><span>Nuevos liderazgos</span><span>Colaboración</span><span>Conflicto</span><span>Alineación</span><span>Inicio de una nueva etapa</span></div>
+  <!-- 6a · equipos & liderazgo, under the night sky -->
+  <section class="night3d" id="equipos-liderazgo" aria-labelledby="h-el">
+    <div class="pin">
+      <canvas id="gl3d" aria-hidden="true"></canvas>
+      <div class="step step-1">
+        <div>
+          <span class="eyebrow">EQUIPOS &amp; LIDERAZGO</span>
+          <h2 class="stag" id="h-el"><span>Your team</span><span>doesn’t need</span><span><em>another activity.</em></span></h2>
+        </div>
+      </div>
+      <div class="step step-2">
+        <div>
+          <p class="stag" aria-hidden="false"><span>It needs</span><span>the right <em>experience</em></span><span>for this moment.</span></p>
+          <div class="side">
+            <p>Diseñamos experiencias alrededor de lo que el equipo está viviendo. Puede ser:</p>
+            <div class="mlist"><span>Integración</span><span>Cambio</span><span>Crecimiento</span><span>Nuevos liderazgos</span><span>Colaboración</span><span>Conflicto</span><span>Alineación</span><span>Inicio de una nueva etapa</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="step step-3">
+        <div>
+          <p class="stag"><span>Equipos</span><span>&amp; <em>liderazgo</em></span></p>
+          <div>
+            <nav class="slist" aria-label="Servicios para equipos">
+              <a href="#team-building">Team Building con propósito</a>
+              <a href="#offsites">Offsites</a>
+              <a href="/para-empresas#liderazgo">Leadership Experiences</a>
+              <a href="/para-empresas#kickoffs">Kickoffs</a>
+              <a href="/para-empresas#cultura">Cultura y colaboración</a>
+              <a href="/para-empresas#capacitacion">Capacitación</a>
+              <a href="/para-empresas#medida">Experiencias a la medida</a>
+            </nav>
+            <a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20una%20experiencia%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+          </div>
+        </div>
+      </div>
+      <div class="hud" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i></div>
     </div>
+  </section>
 
+  <!-- 6b · team building & offsites -->
+  <section class="teams" id="equipos" aria-label="Team Building y Offsites">
     <article class="offer" id="team-building" data-reveal>
       <div class="ph"><img src="media/c/hikers.jpg" alt="Un equipo caminando junto por un sendero del bosque" loading="lazy"><span class="tag">TEAM BUILDING</span></div>
       <div class="txt">
@@ -584,7 +659,7 @@ main { position: relative; z-index: 2; }
       <div data-reveal>
         <h2 class="ttl" id="h-contact">Hablemos <b>por WhatsApp.</b></h2>
         <p class="lead">Cuéntanos qué estás imaginando o qué está viviendo tu equipo. Te respondemos para empezar a diseñarlo.</p>
-        <nav class="social" aria-label="Redes de UNBLOCK"><a href="https://www.linkedin.com/" aria-label="UNBLOCK en LinkedIn" data-todo="linkedin" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/" aria-label="UNBLOCK en Instagram" data-todo="instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/" aria-label="UNBLOCK en Facebook" data-todo="facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
+        <nav class="social" aria-label="Redes de UNBLOCK"><a href="https://www.linkedin.com/company/unblockexperiences/" aria-label="UNBLOCK en LinkedIn" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/__un.block___" aria-label="UNBLOCK en Instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/profile.php?id=61576329704066" aria-label="UNBLOCK en Facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
         <p class="phone">WhatsApp: <a href="https://wa.me/525543938152" target="_blank" rel="noopener">55 4393 8152</a></p>
       </div>
       <div class="wa" data-reveal>
@@ -618,7 +693,7 @@ main { position: relative; z-index: 2; }
       <li><a href="/insights">Insights</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
-    <nav class="social" aria-label="Redes de UNBLOCK" style="grid-column:1/-1;margin-top:0"><a href="https://www.linkedin.com/" aria-label="UNBLOCK en LinkedIn" data-todo="linkedin" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/" aria-label="UNBLOCK en Instagram" data-todo="instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/" aria-label="UNBLOCK en Facebook" data-todo="facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
+    <nav class="social" aria-label="Redes de UNBLOCK" style="grid-column:1/-1;margin-top:0"><a href="https://www.linkedin.com/company/unblockexperiences/" aria-label="UNBLOCK en LinkedIn" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/__un.block___" aria-label="UNBLOCK en Instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/profile.php?id=61576329704066" aria-label="UNBLOCK en Facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
     <p class="about">UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.</p>
     <p class="credits">Paisajes: “Morning Clouds Over North Van Mountain Valley”, David Zhang, CC BY-SA 2.0 · “Looking up at a pine tree”, Simkinseled, CC0 · “Black Forest Trail Vista”, Nicholas A. Tonelli, CC BY 2.0 · “Spruce forest night sky stars”, ForestWander, CC BY-SA 3.0 · vía Wikimedia Commons.</p>
   </div>
@@ -808,6 +883,139 @@ void main(){
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
+})();
+</script>
+<script src="vendor/three.min.js"></script>
+<script>
+(() => {
+  const sec = document.getElementById('equipos-liderazgo');
+  const canvas = document.getElementById('gl3d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let gl = null; try { gl = window.THREE && (canvas.getContext('webgl2') || canvas.getContext('webgl')); } catch (e) {}
+  if (!gl) { document.documentElement.classList.add('no3d'); return; }
+  const small = innerWidth < 700;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !small, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : 2));
+  const scene = new THREE.Scene();
+  const SKY = new THREE.Color('#0a1420');
+  scene.background = SKY; scene.fog = new THREE.Fog(SKY, 60, 420);
+  const camera = new THREE.PerspectiveCamera(55, 1, .5, 1200);
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // ---- star trails: each star sweeps an arc around the pole as you scroll ----
+  const POLE = new THREE.Vector3(30, 150, -420);
+  const N = small ? 380 : 720, K = 22;
+  const pos = new Float32Array(N * K * 2 * 3), arc = new Float32Array(N * K * 2 * 4);
+  let o = 0, q = 0;
+  for (let i = 0; i < N; i++) {
+    const r = 12 + Math.pow(rnd(), .7) * 560, a0 = rnd() * Math.PI * 2, b = .35 + rnd() * .65, sz = rnd();
+    for (let k = 0; k < K; k++) for (const u of [k / K, (k + 1) / K]) {
+      pos[o++] = POLE.x; pos[o++] = POLE.y; pos[o++] = POLE.z;
+      arc[q++] = r; arc[q++] = a0; arc[q++] = u; arc[q++] = b * (.6 + sz * .4);
+    }
+  }
+  const tg = new THREE.BufferGeometry();
+  tg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  tg.setAttribute('arc', new THREE.BufferAttribute(arc, 4));
+  const trailMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { len: { value: .002 }, spin: { value: 0 }, vis: { value: 1 } },
+    vertexShader: `attribute vec4 arc; uniform float len, spin; varying float vA;
+      void main(){ float a = arc.y + spin - arc.z*len; vec3 p = position + vec3(cos(a)*arc.x, sin(a)*arc.x, 0.);
+        vA = arc.w * (1.0 - arc.z*0.85); gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.); }`,
+    fragmentShader: `uniform float vis; varying float vA; void main(){ gl_FragColor = vec4(vec3(.86,.9,1.), vA*vis*.5); }`
+  });
+  scene.add(new THREE.LineSegments(tg, trailMat));
+  // the stars themselves, so the sky reads as sky before the trails grow
+  const sp = new Float32Array(N * 3); for (let i = 0; i < N; i++) { const r = 12 + Math.pow(rnd(), .7) * 560, a = rnd() * 6.283; sp.set([POLE.x + Math.cos(a) * r, POLE.y + Math.sin(a) * r, POLE.z], i * 3); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xeaf0ff, size: small ? 1.6 : 1.3, sizeAttenuation: false, transparent: true, opacity: .9, depthWrite: false });
+  const starPts = new THREE.Points(sg, starMat); scene.add(starPts);
+
+  // ---- mountain ridges in layers of mist ----
+  const ridge = (z, h, col, seedOff) => {
+    const shape = new THREE.Shape(); const W = 1400; shape.moveTo(-W, -40);
+    for (let x = -W; x <= W; x += 10) {
+      const t = x * .004 + seedOff;
+      const y = h * (.55 * Math.sin(t) + .3 * Math.sin(t * 2.7 + 1.3) + .15 * Math.sin(t * 6.1 + .4)) + h * .7;
+      shape.lineTo(x, y);
+    }
+    shape.lineTo(W, -40); shape.lineTo(-W, -40);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshBasicMaterial({ color: col, fog: true }));
+    m.position.z = z; scene.add(m); return m;
+  };
+  ridge(-380, 70, '#0e1a26', 2.1); ridge(-300, 52, '#0c1722', 5.3); ridge(-230, 34, '#09121a', 8.7);
+
+  // ---- the grid terrain that rises from the valley, with a band of light running across it ----
+  const SEG = small ? 110 : 180;
+  const pg = new THREE.PlaneGeometry(520, 620, SEG, SEG); pg.rotateX(-Math.PI / 2);
+  const gridMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, extensions: { derivatives: true },
+    uniforms: { rise: { value: 0 }, scan: { value: -300 }, t: { value: 0 }, fogC: { value: SKY } },
+    vertexShader: `uniform float rise, t; varying vec2 vXZ; varying float vH, vD;
+      float hsh(vec2 p){ vec3 q = fract(vec3(p.xyx)*.1031); q += dot(q, q.yzx+33.33); return fract((q.x+q.y)*q.z); }
+      float nz(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hsh(i),hsh(i+vec2(1,0)),f.x), mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x), f.y); }
+      void main(){ vec3 p = position;
+        float n = nz(p.xz*.012)*.65 + nz(p.xz*.03+7.)*.35;
+        float side = smoothstep(30., 220., abs(p.x));
+        float h = (n*26. + side*60.*n) * rise;
+        p.y += h - 18. + (1.-rise)*-30.;
+        vXZ = p.xz; vH = h; vec4 mv = modelViewMatrix * vec4(p,1.); vD = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform float rise, scan; uniform vec3 fogC; varying vec2 vXZ; varying float vH, vD;
+      void main(){ vec2 g = vXZ / 9.; vec2 w = fwidth(g); vec2 l = abs(fract(g - .5) - .5) / w; float line = 1. - min(min(l.x, l.y), 1.);
+        float band = exp(-pow((vXZ.y - scan) / 22., 2.));
+        vec3 base = vec3(.5,.64,.98) * .85; vec3 hot = vec3(1.,.95,.78);
+        vec3 c = mix(base, hot, band*.9);
+        float a = line * (.62 + band*.38) * rise + band*.06*rise;
+        float fogF = smoothstep(60., 420., vD); c = mix(c, fogC, fogF); a *= 1. - fogF*.85;
+        gl_FragColor = vec4(c, a); }`
+  });
+  const grid = new THREE.Mesh(pg, gridMat); grid.position.z = -120; scene.add(grid);
+
+  // ---- scroll ----
+  const steps = [...sec.querySelectorAll('.step')], hud = [...sec.querySelectorAll('.hud b')];
+  const lines = steps.map(st => [...st.querySelectorAll('.stag span, .side, .slist, .eyebrow, .step-3 .btn')]);
+  const sm = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  let w = 0, h = 0, P = 0, visible = false;
+  const size = () => { w = sec.clientWidth; h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = small ? 68 : 55; camera.updateProjectionMatrix(); };
+  size(); addEventListener('resize', size);
+  new IntersectionObserver(es => es.forEach(e => visible = e.isIntersecting), { rootMargin: '200px 0px' }).observe(sec);
+  const RANGES = [[0, .3], [.3, .62], [.62, 1.01]];
+  let last = performance.now();
+  const loop = (now) => {
+    requestAnimationFrame(loop);
+    if (!visible) { last = now; return; }
+    const dt = Math.min((now - last) / 1000, .1); last = now;
+    const r = sec.getBoundingClientRect();
+    const target = Math.min(1, Math.max(0, -r.top / (sec.offsetHeight - h)));
+    P += (target - P) * (reduce ? 1 : 1 - Math.exp(-dt * 5));
+    const t = now / 1000;
+
+    // sky: trails lengthen and wheel, then fade as the grid takes over
+    trailMat.uniforms.len.value = .002 + sm(.08, .55, P) * 2.4;
+    trailMat.uniforms.spin.value = P * 1.2 + (reduce ? 0 : t * .015);
+    trailMat.uniforms.vis.value = 1 - sm(.62, .9, P) * .75;
+    starMat.opacity = .9 - sm(.1, .4, P) * .5;
+    const rise = sm(.5, .85, P);
+    gridMat.uniforms.rise.value = rise;
+    gridMat.uniforms.scan.value = -420 + ((reduce ? .5 : (t * .18) % 1)) * 560;
+    // camera: look up at the sky, then tilt down over the valley and glide in
+    const tilt = sm(.45, .9, P);
+    camera.position.set(0, 14 + tilt * 34, 120 - P * 110);
+    camera.lookAt(0, 70 - tilt * 92, camera.position.z - 220);
+
+    steps.forEach((st, i) => {
+      const [a, b] = RANGES[i], len = b - a;
+      const vin = i === 0 ? 1 : sm(a, a + len * .25, P), vout = i === 2 ? 1 : 1 - sm(b - len * .22, b, P);
+      const v = Math.min(vin, vout);
+      st.style.opacity = v.toFixed(3); st.classList.toggle('on', v > .5);
+      lines[i].forEach((el, k) => { const lag = k * .025; const e = i === 0 ? 1 : sm(a + lag, a + len * .3 + lag, P); const out = i === 2 ? 1 : 1 - sm(b - len * .25 + lag * .5, b, P);
+        el.style.transform = reduce ? '' : `translate3d(0, ${((1 - e) * 40 - (1 - out) * 26).toFixed(1)}px, 0)`; });
+      if (hud[i]) hud[i].style.transform = `scaleX(${sm(a, b, P).toFixed(3)})`;
+    });
+    renderer.render(scene, camera);
+  };
+  requestAnimationFrame(loop);
 })();
 </script>
 </body>
