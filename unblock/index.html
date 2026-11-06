@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNBLOCK · Experiencias para personas y empresas en CDMX</title>
+<meta name="description" content="UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos, constelaciones y retiros en Ciudad de México y otros destinos de México.">
+<link rel="canonical" href="https://unblock.mx/">
+<meta name="theme-color" content="#0b1a14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 136 126'%3E%3Cg stroke='%23111' stroke-width='6' fill='none' stroke-linecap='round'%3E%3Cpath d='M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="media/f/valley.jpg">
+<script>document.documentElement.classList.add('js')</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "UNBLOCK",
+  "url": "https://unblock.mx/",
+  "description": "UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.",
+  "areaServed": ["Ciudad de México", "México"],
+  "address": { "@type": "PostalAddress", "addressLocality": "Ciudad de México", "addressCountry": "MX" },
+  "founder": { "@type": "Person", "name": "Daniela", "jobTitle": "Fundadora de UNBLOCK" }
+}
+</script>
+<style>
+:root {
+  --ink: #111111;
+  --ivory: #F7F4EF;
+  --cream: #FFF3C6;
+  --green: #0F5B4D;
+  --green-deep: #0b1a14;
+  --green-soft: #8fb5a4;
+  --red: #C81016;
+
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Instrument Serif", "Times New Roman", serif;
+
+  --t-display: clamp(50px, 6.6vw, 116px);
+  --t-head: clamp(38px, 4.6vw, 80px);
+  --t-sub: clamp(16px, 1.3vw, 20px);
+  --t-body: 17px;
+  --t-small: 14px;
+  --m: clamp(16px, 3vw, 48px);
+
+  --glass: rgba(247, 244, 239, 0.12);
+  --glass-edge: rgba(247, 244, 239, 0.3);
+  --glass-blur: blur(18px) saturate(140%);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--green-deep); color: var(--ivory); font: 400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+p, h1, h2, h3, ul, figure, blockquote { margin: 0; }
+h1, h2, h3 { font-weight: 300; }
+ul { padding: 0; list-style: none; }
+img { display: block; max-width: 100%; }
+::selection { background: var(--cream); color: var(--green); }
+:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 999px; }
+
+.ttl { font-weight: 300; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; }
+.ttl b { font-weight: 700; letter-spacing: -0.035em; }
+.ttl .soft { color: var(--green-soft); }
+.sub { font-size: var(--t-sub); letter-spacing: .12em; line-height: 1.6; }
+.rule { display: block; width: 120px; height: 1px; background: currentColor; opacity: .6; margin: 26px 0; }
+.body { opacity: .92; max-width: 34em; }
+.shade { text-shadow: 0 1px 26px rgba(5, 20, 14, .45); }
+
+/* ---------- the forest: fixed scenes, light and fog over them ---------- */
+.stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--green-deep); }
+.scene { position: absolute; inset: 0; opacity: 0; transform: translateZ(0); backface-visibility: hidden; }
+.scene img { width: 100%; height: 100%; object-fit: cover; }
+.scene::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,22,16,.35) 0%, rgba(8,22,16,0) 30%, rgba(8,22,16,.55) 100%); }
+.scene[data-s="valley"] img { object-position: 50% 60%; }
+.scene[data-s="pine"]::after { background: linear-gradient(90deg, rgba(8,22,16,.15) 0%, rgba(8,22,16,.35) 45%, rgba(8,22,16,.78) 100%); }
+.scene[data-s="vista"]::after { background: linear-gradient(90deg, rgba(8,22,16,.7) 0%, rgba(8,22,16,.35) 50%, rgba(8,22,16,.1) 100%), linear-gradient(180deg, rgba(8,22,16,.35), rgba(8,22,16,0) 40%); }
+@media (max-width: 700px) { .scene[data-s="pine"]::after, .scene[data-s="vista"]::after { background: linear-gradient(180deg, rgba(8,22,16,.2) 0%, rgba(8,22,16,.3) 40%, rgba(8,22,16,.82) 100%); } }
+.scene[data-s="pine"] img { object-position: 30% 40%; }
+.scene[data-s="night"] img { object-position: 50% 80%; }
+#air, #stars { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------- glass, header, buttons ---------- */
+.glass { background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); border-radius: 24px; }
+.top { position: fixed; top: 16px; left: var(--m); right: var(--m); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 22px; border-radius: 999px; background: rgba(12, 32, 24, .28); color: var(--ivory); transition: background-color 400ms ease, color 400ms ease; }
+.top.on-light { background: rgba(247, 244, 239, .72); color: var(--green); border-color: rgba(15, 91, 77, .18); }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font: 400 17px/1 var(--sans); letter-spacing: .06em; }
+.brand svg { width: 32px; height: 30px; }
+.nav { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 38px); font-size: 15px; }
+.nav a:not(.btn) { text-decoration: none; position: relative; }
+.nav a:not(.btn)::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .nav a:not(.btn):hover::after { transform: scaleX(1); } }
+.menu { display: none; }
+
+/* two buttons only, from the manual: green and cream */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .75em; min-height: 54px; padding: 0 28px; border-radius: 999px; border: 0; cursor: pointer; font: 500 15px/1 var(--sans); text-decoration: none; background: var(--green); color: var(--ivory); transition: transform 160ms var(--ease-out), background-color 220ms ease; }
+.btn--cream { background: var(--ivory); color: var(--green); }
+.btn:active { transform: scale(.97); }
+.btn .arrow { width: 20px; height: 12px; flex: none; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { background: #0c4d41; }
+  .btn--cream:hover { background: #fff; }
+  .btn:hover .arrow { transform: translateX(4px); }
+}
+.top .btn { min-height: 44px; padding: 0 22px; }
+.top.on-light .btn { background: var(--green); color: var(--ivory); }
+.round { width: 54px; height: 54px; border-radius: 50%; display: inline-grid; place-items: center; border: 1.5px solid currentColor; transition: transform 200ms var(--ease-out), background-color 200ms ease; }
+.round svg { width: 18px; height: 18px; }
+@media (hover: hover) and (pointer: fine) { .round:hover { transform: rotate(45deg); } }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags a { font-size: 13px; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(247,244,239,.55); text-decoration: none; transition: background-color 200ms ease, color 200ms ease; }
+@media (hover: hover) and (pointer: fine) { .tags a:hover { background: var(--ivory); color: var(--green); } }
+
+/* ---------- sections ---------- */
+main { position: relative; z-index: 2; }
+.sec { position: relative; min-height: 120vh; display: flex; align-items: center; padding: 140px var(--m); }
+.sec.right { justify-content: flex-end; }
+.col { width: min(600px, 100%); }
+.sec h2 { font-size: var(--t-head); }
+.sec .sub { margin-top: 22px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 34px; }
+
+/* hero, after Nexora: a promise on the left, the title on the right, cards and tags below */
+.hero { min-height: 100vh; min-height: 100svh; padding: 120px var(--m) 32px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 28px; align-items: center; }
+.hero .lede { align-self: center; max-width: 330px; }
+.hero .lede b { display: block; font-weight: 500; font-size: 20px; letter-spacing: .02em; line-height: 1.25; }
+.hero .lede p { margin-top: 12px; font-size: 15px; opacity: .9; }
+.hero .title { justify-self: end; text-align: right; }
+.hero h1 { font-size: var(--t-display); }
+.hero h1 span { display: block; }
+.hero .title p { margin: 22px 0 0 auto; max-width: 30em; font-size: 16px; opacity: .92; }
+.hero .title .row { justify-content: flex-end; }
+.hero-foot { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+.minis { display: flex; gap: 12px; }
+.mini { width: 190px; padding: 12px; border-radius: 20px; text-decoration: none; display: grid; gap: 10px; transition: transform 300ms var(--ease-out); }
+.mini img { width: 100%; height: 96px; object-fit: cover; border-radius: 12px; }
+.mini b { font-weight: 500; font-size: 15px; }
+.mini span { display: block; font-size: 12px; opacity: .85; margin-top: 2px; }
+.mini.solid { background: var(--ivory); color: var(--green); border-color: transparent; }
+@media (hover: hover) and (pointer: fine) { .mini:hover { transform: translateY(-4px); } }
+
+/* light chapter: the paper of the brand */
+.paper { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
+.paper .ttl b { color: var(--green); }
+.paper .ttl .soft { color: #6f9c8a; }
+.lead-wrap { display: grid; grid-template-columns: 1fr 5fr 1fr; gap: 24px; align-items: start; }
+.lead-wrap .star { width: 38px; color: var(--green); margin-top: 10px; }
+.lead-wrap .note { justify-self: end; font-size: 12px; letter-spacing: .12em; text-align: right; color: #555; }
+.paper h2 { font-size: var(--t-head); text-align: center; }
+.paper h2 .pic { display: inline-block; width: 1.8em; height: .78em; border-radius: 999px; overflow: hidden; vertical-align: -0.08em; }
+.paper h2 .pic img { width: 100%; height: 100%; object-fit: cover; }
+.paper .intro { max-width: 36em; margin: 30px auto 0; text-align: center; color: #333; }
+.trio { display: grid; grid-template-columns: 1fr 3fr; gap: 24px; margin-top: 70px; align-items: end; }
+.trio .side { display: grid; gap: 18px; }
+.trio .side p { font-size: 15px; color: #444; max-width: 24em; }
+.trio .side a { font-weight: 500; letter-spacing: .06em; font-size: 15px; color: var(--green); }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4 / 5; color: var(--ivory); text-decoration: none; display: block; background: var(--green); }
+.card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease-out); }
+.card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,22,16,0) 40%, rgba(8,22,16,.75) 100%); }
+.card .tx { position: absolute; left: 20px; right: 20px; bottom: 18px; z-index: 1; }
+.card .tx b { display: block; font-weight: 500; font-size: 24px; letter-spacing: -0.01em; line-height: 1.1; }
+.card .tx span { display: block; margin-top: 6px; font-size: 14px; opacity: .9; }
+.card .tag { position: absolute; top: 14px; left: 14px; z-index: 1; font-size: 11px; letter-spacing: .1em; padding: 6px 11px; border-radius: 999px; border: 1px solid rgba(247,244,239,.7); }
+@media (hover: hover) and (pointer: fine) { .card:hover img { transform: scale(1.05); } }
+
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
+.duo div { padding: 22px 24px; }
+.duo b { display: block; font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
+.duo span { display: block; margin-top: 6px; font-size: 15px; opacity: .9; }
+
+/* empresas: a row of dark cards */
+.firms { position: relative; z-index: 3; background: var(--green-deep); padding: clamp(110px, 12vw, 190px) var(--m); }
+.firms h2 { font-size: var(--t-head); text-align: center; }
+.firms h2 b { color: var(--cream); }
+.firms .intro { max-width: 38em; margin: 26px auto 0; text-align: center; opacity: .9; }
+.svc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 64px; }
+.svc .card { aspect-ratio: 3 / 4; background: #0f2a20; }
+.svc .card:nth-child(2) { transform: translateY(-22px); }
+.svc .card:nth-child(4) { transform: translateY(-12px); }
+.more-svc { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 40px; }
+.firms .row { justify-content: center; margin-top: 40px; }
+
+.voices-sec { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
+.voices-sec h2 { font-size: var(--t-head); }
+.voices-sec h2 b { color: var(--green); }
+.cases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 48px; }
+.case { padding: 26px; border-radius: 22px; background: #EDE9E1; min-height: 210px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: transform 300ms var(--ease-out), background-color 200ms ease; }
+.case h3 { font-weight: 700; font-size: 21px; line-height: 1.2; color: var(--green); }
+.case p { font-size: 15px; color: #444; margin-top: 16px; }
+@media (hover: hover) and (pointer: fine) { .case:hover { transform: translateY(-4px); background: #E6E1D7; } }
+.voices { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; margin-top: 110px; }
+.voice { padding: 30px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; background: #EDE9E1; }
+.voice.big { background: var(--green); color: var(--ivory); }
+.voice.big p { font-family: var(--serif); font-size: clamp(30px, 2.8vw, 42px); line-height: 1.12; }
+.voice cite { font-style: normal; font-size: var(--t-small); letter-spacing: .05em; opacity: .85; }
+.voices-sec .row { margin-top: 32px; }
+
+.ask { position: relative; z-index: 3; background: var(--green); color: var(--ivory); text-align: center; padding: clamp(120px, 14vw, 220px) var(--m); }
+.ask h2 { font-size: var(--t-display); }
+.ask h2 span { display: block; }
+.ask h2 b { color: var(--cream); }
+.ask .row { justify-content: center; }
+.ask .note { margin-top: 20px; font-size: var(--t-small); letter-spacing: .1em; opacity: .85; }
+
+.foot { position: relative; z-index: 3; background: #111111; color: var(--ivory); padding: clamp(80px, 9vw, 130px) var(--m) 0; overflow: hidden; }
+.foot .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; }
+.foot h2 { font-size: var(--t-head); }
+.foot .links { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: flex-end; align-content: start; }
+.foot .links a { text-decoration: none; }
+.foot .about { grid-column: 1 / -1; font-size: 15px; opacity: .85; max-width: 72ch; }
+.credits { grid-column: 1 / -1; font-size: 13px; opacity: .65; max-width: 110ch; }
+.legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; opacity: .7; padding-top: 40px; letter-spacing: .04em; }
+.wordmark { font: 700 clamp(110px, 25vw, 480px)/.8 var(--sans); letter-spacing: -0.06em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); user-select: none; }
+
+/* equipos & liderazgo: a night scene in 3D */
+.night3d { position: relative; z-index: 3; height: 420vh; background: #07120d; color: var(--ivory); }
+.night3d .pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+#gl3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.night3d .step { position: absolute; inset: 0; display: flex; align-items: center; padding: 120px var(--m) 60px; pointer-events: none; opacity: 0; }
+.night3d .step.on { pointer-events: auto; }
+.night3d .step > div { width: 100%; }
+.stag { font-weight: 300; letter-spacing: -0.03em; line-height: 1.02; font-size: clamp(42px, 5.6vw, 96px); text-wrap: balance; }
+.stag span { display: block; will-change: transform, opacity; }
+.stag span + span { padding-left: 1.2em; }
+.stag b { font-weight: 700; letter-spacing: -0.035em; color: var(--cream); }
+.night3d .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; letter-spacing: .14em; margin-bottom: 26px; padding: 7px 14px; border-radius: 999px; background: var(--cream); color: var(--green); font-weight: 500; }
+.step-1 > div { max-width: 1100px; margin: 0 auto; }
+.step-2 > div { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: end; }
+.step-2 .side { font-size: 15px; max-width: 26em; justify-self: end; }
+.step-2 .side p { opacity: .92; margin-bottom: 18px; }
+.mlist { display: flex; flex-wrap: wrap; gap: 8px; }
+.mlist span { font-size: 13px; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,243,198,.45); color: var(--cream); background: rgba(8,22,16,.35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.step-3 > div { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.slist { display: grid; gap: 0; align-self: center; }
+.slist a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid rgba(247,244,239,.22); text-decoration: none; font-size: clamp(17px, 1.5vw, 22px); transition: padding-left 260ms var(--ease-out), color 200ms ease; }
+.slist a:last-child { border-bottom: 1px solid rgba(247,244,239,.22); }
+.slist a::after { content: "→"; color: var(--cream); transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .slist a:hover { padding-left: 10px; color: var(--cream); } .slist a:hover::after { transform: translateX(4px); } }
+.step-3 .btn { margin-top: 30px; }
+.night3d .hud { position: absolute; left: var(--m); bottom: 28px; display: flex; gap: 8px; z-index: 2; }
+.night3d .hud i { width: 28px; height: 3px; border-radius: 2px; background: rgba(247,244,239,.25); overflow: hidden; position: relative; }
+.night3d .hud i b { position: absolute; inset: 0; background: var(--cream); transform-origin: left; transform: scaleX(0); }
+.no3d .night3d { height: auto; }
+.no3d .night3d .pin { position: relative; height: auto; }
+.no3d .night3d .step { position: relative; opacity: 1; min-height: 80vh; }
+.no3d #gl3d, .no3d .night3d .hud { display: none; }
+
+/* team building & offsites */
+.teams { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
+.teams h2 { font-size: var(--t-head); max-width: 15em; }
+.teams h2 b { color: var(--green); }
+.moments { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+.moments span { font-size: 13px; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(15,91,77,.35); color: var(--green); }
+.offer { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(24px, 4vw, 64px); align-items: center; margin-top: clamp(70px, 8vw, 120px); }
+.offer + .offer { margin-top: clamp(60px, 7vw, 110px); }
+.offer.flip .ph { order: 2; }
+.offer .ph { position: relative; border-radius: 26px; overflow: hidden; aspect-ratio: 5 / 4; background: var(--green); }
+.offer .ph img { width: 100%; height: 100%; object-fit: cover; }
+.offer .ph .tag { position: absolute; top: 16px; left: 16px; font-size: 11px; letter-spacing: .1em; padding: 6px 11px; border-radius: 999px; color: var(--ivory); border: 1px solid rgba(247,244,239,.75); }
+.offer h3 { font-weight: 300; font-size: clamp(34px, 3.4vw, 56px); line-height: 1.02; letter-spacing: -0.03em; }
+.offer h3 b { font-weight: 700; color: var(--green); }
+.offer .txt > p { margin-top: 18px; color: #333; max-width: 34em; }
+.incl { display: grid; gap: 0; margin-top: 24px; }
+.incl li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(15,91,77,.16); font-size: 15px; color: #333; }
+.incl li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-top: 8px; }
+.offer .row { margin-top: 28px; }
+
+/* cases open into a detail sheet */
+.case { cursor: pointer; text-align: left; font: inherit; color: inherit; border: 0; padding: 0; overflow: hidden; }
+.case .thumb { height: 150px; overflow: hidden; }
+.case .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease-out); }
+.case .cbody { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.case .open { margin-top: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--green); }
+.case .open i { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-style: normal; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .case:hover .thumb img { transform: scale(1.06); } .case:hover .open i { transform: rotate(90deg); } }
+.cases { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.case { min-height: 0; }
+.case .ct { display: block; font-weight: 700; font-size: 19px; line-height: 1.2; color: var(--green); }
+.sheet { border: 0; padding: 0; max-width: min(980px, calc(100vw - 32px)); width: 100%; border-radius: 28px; background: var(--ivory); color: var(--ink); overflow: hidden; box-shadow: 0 40px 120px -30px rgba(0,0,0,.55); }
+.sheet::backdrop { background: rgba(8, 22, 16, .55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.sheet[open] { animation: sheetIn 280ms var(--ease-out); }
+.sheet.closing { animation: sheetOut 180ms ease-in forwards; }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes sheetOut { to { opacity: 0; transform: translateY(8px) scale(.98); } }
+.sheet .in { display: grid; grid-template-columns: 1fr 1.1fr; }
+.sheet .ph { min-height: 420px; background: var(--green); }
+.sheet .ph img { width: 100%; height: 100%; object-fit: cover; }
+.sheet .tx { padding: clamp(28px, 3.4vw, 48px); display: flex; flex-direction: column; gap: 18px; }
+.sheet .kind { font-size: 12px; letter-spacing: .12em; color: var(--green); }
+.sheet h3 { font-weight: 300; font-size: clamp(30px, 3vw, 44px); line-height: 1.04; letter-spacing: -0.03em; }
+.sheet h3 b { font-weight: 700; color: var(--green); }
+.sheet dl { margin: 0; display: grid; gap: 0; }
+.sheet dl div { display: grid; grid-template-columns: 9em 1fr; gap: 14px; padding: 12px 0; border-top: 1px solid rgba(15,91,77,.16); font-size: 15px; }
+.sheet dt { color: #666; }
+.sheet dd { margin: 0; color: #222; }
+.sheet .x { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(247,244,239,.9); color: var(--green); font-size: 22px; cursor: pointer; transition: transform 160ms var(--ease-out); }
+.sheet .x:active { transform: scale(.94); }
+
+.incl li { grid-template-columns: 22px 1fr; }
+.incl li b { color: var(--green); font-weight: 700; }
+.offer .for { margin-top: 18px; font-size: 14px; letter-spacing: .04em; color: #555; }
+.clients { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: 0 var(--m) clamp(100px, 11vw, 170px); }
+.cl-wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(28px, 5vw, 80px); align-items: center; border-top: 1px solid rgba(15,91,77,.16); padding-top: clamp(80px, 9vw, 130px); }
+.clients h2 { font-size: var(--t-head); }
+.clients h2 b { color: var(--green); }
+.names { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 34px; }
+.names li { font-size: clamp(15px, 1.25vw, 18px); font-weight: 500; color: var(--green); padding: 8px 14px; border-radius: 999px; background: #EDE9E1; }
+.cl-photo { margin: 0; border-radius: 26px; overflow: hidden; position: relative; }
+.cl-photo img { width: 100%; aspect-ratio: 5 / 4; object-fit: cover; }
+.cl-photo figcaption { position: absolute; left: 16px; bottom: 14px; font-size: 13px; color: var(--ivory); background: rgba(8,22,16,.45); padding: 6px 12px; border-radius: 999px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.voices { grid-template-columns: 1.3fr 1fr 1fr 1fr; }
+.people { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(100px, 11vw, 170px) var(--m); }
+.people h2 { font-size: var(--t-head); }
+.people h2 b { color: var(--green); }
+.people .intro { margin-top: 20px; max-width: 36em; color: #333; }
+.trio-p { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 56px; }
+.person { display: flex; flex-direction: column; gap: 10px; }
+.person .pp { aspect-ratio: 4 / 5; border-radius: 24px; background: linear-gradient(160deg, #13604f, #0b3a31); display: grid; place-items: center; overflow: hidden; margin-bottom: 10px; }
+.person .pp img { width: 100%; height: 100%; object-fit: cover; }
+.person .ini { font-weight: 300; font-size: 96px; color: rgba(247,244,239,.35); }
+.person h3 { font-weight: 700; font-size: 26px; letter-spacing: -0.02em; color: var(--green); }
+.person .role { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #666; }
+.person .bio { font-size: 15px; color: #333; }
+.person .more { color: var(--green); }
+
+/* contact */
+.contact { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(100px, 11vw, 170px) var(--m); }
+.contact .wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
+.contact h2 { font-size: var(--t-head); }
+.contact h2 b { color: var(--green); }
+.contact .lead { margin-top: 22px; color: #333; max-width: 30em; }
+.wa { display: grid; gap: 12px; }
+.wa a { display: grid; grid-template-columns: 52px 1fr auto; gap: 16px; align-items: center; padding: 18px 22px; border-radius: 22px; text-decoration: none; background: var(--green); color: var(--ivory); transition: transform 160ms var(--ease-out), background-color 200ms ease; }
+.wa a.alt { background: #EDE9E1; color: var(--green); }
+.wa a:active { transform: scale(.98); }
+.wa .ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: rgba(247,244,239,.14); }
+.wa a.alt .ic { background: var(--ivory); }
+.wa .ic svg { width: 26px; height: 26px; }
+.wa b { display: block; font-weight: 500; font-size: 18px; }
+.wa span span { display: block; font-size: 14px; opacity: .85; margin-top: 2px; }
+.wa .arrow { width: 22px; height: 12px; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .wa a:hover .arrow { transform: translateX(4px); } .wa a:hover { background: #0c4d41; } .wa a.alt:hover { background: #E6E1D7; } }
+.social { display: flex; gap: 10px; margin-top: 26px; }
+.social a { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid rgba(15,91,77,.4); color: var(--green); transition: background-color 200ms ease, color 200ms ease, transform 160ms var(--ease-out); }
+.social a svg { width: 22px; height: 22px; }
+.social a:active { transform: scale(.95); }
+@media (hover: hover) and (pointer: fine) { .social a:hover { background: var(--green); color: var(--ivory); } }
+.phone { margin-top: 18px; font-size: 15px; color: #444; }
+.phone a { color: var(--green); font-weight: 500; }
+.foot .social a { border-color: rgba(247,244,239,.4); color: var(--ivory); }
+
+/* entrances */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] > * { opacity: 0; transform: translateY(24px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); }
+  .js [data-reveal].is-in > * { opacity: 1; transform: none; }
+  .js [data-reveal].is-in > *:nth-child(2) { transition-delay: 80ms; }
+  .js [data-reveal].is-in > *:nth-child(3) { transition-delay: 160ms; }
+  .js [data-reveal].is-in > *:nth-child(4) { transition-delay: 240ms; }
+  .js [data-reveal].is-in > *:nth-child(5) { transition-delay: 320ms; }
+  .js .cards[data-reveal] > *, .js .svc[data-reveal] > * { transform: translateY(40px); }
+  .js .svc[data-reveal].is-in > *:nth-child(2) { transform: translateY(-22px); }
+  .js .svc[data-reveal].is-in > *:nth-child(4) { transform: translateY(-12px); }
+}
+
+@media (max-width: 980px) {
+  .step-2 > div, .step-3 > div { grid-template-columns: 1fr; gap: 26px; }
+  .step-2 .side { justify-self: start; }
+  .night3d .step { align-items: flex-end; padding-bottom: 70px; }
+  .offer, .contact .wrap, .sheet .in, .cl-wrap { grid-template-columns: 1fr; }
+  .voices { grid-template-columns: 1fr 1fr; }
+  .trio-p { grid-template-columns: 1fr 1fr; }
+  .offer.flip .ph { order: 0; }
+  .cases { grid-template-columns: 1fr 1fr; }
+  .sheet .ph { min-height: 220px; height: 34vh; }
+  .nav a.opt { display: none; }
+  .hero { grid-template-columns: 1fr; grid-template-rows: auto auto auto; align-items: end; }
+  .hero .lede { display: none; }
+  .hero .title { justify-self: start; text-align: left; }
+  .hero .title p { margin-left: 0; }
+  .hero .title .row { justify-content: flex-start; }
+  .hero-foot { flex-direction: column; align-items: flex-start; }
+  .svc, .cases { grid-template-columns: 1fr 1fr; }
+  .svc .card:nth-child(n) { transform: none; }
+  .voices { grid-template-columns: 1fr; }
+  .trio { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  :root { --t-body: 16px; }
+  .top { padding: 8px 8px 8px 16px; top: 12px; }
+  .nav { display: none; }
+  .menu { display: block; position: relative; }
+  .menu summary { list-style: none; cursor: pointer; font: 500 15px/1 var(--sans); padding: 13px 18px; border-radius: 999px; background: var(--ivory); color: var(--green); }
+  .menu summary::-webkit-details-marker { display: none; }
+  .menu ul { position: absolute; right: 0; top: calc(100% + 10px); min-width: 220px; padding: 10px; border-radius: 22px; background: var(--ivory); color: var(--green); }
+  .menu li a { display: block; padding: 12px 14px; text-decoration: none; }
+  .sec { padding: 110px 18px; align-items: flex-end; min-height: 110vh; }
+  .sec.right { justify-content: flex-start; }
+  .hero { padding: 100px 18px 24px; }
+  .hero h1 { font-size: 12.4vw; }
+  .hero .row .btn { width: 100%; }
+  .minis { display: none; }
+  .sec h2, .paper h2, .firms h2, .voices-sec h2 { font-size: 10.6vw; }
+  .lead-wrap { grid-template-columns: 1fr; }
+  .lead-wrap .star, .lead-wrap .note { display: none; }
+  .cards { grid-template-columns: 1fr; }
+  .card { aspect-ratio: 5 / 4; }
+  .duo, .svc, .cases { grid-template-columns: 1fr; }
+  .teams h2, .contact h2, .clients h2, .people h2 { font-size: 10.6vw; }
+  .voices, .trio-p { grid-template-columns: 1fr; }
+  .stag { font-size: 10.4vw; }
+  .stag span + span { padding-left: .6em; }
+  .slist a { padding: 11px 0; font-size: 16px; }
+  .sheet { max-width: 100vw; width: 100vw; max-height: 92vh; margin: auto 0 0; border-radius: 26px 26px 0 0; }
+  .sheet .tx { padding: 24px 20px 32px; }
+  .sheet dl div { grid-template-columns: 1fr; gap: 2px; }
+  .wa a { grid-template-columns: 44px 1fr auto; padding: 16px; }
+  .wa .ic { width: 44px; height: 44px; }
+  .svc .card { aspect-ratio: 5 / 4; }
+  .ask h2 { font-size: 11.6vw; }
+  .ask .row { flex-direction: column; }
+  .ask .btn { width: 100%; }
+  .foot .grid { grid-template-columns: 1fr; }
+  .foot .links { justify-content: flex-start; }
+  .legal { flex-direction: column; gap: 4px; }
+  .wordmark { font-size: 33vw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="stage" aria-hidden="true">
+  <div class="scene" data-s="valley" style="opacity:1"><img src="media/f/valley-m.jpg" srcset="media/f/valley-m.jpg 1200w, media/f/valley.jpg 2400w" sizes="100vw" alt=""></div>
+  <div class="scene" data-s="pine"><img src="media/f/pine-m.jpg" srcset="media/f/pine-m.jpg 1200w, media/f/pine.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
+  <div class="scene" data-s="vista"><img src="media/f/vista-m.jpg" srcset="media/f/vista-m.jpg 1200w, media/f/vista.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
+  <div class="scene" data-s="night"><img src="media/f/night-m.jpg" srcset="media/f/night-m.jpg 1200w, media/f/night.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
+  <canvas id="air"></canvas>
+  <canvas id="stars"></canvas>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="-6 -6 136 126">
+    <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28"/></g>
+    <g fill="currentColor"><circle cx="7" cy="27" r="6"/><circle cx="31" cy="6" r="6"/><circle cx="65" cy="10" r="6"/><circle cx="44" cy="34" r="6"/><circle cx="76" cy="43" r="6"/><circle cx="111" cy="27" r="6"/><circle cx="117" cy="67" r="6"/><circle cx="94" cy="87" r="6"/><circle cx="72" cy="107" r="6"/><circle cx="47" cy="73" r="6"/><circle cx="14" cy="64" r="6"/></g>
+  </symbol>
+  <symbol id="arrow" viewBox="0 0 22 12"><path d="M0 6h20M15 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8.2c.2-.4.5-.4.8-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.3 0 .5-.1.7l-.5.6c-.1.2-.1.4 0 .6.6 1 1.4 1.8 2.4 2.3.2.1.4.1.6-.1l.6-.6c.2-.2.4-.2.7-.1l1.6.7c.3.1.4.3.4.6v.5c0 .4-.2.7-.6.9-.7.3-1.6.4-2.6 0-2.2-.8-4-2.7-4.8-4.8-.4-1-.3-1.9 0-2.6Z" fill="currentColor"/></symbol>
+  <symbol id="i-in" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V17M8 7.4v.1M11.5 17v-3.7c0-1.6 1-2.6 2.3-2.6 1.3 0 2.2.9 2.2 2.6V17M11.5 10.5V17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-fb" viewBox="0 0 24 24"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4A21 21 0 0 0 14.3 4c-2.3 0-3.8 1.4-3.8 3.9v2.6H8v3h2.5V21" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="diag" viewBox="0 0 18 18"><path d="M3 15L15 3M6 3h9v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="top glass" id="top">
+  <a class="brand" href="/" aria-label="UNBLOCK, inicio"><svg aria-hidden="true"><use href="#mark"/></svg><span>UNBLOCK</span></a>
+  <nav class="nav" aria-label="Principal">
+    <a href="/para-ti">Para ti</a>
+    <a href="/para-empresas">Para empresas</a>
+    <a href="/experiencias">Experiencias</a>
+    <a class="opt" href="/sobre-unblock">Sobre UNBLOCK</a>
+    <a class="opt" href="/el-libro">El libro</a>
+    <a class="btn btn--cream" href="#contacto">Contacto</a>
+  </nav>
+  <details class="menu">
+    <summary>Menú</summary>
+    <ul>
+      <li><a href="/para-ti">Para ti</a></li>
+      <li><a href="/para-empresas">Para empresas</a></li>
+      <li><a href="/experiencias">Experiencias</a></li>
+      <li><a href="/sobre-unblock">Sobre UNBLOCK</a></li>
+      <li><a href="/el-libro">El libro</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+  </details>
+</header>
+
+<main>
+  <!-- 1 · dawn over the valley -->
+  <section class="hero" data-scene="valley" data-fog="1" data-light=".7" aria-labelledby="h-hero">
+    <div class="lede shade" data-reveal>
+      <b>Una pausa.<br>Otra perspectiva.</b>
+      <p>Experiencias para personas y organizaciones en Ciudad de México y otros destinos de México.</p>
+    </div>
+    <div class="title shade" data-reveal>
+      <h1 class="ttl" id="h-hero"><span>See what you’ve</span> <span><b>stopped seeing.</b></span></h1>
+      <p>UNBLOCK diseña experiencias que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
+      <div class="row">
+        <a class="btn btn--cream" href="#para-ti">Explorar experiencias para mí <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn" href="#empresas">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </div>
+    </div>
+    <div class="hero-foot" data-reveal>
+      <div class="minis">
+        <a class="mini solid glass" href="#para-ti"><img src="media/u/hike.jpg" alt="Un grupo de UNBLOCK caminando entre pinos"><span><b>Slow Morning</b><span>Hike, fotografía y presencia</span></span></a>
+        <a class="mini glass" href="#slow-weekend"><img src="media/c/retreat.jpg" alt="Casa de piedra y madera entre árboles"><span><b>Slow Weekend</b><span>Una noche fuera de la rutina</span></span></a>
+      </div>
+      <nav class="tags" aria-label="Formatos">
+        <a href="/team-building-cdmx">Team building</a><a href="/offsites-empresas">Offsites</a><a href="/retiros-mexico">Retiros</a><a href="/constelaciones-organizacionales">Constelaciones</a><a href="/family-day-cdmx">Family Days</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- 2 · under the pines -->
+  <section class="sec right" data-scene="pine" data-fog=".25" data-light="1" aria-labelledby="h-que">
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-que">A veces no necesitamos <b>hacer más.</b></h2>
+      <p class="sub">Necesitamos mirar diferente.</p>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="body">Podemos cambiar de rutina, estrategia, equipo o relación y seguir llegando al mismo lugar. No porque la solución haya fallado, sino porque seguimos respondiendo desde algo que ya dejamos de ver.</p>
+    </div>
+  </section>
+
+  <!-- 3 · para ti, on paper -->
+  <section class="paper" id="para-ti" aria-labelledby="h-ti">
+    <div class="lead-wrap" data-reveal>
+      <svg class="star" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2v36M2 20h36M7 7l26 26M33 7L7 33" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>
+      <div>
+        <h2 class="ttl" id="h-ti">Caminatas, retiros y <span class="pic"><img src="media/c/leaf.jpg" alt=""></span> constelaciones para <b>salir del ruido</b> <span class="soft">y observar tu vida</span> desde otro lugar.</h2>
+        <p class="intro">Experiencias para hacer una pausa, salir de la rutina y mirar con más atención. Elige el espacio que necesitas hoy.</p>
+      </div>
+      <p class="note">PARA TI</p>
+    </div>
+    <div class="trio">
+      <div class="side" data-reveal>
+        <p>Cada experiencia indica antes distancia, dificultad y lo que incluye. Puedes ir sola o solo.</p>
+        <a href="/para-ti#proximas">VER PRÓXIMAS<br>EXPERIENCIAS →</a>
+      </div>
+      <div class="cards" data-reveal>
+        <a class="card" href="/para-ti#slow-morning"><img src="media/u/hike.jpg" alt="Un grupo caminando por un sendero entre pinos"><span class="tag">UNA MAÑANA</span><span class="tx"><b>Slow Morning</b><span>Hike, fotografía y presencia en la naturaleza.</span></span></a>
+        <a class="card" href="/para-ti#slow-weekend"><img src="media/c/coffee.jpg" alt="Una taza de café humeante sobre una piedra"><span class="tag">UNA NOCHE</span><span class="tx"><b>Slow Weekend</b><span>Espacio, perspectiva y conexión.</span></span></a>
+        <a class="card" href="/para-ti#slow-retreat"><img src="media/c/garden.jpg" alt="Jardín con cojines para meditar bajo los árboles"><span class="tag">DOS NOCHES</span><span class="tx"><b>Slow Retreat</b><span>Bajar el ruido y observar con más profundidad.</span></span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · the valley at dusk -->
+  <section class="sec" id="slow-weekend" data-scene="vista" data-fog=".55" data-light=".45" aria-labelledby="h-weekend">
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-weekend">Slow Weekend <b>&amp; Slow Retreat</b></h2>
+      <p class="sub">Para cuando necesitas más que una mañana.</p>
+      <span class="rule" aria-hidden="true"></span>
+      <div class="duo">
+        <div class="glass"><b>Una noche</b><span>fuera de la rutina para crear espacio, perspectiva y conexión</span></div>
+        <div class="glass"><b>Dos noches</b><span>para bajar el ruido y observar con más profundidad</span></div>
+      </div>
+      <div class="row"><a class="btn btn--cream" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    </div>
+  </section>
+
+  <!-- 5 · night: the stars draw the pattern -->
+  <section class="sec right" data-scene="night" data-fog=".1" data-light="0" data-stars="1" aria-labelledby="h-const">
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-const">Sometimes the pattern started <b>long before you noticed it.</b></h2>
+      <p class="sub">Constelaciones.</p>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="body">Workshops grupales de 3 o 4 sesiones y retiros inmersivos para observar dinámicas, relaciones y patrones desde una perspectiva sistémica.</p>
+      <div class="row"><a class="btn btn--cream" href="/para-ti#proximas">Ver próximas experiencias <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    </div>
+  </section>
+
+  <!-- 6 · para empresas -->
+  <section class="firms" id="empresas" aria-labelledby="h-emp">
+    <div data-reveal>
+      <h2 class="ttl" id="h-emp">Different moments need <b>different experiences.</b></h2>
+      <p class="intro">UNBLOCK diseña experiencias para empresas, equipos y líderes en Ciudad de México y otros destinos de México. Empezamos siempre por la misma pregunta: ¿qué queremos que las personas vivan aquí?</p>
+    </div>
+    <div class="svc" data-reveal>
+      <a class="card" href="#team-building"><img src="media/u/outdoors.jpg" alt="Un equipo en una dinámica al aire libre"><span class="tag">EQUIPOS</span><span class="tx"><b>Team Building</b><span>Con propósito, nunca de catálogo.</span></span></a>
+      <a class="card" href="#offsites"><img src="media/u/patio.jpg" alt="Un equipo conversando en círculo en un patio de piedra"><span class="tag">LIDERAZGO</span><span class="tx"><b>Offsites</b><span>Salir de la oficina para pensar distinto.</span></span></a>
+      <a class="card" href="#cultura"><img src="media/u/talk.jpg" alt="Facilitación con un grupo en un salón"><span class="tag">CULTURA</span><span class="tx"><b>Cultura y desarrollo organizacional</b><span>Hacer visible lo que limita a un equipo.</span></span></a>
+      <a class="card" href="/family-day-cdmx"><img src="media/c/garden.jpg" alt="Jardín al aire libre con cojines"><span class="tag">EVENTOS</span><span class="tx"><b>Family Days &amp; Eventos 360</b><span>Para reunir, conectar y celebrar.</span></span></a>
+    </div>
+    <nav class="more-svc tags" aria-label="Más servicios">
+      <a href="/para-empresas#liderazgo">Leadership Experiences</a><a href="/para-empresas#kickoffs">Kickoffs</a><a href="/eventos-corporativos-cdmx">Eventos 360</a><a href="/fiestas-fin-de-ano-empresas">Fiestas de fin de año</a><a href="/para-empresas#medida">Experiencias a la medida</a>
+    </nav>
+    <div class="row"><a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20una%20experiencia%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+  </section>
+
+  <!-- 6a · equipos & liderazgo, under the night sky -->
+  <section class="night3d" id="equipos-liderazgo" aria-labelledby="h-el">
+    <div class="pin">
+      <canvas id="gl3d" aria-hidden="true"></canvas>
+      <div class="step step-1">
+        <div>
+          <span class="eyebrow">EQUIPOS &amp; LIDERAZGO</span>
+          <h2 class="stag" id="h-el"><span>Your team doesn’t need</span><span><b>another activity.</b></span></h2>
+        </div>
+      </div>
+      <div class="step step-2">
+        <div>
+          <p class="stag"><span>It needs the right experience</span><span><b>for this moment.</b></span></p>
+          <div class="side">
+            <p>Diseñamos experiencias alrededor de lo que el equipo está viviendo. Puede ser:</p>
+            <div class="mlist"><span>Integración</span><span>Cambio</span><span>Crecimiento</span><span>Nuevos liderazgos</span><span>Colaboración</span><span>Conflicto</span><span>Alineación</span><span>Inicio de una nueva etapa</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="step step-3">
+        <div>
+          <p class="stag"><span>Equipos</span><span><b>&amp; liderazgo.</b></span></p>
+          <div>
+            <nav class="slist" aria-label="Servicios para equipos">
+              <a href="#team-building">Team Building con propósito</a>
+              <a href="#offsites">Offsites</a>
+              <a href="/para-empresas#liderazgo">Leadership Experiences</a>
+              <a href="/para-empresas#kickoffs">Kickoffs</a>
+              <a href="/para-empresas#cultura">Cultura y colaboración</a>
+              <a href="/para-empresas#capacitacion">Capacitación</a>
+              <a href="/para-empresas#medida">Experiencias a la medida</a>
+            </nav>
+            <a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20una%20experiencia%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+          </div>
+        </div>
+      </div>
+      <div class="hud" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i></div>
+    </div>
+  </section>
+
+  <!-- 6b · team building & offsites -->
+  <section class="teams" id="equipos" aria-label="Team Building, Offsites y Cultura">
+    <article class="offer" id="team-building" data-reveal>
+      <div class="ph"><img src="media/u/outdoors.jpg" alt="Un equipo celebrando durante una dinámica al aire libre" loading="lazy"><span class="tag">TEAM BUILDING</span></div>
+      <div class="txt">
+        <h3>Better connections. <b>Stronger teams.</b></h3>
+        <p>Experiencias que sacan a los equipos de la rutina para descubrir nuevas formas de relacionarse, comunicarse y trabajar juntos. Las personas comparten retos, toman decisiones, crean algo en conjunto y se conocen más allá de sus roles.</p>
+        <ul class="incl">
+          <li><span><b>Create Together.</b> Experiencias artísticas colaborativas para escuchar, experimentar, construir acuerdos y crear en equipo.</span></li>
+          <li><span><b>Beyond the Office.</b> Experiencias al aire libre que combinan movimiento, retos colaborativos y espacios de reflexión.</span></li>
+          <li><span><b>The Team Challenge.</b> Misiones, desafíos y dinámicas estratégicas que ponen en juego la comunicación, la colaboración y las decisiones compartidas.</span></li>
+        </ul>
+        <p class="for">Diseñadas para integración, confianza, colaboración, comunicación y sentido de pertenencia.</p>
+        <div class="row"><a class="btn" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20cotizar%20un%20team%20building%20para%20mi%20equipo." target="_blank" rel="noopener">Cotizar un team building <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      </div>
+    </article>
+
+    <article class="offer flip" id="offsites" data-reveal>
+      <div class="ph"><img src="media/u/patio.jpg" alt="Un equipo de liderazgo conversando en círculo" loading="lazy"><span class="tag">LEADERSHIP &amp; OFFSITES</span></div>
+      <div class="txt">
+        <h3>Step outside. Think differently. <b>Move forward.</b></h3>
+        <p>Los equipos de liderazgo necesitan espacios para salir de la operación, cuestionar lo habitual y construir nuevas posibilidades. Combinamos conversaciones relevantes, herramientas prácticas y actividades experienciales.</p>
+        <ul class="incl">
+          <li><span><b>Leadership Offsites.</b> Alinear prioridades, fortalecer la colaboración directiva y construir acuerdos sobre los retos del negocio.</span></li>
+          <li><span><b>Leadership Experiences.</b> Autoconocimiento, influencia, comunicación, toma de decisiones y habilidades de liderazgo.</span></li>
+          <li><span><b>Team Reset.</b> Identificar dinámicas que limitan al equipo y establecer nuevos acuerdos de trabajo.</span></li>
+          <li><span><b>Strategic Kickoffs.</b> Iniciar ciclos, proyectos o transformaciones con visión compartida y compromisos concretos.</span></li>
+        </ul>
+        <p class="for">Para comités directivos, equipos gerenciales, líderes de área y equipos que atraviesan cambios o nuevos desafíos.</p>
+        <div class="row"><a class="btn" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20dise%C3%B1ar%20un%20offsite%20para%20mi%20equipo." target="_blank" rel="noopener">Diseñar un offsite <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      </div>
+    </article>
+
+    <article class="offer" id="cultura" data-reveal>
+      <div class="ph"><img src="media/u/talk.jpg" alt="Facilitación con un grupo grande en un salón" loading="lazy"><span class="tag">CULTURA &amp; DESARROLLO</span></div>
+      <div class="txt">
+        <h3>Make the invisible visible. <b>Change what’s possible.</b></h3>
+        <p>A veces lo que limita a un equipo no es la falta de capacidad, sino las dinámicas de trabajo que nadie ha puesto sobre la mesa. Desarrollamos intervenciones para identificar patrones, abrir conversaciones y construir formas más efectivas de trabajar.</p>
+        <ul class="incl">
+          <li><span><b>Cultura y colaboración.</b> Comportamientos, acuerdos y prácticas alineadas con la cultura deseada.</span></li>
+          <li><span><b>Comunicación y gestión de conflictos.</b> Herramientas para mejorar conversaciones y gestionar desacuerdos de manera constructiva.</span></li>
+          <li><span><b>Liderazgo y desarrollo de equipos.</b> Influencia, responsabilidad, comunicación y capacidad de ejecución.</span></li>
+          <li><span><b>Diagnóstico e intervención organizacional.</b> Escucha, análisis de dinámicas y enfoques sistémicos.</span></li>
+          <li><span><b>Gestión del cambio.</b> Acompañar transiciones y facilitar nuevas formas de trabajo.</span></li>
+        </ul>
+        <div class="row"><a class="btn" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20hablar%20de%20cultura%20y%20desarrollo%20organizacional%20para%20mi%20equipo." target="_blank" rel="noopener">Agendar una conversación <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- clients -->
+  <section class="clients" aria-labelledby="h-clients">
+    <div class="cl-wrap">
+      <div data-reveal>
+        <h2 class="ttl" id="h-clients">Selected teams <b>we’ve worked with.</b></h2>
+        <ul class="names">
+          <li>Círculo de Crédito</li><li>AVEVA</li><li>Kavak</li><li>American Express</li><li>Estée Lauder</li><li>Mercado Libre</li><li>Danone</li><li>Kimberly-Clark</li><li>BIC</li><li>Crayola</li><li>Gruma</li><li>Grupo ADO</li><li>Grupo TUM</li><li>Grupo TYT</li><li>Tecnológico de Monterrey</li><li>Chevez Ruiz Zamarripa</li><li>Capital Media</li><li>Kaba</li><li>NutriExcelsus</li><li>Aeroflash</li><li>TSL</li><li>Increm</li><li>AMDGM</li><li>Jorge Marín</li><li>Engrande</li><li>Conalep Estado de México</li><li>ISSEMYM</li><li>ISEM</li><li>Sedesol</li><li>C.M.S.</li><li>PRI Estado de México</li>
+        </ul>
+      </div>
+      <figure class="cl-photo" data-reveal><img src="media/u/aveva.jpg" alt="El equipo de AVEVA durante una experiencia de UNBLOCK en el bosque" loading="lazy"><figcaption>AVEVA, en una experiencia en el bosque.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 7 · proof -->
+  <section class="voices-sec" aria-labelledby="h-cases">
+    <div data-reveal><h2 class="ttl" id="h-cases">Things we’ve already <b>made happen.</b></h2></div>
+    <div class="cases" data-reveal>
+      <button class="case" type="button" data-case="liderazgo" aria-haspopup="dialog"><span class="thumb"><img src="media/u/guide.jpg" alt="Facilitadora guiando una sesión al aire libre" loading="lazy"></span><span class="cbody"><strong class="ct">Liderazgo estratégico para supervisores</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="colaborativos" aria-haspopup="dialog"><span class="thumb"><img src="media/u/outdoors.jpg" alt="Un equipo en una dinámica al aire libre" loading="lazy"></span><span class="cbody"><strong class="ct">Equipos colaborativos de alto impacto</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="paint" aria-haspopup="dialog"><span class="thumb"><img src="media/u/paint.jpg" alt="Participantes mostrando sus pinturas" loading="lazy"></span><span class="cbody"><strong class="ct">Paint &amp; Connect</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="cook" aria-haspopup="dialog"><span class="thumb"><img src="media/u/cook.jpg" alt="Participantes cocinando juntas" loading="lazy"></span><span class="cbody"><strong class="ct">Cook it like you mean it</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="sistemica" aria-haspopup="dialog"><span class="thumb"><img src="media/u/talk.jpg" alt="Facilitación con un equipo en un salón" loading="lazy"></span><span class="cbody"><strong class="ct">Intervención sistémica para equipos</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+    </div>
+    <div class="voices" aria-label="Testimoniales" data-reveal>
+      <blockquote class="voice big"><p>“Es de esas experiencias que sigues pensando días después.”</p><cite>Paola Figueroa, Sr. HRBP, AVEVA</cite></blockquote>
+      <blockquote class="voice"><p>“Dani no llega con soluciones genéricas: escucha, entiende el contexto y diseña experiencias pensadas específicamente para lo que el equipo necesita.”</p><cite>Greg Guida, Sr. Director, Etsy</cite></blockquote>
+      <blockquote class="voice"><p>“Vernos desde nuestra faceta humana nos ayudó a conectar y generar una confianza real para nuestro día a día.”</p><cite>Sara Noemí Cervera Soto, Científica de Datos, Círculo de Crédito</cite></blockquote>
+      <blockquote class="voice"><p>“Es alguien con quien puedes construir, cuestionar ideas y encontrar caminos claros incluso en situaciones poco definidas.”</p><cite>Tao Rabiou, VP Aerospacial Eng, Clear</cite></blockquote>
+    </div>
+    <div class="row" data-reveal><a class="btn" href="/sobre-unblock">Conoce más sobre UNBLOCK <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+  </section>
+
+  <section class="people" id="equipo-unblock" aria-labelledby="h-people">
+    <div data-reveal>
+      <h2 class="ttl" id="h-people">Different formats. <b>Same idea.</b></h2>
+      <p class="intro">UNBLOCK nace de más de diez años diseñando experiencias para personas, equipos y organizaciones. Estas son las personas detrás de cada una.</p>
+    </div>
+    <div class="trio-p" data-reveal>
+      <article class="person">
+        <div class="pp"><span class="ini" aria-hidden="true">D</span></div>
+        <h3>Daniela</h3>
+        <p class="role">Fundadora de UNBLOCK</p>
+        <p class="bio">Durante años creyó que para cambiar su vida necesitaba modificar todo lo que estaba afuera. Entendió que muchas cosas seguían apareciendo porque las observaba desde los mismos patrones. Hoy diseña espacios suficientemente distintos para que personas y organizaciones puedan ver lo que, desde adentro, quizá ya dejaron de ver.</p>
+        <a class="more" href="/sobre-unblock#daniela">Leer más <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </article>
+      <article class="person">
+        <div class="pp"><span class="ini" aria-hidden="true">S</span></div>
+        <h3>Socia</h3>
+        <p class="role">Nombre y cargo por confirmar</p>
+        <p class="bio">Espacio para su bio y su foto.</p>
+      </article>
+      <article class="person">
+        <div class="pp"><span class="ini" aria-hidden="true">S</span></div>
+        <h3>Socia</h3>
+        <p class="role">Nombre y cargo por confirmar</p>
+        <p class="bio">Espacio para su bio y su foto.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="ask" aria-labelledby="h-ask">
+    <div data-reveal>
+      <h2 class="ttl" id="h-ask"><span>What are you ready</span> <span><b>to see differently?</b></span></h2>
+      <div class="row">
+        <a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20m%C3%AD." target="_blank" rel="noopener">Para mí</a>
+        <a class="btn btn--cream" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20mi%20empresa." target="_blank" rel="noopener">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </div>
+      <p class="note">Empezamos con una conversación sobre lo que estás imaginando.</p>
+    </div>
+  </section>
+
+  <section class="contact" id="contacto" aria-labelledby="h-contact">
+    <div class="wrap">
+      <div data-reveal>
+        <h2 class="ttl" id="h-contact">Hablemos <b>por WhatsApp.</b></h2>
+        <p class="lead">Cuéntanos qué estás imaginando o qué está viviendo tu equipo. Te respondemos para empezar a diseñarlo.</p>
+        <nav class="social" aria-label="Redes de UNBLOCK"><a href="https://www.linkedin.com/company/unblockexperiences/" aria-label="UNBLOCK en LinkedIn" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/__un.block___" aria-label="UNBLOCK en Instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/profile.php?id=61576329704066" aria-label="UNBLOCK en Facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
+        <p class="phone">WhatsApp: <a href="https://wa.me/525543938152" target="_blank" rel="noopener">55 4393 8152</a></p>
+      </div>
+      <div class="wa" data-reveal>
+        <a href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20mi%20empresa." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Para mi empresa</b><span>Team building, offsites, Family Days, eventos</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="alt" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20m%C3%AD." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Para mí</b><span>Slow Morning, Slow Weekend, retiros, constelaciones</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="alt" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20saber%20las%20pr%C3%B3ximas%20fechas%20de%20experiencias." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Próximas fechas</b><span>Recibe el calendario de experiencias</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-t">
+  <div class="in">
+    <div class="ph"><img id="sheet-img" src="" alt=""></div>
+    <div class="tx">
+      <p class="kind" id="sheet-kind">EXPERIENCIA REALIZADA</p>
+      <h3 id="sheet-t"></h3>
+      <dl id="sheet-dl"></dl>
+      <div class="row" style="margin-top:6px"><a class="btn" id="sheet-wa" href="https://wa.me/525543938152" target="_blank" rel="noopener">Quiero algo así para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    </div>
+  </div>
+  <button class="x" type="button" id="sheet-x" aria-label="Cerrar">×</button>
+</dialog>
+
+<footer class="foot">
+  <div class="grid">
+    <h2 class="ttl">Empecemos <b>a diseñarlo.</b></h2>
+    <ul class="links" aria-label="Más de UNBLOCK">
+      <li><a href="/sobre-unblock">Sobre Daniela</a></li>
+      <li><a href="/el-libro">El libro</a></li>
+      <li><a href="/insights">Insights</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <nav class="social" aria-label="Redes de UNBLOCK" style="grid-column:1/-1;margin-top:0"><a href="https://www.linkedin.com/company/unblockexperiences/" aria-label="UNBLOCK en LinkedIn" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-in"/></svg></a><a href="https://www.instagram.com/__un.block___" aria-label="UNBLOCK en Instagram" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg></a><a href="https://www.facebook.com/profile.php?id=61576329704066" aria-label="UNBLOCK en Facebook" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-fb"/></svg></a><a href="https://wa.me/525543938152" aria-label="Escríbenos por WhatsApp" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg></a></nav>
+    <p class="about">UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.</p>
+    <p class="credits">Paisajes: “Morning Clouds Over North Van Mountain Valley”, David Zhang, CC BY-SA 2.0 · “Looking up at a pine tree”, Simkinseled, CC0 · “Black Forest Trail Vista”, Nicholas A. Tonelli, CC BY 2.0 · “Spruce forest night sky stars”, ForestWander, CC BY-SA 3.0 · vía Wikimedia Commons.</p>
+  </div>
+  <div class="legal"><span>© 2026 UNBLOCK · Ciudad de México</span><a href="aviso-de-privacidad.html">Aviso de privacidad</a></div>
+  <p class="wordmark" aria-hidden="true">UNBLOCK</p>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s) => document.querySelector(s);
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }) : null;
+  document.querySelectorAll('[data-reveal]').forEach(el => io ? io.observe(el) : el.classList.add('is-in'));
+
+  // ---------------- case detail sheet ----------------
+  const CASES = {
+    liderazgo: { img: 'u/guide', kind: 'LIDERAZGO · EMPRESA', t: 'Liderazgo estratégico <b>para supervisores</b>', rows: [['Para quién', 'Supervisores y líderes de equipo'], ['Enfoque', 'Ejecución, comunicación, influencia y manejo de conflictos'], ['Experiencia diseñada', 'Diseño y facilitación de una experiencia de liderazgo a la medida del equipo']] },
+    colaborativos: { img: 'u/outdoors', kind: 'EQUIPOS · EMPRESA', t: 'Equipos colaborativos <b>de alto impacto</b>', rows: [['Para quién', 'Equipos de trabajo'], ['Enfoque', 'Comportamientos cotidianos de colaboración'], ['Experiencia diseñada', 'Una experiencia para observarlos y fortalecerlos en la práctica']] },
+    paint: { img: 'u/paint', kind: 'EXPERIENCIA CREATIVA', t: 'Paint <b>&amp; Connect</b>', rows: [['Para quién', 'Equipos que buscan integrarse'], ['Formato', 'Experiencia creativa con la pintura como vehículo'], ['Enfoque', 'Integración, conversación y conexión fuera de lo cotidiano']] },
+    cook: { img: 'u/cook', kind: 'EXPERIENCIA CREATIVA', t: 'Cook it <b>like you mean it</b>', rows: [['Para quién', 'Equipos de trabajo'], ['Formato', 'Cocina colaborativa'], ['Enfoque', 'Comunicación, coordinación y roles']] },
+    sistemica: { img: 'u/talk', kind: 'INTERVENCIÓN SISTÉMICA', t: 'Intervención sistémica <b>para equipos</b>', rows: [['Situación', 'Un equipo atravesando un proceso de cambio organizacional'], ['Experiencia diseñada', 'Trabajo sistémico diseñado alrededor de ese momento'], ['Enfoque', 'Relaciones, posiciones y dinámicas del equipo']] }
+  };
+  const sheet = $('#sheet');
+  if (sheet && sheet.showModal) {
+    const close = () => { if (reduce) return sheet.close(); sheet.classList.add('closing'); setTimeout(() => { sheet.classList.remove('closing'); sheet.close(); }, 170); };
+    document.querySelectorAll('[data-case]').forEach(b => b.addEventListener('click', () => {
+      const c = CASES[b.dataset.case]; if (!c) return;
+      $('#sheet-img').src = 'media/' + c.img + '.jpg'; $('#sheet-img').alt = '';
+      $('#sheet-kind').textContent = c.kind; $('#sheet-t').innerHTML = c.t;
+      $('#sheet-dl').innerHTML = c.rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+      $('#sheet-wa').href = 'https://wa.me/525543938152?text=' + encodeURIComponent('Hola UNBLOCK, vi la experiencia "' + b.querySelector('.ct').textContent + '" y quiero algo así para mi equipo.');
+      sheet.showModal();
+    }));
+    $('#sheet-x').addEventListener('click', close);
+    sheet.addEventListener('click', e => { if (e.target === sheet) close(); });
+    sheet.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  }
+
+  // ---------------- which scene, how much fog and light ----------------
+  const secs = [...document.querySelectorAll('[data-scene]')];
+  const scenes = {}; document.querySelectorAll('.scene').forEach(s => scenes[s.dataset.s] = s);
+  const lights = [...document.querySelectorAll('.paper, .voices-sec, .teams, .contact, .clients, .people')];
+  const top = $('#top');
+  let vw = innerWidth, vh = innerHeight, keys = [];
+  const smooth = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const measure = () => {
+    vw = innerWidth; vh = innerHeight;
+    keys = secs.map(s => ({ y: s.offsetTop + s.offsetHeight / 2 - vh / 2, top: s.offsetTop, h: s.offsetHeight, scene: s.dataset.scene, fog: +s.dataset.fog, light: +s.dataset.light, stars: +(s.dataset.stars || 0) }));
+    keys[0].y = 0;
+    sizeAir(); sizeStars();
+  };
+  // weights: how present each chapter is at this scroll position
+  const state = (y) => {
+    let i = 0; while (i < keys.length - 1 && y > keys[i + 1].y) i++;
+    const a = keys[i], b = keys[Math.min(i + 1, keys.length - 1)];
+    const t = a === b ? 0 : smooth(.15, .85, (y - a.y) / (b.y - a.y));
+    return { a, b, t };
+  };
+
+  // ---------------- air: fog, sun through the trees, pollen ----------------
+  const ac = $('#air');
+  const gl = ac.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+  let prog = null, U = {};
+  function sizeAir() { if (!gl) return; const r = vw < 700 ? .5 : Math.min(devicePixelRatio, 2) * .5; ac.width = Math.round(vw * r); ac.height = Math.round(vh * r); gl.viewport(0, 0, ac.width, ac.height); }
+  if (gl) {
+    const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+    const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 r;uniform float t,fog,light,night;
+float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+float fb(vec2 p){float v=0.,a=.5;for(int k=0;k<5;k++){v+=a*n(p);p*=2.03;a*=.5;}return v;}
+void main(){
+  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=vec2(uv.x*asp,uv.y);
+  // fog: slow banks drifting sideways, thicker low in the valley
+  float f1 = fb(vec2(p.x*1.3 + t*.025, p.y*3.2 - t*.01));
+  float f2 = fb(vec2(p.x*2.6 - t*.04 + 7., p.y*5.));
+  float bank = smoothstep(.42,.9,f1*.7+f2*.45) * (1.-smoothstep(.15,.75,uv.y)*.65);
+  float F = bank*fog*.8;
+  // sun: shafts from the upper right, through the canopy
+  vec2 s = vec2(.82*asp, 1.12); vec2 d = p - s; float ang = atan(d.y,d.x); float dist = length(d);
+  float sh = fb(vec2(ang*9., t*.04)) + .5*fb(vec2(ang*23.+4., t*.07));
+  sh = smoothstep(.62,1.2,sh) * smoothstep(1.7,.1,dist);
+  float L = sh*light*.55 + smoothstep(.9,0.,dist)*light*.18;
+  // pollen in the light
+  float P = 0.;
+  for(int k=0;k<2;k++){ float z=float(k)*1.6+1.;
+    vec2 g=p*vec2(16.*z) + vec2(t*.08*z, -t*.05*z + sin(t*.2+p.x*3.)*.3);
+    vec2 id=floor(g), q=fract(g)-.5; vec2 o=vec2(h(id+1.3)-.5,h(id+5.1)-.5)*.6;
+    P += smoothstep(.09/z,0.,length(q-o))*step(.93,h(id+z))/z; }
+  P *= (.25 + light*.75) * (1.-night);
+  vec3 fogc = mix(vec3(.88,.9,.86), vec3(.35,.42,.5), night);
+  vec3 sunc = vec3(1.,.95,.78);
+  F = clamp(F, 0., .7); L = clamp(L, 0., .6); P = clamp(P, 0., 1.);
+  float a = clamp(F + L + P*.8, 0., .85);
+  vec3 c = min(fogc*F + sunc*(L + P*.8), vec3(a));
+  gl_FragColor = vec4(c, a);
+}`;
+    const sh = (ty, src) => { const s = gl.createShader(ty); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+    prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) prog = null; else {
+      gl.useProgram(prog);
+      const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+      const l = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, 2, gl.FLOAT, false, 0, 0);
+      ['r','t','fog','light','night'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
+      gl.clearColor(0, 0, 0, 0);
+    }
+  }
+
+  // ---------------- stars: constellations draw themselves over the night forest ----------------
+  const sc = $('#stars'), cx = sc.getContext('2d');
+  let dpr = 1, figs = [], logo = null;
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const NAMES = ['Pausa', 'Perspectiva', 'Conexión', 'Presencia', 'Patrones', 'Silencio'];
+  const LOGO = [[7,27],[31,6],[65,10],[44,34],[76,43],[111,27],[117,67],[94,87],[72,107],[47,73],[14,64]];
+  const LOGO_E = [[0,1],[1,2],[1,3],[2,3],[0,3],[0,10],[10,9],[3,9],[3,4],[4,5],[5,6],[4,6],[9,4],[9,8],[8,7],[7,6]];
+  const glow = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.2,'rgba(255,255,255,.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0,0,64,64); return c; })();
+  function sizeStars() {
+    dpr = Math.min(devicePixelRatio || 1, 2); sc.width = vw * dpr; sc.height = vh * dpr;
+    seed = 7; figs = [];
+    const small = vw < 700;
+    const spots = small ? [[.15,.16],[.72,.1],[.45,.3]] : [[.08,.16],[.3,.1],[.5,.3],[.12,.42],[.36,.52]];
+    spots.forEach(([x, y], k) => {
+      const n = 4 + Math.floor(rnd() * 3), size = (small ? 60 : 100) * (.7 + rnd() * .6), pts = []; let px = 0, py = 0;
+      for (let i = 0; i < n; i++) { pts.push([px, py]); const a = rnd() * 6.28; px += Math.cos(a) * size * .5; py += Math.sin(a) * size * .35; }
+      figs.push({ x: x * vw, y: y * vh, pts, lines: pts.slice(1).map((_, i) => [i, i + 1]), name: NAMES[k], ph: rnd() * 6.28, d: k * .08 });
+    });
+    const s = small ? 1.6 : 2.4;
+    logo = { x: small ? vw * .55 : vw * .3, y: small ? vh * .3 : vh * .36, pts: LOGO.map(([a, b]) => [(a - 62) * s, (b - 56) * s]) };
+  }
+  function star(x, y, r, a) { cx.globalAlpha = a; const g = r * 7; cx.drawImage(glow, x - g, y - g, g * 2, g * 2); cx.globalAlpha = Math.min(1, a * 1.2); cx.beginPath(); cx.arc(x, y, r, 0, 6.283); cx.fill(); }
+  function line(A, B, ox, oy, p, a) { cx.globalAlpha = a; cx.beginPath(); cx.moveTo(ox + A[0], oy + A[1]); cx.lineTo(ox + A[0] + (B[0] - A[0]) * p, oy + A[1] + (B[1] - A[1]) * p); cx.stroke(); }
+  function drawStars(v, prog, t) {
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, vw, vh);
+    if (v <= 0.01) return;
+    cx.fillStyle = '#fff'; cx.strokeStyle = '#fff'; cx.lineCap = 'round'; cx.lineWidth = 1;
+    figs.forEach(f => {
+      const dp = smooth(f.d, f.d + .4, prog);
+      f.lines.forEach(([a, b], i) => { const p = Math.min(1, Math.max(0, dp * f.lines.length - i)); if (p > 0) line(f.pts[a], f.pts[b], f.x, f.y, p, v * .45); });
+      f.pts.forEach(([px, py], i) => star(f.x + px, f.y + py, 1.4 + (i % 3) * .5, v * (reduce ? .8 : .5 + .5 * Math.sin(t * (1.3 + i * .4) + f.ph))));
+      cx.globalAlpha = v * .6 * dp; cx.font = '400 12px "DM Sans", sans-serif'; cx.fillText(f.name, f.x + f.pts[0][0] + 10, f.y + f.pts[0][1] - 10);
+    });
+    const ld = smooth(.3, .75, prog); cx.lineWidth = 1.2;
+    LOGO_E.forEach(([a, b], i) => { const p = Math.min(1, Math.max(0, ld * LOGO_E.length - i * .9)); if (p > 0) line(logo.pts[a], logo.pts[b], logo.x, logo.y, p, v * .55); });
+    logo.pts.forEach(([px, py], i) => star(logo.x + px, logo.y + py, 2.2, v * smooth(.25, .4, prog) * (reduce ? 1 : .75 + .25 * Math.sin(t * 2 + i))));
+    cx.globalAlpha = 1;
+  }
+
+  // ---------------- the walk ----------------
+  measure(); addEventListener('resize', measure); addEventListener('load', measure);
+  document.fonts && document.fonts.ready.then(measure);
+  let sy = scrollY, last = performance.now(); const t0 = last;
+  const frame = (now) => {
+    const dt = Math.min((now - last) / 1000, .1); last = now;
+    const t = reduce ? 0 : (now - t0) / 1000;
+    sy += (scrollY - sy) * (reduce ? 1 : 1 - Math.exp(-dt * 6));     // glide, never jump
+    const { a, b, t: k } = state(sy);
+
+    // scenes cross-fade; the one you are in moves slowly towards you
+    for (const name in scenes) {
+      const w = (a.scene === name ? 1 - k : 0) + (b.scene === name ? k : 0);
+      const el = scenes[name];
+      if (w <= 0.001) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
+      const key = keys.find(q => q.scene === name);
+      const prog = Math.min(1.4, Math.max(-.4, (sy - key.top + vh) / (key.h + vh)));
+      el.style.opacity = w.toFixed(3);
+      el.style.transform = reduce ? '' : `scale(${(1.04 + prog * .14).toFixed(4)}) translate3d(0, ${(prog * -2).toFixed(2)}%, 0)`;
+    }
+    const fog = a.fog + (b.fog - a.fog) * k, light = a.light + (b.light - a.light) * k, night = a.stars + (b.stars - a.stars) * k;
+    if (prog) {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform2f(U.r, ac.width, ac.height); gl.uniform1f(U.t, t % 600);
+      const soft = vw < 700 ? .6 : 1; gl.uniform1f(U.fog, fog * soft); gl.uniform1f(U.light, light * (vw < 700 ? .75 : 1)); gl.uniform1f(U.night, night);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    const nk = keys.find(q => q.stars);
+    drawStars(night, nk ? Math.min(1, Math.max(0, (sy - nk.top + vh * .6) / (nk.h * .7))) : 0, t);
+
+    // the header reads the paper beneath it
+    const onLight = lights.some(el => { const r = el.getBoundingClientRect(); return r.top < 50 && r.bottom > 50; });
+    top.classList.toggle('on-light', onLight);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();
+</script>
+<script src="vendor/three.min.js"></script>
+<script>
+(() => {
+  const sec = document.getElementById('equipos-liderazgo');
+  const canvas = document.getElementById('gl3d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let gl = null; try { gl = window.THREE && (canvas.getContext('webgl2') || canvas.getContext('webgl')); } catch (e) {}
+  if (!gl) { document.documentElement.classList.add('no3d'); return; }
+  const small = innerWidth < 700;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !small, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : 2));
+  const scene = new THREE.Scene();
+  const SKY = new THREE.Color('#07120d');
+  const skyTex = (() => { const c = document.createElement('canvas'); c.width = 4; c.height = 512; const g = c.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, '#040b08'); gr.addColorStop(.55, '#0b1d16'); gr.addColorStop(.78, '#1a3a2f'); gr.addColorStop(1, '#0a1712');
+    g.fillStyle = gr; g.fillRect(0, 0, 4, 512); const tx = new THREE.CanvasTexture(c); tx.magFilter = THREE.LinearFilter; return tx; })();
+  scene.background = skyTex; scene.fog = new THREE.Fog(new THREE.Color('#163228'), 80, 460);
+  const camera = new THREE.PerspectiveCamera(55, 1, .5, 1200);
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // ---- star trails: each star sweeps an arc around the pole as you scroll ----
+  const POLE = new THREE.Vector3(30, 150, -420);
+  const N = small ? 380 : 720, K = 22;
+  const pos = new Float32Array(N * K * 2 * 3), arc = new Float32Array(N * K * 2 * 4);
+  let o = 0, q = 0;
+  for (let i = 0; i < N; i++) {
+    const r = 12 + Math.pow(rnd(), .7) * 560, a0 = rnd() * Math.PI * 2, b = .35 + rnd() * .65, sz = rnd();
+    for (let k = 0; k < K; k++) for (const u of [k / K, (k + 1) / K]) {
+      pos[o++] = POLE.x; pos[o++] = POLE.y; pos[o++] = POLE.z;
+      arc[q++] = r; arc[q++] = a0; arc[q++] = u; arc[q++] = b * (.6 + sz * .4);
+    }
+  }
+  const tg = new THREE.BufferGeometry();
+  tg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  tg.setAttribute('arc', new THREE.BufferAttribute(arc, 4));
+  const trailMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { len: { value: .002 }, spin: { value: 0 }, vis: { value: 1 } },
+    vertexShader: `attribute vec4 arc; uniform float len, spin; varying float vA;
+      void main(){ float a = arc.y + spin - arc.z*len; vec3 p = position + vec3(cos(a)*arc.x, sin(a)*arc.x, 0.);
+        vA = arc.w * (1.0 - arc.z*0.85); gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.); }`,
+    fragmentShader: `uniform float vis; varying float vA; void main(){ gl_FragColor = vec4(vec3(.97,.95,.88), vA*vis*.5); }`
+  });
+  scene.add(new THREE.LineSegments(tg, trailMat));
+  // the stars themselves, so the sky reads as sky before the trails grow
+  const sp = new Float32Array(N * 3); for (let i = 0; i < N; i++) { const r = 12 + Math.pow(rnd(), .7) * 560, a = rnd() * 6.283; sp.set([POLE.x + Math.cos(a) * r, POLE.y + Math.sin(a) * r, POLE.z], i * 3); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xf7f4ef, size: small ? 1.6 : 1.3, sizeAttenuation: false, transparent: true, opacity: .9, depthWrite: false });
+  const starPts = new THREE.Points(sg, starMat); scene.add(starPts);
+
+  // ---- mountain ridges in layers of mist ----
+  // a forest line: a soft ridge crowned with pines, three layers deep
+  const ridge = (z, h, col, seedOff, treeH, step) => {
+    const shape = new THREE.Shape(); const W = 1400; shape.moveTo(-W, -60);
+    const base = (x) => { const t = x * .004 + seedOff; return h * (.5 * Math.sin(t) + .3 * Math.sin(t * 2.7 + 1.3) + .2 * Math.sin(t * 6.1 + .4)) + h * .6; };
+    for (let x = -W; x <= W; x += step) {
+      const y = base(x), th = treeH * (.55 + rnd() * .9), half = step * (.42 + rnd() * .2);
+      shape.lineTo(x - half, y); shape.lineTo(x - half * .55, y + th * .35); shape.lineTo(x - half * .75, y + th * .35);
+      shape.lineTo(x - half * .3, y + th * .68); shape.lineTo(x - half * .45, y + th * .68); shape.lineTo(x, y + th);
+      shape.lineTo(x + half * .45, y + th * .68); shape.lineTo(x + half * .3, y + th * .68); shape.lineTo(x + half * .75, y + th * .35);
+      shape.lineTo(x + half * .55, y + th * .35); shape.lineTo(x + half, y);
+    }
+    shape.lineTo(W, -60); shape.lineTo(-W, -60);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshBasicMaterial({ color: col, fog: true }));
+    m.position.z = z; scene.add(m); return m;
+  };
+  ridge(-400, 60, '#0d211a', 2.1, 30, 16); ridge(-310, 44, '#081610', 5.3, 36, 20); ridge(-230, 26, '#040b08', 8.7, 44, 26);
+
+  // fireflies drifting between the trees
+  const FN = small ? 70 : 140, fp = new Float32Array(FN * 3), fs = new Float32Array(FN);
+  for (let i = 0; i < FN; i++) { fp.set([(rnd() - .5) * 420, rnd() * 46 - 8, -60 - rnd() * 190], i * 3); fs[i] = rnd() * 6.28; }
+  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(fp, 3)); fg.setAttribute('seed', new THREE.BufferAttribute(fs, 1));
+  const flyMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { t: { value: 0 }, vis: { value: 0 }, px: { value: renderer.getPixelRatio() } },
+    vertexShader: `attribute float seed; uniform float t, px; varying float vB;
+      void main(){ vec3 p = position + vec3(sin(t*.3+seed)*6., sin(t*.5+seed*2.)*3., cos(t*.25+seed)*5.);
+        vB = .35 + .65*pow(.5+.5*sin(t*1.7+seed*3.), 3.); vec4 mv = modelViewMatrix*vec4(p,1.); gl_PointSize = px*(4.+vB*5.)*(160./-mv.z); gl_Position = projectionMatrix*mv; }`,
+    fragmentShader: `uniform float vis; varying float vB; void main(){ float d = length(gl_PointCoord-.5); float a = smoothstep(.5,0.,d); gl_FragColor = vec4(1.,.93,.66, a*a*vB*vis); }` });
+  scene.add(new THREE.Points(fg, flyMat));
+
+  // the UNBLOCK mark at the pole: the pattern the sky turns around
+  const LOGO = [[7,27],[31,6],[65,10],[44,34],[76,43],[111,27],[117,67],[94,87],[72,107],[47,73],[14,64]];
+  const LOGO_E = [[0,1],[1,2],[1,3],[2,3],[0,3],[0,10],[10,9],[3,9],[3,4],[4,5],[5,6],[4,6],[9,4],[9,8],[8,7],[7,6]];
+  const LS = .62, lp = LOGO.map(([a, b]) => new THREE.Vector3(POLE.x + (a - 62) * LS, POLE.y - (b - 56) * LS, POLE.z + 2));
+  const lineArr = []; LOGO_E.forEach(([a, b]) => lineArr.push(lp[a].x, lp[a].y, lp[a].z, lp[b].x, lp[b].y, lp[b].z));
+  lineArr.push(POLE.x + 24 * LS, POLE.y + 40 * LS, POLE.z + 2, POLE.x + 41 * LS, POLE.y + 28 * LS, POLE.z + 2);
+  const lgeo = new THREE.BufferGeometry(); lgeo.setAttribute('position', new THREE.Float32BufferAttribute(lineArr, 3));
+  const logoLineMat = new THREE.LineBasicMaterial({ color: 0xfff3c6, transparent: true, opacity: 0, depthWrite: false, fog: false });
+  const logoLines = new THREE.LineSegments(lgeo, logoLineMat); scene.add(logoLines);
+  const ngeo = new THREE.BufferGeometry().setFromPoints(lp);
+  const logoDotMat = new THREE.PointsMaterial({ color: 0xfff3c6, size: small ? 6 : 7, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
+  scene.add(new THREE.Points(ngeo, logoDotMat));
+
+  // ---- the grid terrain that rises from the valley, with a band of light running across it ----
+  const SEG = small ? 110 : 180;
+  const pg = new THREE.PlaneGeometry(520, 620, SEG, SEG); pg.rotateX(-Math.PI / 2);
+  const gridMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, extensions: { derivatives: true },
+    uniforms: { rise: { value: 0 }, scan: { value: -300 }, t: { value: 0 }, fogC: { value: new THREE.Color('#0d2019') } },
+    vertexShader: `uniform float rise, t; varying vec2 vXZ; varying float vH, vD;
+      float hsh(vec2 p){ vec3 q = fract(vec3(p.xyx)*.1031); q += dot(q, q.yzx+33.33); return fract((q.x+q.y)*q.z); }
+      float nz(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(hsh(i),hsh(i+vec2(1,0)),f.x), mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x), f.y); }
+      void main(){ vec3 p = position;
+        float n = nz(p.xz*.012)*.65 + nz(p.xz*.03+7.)*.35;
+        float side = smoothstep(30., 220., abs(p.x));
+        float h = (n*26. + side*60.*n) * rise;
+        p.y += h - 18. + (1.-rise)*-30.;
+        vXZ = p.xz; vH = h; vec4 mv = modelViewMatrix * vec4(p,1.); vD = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform float rise, scan; uniform vec3 fogC; varying vec2 vXZ; varying float vH, vD;
+      void main(){ vec2 g = vXZ / 9.; vec2 w = fwidth(g); vec2 l = abs(fract(g - .5) - .5) / w; float line = 1. - min(min(l.x, l.y), 1.);
+        float band = exp(-pow((vXZ.y - scan) / 22., 2.));
+        vec3 base = vec3(.42,.68,.56) * .9; vec3 hot = vec3(1.,.95,.78);
+        vec3 c = mix(base, hot, band*.9);
+        float a = line * (.62 + band*.38) * rise + band*.06*rise;
+        float fogF = smoothstep(60., 420., vD); c = mix(c, fogC, fogF); a *= 1. - fogF*.85;
+        gl_FragColor = vec4(c, a); }`
+  });
+  const grid = new THREE.Mesh(pg, gridMat); grid.position.z = -120; scene.add(grid);
+
+  // ---- scroll ----
+  const steps = [...sec.querySelectorAll('.step')], hud = [...sec.querySelectorAll('.hud b')];
+  const lines = steps.map(st => [...st.querySelectorAll('.stag span, .side, .slist, .eyebrow, .step-3 .btn')]);
+  const sm = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  let w = 0, h = 0, P = 0, visible = false;
+  const size = () => { w = sec.clientWidth; h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = small ? 68 : 55; camera.updateProjectionMatrix(); };
+  size(); addEventListener('resize', size);
+  new IntersectionObserver(es => es.forEach(e => visible = e.isIntersecting), { rootMargin: '200px 0px' }).observe(sec);
+  const RANGES = [[0, .3], [.3, .62], [.62, 1.01]];
+  let last = performance.now();
+  const loop = (now) => {
+    requestAnimationFrame(loop);
+    if (!visible) { last = now; return; }
+    const dt = Math.min((now - last) / 1000, .1); last = now;
+    const r = sec.getBoundingClientRect();
+    const target = Math.min(1, Math.max(0, -r.top / (sec.offsetHeight - h)));
+    P += (target - P) * (reduce ? 1 : 1 - Math.exp(-dt * 5));
+    const t = now / 1000;
+
+    // sky: trails lengthen and wheel, then fade as the grid takes over
+    trailMat.uniforms.len.value = .002 + sm(.08, .55, P) * 2.4;
+    trailMat.uniforms.spin.value = P * 1.2 + (reduce ? 0 : t * .015);
+    trailMat.uniforms.vis.value = 1 - sm(.62, .9, P) * .75;
+    starMat.opacity = .9 - sm(.1, .4, P) * .5;
+    flyMat.uniforms.t.value = reduce ? 0 : t; flyMat.uniforms.vis.value = sm(.15, .4, P) * (1 - sm(.7, .9, P) * .5);
+    const mark = sm(.3, .5, P) * (1 - sm(.72, .9, P));
+    logoLineMat.opacity = mark * .75; logoDotMat.opacity = mark;
+    logoLines.geometry.setDrawRange(0, Math.ceil(sm(.3, .5, P) * (LOGO_E.length + 1)) * 2);
+    const rise = sm(.5, .85, P);
+    gridMat.uniforms.rise.value = rise;
+    gridMat.uniforms.scan.value = -420 + ((reduce ? .5 : (t * .18) % 1)) * 560;
+    // camera: look up at the sky, then tilt down over the valley and glide in
+    const tilt = sm(.45, .9, P);
+    camera.position.set(0, 14 + tilt * 34, 120 - P * 110);
+    camera.lookAt(0, 70 - tilt * 92, camera.position.z - 220);
+
+    steps.forEach((st, i) => {
+      const [a, b] = RANGES[i], len = b - a;
+      const vin = i === 0 ? 1 : sm(a, a + len * .25, P), vout = i === 2 ? 1 : 1 - sm(b - len * .22, b, P);
+      const v = Math.min(vin, vout);
+      st.style.opacity = v.toFixed(3); st.classList.toggle('on', v > .5);
+      lines[i].forEach((el, k) => { const lag = k * .025; const e = i === 0 ? 1 : sm(a + lag, a + len * .3 + lag, P); const out = i === 2 ? 1 : 1 - sm(b - len * .25 + lag * .5, b, P);
+        el.style.transform = reduce ? '' : `translate3d(0, ${((1 - e) * 40 - (1 - out) * 26).toFixed(1)}px, 0)`; });
+      if (hud[i]) hud[i].style.transform = `scaleX(${sm(a, b, P).toFixed(3)})`;
+    });
+    renderer.render(scene, camera);
+  };
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
