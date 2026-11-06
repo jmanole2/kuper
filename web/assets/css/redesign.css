@@ -1584,12 +1584,19 @@ html.is-bucket-dragging * {
 
 /* Logo del menú más grande (comentario del cliente) con aire arriba y abajo,
    y el menú se compacta o pasa a hamburguesa antes de que no quepa. */
-:root { --np-nav-h: 94px; }
-.np-nav-logo { width: 188px; }                 /* ~79 px de alto: ~8 px de aire */
-/* La barra conserva su tamaño al hacer scroll (antes se encogía y "brincaba"). */
+:root { --np-nav-h: 106px; }
+.np-nav-logo { width: 202px; }                 /* ~85 px de alto: ~10 px de aire */
+/* Al bajar, la barra se compacta y el logo se hace más chico. El logo se
+   escala con transform (sin recalcular el diseño) para que la animación sea suave. */
+.np-nav { transition: height 0.3s ease, top 0.3s ease, background 0.3s ease, box-shadow 0.3s ease; }
+.np-nav-logo { transform-origin: left center; transition: transform 0.3s ease; will-change: transform; }
+@media (min-width: 992px) {
+  .np-nav.is-stuck { --np-nav-h: 84px; }
+  .np-nav.is-stuck .np-nav-logo { transform: scale(0.8); }
+}
 @media (min-width: 1280px) and (max-width: 1439.98px) {
-  :root { --np-nav-h: 90px; }
-  .np-nav-logo { width: 172px; }
+  :root { --np-nav-h: 96px; }
+  .np-nav-logo { width: 178px; }
   .np-nav-links a { padding: 10px 9px; font-size: 11px; letter-spacing: 0.13em; }
   .np-nav-cta { font-size: 11px; letter-spacing: 0.12em; }
 }
@@ -1660,14 +1667,8 @@ html.is-bucket-dragging * {
 }
 .contact-details .contact-wa-cta a:hover { background: #1ebe5a; }
 
-/* Experiencia (escritorio):
-   - la imagen de la tarjeta "Destacado" se ajusta a la altura de la pantalla
-     para no cortarse en laptops bajas;
-   - la sección queda fija menos tiempo: el scroll avanza antes a Nosotros. */
-@media (min-width: 821px) {
-  html.panel-transitions-ready .exp-section { height: 125vh; min-height: 880px; }
-
-}
+/* Experiencia (escritorio): la imagen de la tarjeta "Destacado" se ajusta a la
+   altura de la pantalla para no cortarse en laptops bajas. */
 @media (min-width: 821px) and (max-height: 880px) {
   .exp-card-image { aspect-ratio: auto; height: max(140px, calc(100vh - 500px)); }
 }
