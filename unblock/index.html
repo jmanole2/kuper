@@ -71,7 +71,7 @@ img { display: block; max-width: 100%; }
 
 /* ---------- the forest: fixed scenes, light and fog over them ---------- */
 .stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--green-deep); }
-.scene { position: absolute; inset: 0; opacity: 0; will-change: transform, opacity; }
+.scene { position: absolute; inset: 0; opacity: 0; transform: translateZ(0); backface-visibility: hidden; }
 .scene img { width: 100%; height: 100%; object-fit: cover; }
 .scene::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,22,16,.35) 0%, rgba(8,22,16,0) 30%, rgba(8,22,16,.55) 100%); }
 .scene[data-s="valley"] img { object-position: 50% 60%; }
@@ -280,10 +280,10 @@ main { position: relative; z-index: 2; }
 <body>
 
 <div class="stage" aria-hidden="true">
-  <div class="scene" data-s="valley" style="opacity:1"><img src="media/f/valley.jpg" alt=""></div>
-  <div class="scene" data-s="pine"><img src="media/f/pine.jpg" alt="" loading="lazy"></div>
-  <div class="scene" data-s="vista"><img src="media/f/vista.jpg" alt="" loading="lazy"></div>
-  <div class="scene" data-s="night"><img src="media/f/night.jpg" alt="" loading="lazy"></div>
+  <div class="scene" data-s="valley" style="opacity:1"><img src="media/f/valley-m.jpg" srcset="media/f/valley-m.jpg 1200w, media/f/valley.jpg 2400w" sizes="100vw" alt=""></div>
+  <div class="scene" data-s="pine"><img src="media/f/pine-m.jpg" srcset="media/f/pine-m.jpg 1200w, media/f/pine.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
+  <div class="scene" data-s="vista"><img src="media/f/vista-m.jpg" srcset="media/f/vista-m.jpg 1200w, media/f/vista.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
+  <div class="scene" data-s="night"><img src="media/f/night-m.jpg" srcset="media/f/night-m.jpg 1200w, media/f/night.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
   <canvas id="air"></canvas>
   <canvas id="stars"></canvas>
 </div>
@@ -499,14 +499,18 @@ main { position: relative; z-index: 2; }
 
   // ---------------- air: fog, sun through the trees, pollen ----------------
   const ac = $('#air');
-  const gl = ac.getContext('webgl', { premultipliedAlpha: false, alpha: true, antialias: false });
+  const gl = ac.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
   let prog = null, U = {};
-  function sizeAir() { if (!gl) return; const r = Math.min(devicePixelRatio, 2) * .5; ac.width = Math.round(vw * r); ac.height = Math.round(vh * r); gl.viewport(0, 0, ac.width, ac.height); }
+  function sizeAir() { if (!gl) return; const r = vw < 700 ? .5 : Math.min(devicePixelRatio, 2) * .5; ac.width = Math.round(vw * r); ac.height = Math.round(vh * r); gl.viewport(0, 0, ac.width, ac.height); }
   if (gl) {
     const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
-    const fs = `precision mediump float;
+    const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
 uniform vec2 r;uniform float t,fog,light,night;
-float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float h(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
 float fb(vec2 p){float v=0.,a=.5;for(int k=0;k<5;k++){v+=a*n(p);p*=2.03;a*=.5;}return v;}
 void main(){
@@ -530,8 +534,9 @@ void main(){
   P *= (.25 + light*.75) * (1.-night);
   vec3 fogc = mix(vec3(.88,.9,.86), vec3(.35,.42,.5), night);
   vec3 sunc = vec3(1.,.95,.78);
-  float a = clamp(F + L + P*.8, 0., .92);
-  vec3 c = (fogc*F + sunc*(L + P*.8)) / max(a, .001);
+  F = clamp(F, 0., .7); L = clamp(L, 0., .6); P = clamp(P, 0., 1.);
+  float a = clamp(F + L + P*.8, 0., .85);
+  vec3 c = min(fogc*F + sunc*(L + P*.8), vec3(a));
   gl_FragColor = vec4(c, a);
 }`;
     const sh = (ty, src) => { const s = gl.createShader(ty); gl.shaderSource(s, src); gl.compileShader(s); return s; };
@@ -607,8 +612,8 @@ void main(){
     const fog = a.fog + (b.fog - a.fog) * k, light = a.light + (b.light - a.light) * k, night = a.stars + (b.stars - a.stars) * k;
     if (prog) {
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform2f(U.r, ac.width, ac.height); gl.uniform1f(U.t, t);
-      gl.uniform1f(U.fog, fog); gl.uniform1f(U.light, light); gl.uniform1f(U.night, night);
+      gl.uniform2f(U.r, ac.width, ac.height); gl.uniform1f(U.t, t % 600);
+      const soft = vw < 700 ? .6 : 1; gl.uniform1f(U.fog, fog * soft); gl.uniform1f(U.light, light * (vw < 700 ? .75 : 1)); gl.uniform1f(U.night, night);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
     const nk = keys.find(q => q.stars);
