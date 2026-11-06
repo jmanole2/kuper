@@ -294,6 +294,22 @@ export const horarioEquipo = (client) => ({ dias: [1, 2, 3, 4, 5], de: 8, a: 18,
 /** Cuándo contesta la IA: 'siempre' (por defecto) o 'fuera_de_horario' (el equipo atiende en su horario). */
 export const MODOS_IA = { siempre: 'Siempre (las 24 horas)', fuera_de_horario: 'Solo fuera del horario del equipo' };
 export const horarioIA = (client) => ({ modo: MODOS_IA[client?.config?.ia_modo] ? client.config.ia_modo : 'siempre', ...horarioEquipo(client), tz: config.timezone });
+/** ¿Está el equipo en su horario en este momento? (hora del panel). */
+export function enHorarioEquipo(client, t = Date.now()) {
+  const h = horarioEquipo(client);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: config.timezone, hourCycle: 'h23', weekday: 'short', hour: '2-digit' }).formatToParts(t).map((x) => [x.type, x.value]));
+  const dia = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday);
+  return h.dias.map(Number).includes(dia) && Number(p.hour) >= h.de && Number(p.hour) < h.a;
+}
+/**
+ * Quién contesta una llamada que entra ahora: 'ia' (la asistente) o 'equipo' (la pasa al asesor).
+ * Pasa al equipo si las llamadas están en pausa o si la IA está en "solo fuera de horario" y es horario del equipo.
+ */
+export function turnoLlamadas(client, t = Date.now()) {
+  if (client?.config?.llamadas_pausado === true) return { atiende: 'equipo', motivo: 'pausa' };
+  if (horarioIA(client).modo === 'fuera_de_horario' && enHorarioEquipo(client, t)) return { atiende: 'equipo', motivo: 'horario_equipo' };
+  return { atiende: 'ia', motivo: horarioIA(client).modo === 'fuera_de_horario' ? 'fuera_de_horario' : 'siempre' };
+}
 export function guardarHorario(client, body = {}) {
   const dias = [].concat(body.dias || []).map(Number).filter((d) => d >= 0 && d <= 6);
   const de = Number(body.de), a = Number(body.a);

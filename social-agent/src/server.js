@@ -141,6 +141,9 @@ export function createApp() {
     if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado });
     res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
   });
+  // Agente de llamadas: en cada llamada que entra pregunta si contesta la asistente o la pasa al equipo
+  // (botón "Pausar llamadas" y horario de la IA del panel).
+  api.get('/llamadas/turno', (req, res) => res.set('Cache-Control', 'no-store').json(embudo.turnoLlamadas(req.client)));
   // El agente pregunta en el momento qué oficinas hay libres (sale de su Airtable). ?sede=&personas=&tipo=
   api.get('/disponibilidad', (req, res) => {
     const q = (k) => String(req.query[k] || '').slice(0, 60);
@@ -1202,6 +1205,15 @@ export function createApp() {
         } catch { aviso += ' (El agente lo toma en los próximos 5 minutos.)'; }
       } else aviso += ' (El agente lo toma en los próximos 5 minutos.)';
       res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(aviso)}`);
+    });
+    // Pausar o reanudar las llamadas: en pausa, la asistente pasa todas las llamadas al equipo (lo lee en cada llamada).
+    router.post(`${prefix}/agente/pausa-llamadas`, (req, res) => {
+      const pausado = req.body.pausado === '1';
+      const autor = req.sesion?.user?.nombre || 'Kuper';
+      db.updateClient(req.client.id, { config: { ...req.client.config, llamadas_pausado: pausado } });
+      db.logEvent({ clientId: req.client.id, tipo: pausado ? 'llamadas_pausadas' : 'llamadas_reanudadas', detalle: autor });
+      seg.auditar(req, pausado ? 'llamadas_pausadas' : 'llamadas_reanudadas', req.client.nombre);
+      res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(pausado ? 'Llamadas en pausa: desde la siguiente llamada, todas pasan a tu equipo.' : 'Llamadas activas: la asistente vuelve a contestar.')}`);
     });
     // Airtable del cliente (solo lectura) para la disponibilidad de oficinas.
     router.post(`${prefix}/agente/airtable`, async (req, res) => {

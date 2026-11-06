@@ -154,3 +154,17 @@ test('analítica: rango de fechas (atajos y propio) y filtro por asesor', () => 
   const deAna = E.analitica(c, { rango: '90', asesor: String(ana.id), ahora }).nuevos;
   assert.ok(deAna <= todos);
 });
+
+test('turno de llamadas: pausa y horario del equipo pasan la llamada al equipo', () => {
+  const martesMediodia = Date.parse('2026-11-10T18:00:00Z'); // martes 12:00 en CDMX
+  const martesNoche = Date.parse('2026-11-11T03:00:00Z'); // martes 21:00 en CDMX
+  const domingo = Date.parse('2026-11-08T18:00:00Z'); // domingo 12:00 en CDMX
+  let x = db.createClient({ slug: 'turno', nombre: 'Turno', perfil, config: {}, credentials: {} });
+  assert.deepEqual(E.turnoLlamadas(x, martesMediodia), { atiende: 'ia', motivo: 'siempre' });
+  x = E.guardarHorario(x, { ia_modo: 'fuera_de_horario', de: '9', a: '18', dias: ['1', '2', '3', '4', '5'] });
+  assert.equal(E.turnoLlamadas(x, martesMediodia).atiende, 'equipo');
+  assert.equal(E.turnoLlamadas(x, martesNoche).atiende, 'ia');
+  assert.equal(E.turnoLlamadas(x, domingo).atiende, 'ia');
+  db.updateClient(x.id, { config: { ...x.config, llamadas_pausado: true } });
+  assert.deepEqual(E.turnoLlamadas(db.getClient(x.id), martesNoche), { atiende: 'equipo', motivo: 'pausa' });
+});

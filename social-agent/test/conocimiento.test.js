@@ -60,3 +60,18 @@ test('solo quien tiene agente de chat ve esta sección', async () => {
   assert.equal((await get('/app/agente', ck)).headers.get('location'), '/app');
   assert.doesNotMatch(await (await get('/app', ck)).text(), /Lo que sabe tu agente/);
 });
+
+test('pausar llamadas: el botón sale con el servicio de llamadas y el agente de llamadas lo lee', async () => {
+  const ck = await login('rh@sabor.mx', 'ClaveRocio2030');
+  assert.doesNotMatch(await (await get('/app/agente', ck)).text(), /Pausar llamadas/);
+  db.updateClient(c.id, { config: { ...db.getClient(c.id).config, plan: { servicios: { chat: true, llamadas: true } } } });
+  assert.match(await (await get('/app/agente', ck)).text(), /Pausar llamadas/);
+  const turno = () => fetch(`${base}/api/sabor/llamadas/turno`, { headers: { Authorization: 'Bearer llave-123' } }).then((r) => r.json());
+  assert.equal((await turno()).atiende, 'ia');
+  assert.equal((await post('/app/agente/pausa-llamadas', ck, { pausado: '1' })).status, 302);
+  assert.deepEqual(await turno(), { atiende: 'equipo', motivo: 'pausa' });
+  assert.match(await (await get('/app/agente', ck)).text(), /Reanudar llamadas/);
+  await post('/app/agente/pausa-llamadas', ck, { pausado: '0' });
+  assert.equal((await turno()).atiende, 'ia');
+  assert.equal((await fetch(`${base}/api/sabor/llamadas/turno`, { headers: { Authorization: 'Bearer mala' } })).status, 401);
+});
