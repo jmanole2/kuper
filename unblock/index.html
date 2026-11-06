@@ -6,12 +6,12 @@
 <title>UNBLOCK · Experiencias para personas y empresas en CDMX</title>
 <meta name="description" content="UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos, constelaciones y retiros en Ciudad de México y otros destinos de México.">
 <link rel="canonical" href="https://unblock.mx/">
-<meta name="theme-color" content="#2fb8d6">
+<meta name="theme-color" content="#0b1a14">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 136 126'%3E%3Cg stroke='%23111' stroke-width='6' fill='none' stroke-linecap='round'%3E%3Cpath d='M7 27L31 6L65 10M31 6L44 34L65 10M7 27L44 34M7 27L14 64L47 73L44 34L76 43L111 27L117 67L76 43M47 73L76 43M47 73L72 107L94 87L117 67M86 16L103 28'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="media/sea.jpg">
+<link rel="preload" as="image" href="media/f/valley.jpg">
 <script>document.documentElement.classList.add('js')</script>
 <script type="application/ld+json">
 {
@@ -29,219 +29,262 @@
 :root {
   --ink: #111111;
   --ivory: #F7F4EF;
-  --red: #C81016;
-  --pink: #F075C8;
-  --yellow: #FFF3C6;
-  --blue: #2F5BFF;
+  --cream: #FFF3C6;
   --green: #0F5B4D;
+  --green-deep: #0b1a14;
+  --green-soft: #8fb5a4;
+  --red: #C81016;
 
   --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif: "Instrument Serif", "Times New Roman", serif;
 
-  --t-display: clamp(52px, 7vw, 120px);
-  --t-head: clamp(40px, 4.8vw, 84px);
-  --t-sub: clamp(17px, 1.5vw, 22px);
+  --t-display: clamp(50px, 6.6vw, 116px);
+  --t-head: clamp(38px, 4.6vw, 80px);
+  --t-sub: clamp(16px, 1.3vw, 20px);
   --t-body: 17px;
   --t-small: 14px;
   --m: clamp(16px, 3vw, 48px);
 
   --glass: rgba(247, 244, 239, 0.12);
-  --glass-strong: rgba(247, 244, 239, 0.2);
-  --glass-edge: rgba(247, 244, 239, 0.34);
-  --glass-blur: blur(20px) saturate(160%);
-
+  --glass-edge: rgba(247, 244, 239, 0.3);
+  --glass-blur: blur(18px) saturate(140%);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: #06202c; color: #fff; font: 400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; background: var(--green-deep); color: var(--ivory); font: 400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; }
 p, h1, h2, h3, ul, figure, blockquote { margin: 0; }
 h1, h2, h3 { font-weight: 300; }
 ul { padding: 0; list-style: none; }
-::selection { background: #fff; color: #0a3b4a; }
-:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 999px; }
+img { display: block; max-width: 100%; }
+::selection { background: var(--cream); color: var(--green); }
+:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 999px; }
 
-/* type, as in the mockups: light words, the last line bold */
-.ttl { font-family: var(--sans); font-weight: 300; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; }
-.ttl b { display: block; font-weight: 700; letter-spacing: -0.035em; }
-.sub { font-size: var(--t-sub); font-weight: 400; letter-spacing: .12em; line-height: 1.6; }
-.rule { display: block; width: 128px; height: 1px; background: rgba(255,255,255,.7); margin: 28px 0; }
-.body { color: rgba(255,255,255,.92); max-width: 34em; }
-.shade { text-shadow: 0 1px 24px rgba(0, 40, 60, .28); }
+.ttl { font-weight: 300; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; }
+.ttl b { font-weight: 700; letter-spacing: -0.035em; }
+.ttl .soft { color: var(--green-soft); }
+.sub { font-size: var(--t-sub); letter-spacing: .12em; line-height: 1.6; }
+.rule { display: block; width: 120px; height: 1px; background: currentColor; opacity: .6; margin: 26px 0; }
+.body { opacity: .92; max-width: 34em; }
+.shade { text-shadow: 0 1px 26px rgba(5, 20, 14, .45); }
 
-/* ---------- the sea: fixed layers ---------- */
-.world { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.world > * { position: absolute; inset: 0; width: 100%; height: 100%; }
-#water { display: block; }
-.still { opacity: 0; background: linear-gradient(180deg, #2f7491 0%, #1b4a5e 45%, #163a4a 100%); }
-.still::before { content: ""; position: absolute; top: -8%; bottom: -8%; left: 0; width: min(68vw, calc(116vh * .862)); background: url(media/still.jpg) 50% 100% / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 100%); mask-image: linear-gradient(90deg, #000 62%, transparent 100%); }
-.still::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,52,68,0) 40%, rgba(14,52,68,.35) 70%, rgba(14,52,68,.55) 100%); }
-.surface { will-change: transform, opacity; transform-origin: 50% 70%; }
-.surface video, .surface img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 66%; display: block; }
-/* a soft pool of shade under the words so the water never fights them */
-.surface::after { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 42% at 50% 62%, rgba(6, 70, 100, .30), rgba(6, 70, 100, 0) 70%); }
-#stars { display: block; }
+/* ---------- the forest: fixed scenes, light and fog over them ---------- */
+.stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--green-deep); }
+.scene { position: absolute; inset: 0; opacity: 0; will-change: transform, opacity; }
+.scene img { width: 100%; height: 100%; object-fit: cover; }
+.scene::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,22,16,.35) 0%, rgba(8,22,16,0) 30%, rgba(8,22,16,.55) 100%); }
+.scene[data-s="valley"] img { object-position: 50% 60%; }
+.scene[data-s="pine"]::after { background: linear-gradient(90deg, rgba(8,22,16,.15) 0%, rgba(8,22,16,.35) 45%, rgba(8,22,16,.78) 100%); }
+.scene[data-s="vista"]::after { background: linear-gradient(90deg, rgba(8,22,16,.7) 0%, rgba(8,22,16,.35) 50%, rgba(8,22,16,.1) 100%), linear-gradient(180deg, rgba(8,22,16,.35), rgba(8,22,16,0) 40%); }
+@media (max-width: 700px) { .scene[data-s="pine"]::after, .scene[data-s="vista"]::after { background: linear-gradient(180deg, rgba(8,22,16,.2) 0%, rgba(8,22,16,.3) 40%, rgba(8,22,16,.82) 100%); } }
+.scene[data-s="pine"] img { object-position: 30% 40%; }
+.scene[data-s="night"] img { object-position: 50% 80%; }
+#air, #stars { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-/* ---------- glass ---------- */
-.glass { background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 20px 50px -28px rgba(0, 30, 45, .5); border-radius: 26px; }
-
-.top { background: rgba(12, 74, 96, .2); position: fixed; top: 18px; left: var(--m); right: var(--m); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 22px; border-radius: 999px; }
+/* ---------- glass, header, buttons ---------- */
+.glass { background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); border-radius: 24px; }
+.top { position: fixed; top: 16px; left: var(--m); right: var(--m); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 22px; border-radius: 999px; background: rgba(12, 32, 24, .28); color: var(--ivory); transition: background-color 400ms ease, color 400ms ease; }
+.top.on-light { background: rgba(247, 244, 239, .72); color: var(--green); border-color: rgba(15, 91, 77, .18); }
 .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font: 400 17px/1 var(--sans); letter-spacing: .06em; }
-.brand svg { width: 34px; height: 32px; }
-.nav { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 40px); font-size: 16px; }
-.nav a:not(.pill) { text-decoration: none; opacity: .92; position: relative; transition: opacity 200ms ease; }
-.nav a:not(.pill)::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--ease-out); }
-@media (hover: hover) and (pointer: fine) { .nav a:not(.pill):hover::after { transform: scaleX(1); } }
+.brand svg { width: 32px; height: 30px; }
+.nav { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 38px); font-size: 15px; }
+.nav a:not(.btn) { text-decoration: none; position: relative; }
+.nav a:not(.btn)::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .nav a:not(.btn):hover::after { transform: scaleX(1); } }
 .menu { display: none; }
 
-.pill { display: inline-flex; align-items: center; justify-content: center; gap: .7em; min-height: 56px; padding: 0 30px; border-radius: 999px; cursor: pointer; font: 500 16px/1 var(--sans); text-decoration: none; color: #fff; border: 1.5px solid rgba(255,255,255,.85); background: transparent; transition: transform 160ms var(--ease-out), background-color 220ms ease, color 220ms ease; }
-.pill--glass { border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.22); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
-.pill--solid { background: var(--ivory); color: #0a3b4a; border-color: var(--ivory); }
-.pill--accent { background: var(--acc); color: var(--acc-ink); border-color: var(--acc); }
-.pill:active { transform: scale(.97); }
-.pill .arrow { width: 22px; height: 12px; flex: none; transition: transform 240ms var(--ease-out); }
+/* two buttons only, from the manual: green and cream */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .75em; min-height: 54px; padding: 0 28px; border-radius: 999px; border: 0; cursor: pointer; font: 500 15px/1 var(--sans); text-decoration: none; background: var(--green); color: var(--ivory); transition: transform 160ms var(--ease-out), background-color 220ms ease; }
+.btn--cream { background: var(--ivory); color: var(--green); }
+.btn:active { transform: scale(.97); }
+.btn .arrow { width: 20px; height: 12px; flex: none; transition: transform 240ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
-  .pill:hover .arrow { transform: translateX(4px); }
-  .pill:not(.pill--solid):not(.pill--accent):hover { background: rgba(255,255,255,.3); }
+  .btn:hover { background: #0c4d41; }
+  .btn--cream:hover { background: #fff; }
+  .btn:hover .arrow { transform: translateX(4px); }
 }
-.top .pill { min-height: 46px; padding: 0 26px; }
+.top .btn { min-height: 44px; padding: 0 22px; }
+.top.on-light .btn { background: var(--green); color: var(--ivory); }
+.round { width: 54px; height: 54px; border-radius: 50%; display: inline-grid; place-items: center; border: 1.5px solid currentColor; transition: transform 200ms var(--ease-out), background-color 200ms ease; }
+.round svg { width: 18px; height: 18px; }
+@media (hover: hover) and (pointer: fine) { .round:hover { transform: rotate(45deg); } }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags a { font-size: 13px; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(247,244,239,.55); text-decoration: none; transition: background-color 200ms ease, color 200ms ease; }
+@media (hover: hover) and (pointer: fine) { .tags a:hover { background: var(--ivory); color: var(--green); } }
 
 /* ---------- sections ---------- */
 main { position: relative; z-index: 2; }
-.sec { position: relative; min-height: 115vh; display: flex; align-items: center; padding: 140px var(--m); }
+.sec { position: relative; min-height: 120vh; display: flex; align-items: center; padding: 140px var(--m); }
 .sec.right { justify-content: flex-end; }
 .col { width: min(600px, 100%); }
 .sec h2 { font-size: var(--t-head); }
 .sec .sub { margin-top: 22px; }
-.row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 36px; }
-[data-acc="yellow"] { --acc: var(--yellow); --acc-ink: var(--ink); }
-[data-acc="green"]  { --acc: var(--green);  --acc-ink: var(--ivory); }
-[data-acc="pink"]   { --acc: var(--pink);   --acc-ink: var(--ink); }
-[data-acc="blue"]   { --acc: var(--blue);   --acc-ink: var(--ivory); }
-[data-acc="red"]    { --acc: var(--red);    --acc-ink: var(--ivory); }
-/* the chapter's one colour, as a line */
-[data-acc] .rule { background: var(--acc); height: 2px; }
-[data-acc="green"] .rule { background: #47b394; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 34px; }
 
-/* hero: centred over calm water, the foam stays above */
-.hero { min-height: 100vh; min-height: 100svh; justify-content: center; align-items: flex-end; text-align: center; padding-bottom: clamp(70px, 13vh, 150px); }
-.hero .col { width: min(900px, 100%); }
+/* hero, after Nexora: a promise on the left, the title on the right, cards and tags below */
+.hero { min-height: 100vh; min-height: 100svh; padding: 120px var(--m) 32px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 28px; align-items: center; }
+.hero .lede { align-self: center; max-width: 330px; }
+.hero .lede b { display: block; font-weight: 500; font-size: 20px; letter-spacing: .02em; line-height: 1.25; }
+.hero .lede p { margin-top: 12px; font-size: 15px; opacity: .9; }
+.hero .title { justify-self: end; text-align: right; }
 .hero h1 { font-size: var(--t-display); }
-.hero .sub { max-width: 46ch; margin: 30px auto 0; font-size: clamp(16px, 1.35vw, 20px); }
-.hero .row { justify-content: center; margin-top: 44px; gap: 22px; }
-.cue { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); width: 26px; height: 42px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.7); }
-.cue::after { content: ""; position: absolute; left: 50%; top: 8px; width: 3px; height: 8px; margin-left: -1.5px; border-radius: 2px; background: #fff; animation: cue 2s var(--ease-out) infinite; }
-@keyframes cue { from { transform: translateY(0); opacity: 1; } to { transform: translateY(14px); opacity: 0; } }
+.hero h1 span { display: block; }
+.hero .title p { margin: 22px 0 0 auto; max-width: 30em; font-size: 16px; opacity: .92; }
+.hero .title .row { justify-content: flex-end; }
+.hero-foot { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+.minis { display: flex; gap: 12px; }
+.mini { width: 190px; padding: 12px; border-radius: 20px; text-decoration: none; display: grid; gap: 10px; transition: transform 300ms var(--ease-out); }
+.mini img { width: 100%; height: 96px; object-fit: cover; border-radius: 12px; }
+.mini b { font-weight: 500; font-size: 15px; }
+.mini span { display: block; font-size: 12px; opacity: .85; margin-top: 2px; }
+.mini.solid { background: var(--ivory); color: var(--green); border-color: transparent; }
+@media (hover: hover) and (pointer: fine) { .mini:hover { transform: translateY(-4px); } }
 
-/* meditation: the picture on the left, words on the right */
-.calm h2 { font-size: var(--t-head); }
-.ring { position: absolute; right: -16vw; top: 50%; width: 60vw; height: 60vw; max-width: 900px; max-height: 900px; transform: translateY(-50%); border-radius: 50%; border: 1px solid rgba(255,255,255,.22); pointer-events: none; }
-.ring::after { content: ""; position: absolute; inset: 7%; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); }
+/* light chapter: the paper of the brand */
+.paper { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
+.paper .ttl b { color: var(--green); }
+.paper .ttl .soft { color: #6f9c8a; }
+.lead-wrap { display: grid; grid-template-columns: 1fr 5fr 1fr; gap: 24px; align-items: start; }
+.lead-wrap .star { width: 38px; color: var(--green); margin-top: 10px; }
+.lead-wrap .note { justify-self: end; font-size: 12px; letter-spacing: .12em; text-align: right; color: #555; }
+.paper h2 { font-size: var(--t-head); text-align: center; }
+.paper h2 .pic { display: inline-block; width: 1.8em; height: .78em; border-radius: 999px; overflow: hidden; vertical-align: -0.08em; }
+.paper h2 .pic img { width: 100%; height: 100%; object-fit: cover; }
+.paper .intro { max-width: 36em; margin: 30px auto 0; text-align: center; color: #333; }
+.trio { display: grid; grid-template-columns: 1fr 3fr; gap: 24px; margin-top: 70px; align-items: end; }
+.trio .side { display: grid; gap: 18px; }
+.trio .side p { font-size: 15px; color: #444; max-width: 24em; }
+.trio .side a { font-weight: 500; letter-spacing: .06em; font-size: 15px; color: var(--green); }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4 / 5; color: var(--ivory); text-decoration: none; display: block; background: var(--green); }
+.card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease-out); }
+.card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,22,16,0) 40%, rgba(8,22,16,.75) 100%); }
+.card .tx { position: absolute; left: 20px; right: 20px; bottom: 18px; z-index: 1; }
+.card .tx b { display: block; font-weight: 500; font-size: 24px; letter-spacing: -0.01em; line-height: 1.1; }
+.card .tx span { display: block; margin-top: 6px; font-size: 14px; opacity: .9; }
+.card .tag { position: absolute; top: 14px; left: 14px; z-index: 1; font-size: 11px; letter-spacing: .1em; padding: 6px 11px; border-radius: 999px; border: 1px solid rgba(247,244,239,.7); }
+@media (hover: hover) and (pointer: fine) { .card:hover img { transform: scale(1.05); } }
 
-.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 30px; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 28px; }
 .duo div { padding: 22px 24px; }
 .duo b { display: block; font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
-.duo span { display: block; margin-top: 6px; font-size: 15px; color: rgba(255,255,255,.88); }
+.duo span { display: block; margin-top: 6px; font-size: 15px; opacity: .9; }
 
-.svc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; }
-.svc a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; border-radius: 18px; text-decoration: none; font-size: 15px; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); transition: background-color 200ms ease, transform 160ms var(--ease-out); }
-.svc a::after { content: "→"; transition: transform 240ms var(--ease-out); }
-.svc a:active { transform: scale(.98); }
-@media (hover: hover) and (pointer: fine) { .svc a:hover { background: rgba(255,255,255,.18); } .svc a:hover::after { transform: translateX(3px); } }
+/* empresas: a row of dark cards */
+.firms { position: relative; z-index: 3; background: var(--green-deep); padding: clamp(110px, 12vw, 190px) var(--m); }
+.firms h2 { font-size: var(--t-head); text-align: center; }
+.firms h2 b { color: var(--cream); }
+.firms .intro { max-width: 38em; margin: 26px auto 0; text-align: center; opacity: .9; }
+.svc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 64px; }
+.svc .card { aspect-ratio: 3 / 4; background: #0f2a20; }
+.svc .card:nth-child(2) { transform: translateY(-22px); }
+.svc .card:nth-child(4) { transform: translateY(-12px); }
+.more-svc { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 40px; }
+.firms .row { justify-content: center; margin-top: 40px; }
 
-.deep { display: block; min-height: 0; padding-top: 180px; }
-.deep h2 { max-width: 13em; }
-.cases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 48px; }
-.case { padding: 28px; min-height: 240px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: transform 300ms var(--ease-out), background-color 200ms ease; }
-.case h3 { font-weight: 700; font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; }
-.case p { font-size: 15px; color: rgba(255,255,255,.85); margin-top: 18px; }
-@media (hover: hover) and (pointer: fine) { .case:hover { transform: translateY(-4px); background: var(--glass-strong); } }
-.voices { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; margin-top: 130px; }
-.voice { padding: 32px; display: flex; flex-direction: column; justify-content: space-between; gap: 26px; }
-.voice.big p { font-family: var(--serif); font-size: clamp(30px, 2.9vw, 42px); line-height: 1.12; }
-.voice cite { font-style: normal; font-size: var(--t-small); letter-spacing: .06em; color: rgba(255,255,255,.82); }
-.deep .row { margin-top: 30px; }
+.voices-sec { position: relative; z-index: 3; background: var(--ivory); color: var(--ink); padding: clamp(110px, 12vw, 190px) var(--m); }
+.voices-sec h2 { font-size: var(--t-head); }
+.voices-sec h2 b { color: var(--green); }
+.cases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 48px; }
+.case { padding: 26px; border-radius: 22px; background: #EDE9E1; min-height: 210px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: transform 300ms var(--ease-out), background-color 200ms ease; }
+.case h3 { font-weight: 700; font-size: 21px; line-height: 1.2; color: var(--green); }
+.case p { font-size: 15px; color: #444; margin-top: 16px; }
+@media (hover: hover) and (pointer: fine) { .case:hover { transform: translateY(-4px); background: #E6E1D7; } }
+.voices { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; margin-top: 110px; }
+.voice { padding: 30px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; background: #EDE9E1; }
+.voice.big { background: var(--green); color: var(--ivory); }
+.voice.big p { font-family: var(--serif); font-size: clamp(30px, 2.8vw, 42px); line-height: 1.12; }
+.voice cite { font-style: normal; font-size: var(--t-small); letter-spacing: .05em; opacity: .85; }
+.voices-sec .row { margin-top: 32px; }
 
-.ask { min-height: 100vh; justify-content: center; text-align: center; }
-.ask .col { width: min(980px, 100%); }
+.ask { position: relative; z-index: 3; background: var(--green); color: var(--ivory); text-align: center; padding: clamp(120px, 14vw, 220px) var(--m); }
 .ask h2 { font-size: var(--t-display); }
-.ask .rule { margin: 30px auto; }
+.ask h2 span { display: block; }
+.ask h2 b { color: var(--cream); }
 .ask .row { justify-content: center; }
-.ask .note { margin-top: 22px; font-size: var(--t-small); letter-spacing: .1em; color: rgba(255,255,255,.82); }
+.ask .note { margin-top: 20px; font-size: var(--t-small); letter-spacing: .1em; opacity: .85; }
 
-.foot { position: relative; z-index: 2; padding: 0 var(--m); overflow: hidden; }
-.foot .glass { padding: clamp(28px, 3vw, 46px); display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; }
+.foot { position: relative; z-index: 3; background: #111111; color: var(--ivory); padding: clamp(80px, 9vw, 130px) var(--m) 0; overflow: hidden; }
+.foot .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; }
 .foot h2 { font-size: var(--t-head); }
 .foot .links { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: flex-end; align-content: start; }
 .foot .links a { text-decoration: none; }
-.foot .about { grid-column: 1 / -1; font-size: 15px; color: rgba(255,255,255,.85); max-width: 72ch; }
-.legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: rgba(255,255,255,.72); padding: 22px 4px 0; letter-spacing: .04em; }
-.wordmark { font: 700 clamp(110px, 25vw, 480px)/.8 var(--sans); letter-spacing: -0.06em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); color: rgba(255,255,255,.9); user-select: none; }
+.foot .about { grid-column: 1 / -1; font-size: 15px; opacity: .85; max-width: 72ch; }
+.credits { grid-column: 1 / -1; font-size: 13px; opacity: .65; max-width: 110ch; }
+.legal { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; opacity: .7; padding-top: 40px; letter-spacing: .04em; }
+.wordmark { font: 700 clamp(110px, 25vw, 480px)/.8 var(--sans); letter-spacing: -0.06em; white-space: nowrap; margin: 30px 0 0 -0.04em; transform: translateY(24%); user-select: none; }
 
 /* entrances */
 @media (prefers-reduced-motion: no-preference) {
-  .js [data-reveal] > * { opacity: 0; transform: translateY(22px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); }
+  .js [data-reveal] > * { opacity: 0; transform: translateY(24px); transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out); }
   .js [data-reveal].is-in > * { opacity: 1; transform: none; }
-  .js [data-reveal].is-in > *:nth-child(2) { transition-delay: 70ms; }
-  .js [data-reveal].is-in > *:nth-child(3) { transition-delay: 140ms; }
-  .js [data-reveal].is-in > *:nth-child(4) { transition-delay: 210ms; }
-  .js [data-reveal].is-in > *:nth-child(5) { transition-delay: 280ms; }
-  .js [data-reveal].is-in > *:nth-child(6) { transition-delay: 350ms; }
-  .js .rule { transform-origin: left; }
-  .js .ask .rule, .js .hero .rule { transform-origin: center; }
+  .js [data-reveal].is-in > *:nth-child(2) { transition-delay: 80ms; }
+  .js [data-reveal].is-in > *:nth-child(3) { transition-delay: 160ms; }
+  .js [data-reveal].is-in > *:nth-child(4) { transition-delay: 240ms; }
+  .js [data-reveal].is-in > *:nth-child(5) { transition-delay: 320ms; }
+  .js .cards[data-reveal] > *, .js .svc[data-reveal] > * { transform: translateY(40px); }
+  .js .svc[data-reveal].is-in > *:nth-child(2) { transform: translateY(-22px); }
+  .js .svc[data-reveal].is-in > *:nth-child(4) { transform: translateY(-12px); }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 980px) {
   .nav a.opt { display: none; }
-  .cases { grid-template-columns: 1fr 1fr; }
+  .hero { grid-template-columns: 1fr; grid-template-rows: auto auto auto; align-items: end; }
+  .hero .lede { display: none; }
+  .hero .title { justify-self: start; text-align: left; }
+  .hero .title p { margin-left: 0; }
+  .hero .title .row { justify-content: flex-start; }
+  .hero-foot { flex-direction: column; align-items: flex-start; }
+  .svc, .cases { grid-template-columns: 1fr 1fr; }
+  .svc .card:nth-child(n) { transform: none; }
   .voices { grid-template-columns: 1fr; }
-  .still::before { top: 0; bottom: auto; height: 64vh; width: 100%; background-position: 50% 88%; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%); mask-image: linear-gradient(180deg, #000 70%, transparent 100%); }
-  .still::after { background: linear-gradient(180deg, rgba(8,64,90,0) 30%, rgba(8,64,90,.75) 78%); }
-  .ring { display: none; }
+  .trio { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   :root { --t-body: 16px; }
   .top { padding: 8px 8px 8px 16px; top: 12px; }
   .nav { display: none; }
   .menu { display: block; position: relative; }
-  .menu summary { list-style: none; cursor: pointer; font: 500 15px/1 var(--sans); padding: 13px 18px; border-radius: 999px; background: rgba(255,255,255,.9); color: #0a3b4a; }
+  .menu summary { list-style: none; cursor: pointer; font: 500 15px/1 var(--sans); padding: 13px 18px; border-radius: 999px; background: var(--ivory); color: var(--green); }
   .menu summary::-webkit-details-marker { display: none; }
-  .menu ul { position: absolute; right: 0; top: calc(100% + 10px); min-width: 220px; padding: 10px; border-radius: 22px; background: rgba(10,70,92,.7); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 0 0 1px var(--glass-edge); }
+  .menu ul { position: absolute; right: 0; top: calc(100% + 10px); min-width: 220px; padding: 10px; border-radius: 22px; background: var(--ivory); color: var(--green); }
   .menu li a { display: block; padding: 12px 14px; text-decoration: none; }
   .sec { padding: 110px 18px; align-items: flex-end; min-height: 110vh; }
   .sec.right { justify-content: flex-start; }
-  .hero { padding-bottom: 80px; }
-  .hero h1 { font-size: 12.6vw; }
-  .hero .sub { letter-spacing: .08em; }
-  .hero .row { flex-direction: column; gap: 12px; }
-  .hero .row .pill { width: 100%; }
-  .sec h2, .calm h2 { font-size: 11vw; }
-  .sub { letter-spacing: .08em; }
+  .hero { padding: 100px 18px 24px; }
+  .hero h1 { font-size: 12.4vw; }
+  .hero .row .btn { width: 100%; }
+  .minis { display: none; }
+  .sec h2, .paper h2, .firms h2, .voices-sec h2 { font-size: 10.6vw; }
+  .lead-wrap { grid-template-columns: 1fr; }
+  .lead-wrap .star, .lead-wrap .note { display: none; }
+  .cards { grid-template-columns: 1fr; }
+  .card { aspect-ratio: 5 / 4; }
   .duo, .svc, .cases { grid-template-columns: 1fr; }
-  .case { min-height: 0; }
-  .ask h2 { font-size: 12vw; }
+  .svc .card { aspect-ratio: 5 / 4; }
+  .ask h2 { font-size: 11.6vw; }
   .ask .row { flex-direction: column; }
-  .ask .pill { width: 100%; }
-  .foot .glass { grid-template-columns: 1fr; }
+  .ask .btn { width: 100%; }
+  .foot .grid { grid-template-columns: 1fr; }
   .foot .links { justify-content: flex-start; }
   .legal { flex-direction: column; gap: 4px; }
   .wordmark { font-size: 33vw; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cue::after { animation: none; }
   *, *::before, *::after { transition-duration: 1ms !important; }
 }
 </style>
 </head>
 <body>
 
-<div class="world" aria-hidden="true">
-  <div class="still" id="still"></div>
-  <canvas id="water"></canvas>
-  <div class="surface" id="surface">
-    <video muted loop playsinline autoplay preload="auto" poster="media/sea.jpg"><source src="media/sea.webm" type="video/webm"><source src="media/sea.mp4" type="video/mp4"></video>
-  </div>
+<div class="stage" aria-hidden="true">
+  <div class="scene" data-s="valley" style="opacity:1"><img src="media/f/valley.jpg" alt=""></div>
+  <div class="scene" data-s="pine"><img src="media/f/pine.jpg" alt="" loading="lazy"></div>
+  <div class="scene" data-s="vista"><img src="media/f/vista.jpg" alt="" loading="lazy"></div>
+  <div class="scene" data-s="night"><img src="media/f/night.jpg" alt="" loading="lazy"></div>
+  <canvas id="air"></canvas>
   <canvas id="stars"></canvas>
 </div>
 
@@ -251,9 +294,10 @@ main { position: relative; z-index: 2; }
     <g fill="currentColor"><circle cx="7" cy="27" r="6"/><circle cx="31" cy="6" r="6"/><circle cx="65" cy="10" r="6"/><circle cx="44" cy="34" r="6"/><circle cx="76" cy="43" r="6"/><circle cx="111" cy="27" r="6"/><circle cx="117" cy="67" r="6"/><circle cx="94" cy="87" r="6"/><circle cx="72" cy="107" r="6"/><circle cx="47" cy="73" r="6"/><circle cx="14" cy="64" r="6"/></g>
   </symbol>
   <symbol id="arrow" viewBox="0 0 22 12"><path d="M0 6h20M15 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="diag" viewBox="0 0 18 18"><path d="M3 15L15 3M6 3h9v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
-<header class="top glass">
+<header class="top glass" id="top">
   <a class="brand" href="/" aria-label="UNBLOCK, inicio"><svg aria-hidden="true"><use href="#mark"/></svg><span>UNBLOCK</span></a>
   <nav class="nav" aria-label="Principal">
     <a href="/para-ti">Para ti</a>
@@ -261,7 +305,7 @@ main { position: relative; z-index: 2; }
     <a href="/experiencias">Experiencias</a>
     <a class="opt" href="/sobre-unblock">Sobre UNBLOCK</a>
     <a class="opt" href="/el-libro">El libro</a>
-    <a class="pill pill--glass" href="/contacto">Contacto</a>
+    <a class="btn btn--cream" href="/contacto">Contacto</a>
   </nav>
   <details class="menu">
     <summary>Menú</summary>
@@ -277,20 +321,33 @@ main { position: relative; z-index: 2; }
 </header>
 
 <main>
-  <section class="sec hero" data-depth="0" aria-labelledby="h-hero">
-    <div class="col shade" data-reveal>
-      <h1 class="ttl" id="h-hero">See what you’ve <b>stopped seeing.</b></h1>
-      <p class="sub">UNBLOCK diseña experiencias para personas y organizaciones que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
+  <!-- 1 · dawn over the valley -->
+  <section class="hero" data-scene="valley" data-fog="1" data-light=".7" aria-labelledby="h-hero">
+    <div class="lede shade" data-reveal>
+      <b>Una pausa.<br>Otra perspectiva.</b>
+      <p>Experiencias para personas y organizaciones en Ciudad de México y otros destinos de México.</p>
+    </div>
+    <div class="title shade" data-reveal>
+      <h1 class="ttl" id="h-hero"><span>See what you’ve</span> <span><b>stopped seeing.</b></span></h1>
+      <p>UNBLOCK diseña experiencias que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
       <div class="row">
-        <a class="pill pill--glass" href="#slow-morning">Explorar experiencias para mí <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
-        <a class="pill" href="#empresas">Explorar experiencias para empresas <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn btn--cream" href="#para-ti">Explorar experiencias para mí <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn" href="#empresas">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
     </div>
-    <span class="cue" aria-hidden="true"></span>
+    <div class="hero-foot" data-reveal>
+      <div class="minis">
+        <a class="mini solid glass" href="#para-ti"><img src="media/c/hikers.jpg" alt="Personas caminando por un sendero en el bosque"><span><b>Slow Morning</b><span>Hike, fotografía y presencia</span></span></a>
+        <a class="mini glass" href="#slow-weekend"><img src="media/c/retreat.jpg" alt="Casa de piedra y madera entre árboles"><span><b>Slow Weekend</b><span>Una noche fuera de la rutina</span></span></a>
+      </div>
+      <nav class="tags" aria-label="Formatos">
+        <a href="/team-building-cdmx">Team building</a><a href="/offsites-empresas">Offsites</a><a href="/retiros-mexico">Retiros</a><a href="/constelaciones-organizacionales">Constelaciones</a><a href="/family-day-cdmx">Family Days</a>
+      </nav>
+    </div>
   </section>
 
-  <section class="sec right calm" data-depth="0.16" aria-labelledby="h-que">
-    <span class="ring" aria-hidden="true"></span>
+  <!-- 2 · under the pines -->
+  <section class="sec right" data-scene="pine" data-fog=".25" data-light="1" aria-labelledby="h-que">
     <div class="col shade" data-reveal>
       <h2 class="ttl" id="h-que">A veces no necesitamos <b>hacer más.</b></h2>
       <p class="sub">Necesitamos mirar diferente.</p>
@@ -299,17 +356,31 @@ main { position: relative; z-index: 2; }
     </div>
   </section>
 
-  <section class="sec" id="slow-morning" data-depth="0.36" data-acc="yellow" aria-labelledby="h-morning">
-    <div class="col shade" data-reveal>
-      <h2 class="ttl" id="h-morning">Slow <b>Morning</b></h2>
-      <p class="sub">Hike, fotografía y presencia en la naturaleza.</p>
-      <span class="rule" aria-hidden="true"></span>
-      <p class="body">Una mañana para salir del ruido cotidiano. No necesitas saber fotografía: la cámara es solo una forma de mirar con más atención.</p>
-      <div class="row"><a class="pill pill--accent" href="/para-ti#slow-morning">Conocer Slow Morning <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+  <!-- 3 · para ti, on paper -->
+  <section class="paper" id="para-ti" aria-labelledby="h-ti">
+    <div class="lead-wrap" data-reveal>
+      <svg class="star" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2v36M2 20h36M7 7l26 26M33 7L7 33" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>
+      <div>
+        <h2 class="ttl" id="h-ti">Caminatas, retiros y <span class="pic"><img src="media/c/leaf.jpg" alt=""></span> constelaciones para <b>salir del ruido</b> <span class="soft">y observar tu vida</span> desde otro lugar.</h2>
+        <p class="intro">Experiencias para hacer una pausa, salir de la rutina y mirar con más atención. Elige el espacio que necesitas hoy.</p>
+      </div>
+      <p class="note">PARA TI</p>
+    </div>
+    <div class="trio">
+      <div class="side" data-reveal>
+        <p>Cada experiencia indica antes distancia, dificultad y lo que incluye. Puedes ir sola o solo.</p>
+        <a href="/para-ti#proximas">VER PRÓXIMAS<br>EXPERIENCIAS →</a>
+      </div>
+      <div class="cards" data-reveal>
+        <a class="card" href="/para-ti#slow-morning"><img src="media/c/hikers.jpg" alt="Tres personas caminan por un sendero entre árboles"><span class="tag">UNA MAÑANA</span><span class="tx"><b>Slow Morning</b><span>Hike, fotografía y presencia en la naturaleza.</span></span></a>
+        <a class="card" href="/para-ti#slow-weekend"><img src="media/c/coffee.jpg" alt="Una taza de café humeante sobre una piedra"><span class="tag">UNA NOCHE</span><span class="tx"><b>Slow Weekend</b><span>Espacio, perspectiva y conexión.</span></span></a>
+        <a class="card" href="/para-ti#slow-retreat"><img src="media/c/garden.jpg" alt="Jardín con cojines para meditar bajo los árboles"><span class="tag">DOS NOCHES</span><span class="tx"><b>Slow Retreat</b><span>Bajar el ruido y observar con más profundidad.</span></span></a>
+      </div>
     </div>
   </section>
 
-  <section class="sec right" id="slow-weekend" data-depth="0.54" data-acc="green" aria-labelledby="h-weekend">
+  <!-- 4 · the valley at dusk -->
+  <section class="sec" id="slow-weekend" data-scene="vista" data-fog=".55" data-light=".45" aria-labelledby="h-weekend">
     <div class="col shade" data-reveal>
       <h2 class="ttl" id="h-weekend">Slow Weekend <b>&amp; Slow Retreat</b></h2>
       <p class="sub">Para cuando necesitas más que una mañana.</p>
@@ -318,62 +389,62 @@ main { position: relative; z-index: 2; }
         <div class="glass"><b>Una noche</b><span>fuera de la rutina para crear espacio, perspectiva y conexión</span></div>
         <div class="glass"><b>Dos noches</b><span>para bajar el ruido y observar con más profundidad</span></div>
       </div>
-      <div class="row"><a class="pill pill--accent" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      <div class="row"><a class="btn btn--cream" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
-  <section class="sec" data-depth="0.72" data-acc="pink" aria-labelledby="h-const">
+  <!-- 5 · night: the stars draw the pattern -->
+  <section class="sec right" data-scene="night" data-fog=".1" data-light="0" data-stars="1" aria-labelledby="h-const">
     <div class="col shade" data-reveal>
       <h2 class="ttl" id="h-const">Sometimes the pattern started <b>long before you noticed it.</b></h2>
       <p class="sub">Constelaciones.</p>
       <span class="rule" aria-hidden="true"></span>
       <p class="body">Workshops grupales de 3 o 4 sesiones y retiros inmersivos para observar dinámicas, relaciones y patrones desde una perspectiva sistémica.</p>
-      <div class="row"><a class="pill pill--accent" href="/para-ti#proximas">Ver próximas experiencias <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      <div class="row"><a class="btn btn--cream" href="/para-ti#proximas">Ver próximas experiencias <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
-  <section class="sec right" id="empresas" data-depth="0.86" data-acc="blue" aria-labelledby="h-emp">
-    <div class="col shade" data-reveal>
+  <!-- 6 · para empresas -->
+  <section class="firms" id="empresas" aria-labelledby="h-emp">
+    <div data-reveal>
       <h2 class="ttl" id="h-emp">Different moments need <b>different experiences.</b></h2>
-      <p class="sub">Para empresas, en CDMX y otros destinos de México.</p>
-      <span class="rule" aria-hidden="true"></span>
-      <ul class="svc">
-        <li><a href="/team-building-cdmx">Team Building</a></li>
-        <li><a href="/offsites-empresas">Offsites</a></li>
-        <li><a href="/para-empresas#liderazgo">Leadership Experiences</a></li>
-        <li><a href="/para-empresas#kickoffs">Kickoffs</a></li>
-        <li><a href="/constelaciones-organizacionales">Constelaciones organizacionales</a></li>
-        <li><a href="/family-day-cdmx">Family Days</a></li>
-        <li><a href="/eventos-corporativos-cdmx">Eventos 360</a></li>
-        <li><a href="/fiestas-fin-de-ano-empresas">Fiestas de fin de año</a></li>
-      </ul>
-      <div class="row"><a class="pill pill--accent" href="/contacto?tipo=empresa">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+      <p class="intro">UNBLOCK diseña experiencias para empresas, equipos y líderes en Ciudad de México y otros destinos de México. Empezamos siempre por la misma pregunta: ¿qué queremos que las personas vivan aquí?</p>
     </div>
+    <div class="svc" data-reveal>
+      <a class="card" href="/team-building-cdmx"><img src="media/c/hikers.jpg" alt="Un equipo caminando junto por el bosque"><span class="tag">EQUIPOS</span><span class="tx"><b>Team Building</b><span>Con propósito, nunca de catálogo.</span></span></a>
+      <a class="card" href="/offsites-empresas"><img src="media/c/retreat.jpg" alt="Casa de retiro con mesa larga entre árboles"><span class="tag">LIDERAZGO</span><span class="tx"><b>Offsites</b><span>Salir de la oficina para pensar distinto.</span></span></a>
+      <a class="card" href="/constelaciones-organizacionales"><img src="media/c/pines.jpg" alt="Copas de pinos vistas desde abajo"><span class="tag">SISTÉMICO</span><span class="tx"><b>Constelaciones organizacionales</b><span>Lo que el organigrama no cuenta.</span></span></a>
+      <a class="card" href="/family-day-cdmx"><img src="media/c/garden.jpg" alt="Jardín al aire libre con cojines"><span class="tag">EVENTOS</span><span class="tx"><b>Family Days &amp; Eventos 360</b><span>Para reunir, conectar y celebrar.</span></span></a>
+    </div>
+    <nav class="more-svc tags" aria-label="Más servicios">
+      <a href="/para-empresas#liderazgo">Leadership Experiences</a><a href="/para-empresas#kickoffs">Kickoffs</a><a href="/eventos-corporativos-cdmx">Eventos 360</a><a href="/fiestas-fin-de-ano-empresas">Fiestas de fin de año</a><a href="/para-empresas#medida">Experiencias a la medida</a>
+    </nav>
+    <div class="row"><a class="btn btn--cream" href="/contacto?tipo=empresa">Diseñar una experiencia para mi equipo <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
   </section>
 
-  <section class="sec deep" data-depth="0.94" aria-labelledby="h-cases">
+  <!-- 7 · proof -->
+  <section class="voices-sec" aria-labelledby="h-cases">
     <div data-reveal><h2 class="ttl" id="h-cases">Things we’ve already <b>made happen.</b></h2></div>
-    <div class="cases">
-      <a class="case glass" href="/experiencias#liderazgo-estrategico" data-reveal><h3>Liderazgo estratégico para supervisores</h3><p>Ejecución, comunicación, influencia y manejo de conflictos.</p></a>
-      <a class="case glass" href="/experiencias#equipos-colaborativos" data-reveal><h3>Equipos colaborativos de alto impacto</h3><p>Observar y fortalecer comportamientos cotidianos de colaboración.</p></a>
-      <a class="case glass" href="/experiencias#paint-and-connect" data-reveal><h3>Paint &amp; Connect</h3><p>Integración creativa utilizando la pintura como vehículo.</p></a>
-      <a class="case glass" href="/experiencias#cook-it" data-reveal><h3>Cook it like you mean it</h3><p>Cocina colaborativa alrededor de comunicación, coordinación y roles.</p></a>
+    <div class="cases" data-reveal>
+      <a class="case" href="/experiencias#liderazgo-estrategico"><h3>Liderazgo estratégico para supervisores</h3><p>Ejecución, comunicación, influencia y manejo de conflictos.</p></a>
+      <a class="case" href="/experiencias#equipos-colaborativos"><h3>Equipos colaborativos de alto impacto</h3><p>Observar y fortalecer comportamientos cotidianos de colaboración.</p></a>
+      <a class="case" href="/experiencias#paint-and-connect"><h3>Paint &amp; Connect</h3><p>Integración creativa utilizando la pintura como vehículo.</p></a>
+      <a class="case" href="/experiencias#cook-it"><h3>Cook it like you mean it</h3><p>Cocina colaborativa alrededor de comunicación, coordinación y roles.</p></a>
     </div>
-    <div class="voices" aria-label="Testimoniales">
-      <blockquote class="voice big glass" data-reveal><p>“Es de esas experiencias que sigues pensando días después.”</p><cite>Paola Figueroa, Sr. HRBP, AVEVA</cite></blockquote>
-      <blockquote class="voice glass" data-reveal><p>“Dani no llega con soluciones genéricas: escucha, entiende el contexto y diseña experiencias pensadas específicamente para lo que el equipo necesita.”</p><cite>Greg Guida, Sr. Director, Etsy</cite></blockquote>
-      <blockquote class="voice glass" data-reveal><p>“Vernos desde nuestra faceta humana nos ayudó a conectar y generar una confianza real para nuestro día a día.”</p><cite>Sara Noemí Cervera Soto, Científica de Datos, Círculo de Crédito</cite></blockquote>
+    <div class="voices" aria-label="Testimoniales" data-reveal>
+      <blockquote class="voice big"><p>“Es de esas experiencias que sigues pensando días después.”</p><cite>Paola Figueroa, Sr. HRBP, AVEVA</cite></blockquote>
+      <blockquote class="voice"><p>“Dani no llega con soluciones genéricas: escucha, entiende el contexto y diseña experiencias pensadas específicamente para lo que el equipo necesita.”</p><cite>Greg Guida, Sr. Director, Etsy</cite></blockquote>
+      <blockquote class="voice"><p>“Vernos desde nuestra faceta humana nos ayudó a conectar y generar una confianza real para nuestro día a día.”</p><cite>Sara Noemí Cervera Soto, Científica de Datos, Círculo de Crédito</cite></blockquote>
     </div>
-    <div class="row" data-reveal><a class="pill pill--glass" href="/sobre-unblock">Conoce más sobre UNBLOCK <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+    <div class="row" data-reveal><a class="btn" href="/sobre-unblock">Conoce más sobre UNBLOCK <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
   </section>
 
-  <section class="sec ask" data-depth="1" data-acc="red" aria-labelledby="h-ask">
-    <div class="col shade" data-reveal>
-      <h2 class="ttl" id="h-ask">What are you ready <b>to see differently?</b></h2>
-      <span class="rule" aria-hidden="true"></span>
+  <section class="ask" aria-labelledby="h-ask">
+    <div data-reveal>
+      <h2 class="ttl" id="h-ask"><span>What are you ready</span> <span><b>to see differently?</b></span></h2>
       <div class="row">
-        <a class="pill pill--solid" href="/contacto?tipo=personal">Para mí</a>
-        <a class="pill pill--accent" href="/contacto?tipo=empresa">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn btn--cream" href="/contacto?tipo=personal">Para mí</a>
+        <a class="btn btn--cream" href="/contacto?tipo=empresa">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
       <p class="note">Empezamos con una conversación sobre lo que estás imaginando.</p>
     </div>
@@ -381,7 +452,7 @@ main { position: relative; z-index: 2; }
 </main>
 
 <footer class="foot">
-  <div class="glass">
+  <div class="grid">
     <h2 class="ttl">Empecemos <b>a diseñarlo.</b></h2>
     <ul class="links" aria-label="Más de UNBLOCK">
       <li><a href="/sobre-unblock">Sobre Daniela</a></li>
@@ -390,6 +461,7 @@ main { position: relative; z-index: 2; }
       <li><a href="/contacto">Contacto</a></li>
     </ul>
     <p class="about">UNBLOCK diseña team buildings, offsites, experiencias de liderazgo, Family Days, eventos corporativos 360, constelaciones organizacionales, workshops, experiencias personales y retiros en Ciudad de México y otros destinos de México.</p>
+    <p class="credits">Paisajes: “Morning Clouds Over North Van Mountain Valley”, David Zhang, CC BY-SA 2.0 · “Looking up at a pine tree”, Simkinseled, CC0 · “Black Forest Trail Vista”, Nicholas A. Tonelli, CC BY 2.0 · “Spruce forest night sky stars”, ForestWander, CC BY-SA 3.0 · vía Wikimedia Commons.</p>
   </div>
   <div class="legal"><span>© 2026 UNBLOCK · Ciudad de México</span><a href="/aviso-de-privacidad">Aviso de privacidad</a></div>
   <p class="wordmark" aria-hidden="true">UNBLOCK</p>
@@ -399,185 +471,152 @@ main { position: relative; z-index: 2; }
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = (s) => document.querySelector(s);
-
   const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
   }), { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }) : null;
   document.querySelectorAll('[data-reveal]').forEach(el => io ? io.observe(el) : el.classList.add('is-in'));
-  if (reduce) document.querySelectorAll('video').forEach(v => { v.removeAttribute('autoplay'); v.pause(); });
 
-  // ---------------- depth ----------------
-  const secs = [...document.querySelectorAll('[data-depth]')];
-  let marks = [], vh = innerHeight, vw = innerWidth;
-  const measure = () => {
-    vh = innerHeight; vw = innerWidth;
-    marks = secs.map(s => ({ y: s.offsetTop + s.offsetHeight / 2 - vh / 2, d: +s.dataset.depth }));
-    marks[0].y = 0;
-    sizeStars(); sizeWater();
-  };
-  const depthAt = (y) => {
-    if (y <= 0) return 0;
-    for (let i = 1; i < marks.length; i++) if (y < marks[i].y) {
-      const a = marks[i - 1], b = marks[i]; return a.d + (b.d - a.d) * (y - a.y) / (b.y - a.y);
-    }
-    return 1;
-  };
+  // ---------------- which scene, how much fog and light ----------------
+  const secs = [...document.querySelectorAll('[data-scene]')];
+  const scenes = {}; document.querySelectorAll('.scene').forEach(s => scenes[s.dataset.s] = s);
+  const lights = [...document.querySelectorAll('.paper, .voices-sec')];
+  const top = $('#top');
+  let vw = innerWidth, vh = innerHeight, keys = [];
   const smooth = (a, b, t) => { t = Math.min(1, Math.max(0, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const measure = () => {
+    vw = innerWidth; vh = innerHeight;
+    keys = secs.map(s => ({ y: s.offsetTop + s.offsetHeight / 2 - vh / 2, top: s.offsetTop, h: s.offsetHeight, scene: s.dataset.scene, fog: +s.dataset.fog, light: +s.dataset.light, stars: +(s.dataset.stars || 0) }));
+    keys[0].y = 0;
+    sizeAir(); sizeStars();
+  };
+  // weights: how present each chapter is at this scroll position
+  const state = (y) => {
+    let i = 0; while (i < keys.length - 1 && y > keys[i + 1].y) i++;
+    const a = keys[i], b = keys[Math.min(i + 1, keys.length - 1)];
+    const t = a === b ? 0 : smooth(.15, .85, (y - a.y) / (b.y - a.y));
+    return { a, b, t };
+  };
 
-  // ---------------- water: moving light, caustics, drifting particles ----------------
-  const wc = $('#water');
-  const gl = wc.getContext('webgl', { antialias: false, premultipliedAlpha: false, alpha: true });
+  // ---------------- air: fog, sun through the trees, pollen ----------------
+  const ac = $('#air');
+  const gl = ac.getContext('webgl', { premultipliedAlpha: false, alpha: true, antialias: false });
   let prog = null, U = {};
-  const SCALE = 0.5;
-  function sizeWater() { if (!gl) return; const r = Math.min(devicePixelRatio, 2) * SCALE; wc.width = Math.round(vw * r); wc.height = Math.round(vh * r); gl.viewport(0, 0, wc.width, wc.height); }
+  function sizeAir() { if (!gl) return; const r = Math.min(devicePixelRatio, 2) * .5; ac.width = Math.round(vw * r); ac.height = Math.round(vh * r); gl.viewport(0, 0, ac.width, ac.height); }
   if (gl) {
     const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
     const fs = `precision mediump float;
-uniform vec2 r;uniform float t,d,sun,pm;
+uniform vec2 r;uniform float t,fog,light,night;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
-float fb(vec2 p){float v=0.,a=.5;for(int k=0;k<5;k++){v+=a*n(p);p*=2.02;a*=.5;}return v;}
+float fb(vec2 p){float v=0.,a=.5;for(int k=0;k<5;k++){v+=a*n(p);p*=2.03;a*=.5;}return v;}
 void main(){
-  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=vec2((uv.x-.5)*asp,uv.y);
-  vec3 c0=vec3(.13,.62,.74), c1=vec3(.04,.34,.46), c2=vec3(.015,.12,.20), c3=vec3(.008,.03,.065);
-  vec3 top = d<.33? mix(c0,c1,d/.33) : d<.66? mix(c1,c2,(d-.33)/.33) : mix(c2,c3,(d-.66)/.34);
-  vec3 bot = mix(top*.55, c3, .35+.6*d);
-  vec3 col = mix(bot, top, pow(uv.y,1.2));
-  float sx = p.x*1.4 + (1.-uv.y)*.45;
-  float rays = fb(vec2(sx*2.6, t*.05)) + .5*fb(vec2(sx*6.0+3., t*.08));
-  rays = smoothstep(.62,1.15,rays);
-  float vis = 1.-smoothstep(.10,.80,d);
-  vec3 rayc = mix(vec3(.82,.98,1.), vec3(1.,.95,.72), sun);
-  float R = rays*pow(uv.y,1.6)*vis*.65;
-  float ca = fb(p*5.+vec2(t*.12,-t*.07)); ca = pow(abs(sin(ca*14.)),10.);
-  R += ca*.18*pow(uv.y,2.5)*(1.-smoothstep(0.,.45,d));
-  float S = 0.;
-  for(int L=0;L<2;L++){
-    float z=float(L)*1.7+1.;
-    vec2 g=p*vec2(22.,22.)*z+vec2(t*.03*z, t*.35/z + d*30.*z);
-    vec2 id=floor(g), f=fract(g)-.5; float k=h(id+z);
-    vec2 o=vec2(h(id+3.1)-.5,h(id+7.7)-.5)*.7;
-    S += smoothstep(.07/z,.0,length(f-o))*step(.9,k)*(.2+.25*(1.-d))/z;
-  }
-  vec3 water = (col + rayc*R + vec3(.85,.95,.95)*S) * (1.-.42*pow(length(uv-vec2(.5,.62)),1.6));
-  // over the photograph only the light and the particles are drawn
-  float a = mix(1., clamp(R*1.1 + S, 0., .9), pm);
-  vec3 c = mix(water, rayc, pm);
+  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=vec2(uv.x*asp,uv.y);
+  // fog: slow banks drifting sideways, thicker low in the valley
+  float f1 = fb(vec2(p.x*1.3 + t*.025, p.y*3.2 - t*.01));
+  float f2 = fb(vec2(p.x*2.6 - t*.04 + 7., p.y*5.));
+  float bank = smoothstep(.42,.9,f1*.7+f2*.45) * (1.-smoothstep(.15,.75,uv.y)*.65);
+  float F = bank*fog*.8;
+  // sun: shafts from the upper right, through the canopy
+  vec2 s = vec2(.82*asp, 1.12); vec2 d = p - s; float ang = atan(d.y,d.x); float dist = length(d);
+  float sh = fb(vec2(ang*9., t*.04)) + .5*fb(vec2(ang*23.+4., t*.07));
+  sh = smoothstep(.62,1.2,sh) * smoothstep(1.7,.1,dist);
+  float L = sh*light*.55 + smoothstep(.9,0.,dist)*light*.18;
+  // pollen in the light
+  float P = 0.;
+  for(int k=0;k<2;k++){ float z=float(k)*1.6+1.;
+    vec2 g=p*vec2(16.*z) + vec2(t*.08*z, -t*.05*z + sin(t*.2+p.x*3.)*.3);
+    vec2 id=floor(g), q=fract(g)-.5; vec2 o=vec2(h(id+1.3)-.5,h(id+5.1)-.5)*.6;
+    P += smoothstep(.09/z,0.,length(q-o))*step(.93,h(id+z))/z; }
+  P *= (.25 + light*.75) * (1.-night);
+  vec3 fogc = mix(vec3(.88,.9,.86), vec3(.35,.42,.5), night);
+  vec3 sunc = vec3(1.,.95,.78);
+  float a = clamp(F + L + P*.8, 0., .92);
+  vec3 c = (fogc*F + sunc*(L + P*.8)) / max(a, .001);
   gl_FragColor = vec4(c, a);
 }`;
-    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+    const sh = (ty, src) => { const s = gl.createShader(ty); gl.shaderSource(s, src); gl.compileShader(s); return s; };
     prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) prog = null;
-    else {
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) prog = null; else {
       gl.useProgram(prog);
-      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-      const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['r', 't', 'd', 'sun', 'pm'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
+      const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+      const l = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, 2, gl.FLOAT, false, 0, 0);
+      ['r','t','fog','light','night'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
       gl.clearColor(0, 0, 0, 0);
     }
   }
 
-  // ---------------- constellations ----------------
+  // ---------------- stars: constellations draw themselves over the night forest ----------------
   const sc = $('#stars'), cx = sc.getContext('2d');
-  let dpr = 1, figs = [], dust = [], logo = null;
-  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const NAMES = ['Pausa', 'Perspectiva', 'Conexión', 'Presencia', 'Patrones', 'Silencio', 'Equipo', 'Mirada'];
+  let dpr = 1, figs = [], logo = null;
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const NAMES = ['Pausa', 'Perspectiva', 'Conexión', 'Presencia', 'Patrones', 'Silencio'];
   const LOGO = [[7,27],[31,6],[65,10],[44,34],[76,43],[111,27],[117,67],[94,87],[72,107],[47,73],[14,64]];
   const LOGO_E = [[0,1],[1,2],[1,3],[2,3],[0,3],[0,10],[10,9],[3,9],[3,4],[4,5],[5,6],[4,6],[9,4],[9,8],[8,7],[7,6]];
-  const glow = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.18, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return c; })();
+  const glow = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.2,'rgba(255,255,255,.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0,0,64,64); return c; })();
   function sizeStars() {
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    sc.width = vw * dpr; sc.height = vh * dpr;
-    seed = 11; figs = []; dust = [];
+    dpr = Math.min(devicePixelRatio || 1, 2); sc.width = vw * dpr; sc.height = vh * dpr;
+    seed = 7; figs = [];
     const small = vw < 700;
-    const spots = small ? [[.18,.16],[.72,.12],[.5,.34],[.2,.5],[.8,.46]] : [[.12,.2],[.36,.12],[.6,.22],[.86,.16],[.18,.62],[.5,.5],[.72,.7],[.9,.52]];
+    const spots = small ? [[.15,.16],[.72,.1],[.45,.3]] : [[.08,.16],[.3,.1],[.5,.3],[.12,.42],[.36,.52]];
     spots.forEach(([x, y], k) => {
-      const n = 4 + Math.floor(rnd() * 4), size = (small ? 70 : 120) * (0.7 + rnd() * 0.6);
-      const pts = []; let px = 0, py = 0;
-      for (let i = 0; i < n; i++) { pts.push([px, py]); const a = rnd() * Math.PI * 2; px += Math.cos(a) * size * 0.45; py += Math.sin(a) * size * 0.35; }
-      const lines = pts.slice(1).map((_, i) => [i, i + 1]); if (n > 4 && rnd() < .6) lines.push([1, n - 1]);
-      figs.push({ x: x * vw, y: y * vh, pts, lines, th: 0.44 + (k / spots.length) * 0.3, name: NAMES[k % NAMES.length], ph: rnd() * 6.28, drift: 0.4 + rnd() * 0.8 });
+      const n = 4 + Math.floor(rnd() * 3), size = (small ? 60 : 100) * (.7 + rnd() * .6), pts = []; let px = 0, py = 0;
+      for (let i = 0; i < n; i++) { pts.push([px, py]); const a = rnd() * 6.28; px += Math.cos(a) * size * .5; py += Math.sin(a) * size * .35; }
+      figs.push({ x: x * vw, y: y * vh, pts, lines: pts.slice(1).map((_, i) => [i, i + 1]), name: NAMES[k], ph: rnd() * 6.28, d: k * .08 });
     });
-    for (let i = 0; i < (small ? 140 : 260); i++) dust.push({ x: rnd() * vw, y: rnd() * vh, r: .4 + rnd() * 1.1, ph: rnd() * 6.28, w: .6 + rnd() * 2.2, th: .4 + rnd() * .28 });
-    const s = small ? 1.7 : 2.6;
-    logo = { x: small ? vw * .5 : vw * .72, y: small ? vh * .26 : vh * .48, pts: LOGO.map(([a, b]) => [(a - 62) * s, (b - 56) * s]) };
+    const s = small ? 1.6 : 2.4;
+    logo = { x: small ? vw * .55 : vw * .3, y: small ? vh * .3 : vh * .36, pts: LOGO.map(([a, b]) => [(a - 62) * s, (b - 56) * s]) };
   }
-  function star(x, y, r, a) {
-    cx.globalAlpha = a; const g = r * 7; cx.drawImage(glow, x - g, y - g, g * 2, g * 2);
-    cx.globalAlpha = Math.min(1, a * 1.2); cx.beginPath(); cx.arc(x, y, r, 0, 6.283); cx.fill();
-  }
-  function drawStars(d, t, scrollY) {
+  function star(x, y, r, a) { cx.globalAlpha = a; const g = r * 7; cx.drawImage(glow, x - g, y - g, g * 2, g * 2); cx.globalAlpha = Math.min(1, a * 1.2); cx.beginPath(); cx.arc(x, y, r, 0, 6.283); cx.fill(); }
+  function line(A, B, ox, oy, p, a) { cx.globalAlpha = a; cx.beginPath(); cx.moveTo(ox + A[0], oy + A[1]); cx.lineTo(ox + A[0] + (B[0] - A[0]) * p, oy + A[1] + (B[1] - A[1]) * p); cx.stroke(); }
+  function drawStars(v, prog, t) {
     cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, vw, vh);
-    if (d < 0.36) return;
-    cx.fillStyle = '#fff'; cx.strokeStyle = '#fff'; cx.lineCap = 'round';
-    for (const s of dust) {
-      const v = smooth(s.th, s.th + .12, d); if (v <= 0) continue;
-      const tw = reduce ? .7 : .45 + .55 * (0.5 + 0.5 * Math.sin(t * s.w + s.ph));
-      star(s.x, (s.y - scrollY * .04 * s.r + vh * 4) % vh, s.r, v * tw * .7);
-    }
-    for (const f of figs) {
-      const v = smooth(f.th, f.th + .1, d), draw = smooth(f.th + .03, f.th + .16, d);
-      if (v <= 0) continue;
-      const oy = f.y - (scrollY * .03 * f.drift) % (vh * 1.4) + (reduce ? 0 : Math.sin(t * .2 + f.ph) * 4);
-      const y0 = ((oy % (vh * 1.2)) + vh * 1.2) % (vh * 1.2) - vh * .1;
-      cx.lineWidth = 1;
-      f.lines.forEach(([a, b], i) => {
-        const p = Math.min(1, Math.max(0, draw * f.lines.length - i)); if (p <= 0) return;
-        const A = f.pts[a], B = f.pts[b];
-        cx.globalAlpha = v * .42; cx.beginPath(); cx.moveTo(f.x + A[0], y0 + A[1]); cx.lineTo(f.x + A[0] + (B[0] - A[0]) * p, y0 + A[1] + (B[1] - A[1]) * p); cx.stroke();
-      });
-      f.pts.forEach(([px, py], i) => {
-        const blink = reduce ? .8 : .5 + .5 * Math.sin(t * (1.4 + i * .37) + f.ph + i);
-        star(f.x + px, y0 + py, 1.5 + (i % 3) * .5, v * (.45 + .55 * blink));
-      });
-      cx.globalAlpha = v * .6 * draw; cx.font = '400 12px "DM Sans", sans-serif';
-      cx.fillText(f.name, f.x + f.pts[0][0] + 10, y0 + f.pts[0][1] - 10);
-    }
-    const lv = smooth(.6, .7, d) * (1 - smooth(.86, .94, d));
-    if (lv > 0) {
-      const ld = smooth(.6, .74, d);
-      cx.lineWidth = 1.2;
-      LOGO_E.forEach(([a, b], i) => {
-        const p = Math.min(1, Math.max(0, ld * LOGO_E.length - i * .9)); if (p <= 0) return;
-        const A = logo.pts[a], B = logo.pts[b];
-        cx.globalAlpha = lv * .55; cx.beginPath(); cx.moveTo(logo.x + A[0], logo.y + A[1]); cx.lineTo(logo.x + A[0] + (B[0] - A[0]) * p, logo.y + A[1] + (B[1] - A[1]) * p); cx.stroke();
-      });
-      logo.pts.forEach(([px, py], i) => star(logo.x + px, logo.y + py, 2.2, lv * (reduce ? 1 : .7 + .3 * Math.sin(t * 2 + i))));
-    }
+    if (v <= 0.01) return;
+    cx.fillStyle = '#fff'; cx.strokeStyle = '#fff'; cx.lineCap = 'round'; cx.lineWidth = 1;
+    figs.forEach(f => {
+      const dp = smooth(f.d, f.d + .4, prog);
+      f.lines.forEach(([a, b], i) => { const p = Math.min(1, Math.max(0, dp * f.lines.length - i)); if (p > 0) line(f.pts[a], f.pts[b], f.x, f.y, p, v * .45); });
+      f.pts.forEach(([px, py], i) => star(f.x + px, f.y + py, 1.4 + (i % 3) * .5, v * (reduce ? .8 : .5 + .5 * Math.sin(t * (1.3 + i * .4) + f.ph))));
+      cx.globalAlpha = v * .6 * dp; cx.font = '400 12px "DM Sans", sans-serif'; cx.fillText(f.name, f.x + f.pts[0][0] + 10, f.y + f.pts[0][1] - 10);
+    });
+    const ld = smooth(.3, .75, prog); cx.lineWidth = 1.2;
+    LOGO_E.forEach(([a, b], i) => { const p = Math.min(1, Math.max(0, ld * LOGO_E.length - i * .9)); if (p > 0) line(logo.pts[a], logo.pts[b], logo.x, logo.y, p, v * .55); });
+    logo.pts.forEach(([px, py], i) => star(logo.x + px, logo.y + py, 2.2, v * smooth(.25, .4, prog) * (reduce ? 1 : .75 + .25 * Math.sin(t * 2 + i))));
     cx.globalAlpha = 1;
   }
 
-  // ---------------- the loop ----------------
-  const surface = $('#surface'), still = $('#still');
-  let dS = 0, t0 = performance.now(), last = t0;
+  // ---------------- the walk ----------------
   measure(); addEventListener('resize', measure); addEventListener('load', measure);
   document.fonts && document.fonts.ready.then(measure);
-
+  let sy = scrollY, last = performance.now(); const t0 = last;
   const frame = (now) => {
     const dt = Math.min((now - last) / 1000, .1); last = now;
     const t = reduce ? 0 : (now - t0) / 1000;
-    const y = scrollY;
-    dS += (depthAt(y) - dS) * (reduce ? 1 : 1 - Math.exp(-dt * 5));
+    sy += (scrollY - sy) * (reduce ? 1 : 1 - Math.exp(-dt * 6));     // glide, never jump
+    const { a, b, t: k } = state(sy);
 
-    // dive: the water comes up to meet you, then you are under it
-    const k = Math.min(1, y / (vh * 1.0));
-    const sink = smooth(0, 1, k);
-    surface.style.transform = `translate3d(0, ${(-sink * 10).toFixed(2)}vh, 0) scale(${(1 + sink * 1.2).toFixed(4)})`;
-    surface.style.opacity = (1 - smooth(.5, .95, k)).toFixed(3);
-
-    // the photograph lives just under the surface
-    const pm = smooth(.05, .12, dS) * (1 - smooth(.24, .32, dS));
-    still.style.opacity = Math.min(1, pm * 2.5).toFixed(3);
-
+    // scenes cross-fade; the one you are in moves slowly towards you
+    for (const name in scenes) {
+      const w = (a.scene === name ? 1 - k : 0) + (b.scene === name ? k : 0);
+      const el = scenes[name];
+      if (w <= 0.001) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
+      const key = keys.find(q => q.scene === name);
+      const prog = Math.min(1.4, Math.max(-.4, (sy - key.top + vh) / (key.h + vh)));
+      el.style.opacity = w.toFixed(3);
+      el.style.transform = reduce ? '' : `scale(${(1.04 + prog * .14).toFixed(4)}) translate3d(0, ${(prog * -2).toFixed(2)}%, 0)`;
+    }
+    const fog = a.fog + (b.fog - a.fog) * k, light = a.light + (b.light - a.light) * k, night = a.stars + (b.stars - a.stars) * k;
     if (prog) {
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform2f(U.r, wc.width, wc.height); gl.uniform1f(U.t, t); gl.uniform1f(U.d, dS);
-      gl.uniform1f(U.sun, smooth(.26, .34, dS) * (1 - smooth(.42, .5, dS)));
-      gl.uniform1f(U.pm, pm);
+      gl.uniform2f(U.r, ac.width, ac.height); gl.uniform1f(U.t, t);
+      gl.uniform1f(U.fog, fog); gl.uniform1f(U.light, light); gl.uniform1f(U.night, night);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
-    drawStars(dS, t, y);
+    const nk = keys.find(q => q.stars);
+    drawStars(night, nk ? Math.min(1, Math.max(0, (sy - nk.top + vh * .6) / (nk.h * .7))) : 0, t);
+
+    // the header reads the paper beneath it
+    const onLight = lights.some(el => { const r = el.getBoundingClientRect(); return r.top < 50 && r.bottom > 50; });
+    top.classList.toggle('on-light', onLight);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
