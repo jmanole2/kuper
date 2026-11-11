@@ -127,5 +127,5 @@ En cada llamada, Retell pregunta a `/retell/entrante` y el panel decide (`/api/<
 
 Cada demo (llamadas.kuper.media/<demo>) tiene arriba a la derecha **Llamar | Chatear**. El chat usa las mismas instrucciones que la voz (`prompt.mjs`), adaptadas a texto, con Claude, y para las demos con panel consulta la disponibilidad igual que la voz. No guarda la conversación.
 
-- Necesita `ANTHROPIC_API_KEY` en el `.env` (opcional: `CHAT_MODEL`, por defecto `claude-haiku-5-5`). Sin la clave, el botón de chat no aparece.
+- Necesita `ANTHROPIC_API_KEY` o `LLM_API_KEY` (OpenRouter, la misma de los agentes de WhatsApp) en el `.env`. Opcional: `CHAT_MODEL`. Sin clave, el botón de chat no aparece.
 - Límites: `CHAT_POR_IP_DIA` (40 mensajes) y `CHAT_DIA_TOTAL` (1500 al día).

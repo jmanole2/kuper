@@ -45,3 +45,18 @@ test('sin panel no manda herramientas; errores claros', async () => {
   hooks.fetch = async () => ({ ok: false, status: 401, json: async () => ({ error: { message: 'invalid x-api-key' } }) });
   await assert.rejects(responder({ cfg: demo, env, mensajes: [{ rol: 'user', texto: 'hola' }] }), /401/);
 });
+
+test('con la clave de OpenRouter (la de los agentes de WhatsApp) también contesta y consulta disponibilidad', async () => {
+  const llamadas = [];
+  hooks.fetch = async (u, o) => {
+    const b = JSON.parse(o.body); llamadas.push({ u, b, auth: o.headers.Authorization });
+    if (llamadas.length === 1) return { ok: true, json: async () => ({ choices: [{ message: { content: '', tool_calls: [{ id: 'c1', type: 'function', function: { name: 'consultar_disponibilidad', arguments: '{"sede":"Roma Norte"}' } }] } }] }) };
+    return { ok: true, json: async () => ({ choices: [{ message: { content: 'En Roma Norte hay un puesto fijo.' } }] }) };
+  };
+  const t = await responder({ cfg: demo, env: { LLM_API_KEY: 'or', LLM_MODEL: 'anthropic/claude-haiku-5.5' }, mensajes: [{ rol: 'user', texto: '¿Roma Norte?' }], disponibilidad: async (a) => `ok ${a.sede}` });
+  assert.equal(t, 'En Roma Norte hay un puesto fijo.');
+  assert.match(llamadas[0].u, /openrouter\.ai\/api\/v1\/chat\/completions$/);
+  assert.equal(llamadas[0].auth, 'Bearer or');
+  assert.equal(llamadas[0].b.messages[0].role, 'system');
+  assert.equal(llamadas[1].b.messages.at(-1).content, 'ok Roma Norte');
+});

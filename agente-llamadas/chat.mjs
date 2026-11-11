@@ -6,7 +6,8 @@ import { construirPrompt } from './prompt.mjs';
 export const hooks = { fetch: (...a) => fetch(...a) }; // pruebas
 const MAX_MENSAJES = 30, MAX_TEXTO = 1200;
 
-export const chatConfigurado = (env = process.env) => Boolean(env.ANTHROPIC_API_KEY);
+// Claude directo (ANTHROPIC_API_KEY) o por OpenRouter (LLM_API_KEY, la misma que usan los agentes de WhatsApp).
+export const chatConfigurado = (env = process.env) => Boolean(env.ANTHROPIC_API_KEY || env.LLM_API_KEY);
 
 function fechaLocal(tz, t = Date.now()) {
   return new Intl.DateTimeFormat('es-MX', { timeZone: tz, dateStyle: 'full', timeStyle: 'short' }).format(t);
@@ -70,6 +71,7 @@ export async function responder({ cfg, mensajes, infoPanel = '', disponibilidad 
   const msgs = limpiarMensajes(mensajes);
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new Error('sin_mensaje');
   const system = promptChat(cfg, { infoPanel });
+  if (!env.ANTHROPIC_API_KEY && env.LLM_API_KEY) return responderOpenRouter({ system, msgs, disponibilidad, env });
   const tools = disponibilidad ? [herramientaDisponibilidad] : undefined;
   for (let ronda = 0; ronda < 4; ronda++) {
     const r = await hooks.fetch(`${String(env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '')}/v1/messages`, {
@@ -93,6 +95,34 @@ export async function responder({ cfg, mensajes, infoPanel = '', disponibilidad 
       resultados.push({ type: 'tool_result', tool_use_id: u.id, content: String(res) });
     }
     msgs.push({ role: 'user', content: resultados });
+  }
+  return 'Déjame confirmarlo con un asesor. ¿Me compartes tu nombre y tu WhatsApp para que te escriba?';
+}
+
+// OpenRouter (formato OpenAI). Modelo: CHAT_MODEL o LLM_MODEL (p. ej. anthropic/claude-haiku-5.5).
+async function responderOpenRouter({ system, msgs, disponibilidad, env }) {
+  const base = String(env.LLM_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
+  const messages = [{ role: 'system', content: system }, ...msgs];
+  const tools = disponibilidad ? [{ type: 'function', function: { name: herramientaDisponibilidad.name, description: herramientaDisponibilidad.description, parameters: herramientaDisponibilidad.input_schema } }] : undefined;
+  for (let ronda = 0; ronda < 4; ronda++) {
+    const r = await hooks.fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.LLM_API_KEY}`, 'Content-Type': 'application/json', 'X-Title': 'Kuper demos' },
+      body: JSON.stringify({ model: env.CHAT_MODEL || env.LLM_MODEL || 'anthropic/claude-haiku-5.5', max_tokens: 600, messages, ...(tools ? { tools } : {}) }),
+      signal: AbortSignal.timeout(30000),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) throw new Error(`openrouter ${r.status}: ${d?.error?.message || ''}`.trim());
+    const m = d.choices?.[0]?.message || {};
+    const llamadas = m.tool_calls || [];
+    if (!llamadas.length || !disponibilidad) return String(m.content || '').trim() || 'Perdón, ¿me lo repites?';
+    messages.push({ role: 'assistant', content: m.content || '', tool_calls: llamadas });
+    for (const c of llamadas) {
+      let args = {}; try { args = JSON.parse(c.function?.arguments || '{}'); } catch { /* sin argumentos */ }
+      let res;
+      try { res = await disponibilidad(args); } catch { res = 'No pude revisar la disponibilidad. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme.'; }
+      messages.push({ role: 'tool', tool_call_id: c.id, content: String(res) });
+    }
   }
   return 'Déjame confirmarlo con un asesor. ¿Me compartes tu nombre y tu WhatsApp para que te escriba?';
 }
