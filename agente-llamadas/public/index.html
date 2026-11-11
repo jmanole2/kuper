@@ -164,6 +164,8 @@
     $('sub').textContent = c.sub || `${c.asistente} es la asistente virtual de ${c.negocio}. Pídele ${c.tipo_de_cita} como si llamaras por teléfono.`;
     if (c.link_reservas) $('reservar').href = c.link_reservas; else $('reservar').style.display = 'none';
     if (c.logo) { document.querySelector('.logo').src = c.logo; document.querySelector('link[rel=icon]').href = c.logo; }
+    // Logos claros (blancos o pastel) se ven oscuros sobre el fondo claro de la página.
+    if (c.logo_oscuro) document.querySelector('.logo').style.filter = 'brightness(0)';
     if (c.logo_alto) { const l = document.querySelector('.logo'); l.style.height = `${c.logo_alto}px`; l.style.borderRadius = '10px'; }
     if (c.etiqueta) document.querySelector('.marca .mono').textContent = c.etiqueta;
     const pon = (sel, items, fn) => { if (Array.isArray(items) && items.length) document.querySelector(sel).replaceChildren(...items.map(fn)); };

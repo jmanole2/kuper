@@ -30,7 +30,25 @@
     "logo": "https://miamiadschool.mx/wp-content/uploads/2021/01/mad-wordmark.svg",
     "logo_alto": 44,
     "sub": "Renata atiende la línea de admisiones de Miami Ad School México. Pregúntale por los programas de portafolio, los boot camps o cómo inscribirte, como si quisieras estudiar ahí.",
-    "datos": [["24 h", "Contesta siempre"], ["Programas", "Te orienta en cada uno"], ["Entrevista", "Agenda con un asesor"]],
-    "pasos": ["Toca el botón y da permiso al micrófono.", "Habla como aspirante: quiero ser director de arte, ¿cuánto dura y cuándo empieza?", "Pide tu entrevista, deja tus datos y al final toca el botón rojo para colgar."]
+    "datos": [
+      [
+        "24 h",
+        "Contesta siempre"
+      ],
+      [
+        "Programas",
+        "Te orienta en cada uno"
+      ],
+      [
+        "Entrevista",
+        "Agenda con un asesor"
+      ]
+    ],
+    "pasos": [
+      "Toca el botón y da permiso al micrófono.",
+      "Habla como aspirante: quiero ser director de arte, ¿cuánto dura y cuándo empieza?",
+      "Pide tu entrevista, deja tus datos y al final toca el botón rojo para colgar."
+    ],
+    "logo_oscuro": true
   }
 }
