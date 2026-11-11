@@ -274,7 +274,7 @@ export function createApp() {
     if (!client) return res.status(400).send('El enlace de TikTok venció o no es válido. Vuelve a dar "Conectar TikTok".');
     const s = session(req);
     const esApp = origen === 'app';
-    if (!s?.admin && !(esApp && s?.user?.client_id === client.id)) return res.redirect('/entrar');
+    if (!s?.admin && !(esApp && db.marcasDeUsuario(s?.user).some((m) => m.id === client.id))) return res.redirect('/entrar');
     const volver = esApp ? '/app/cuenta' : `/admin/clientes/${client.id}`;
     if (req.query.error) return res.redirect(`${volver}?error=${encodeURIComponent(`TikTok: ${req.query.error_description || req.query.error}`)}`);
     try {
@@ -349,6 +349,14 @@ export function createApp() {
     req.sesion = s;
     if (req.path.startsWith('/cuenta')) return next();
     let cid = s.user?.rol === 'cliente' ? s.user.client_id : null;
+    // Acceso de grupo: un mismo usuario ve varias marcas y cambia entre ellas (/app?marca=<id>).
+    const marcas = s.user?.rol === 'cliente' ? db.marcasDeUsuario(s.user) : [];
+    if (marcas.length > 1) {
+      const permitida = (n) => marcas.some((m) => m.id === n);
+      const pedida = Number(req.query.marca);
+      if (permitida(pedida)) { cid = pedida; res.setHeader('Set-Cookie', `sa_marca=${pedida}; HttpOnly; SameSite=Lax; Path=/app`); }
+      else if (permitida(Number(cookies(req).sa_marca))) cid = Number(cookies(req).sa_marca);
+    }
     if (s.admin) {
       if (req.query.c) res.setHeader('Set-Cookie', `sa_ver=${Number(req.query.c)}; HttpOnly; SameSite=Lax; Path=/app`);
       cid = Number(req.query.c || cookies(req).sa_ver) || null;
@@ -356,6 +364,8 @@ export function createApp() {
     }
     req.client = cid && db.getClient(cid);
     if (!req.client) return res.status(404).send('Marca no encontrada');
+    if (marcas.length > 1) req.client._marcas = marcas; // la barra lateral muestra "Cambiar de marca"
+    if (req.path === '/marcas') return res.send(V.marcasPage(req.client, marcas));
     res.setHeader('X-Robots-Tag', 'noindex');
     next();
   });
@@ -539,12 +549,13 @@ export function createApp() {
   admin.use(requireAdmin);
 
   // Usuarios del panel
-  const usersView = (req, extra = {}) => V.usersPage(db.listUsers(), db.listClients(), { filtro: Number(req.query.c) || null, bitacora: seg.bitacora(40), ...extra });
+  const usersView = (req, extra = {}) => V.usersPage(db.listUsers().map((u) => ({ ...u, extras: u.rol === 'cliente' ? db.marcasExtra(u.id) : [] })), db.listClients(), { filtro: Number(req.query.c) || null, bitacora: seg.bitacora(40), ...extra });
   admin.get('/usuarios', (req, res) => res.send(usersView(req)));
   admin.post('/usuarios', (req, res) => {
     const password = tempPassword();
     try {
       const u = db.createUser({ email: req.body.email, nombre: req.body.nombre, rol: req.body.rol, client_id: req.body.client_id, password_hash: hashPassword(password) });
+      if (u.rol === 'cliente' && req.body.marcas) db.setMarcasExtra(u.id, req.body.marcas);
       db.logEvent({ clientId: u.client_id, tipo: 'usuario_creado', detalle: `${u.email} (${u.rol})` });
       seg.auditar(req, 'usuario_creado', `${u.email} (${u.rol})`);
       res.send(usersView(req, { creado: { nombre: u.nombre, email: u.email, password }, filtro: u.client_id }));
@@ -564,6 +575,12 @@ export function createApp() {
   admin.post('/usuarios/:uid/eliminar', (req, res) => {
     if (req.sesion.user?.id === req.usuario.id) return res.status(400).send(usersView(req, { error: 'No puedes eliminarte a ti mismo.' }));
     db.deleteUser(req.usuario.id); seg.auditar(req, 'usuario_eliminado', req.usuario.email); res.redirect('/admin/usuarios');
+  });
+  admin.post('/usuarios/:uid/marcas', (req, res) => {
+    if (req.usuario.rol !== 'cliente') return res.status(400).send(usersView(req, { error: 'Solo los usuarios de cliente tienen marcas de grupo.' }));
+    const ids = db.setMarcasExtra(req.usuario.id, req.body.marcas || []);
+    seg.auditar(req, 'marcas_grupo', `${req.usuario.email}: ${ids.length} marcas extra`);
+    res.redirect('/admin/usuarios');
   });
   admin.post('/usuarios/:uid/quitar-2fa', (req, res) => {
     db.getDb().prepare('UPDATE users SET totp_enc = NULL WHERE id = ?').run(req.usuario.id);

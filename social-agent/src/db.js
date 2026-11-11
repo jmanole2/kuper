@@ -121,6 +121,12 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
       last_login TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    -- Acceso de grupo: marcas adicionales que puede ver un usuario cliente (además de users.client_id).
+    CREATE TABLE IF NOT EXISTS user_marcas (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      PRIMARY KEY (user_id, client_id)
+    );
     CREATE TABLE IF NOT EXISTS extras (
       id INTEGER PRIMARY KEY,
       client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
@@ -523,6 +529,26 @@ export function createUser({ email, nombre, rol, client_id = null, password_hash
 }
 export const getUser = (id) => getDb().prepare('SELECT * FROM users WHERE id = ?').get(id);
 export const getUserByEmail = (email) => getDb().prepare('SELECT * FROM users WHERE email = ?').get(normEmail(email));
+/** Marcas que ve un usuario cliente: la suya primero y luego las de su grupo (solo activas). */
+export function marcasDeUsuario(user) {
+  if (!user?.client_id) return [];
+  const extra = getDb().prepare('SELECT c.id, c.nombre FROM user_marcas m JOIN clients c ON c.id = m.client_id WHERE m.user_id = ? AND c.activo = 1 AND c.id != ? ORDER BY c.nombre').all(user.id, user.client_id);
+  const propia = getDb().prepare('SELECT id, nombre FROM clients WHERE id = ?').get(user.client_id);
+  return [propia, ...extra].filter(Boolean);
+}
+export const marcasExtra = (userId) => getDb().prepare('SELECT client_id FROM user_marcas WHERE user_id = ?').all(userId).map((r) => r.client_id);
+export function setMarcasExtra(userId, ids) {
+  const d = getDb(), u = d.prepare('SELECT client_id FROM users WHERE id = ?').get(userId);
+  const limpias = [...new Set([].concat(ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0 && n !== u?.client_id))];
+  d.exec('BEGIN');
+  try {
+    d.prepare('DELETE FROM user_marcas WHERE user_id = ?').run(userId);
+    const ins = d.prepare('INSERT OR IGNORE INTO user_marcas (user_id, client_id) SELECT ?, id FROM clients WHERE id = ?');
+    for (const id of limpias) ins.run(userId, id);
+    d.exec('COMMIT');
+  } catch (e) { d.exec('ROLLBACK'); throw e; }
+  return marcasExtra(userId);
+}
 export const listUsers = () => getDb().prepare('SELECT u.*, c.nombre AS cliente FROM users u LEFT JOIN clients c ON c.id = u.client_id ORDER BY u.rol, c.nombre, u.nombre').all();
 export const setUserPassword = (id, hash) => getDb().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, id);
 export const setUserActivo = (id, activo) => getDb().prepare('UPDATE users SET activo = ? WHERE id = ?').run(activo ? 1 : 0, id);

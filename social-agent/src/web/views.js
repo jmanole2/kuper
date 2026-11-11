@@ -156,6 +156,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
+  ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
   { href: '/app/reporte', icon: 'chart', label: 'Reporte del mes', on: on === 'reporte' },
   { href: '/app/pagos', icon: 'card', label: 'Pagos', on: on === 'pagos' },
   { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta' },
@@ -616,9 +617,20 @@ export function leadChatPage(client, lead, mensajes, { back = null, sideBar = nu
 const ACCION = { entrada: 'Entró', entrada_fallida: 'Contraseña incorrecta', codigo_fallido: 'Código incorrecto', usuario_creado: 'Creó usuario', usuario_eliminado: 'Eliminó usuario',
   usuario_bloqueado: 'Bloqueó usuario', usuario_activado: 'Activó usuario', clave_reiniciada: 'Nueva contraseña', clave_cambiada: 'Cambió su contraseña', '2fa_activado': 'Activó 2 pasos',
   '2fa_quitado': 'Quitó 2 pasos', '2fa_quitado_por_admin': 'Admin quitó 2 pasos', plan_actualizado: 'Cambió plan', llave_api_generada: 'Generó llave API', origen_rechazado: 'Bloqueado (otro sitio)' };
+// Acceso de grupo: el usuario elige qué marca ver.
+export function marcasPage(client, marcas) {
+  const body = html`${hero({ kicker: 'Tu grupo', title: 'Cambiar de marca', letra: client.nombre, sub: 'Con tu misma cuenta entras a todas las marcas de tu grupo. Cada una tiene sus propios leads, agentes, publicaciones y pagos.' })}
+  <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+    ${marcas.map((m) => html`<a class="card" href="/app?marca=${m.id}" style="text-decoration:none;color:inherit;${m.id === client.id ? 'border-color:var(--accent)' : ''}">
+      <span class="mono">${m.id === client.id ? 'Estás aquí' : 'Entrar'}</span>
+      <p style="font-size:22px;margin:8px 0 0">${m.nombre}</p></a>`)}
+  </div>`;
+  return page({ title: `Marcas · ${client.nombre}`, side: sideApp('marcas', client), body });
+}
+
 export function usersPage(users, clients, { error = '', creado = null, filtro = null, bitacora = [] } = {}) {
   const ROL = { admin: 'Administrador', cliente: 'Cliente' };
-  const lista = filtro ? users.filter((u) => u.client_id === filtro) : users;
+  const lista = filtro ? users.filter((u) => u.client_id === filtro || u.extras?.includes(filtro)) : users;
   const body = html`${hero({ kicker: 'Equipo y clientes', title: 'Usuarios', sub: 'Los administradores (Kuper) ven y manejan todo. Cada cliente entra con su correo y solo ve su marca.',
     stats: [[users.filter((u) => u.rol === 'admin').length, 'Administradores', '#c9f53a'], [users.filter((u) => u.rol === 'cliente').length, 'Clientes', '#93b4ff']],
     tabs: [['/admin/usuarios', 'Todos', !filtro], ...clients.map((c) => [`/admin/usuarios?c=${c.id}`, c.nombre, filtro === c.id])] })}
@@ -632,7 +644,11 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
   <div class="card" style="padding:8px 14px;overflow-x:auto"><table>
     <tr><th>Usuario</th><th>Rol</th><th>Último acceso</th><th>Acciones</th></tr>
     ${lista.map((u) => html`<tr><td><strong>${u.nombre}</strong><div class="muted small">${u.email}</div></td>
-      <td><span class="badge" style="color:${u.rol === 'admin' ? '#c9f53a' : '#93b4ff'}">${ROL[u.rol]}${u.cliente ? ` · ${u.cliente}` : ''}</span>${u.activo ? '' : html` <span class="badge" style="color:#f87171">Bloqueado</span>`}${u.totp_enc ? html` <span class="badge" style="color:#4ade80">2 pasos</span>` : ''}</td>
+      <td><span class="badge" style="color:${u.rol === 'admin' ? '#c9f53a' : '#93b4ff'}">${ROL[u.rol]}${u.cliente ? ` · ${u.cliente}` : ''}</span>${u.extras?.length ? html` <span class="badge" style="color:#fbbf24" title="${clients.filter((c) => u.extras.includes(c.id)).map((c) => c.nombre).join(', ')}">+${u.extras.length} marca${u.extras.length > 1 ? 's' : ''} del grupo</span>` : ''}
+        ${u.rol === 'cliente' ? html`<details style="margin-top:6px"><summary class="muted small" style="cursor:pointer">Marcas del grupo</summary>
+          <form method="post" action="/admin/usuarios/${u.id}/marcas" style="margin-top:6px">
+            ${clients.filter((c) => c.id !== u.client_id).map((c) => html`<label class="small" style="display:block;margin:2px 0"><input type="checkbox" name="marcas" value="${c.id}" ${raw(u.extras?.includes(c.id) ? 'checked' : '')}> ${c.nombre}</label>`)}
+            <button class="btn-warn" style="padding:6px 12px;font-size:13px;margin-top:6px">Guardar marcas</button></form></details>` : ''}${u.activo ? '' : html` <span class="badge" style="color:#f87171">Bloqueado</span>`}${u.totp_enc ? html` <span class="badge" style="color:#4ade80">2 pasos</span>` : ''}</td>
       <td class="small muted">${u.last_login ? fmtDate(u.last_login.replace(' ', 'T') + 'Z') : 'Nunca'}</td>
       <td><div class="row" style="gap:6px"><form class="inline" method="post" action="/admin/usuarios/${u.id}/clave"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Nueva contraseña</button></form>
         <form class="inline" method="post" action="/admin/usuarios/${u.id}/activo"><button class="btn-warn" style="padding:6px 12px;font-size:13px">${u.activo ? 'Bloquear' : 'Activar'}</button></form>
@@ -647,6 +663,9 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
     <label>Rol</label><select name="rol" onchange="this.form.client_id.disabled=this.value!=='cliente'">
       <option value="cliente">Cliente (solo ve su marca)</option><option value="admin">Administrador (Kuper, ve todo)</option></select>
     <label>Marca</label><select name="client_id">${clients.map((c) => html`<option value="${c.id}" ${raw(filtro === c.id ? 'selected' : '')}>${c.nombre}</option>`)}</select>
+    <details style="margin-top:10px"><summary class="muted small" style="cursor:pointer">¿Es de un grupo? Elige sus otras marcas</summary>
+      ${clients.map((c) => html`<label class="small" style="display:block;margin:2px 0"><input type="checkbox" name="marcas" value="${c.id}"> ${c.nombre}</label>`)}
+      <p class="muted small">Con un solo correo entrará a todas y cambiará de marca desde su panel.</p></details>
     <p class="muted small">Se genera una contraseña temporal y te la mostramos una sola vez para que se la mandes.</p>
     <button class="btn-accent">Crear usuario</button>
   </form></div>
