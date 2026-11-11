@@ -74,6 +74,25 @@
     h1 { font-size: 36px; }
     .escenario { width: min(100%, 300px); }
   }
+  /* llamar / chatear */
+  .barra { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .modos { display: inline-flex; padding: 3px; border-radius: 99px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
+  .modos[hidden] { display: none; }
+  .modos button { border: 0; background: transparent; color: #cfc9bf; font: 600 13px/1 inherit; padding: 8px 14px; border-radius: 99px; cursor: pointer; }
+  .modos button.activo { background: var(--lima); color: #1d1b18; }
+  .barra .vivo { margin-left: auto; }
+  #chatbox { display: none; width: 100%; flex: 1; min-height: 420px; flex-direction: column; gap: 10px; }
+  .modo-chat #chatbox { display: flex; }
+  .modo-chat .escenario, .modo-chat #estado, .modo-chat #nota, .modo-chat #charla, .modo-chat .vivo { display: none !important; }
+  #mensajes { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 16px; max-height: 470px;
+    background: linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.03)); border: 1px solid rgba(255,255,255,.12); border-radius: 22px; }
+  #mensajes .msg { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .escribiendo { color: #a9a399; font-size: 13px; padding: 0 6px; min-height: 1.2em; }
+  #formChat { display: flex; gap: 8px; }
+  #formChat input { flex: 1; min-width: 0; border-radius: 99px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.07); color: #f4f0e8; font: 15px inherit; padding: 13px 18px; outline: none; }
+  #formChat input:focus { border-color: rgba(215,255,63,.6); }
+  #formChat button { border: 0; border-radius: 99px; background: var(--lima); color: #1d1b18; font-weight: 700; padding: 0 20px; cursor: pointer; }
+  #formChat button:disabled { opacity: .5; cursor: wait; }
   @media (prefers-reduced-motion: reduce) { .halo, .pulso, .pulso2, .vivo i { animation: none !important; } }
 </style>
 </head>
@@ -97,7 +116,13 @@
     <footer>La conversación puede grabarse para mejorar el servicio. Es un asistente de inteligencia artificial.</footer>
   </section>
   <section class="oscuro">
-    <span class="vivo mono"><i></i><span id="vivoTxt">Lista para llamar</span></span>
+    <div class="barra">
+      <div class="modos" id="modos" hidden role="tablist" aria-label="Cómo quieres hablar">
+        <button type="button" class="activo" data-modo="voz" role="tab" aria-selected="true">Llamar</button>
+        <button type="button" data-modo="chat" role="tab" aria-selected="false">Chatear</button>
+      </div>
+      <span class="vivo mono"><i></i><span id="vivoTxt">Lista para llamar</span></span>
+    </div>
     <div class="escenario">
       <div class="halo"></div>
       <div class="esfera"><canvas id="orb" aria-hidden="true"></canvas></div>
@@ -109,6 +134,14 @@
     <p class="estado" id="estado">Toca para llamar</p>
     <p class="nota" id="nota">Te pediremos permiso para usar el micrófono.</p>
     <div id="charla" aria-live="polite"></div>
+    <div id="chatbox">
+      <div id="mensajes" aria-live="polite"></div>
+      <div class="escribiendo" id="escribiendo"></div>
+      <form id="formChat" autocomplete="off">
+        <input id="entrada" maxlength="1000" placeholder="Escribe tu mensaje…" aria-label="Escribe tu mensaje">
+        <button id="enviar">Enviar</button>
+      </form>
+    </div>
   </section>
 </main>
 
@@ -170,6 +203,7 @@
     if (c.etiqueta) document.querySelector('.marca .mono').textContent = c.etiqueta;
     const pon = (sel, items, fn) => { if (Array.isArray(items) && items.length) document.querySelector(sel).replaceChildren(...items.map(fn)); };
     pon('.datos', c.datos, ([b, small]) => { const d = document.createElement('div'); d.append(Object.assign(document.createElement('b'), { textContent: b }), Object.assign(document.createElement('small'), { textContent: small })); return d; });
+    if (c.chat) iniciarChat(c);
     pon('.pasos', c.pasos, (t, i) => { const li = document.createElement('li'); li.append(Object.assign(document.createElement('span'), { textContent: String(i + 1).padStart(2, '0') }), t); return li; });
   }).catch(() => {});
 
@@ -237,6 +271,54 @@
       mostrar(microfono ? 'Necesitamos permiso para usar tu micrófono.' : e.message, true);
     }
   });
+
+  // ---- Chat: la misma asistente, escribiendo ----
+  let conversacion = [];
+  function iniciarChat(c) {
+    const modos = $('modos'), mensajes = $('mensajes'), form = $('formChat'), entrada = $('entrada'), enviar = $('enviar'), escribiendo = $('escribiendo');
+    modos.hidden = false;
+    const burbuja = (rol, texto) => {
+      const d = document.createElement('div');
+      d.className = `msg ${rol === 'assistant' ? 'agent' : 'user'}`;
+      d.textContent = texto;
+      mensajes.append(d);
+      mensajes.scrollTop = mensajes.scrollHeight;
+    };
+    const saludo = `¡Hola! Soy ${c.asistente}, de ${c.negocio}. ¿En qué te puedo ayudar?`;
+    modos.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-modo]');
+      if (!b) return;
+      const chatOn = b.dataset.modo === 'chat';
+      if (chatOn && enLlamada) cliente.stopCall();
+      app.classList.toggle('modo-chat', chatOn);
+      for (const x of modos.querySelectorAll('button')) { const on = x === b; x.classList.toggle('activo', on); x.setAttribute('aria-selected', String(on)); }
+      if (chatOn && !conversacion.length) { conversacion.push({ rol: 'assistant', texto: saludo }); burbuja('assistant', saludo); }
+      if (chatOn) entrada.focus();
+    });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const texto = entrada.value.trim();
+      if (!texto || enviar.disabled) return;
+      entrada.value = '';
+      conversacion.push({ rol: 'user', texto });
+      burbuja('user', texto);
+      enviar.disabled = true;
+      escribiendo.textContent = `${c.asistente} está escribiendo…`;
+      try {
+        const r = await fetch(`/api/chat${qs}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensajes: conversacion.slice(-30) }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'No pude contestar. Intenta de nuevo.');
+        conversacion.push({ rol: 'assistant', texto: d.texto });
+        burbuja('assistant', d.texto);
+      } catch (err) {
+        conversacion.pop();
+        const aviso = document.createElement('div'); aviso.className = 'msg agent error'; aviso.textContent = err.message;
+        mensajes.append(aviso); mensajes.scrollTop = mensajes.scrollHeight;
+      } finally {
+        enviar.disabled = false; escribiendo.textContent = ''; entrada.focus();
+      }
+    });
+  }
 </script>
 </body>
 </html>

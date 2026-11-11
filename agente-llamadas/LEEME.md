@@ -122,3 +122,10 @@ En cada llamada, Retell pregunta a `/retell/entrante` y el panel decide (`/api/<
 - **Pausar llamadas** (en "Lo que sabe tu agente"): la asistente solo saluda y pasa la llamada al equipo.
 - **Horario de la IA = solo fuera del horario del equipo**: en horario del equipo, la pasa; fuera de horario, contesta ella.
 - Si el panel no responde o no hay `TRANSFERIR_<DEMO>`, contesta la asistente (nunca se pierde una llamada).
+
+## Chat en las páginas de demo
+
+Cada demo (llamadas.kuper.media/<demo>) tiene arriba a la derecha **Llamar | Chatear**. El chat usa las mismas instrucciones que la voz (`prompt.mjs`), adaptadas a texto, con Claude, y para las demos con panel consulta la disponibilidad igual que la voz. No guarda la conversación.
+
+- Necesita `ANTHROPIC_API_KEY` en el `.env` (opcional: `CHAT_MODEL`, por defecto `claude-haiku-5-5`). Sin la clave, el botón de chat no aparece.
+- Límites: `CHAT_POR_IP_DIA` (40 mensajes) y `CHAT_DIA_TOTAL` (1500 al día).

@@ -14,6 +14,7 @@ import { configFunciones, crearFunciones, eventoDeLink, tokenFunciones } from '.
 import * as marcador from './marcador.mjs';
 import { agentePorNombre as buscarEnRetell } from './agentes.mjs';
 import { numeroTransferencia, respuestaEntrante } from './entrante.mjs';
+import * as chat from './chat.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -148,7 +149,7 @@ const server = createServer(async (req, res) => {
     const demo = demoDe(new URL(req.url, 'http://x'));
     if (demo) {
       return json(res, 200, { negocio: demo.negocio, asistente: demo.asistente, tipo_de_cita: demo.tipo_de_cita, link_reservas: demo.link_reservas || '',
-        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', logo_alto: Number(demo.pagina?.logo_alto) || 0, logo_oscuro: demo.pagina?.logo_oscuro === true, etiqueta: demo.pagina?.etiqueta || '' });
+        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', logo_alto: Number(demo.pagina?.logo_alto) || 0, logo_oscuro: demo.pagina?.logo_oscuro === true, chat: chat.chatConfigurado(), etiqueta: demo.pagina?.etiqueta || '' });
     }
     if (esPruebaVentas(new URL(req.url, 'http://x'))) {
       return json(res, 200, { negocio: cfg.negocio, asistente: cfg.ventas.asistente, tipo_de_cita: cfg.tipo_de_cita, link_reservas: cfg.link_reservas || '', ventas: true,
@@ -160,11 +161,13 @@ const server = createServer(async (req, res) => {
       tipo_de_cita: cfg.tipo_de_cita,
       link_reservas: cfg.link_reservas || '',
       requiere_clave: Boolean(CLAVE),
+      chat: chat.chatConfigurado(),
     });
   }
   if (ruta === '/api/llamada' && req.method === 'POST') return crearLlamada(req, res);
   if (ruta === '/funciones/disponibilidad' && req.method === 'POST') return consultarDisponibilidad(req, res);
   if (ruta === '/retell/entrante' && req.method === 'POST') return llamadaEntrante(req, res);
+  if (ruta === '/api/chat' && req.method === 'POST') return mensajeChat(req, res);
   const fn = /^\/funciones\/([a-z_]+)$/.exec(ruta);
   if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
   const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null);
@@ -197,48 +200,59 @@ async function infoDelPanel(demo) {
     return texto;
   } catch { return c?.texto || null; }
 }
-// consultar_disponibilidad (Retell): pregunta al panel del cliente qué hay libre en este momento.
-async function consultarDisponibilidad(req, res) {
-  const tok = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!KEY || tok !== tokenFunciones(KEY)) return json(res, 401, { error: 'no autorizado' });
-  const demo = demos.get(String(new URL(req.url, 'http://x').searchParams.get('demo') || ''));
+// consultar_disponibilidad: pregunta al panel del cliente qué hay libre en este momento (la usan la voz y el chat).
+async function disponibilidadDe(demo, args = {}) {
   const key = demo && llaveDe(demo.panel_slug), base = String(process.env.PANEL_URL || '').replace(/\/+$/, '');
-  if (!demo || !key || !base) return json(res, 200, { resultado: 'No pude revisar el sistema de disponibilidad. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.' });
-  let args = {};
-  try { const b = JSON.parse(await leerCuerpo(req) || '{}'); args = b.args || b; } catch { /* sin argumentos */ }
+  if (!demo || !key || !base) return 'No pude revisar el sistema de disponibilidad. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.';
   const qs = new URLSearchParams(Object.entries({ sede: args.sede, personas: args.personas, tipo: args.tipo }).filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => [k, String(v)]));
   try {
     const r = await fetch(`${base}/api/${encodeURIComponent(demo.panel_slug)}/disponibilidad?${qs}`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(6000) });
     const j = await r.json();
     console.log(`${new Date().toISOString()} disponibilidad ${demo.panel_slug} ${qs}: ${String(j.resultado || '').slice(0, 80)}`);
-    return json(res, 200, { resultado: j.resultado || 'Sin datos de disponibilidad: ofrece que un asesor lo confirme.' });
+    return j.resultado || 'Sin datos de disponibilidad: ofrece que un asesor lo confirme.';
   } catch (e) {
     console.error('[disponibilidad]', e.message);
-    return json(res, 200, { resultado: 'El sistema de disponibilidad no respondió. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.' });
+    return 'El sistema de disponibilidad no respondió. No digas que hay o que no hay lugar: ofrece que un asesor lo confirme y toma sus datos.';
   }
 }
-// Llamada por teléfono que entra: Retell pregunta antes de contestar si atiende la asistente o la pasa al equipo.
-// URL (la pone "retell.mjs conectar-numero"): /retell/entrante?demo=<demo>&t=<token>
-async function turnoDelPanel(demo) {
-  const key = llaveDe(demo.panel_slug), base = String(process.env.PANEL_URL || '').replace(/\/+$/, '');
-  if (!demo.panel_slug || !key || !base) return null;
-  try {
-    const r = await fetch(`${base}/api/${encodeURIComponent(demo.panel_slug)}/llamadas/turno`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(3000) });
-    return r.ok ? await r.json() : null;
-  } catch { return null; }
+async function consultarDisponibilidad(req, res) {
+  const tok = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!KEY || tok !== tokenFunciones(KEY)) return json(res, 401, { error: 'no autorizado' });
+  const demo = demos.get(String(new URL(req.url, 'http://x').searchParams.get('demo') || ''));
+  let args = {};
+  try { const b = JSON.parse(await leerCuerpo(req) || '{}'); args = b.args || b; } catch { /* sin argumentos */ }
+  return json(res, 200, { resultado: await disponibilidadDe(demo, args) });
 }
-async function llamadaEntrante(req, res) {
+
+// Chat de la página: la misma asistente escribiendo. Límite propio por IP y por día.
+const CHAT_POR_IP = Number(process.env.CHAT_POR_IP_DIA || 40), CHAT_POR_DIA = Number(process.env.CHAT_DIA_TOTAL || 1500);
+let chatDia = '', chatTotal = 0; const chatPorIp = new Map();
+function permitirChat(ip) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (hoy !== chatDia) { chatDia = hoy; chatTotal = 0; chatPorIp.clear(); }
+  if (chatTotal >= CHAT_POR_DIA || (chatPorIp.get(ip) || 0) >= CHAT_POR_IP) return false;
+  chatTotal += 1; chatPorIp.set(ip, (chatPorIp.get(ip) || 0) + 1);
+  return true;
+}
+async function mensajeChat(req, res) {
   const url = new URL(req.url, 'http://x');
-  if (!KEY || url.searchParams.get('t') !== tokenFunciones(KEY)) return json(res, 401, { error: 'no autorizado' });
-  const clave = String(url.searchParams.get('demo') || '');
-  const demo = demos.get(clave);
-  let cuerpo = {};
-  try { cuerpo = JSON.parse(await leerCuerpo(req) || '{}'); } catch { /* sin cuerpo: se contesta igual */ }
-  if (!demo) return json(res, 200, { call_inbound: {} }); // agente principal: contesta normal
-  const [turno, infoPanel] = await Promise.all([turnoDelPanel(demo), infoDelPanel(demo)]);
-  const r = respuestaEntrante({ demo, clave, turno, infoPanel, transferencia: numeroTransferencia(demo, clave) });
-  console.log(`${new Date().toISOString()} llamada entrante ${clave} de ${String(cuerpo.call_inbound?.from_number || '?').slice(0, 6)}…: ${r.call_inbound.metadata.atiende} (${r.call_inbound.metadata.motivo})`);
-  json(res, 200, r);
+  const demo = demoDe(url);
+  if (!chat.chatConfigurado()) return json(res, 503, { error: 'El chat no está disponible en este momento.' });
+  if (!demo && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
+  let cuerpo;
+  try { cuerpo = JSON.parse(await leerCuerpo(req, 100_000) || '{}'); } catch { return json(res, 400, { error: 'Mensaje no válido.' }); }
+  if (!permitirChat(ipDe(req))) return json(res, 429, { error: 'Ya se usaron los mensajes de prueba de hoy. Intenta mañana.' });
+  const cfgChat = demo || cfg;
+  try {
+    const texto = await chat.responder({ cfg: cfgChat, mensajes: cuerpo.mensajes,
+      infoPanel: demo ? await infoDelPanel(demo) : '',
+      disponibilidad: demo?.panel_slug && llaveDe(demo.panel_slug) ? (args) => disponibilidadDe(demo, args) : null });
+    json(res, 200, { texto });
+  } catch (e) {
+    if (e.message === 'sin_mensaje') return json(res, 400, { error: 'Escribe un mensaje.' });
+    console.error('[chat]', e.message);
+    json(res, 502, { error: 'No pude contestar en este momento. Intenta de nuevo.' });
+  }
 }
 const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio,
   panel: d.panel_slug && llaveDe(d.panel_slug) ? { slug: d.panel_slug, key: llaveDe(d.panel_slug) } : null })))).filter((d) => d.id);
