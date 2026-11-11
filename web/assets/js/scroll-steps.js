@@ -52,7 +52,8 @@
   }
 
   let animating = false;
-  let lastWheel = 0;
+  let lastStep = -1e9;
+  const recent = [];   // [tiempo, |deltaY|] de los últimos eventos de la rueda
   let rafId = 0;
 
   function animateTo(target) {
@@ -90,18 +91,30 @@
   // Elementos con scroll propio donde la rueda debe seguir funcionando normal.
   const ownScroll = (el) => el && el.closest && el.closest('.np-cat-sheet, .np-mobile-nav, textarea, dialog');
 
+  // Detección de gesto (como las páginas de "scroll por secciones"):
+  // - un gesto NUEVO se reconoce porque el movimiento acelera (o llega tras una pausa);
+  // - la inercia del trackpad va frenando, así que no dispara pasos extra;
+  // - por seguridad, si se sigue deslizando 0.9 s después del último paso, avanza igual
+  //   sin que vaya frenando (nunca se queda trabado).
   window.addEventListener('wheel', (e) => {
     if (!desktop.matches || e.ctrlKey || ownScroll(e.target)) return;
     if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;   // gesto horizontal
     e.preventDefault();
     const now = performance.now();
-    const quietFor = now - lastWheel;
-    lastWheel = now;
-    // Mientras se mueve, o mientras siguen llegando eventos del mismo gesto
-    // (inercia del trackpad), no se encadena otro paso.
-    if (animating || quietFor < 220) return;
-    if (Math.abs(e.deltaY) < 2) return;
-    go(Math.sign(e.deltaY));
+    const gap = recent.length ? now - recent[recent.length - 1][0] : Infinity;
+    recent.push([now, Math.abs(e.deltaY)]);
+    while (recent.length > 60) recent.shift();
+    if (animating || Math.abs(e.deltaY) < 1) return;
+    const sinceStep = now - lastStep;
+    if (sinceStep < 350) return;                          // rebote del mismo gesto
+    const avg = (n) => {
+      const part = recent.slice(-n);
+      return part.reduce((sum, [, d]) => sum + d, 0) / part.length;
+    };
+    const newGesture = gap > 180 || avg(4) > avg(30) * 1.05;
+    const decaying = avg(4) < avg(30) * 0.92;              // inercia frenando
+    if (!newGesture && (decaying || sinceStep < 900)) return;
+    if (go(Math.sign(e.deltaY))) lastStep = now;
   }, { passive: false });
 
   window.addEventListener('keydown', (e) => {
