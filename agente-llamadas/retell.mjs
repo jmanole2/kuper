@@ -132,7 +132,7 @@ async function crear() {
     // Qué tanto lo interrumpe un ruido o una palabra suelta (0 a 1; 1 = se calla con cualquier sonido).
     interruption_sensitivity: Number.isFinite(Number(cfg.interrupcion)) ? Number(cfg.interrupcion) : 0.6,
     max_call_duration_ms: (Number(cfg.duracion_max_seg) || 600) * 1000,
-    end_call_after_silence_ms: 30 * 1000,
+    end_call_after_silence_ms: (Number(cfg.silencio_max_seg) || 30) * 1000,
     post_call_analysis_data: [
       { type: 'system-presets', name: 'call_summary' },
       { type: 'boolean', name: 'cita_agendada', description: '¿Se agendó una cita durante la llamada?' },
