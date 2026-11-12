@@ -9,6 +9,7 @@
 import * as db from '../src/db.js';
 import { hashPassword, tempPassword } from '../src/crypto.js';
 import * as difusion from '../src/difusion.js';
+import * as docs from '../src/documentos.js';
 
 db.openDb();
 const SLUG = 'demo-new-ventures';
@@ -88,6 +89,17 @@ for (const [nombre, negocio, pais, tel, etapa, pend, h, control, conv] of aplica
     JSON.stringify([pais, ...(pend ? ['documentos pendientes'] : [])]), usuarios[pais], pend ? `Le falta: ${pend}.` : 'Postulación completa.', control, hace(h + 48), hace(h));
   conv.forEach(([rol, texto], i) => msg.run(Number(r.lastInsertRowid), rol, texto, rol === 'humano' ? (equipo.find((x) => x[1] === pais)?.[0] || 'Equipo') : null, hace(h + (conv.length - i) * 0.2)));
 }
+
+// Países por lada (con la persona de cada país) y documentos que se piden por WhatsApp.
+const requeridos = ['Constancia fiscal', 'Identificación', 'Comprobante de ventas', 'Video pitch', 'Perfil de TikTok'];
+db.updateClient(client.id, { config: { ...db.getClient(client.id).config, paises: { activo: true, asesores: usuarios },
+  documentos: { activo: true, requeridos, drive_carpeta: '', etapa_completos: 'completos' } } });
+client = db.getClient(client.id);
+// Documentos de ejemplo: Mariana ya entregó todo; Diego mandó su identificación.
+const pdf = (t) => Buffer.from(`%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 120]/Contents 4 0 R/Resources<<>>>>endobj 4 0 obj<</Length 60>>stream\nBT /F1 14 Tf 20 60 Td (${t} - documento de ejemplo) Tj ET\nendstream endobj\ntrailer<</Root 1 0 R>>`);
+const entregar = async (tel, lista) => { for (const [nombre, tipo] of lista) { await docs.guardar(client, { telefono: tel, nombre, mime: 'application/pdf', buf: pdf(tipo) }); docs.registrarTipo(client, { telefono: tel, tipo }); } };
+await entregar('+525512340002', requeridos.map((r) => [`${r} - Velas Luna.pdf`, r]));
+await entregar('+51900110007', [['DNI Diego Quispe.pdf', 'Identificación']]);
 
 // Una campaña por aprobar: recordatorio a quienes tienen documentos pendientes.
 try {
