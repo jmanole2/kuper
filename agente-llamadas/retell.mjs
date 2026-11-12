@@ -93,11 +93,25 @@ async function elegirVoz(vozId = cfg.voz_id, genero = 'female') {
   if (!latinas.length && cfg.acento_voz) {
     console.log(`No hay voz con acento "${cfg.acento_voz}"; uso otra en español (o pon "voz_id").`);
     latinas = voces.filter((v) => /spanish|español|mexic|latin/i.test(`${v.accent} ${v.voice_name}`) && prov(v));
+    if (!latinas.length) latinas = voces.filter((v) => /spanish|español|mexic|latin/i.test(`${v.accent} ${v.voice_name}`));
   }
   const voz = latinas.find((v) => v.gender === genero) || latinas[0];
   if (!voz) throw new Error('No encontré una voz en español. Corre el comando "voces" y pon una en "voz_id" de negocio.json.');
   console.log(`Voz elegida: ${voz.voice_name} (${voz.accent}, ${voz.provider}) -> ${voz.voice_id}`);
   return voz.voice_id;
+}
+
+// Si Retell rechaza la combinación de idiomas o el modelo de voz (demos en varios idiomas),
+// se vuelve a intentar con un solo idioma, para que la demo siempre funcione.
+async function guardarAgente(enviar, agente) {
+  try { return await enviar(agente); }
+  catch (e) {
+    if (!Array.isArray(agente.language) && !agente.voice_model) throw e;
+    const solo = { ...agente, language: Array.isArray(agente.language) ? agente.language[0] : agente.language };
+    delete solo.voice_model;
+    console.log(`Retell no aceptó idiomas ${JSON.stringify(agente.language)}${agente.voice_model ? ` / ${agente.voice_model}` : ''} (${e.message}). Uso solo ${solo.language}.`);
+    return enviar(solo);
+  }
 }
 
 async function crear() {
@@ -134,7 +148,7 @@ async function crear() {
     // No mandamos general_tools: así no se borran las funciones de Cal.com agregadas en el panel.
     const llmId = previo.response_engine?.llm_id;
     await api('PATCH', `/update-retell-llm/${llmId}`, llm);
-    await api('PATCH', `/update-agent/${previo.agent_id}`, agente);
+    await guardarAgente((a) => api('PATCH', `/update-agent/${previo.agent_id}`, a), agente);
     console.log(`Agente actualizado: ${previo.agent_id} (LLM ${llmId})`);
     if (!cfg.instrucciones) await sincronizarFunciones(llmId);
     await sincronizarDisponibilidad(llmId);
@@ -143,10 +157,7 @@ async function crear() {
   }
 
   const nuevoLlm = await api('POST', '/create-retell-llm', { ...llm, general_tools: herramientas() });
-  const nuevo = await api('POST', '/create-agent', {
-    ...agente,
-    response_engine: { type: 'retell-llm', llm_id: nuevoLlm.llm_id },
-  });
+  const nuevo = await guardarAgente((a) => api('POST', '/create-agent', a), { ...agente, response_engine: { type: 'retell-llm', llm_id: nuevoLlm.llm_id } });
   console.log(`Agente creado: ${nuevo.agent_id} (LLM ${nuevoLlm.llm_id})`);
   await sincronizarDisponibilidad(nuevoLlm.llm_id);
   if (cfg.instrucciones) return; // demo de prospecto: toma los datos, sin calendario
