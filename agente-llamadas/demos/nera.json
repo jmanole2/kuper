@@ -5,10 +5,15 @@
   "giro": "edificio de alquiler de larga estancia de obra nueva en el centro de Madrid, gestionado por Greystar: estudios y pisos de uno y dos dormitorios con servicios y zonas comunes de hotel. Está en la calle de Leganés, número once, código postal veintiocho mil cuarenta y cinco, Madrid: a tres minutos del metro Méndez Álvaro, a cinco del metro Atocha, a siete del Museo Reina Sofía y del Retiro, a quince de la Puerta del Sol y muy cerca de la M-30",
   "habla": "español de España (castellano peninsular): di \"piso\" o \"apartamento\", \"móvil\", \"vale\", \"genial\", \"ordenador\", \"coche\", y nunca uses expresiones latinoamericanas como \"departamento\", \"celular\", \"ahorita\", \"platicar\", \"carro\" o \"qué padre\"",
   "otros_idiomas": "inglés, ruso, francés, alemán, italiano o cualquier otro",
-  "idioma_voz": ["es-ES", "en-US", "ru-RU", "fr-FR", "de-DE", "it-IT"],
-  "acento_voz": "spain|castil|españa|peninsular|european spanish",
-  "voz_proveedor": "elevenlabs",
-  "voz_modelo": "eleven_multilingual_v2",
+  "idioma_voz": [
+    "es-ES",
+    "en-US",
+    "ru-RU",
+    "fr-FR",
+    "de-DE",
+    "it-IT"
+  ],
+  "voz_modelo": "sonic-3",
   "moneda": "euros",
   "simbolo_moneda": "€",
   "zona_texto": "hora de Madrid",
@@ -36,7 +41,7 @@
   ],
   "instrucciones": "1. Saluda con calidez, preséntate como Lucía de Nera Living Atocha y pregunta en qué le puedes ayudar.\n2. Entiende lo que busca con preguntas cortas, una a la vez: si es para vivir solo, en pareja, en familia o para una empresa; si busca estudio, uno o dos dormitorios; si lo quiere amueblado; para cuándo quiere entrar y cuánto tiempo piensa quedarse (la estancia mínima es de un año); si tiene mascota o coche.\n3. Según lo que busca, recomiéndale el tipo de piso que mejor le encaja y cuéntale en una o dos frases lo que más le puede interesar: lo que incluye el precio, las zonas comunes (gimnasio, piscina, coworking, rooftop) y la ubicación junto a Atocha y Méndez Álvaro.\n4. Ofrece una visita al edificio, presencial o virtual. Pregunta qué día y a qué hora le viene bien. Pide su nombre, su móvil o WhatsApp y su correo, y repítelos para confirmarlos.\n5. Dile que el equipo comercial le confirma la visita y le envía la disponibilidad y los precios actualizados.\n6. Si es una empresa, toma el nombre de la empresa, cuántas personas y para cuánto tiempo, y dile que el equipo le prepara una propuesta corporativa.\n7. Confirma lo que quedó, pregunta si necesita algo más, despídete y termina la llamada.\nTono cercano, profesional y elegante, de usted; breve y sin presión. No inventes precios, disponibilidad, fianzas ni condiciones que no estén aquí.",
   "numero_transferencia": "",
-  "voz_id": "",
+  "voz_id": "cartesia-Isabel",
   "modelo": "gpt-5.6-terra",
   "interrupcion": 0.55,
   "pagina": {
@@ -45,7 +50,24 @@
     "logo_oscuro": true,
     "logo_alto": 40,
     "sub": "Lucía atiende a quien busca piso en Nera Living Atocha. Habla español de España y también inglés, ruso, francés, alemán e italiano: pregúntale por un estudio o un piso de dos dormitorios en el idioma que quieras, por llamada o por chat.",
-    "datos": [["24 h", "Contesta siempre"], ["6 idiomas", "Español, inglés, ruso…"], ["Visitas", "Agenda con comercial"]],
-    "pasos": ["Toca el botón (o Chatear) y da permiso al micrófono.", "Habla como inquilino: busco un estudio amueblado para entrar en enero. O prueba en inglés o en ruso.", "Agenda la visita, deja tus datos y al final toca el botón rojo para colgar."]
+    "datos": [
+      [
+        "24 h",
+        "Contesta siempre"
+      ],
+      [
+        "6 idiomas",
+        "Español, inglés, ruso…"
+      ],
+      [
+        "Visitas",
+        "Agenda con comercial"
+      ]
+    ],
+    "pasos": [
+      "Toca el botón (o Chatear) y da permiso al micrófono.",
+      "Habla como inquilino: busco un estudio amueblado para entrar en enero. O prueba en inglés o en ruso.",
+      "Agenda la visita, deja tus datos y al final toca el botón rojo para colgar."
+    ]
   }
 }
