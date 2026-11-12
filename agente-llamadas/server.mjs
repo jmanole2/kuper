@@ -89,6 +89,11 @@ async function avisarLead(d) {
   await fetch(`${url}/api/${encodeURIComponent(slug)}/leads`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
     body: JSON.stringify({ nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, email: d.contacto.correo || undefined, origen: 'web', empresa: d.negocio.negocio, tags: ['demo gratis'],
       resumen: `Hizo su demo gratis: ${d.negocio.negocio} (${d.negocio.giro}). ${d.url || 'Sin página web'}.`, nota: `Demo gratis ${d.url || ''}` }) });
+  // Y un correo al aviso de Kuper (Configuración → Notificaciones del panel), con botón para escribirle por WhatsApp.
+  await fetch(`${url}/api/${encodeURIComponent(slug)}/avisos`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
+    body: JSON.stringify({ correo: true, nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, origen: 'web', titulo: `Nueva demo gratis: ${d.negocio.negocio}`.slice(0, 160),
+      texto: [`Negocio: ${d.negocio.negocio} (${d.negocio.giro})`, d.url ? `Página: ${d.url}` : 'Sin página web (lo describió)', d.contacto.correo ? `Correo: ${d.contacto.correo}` : '',
+        `Su demo: https://kuper.media/demo/?d=${d.id}`].filter(Boolean).join('\n') }) });
 }
 // ?aplicante=<id>: probar la demo "como" un aplicante de la lista (envío de pendientes).
 const aplicanteDe = (demo, url) => (demo ? envios.aplicanteDe(demo, String(url.searchParams.get('aplicante') || '')) : null);
