@@ -1378,7 +1378,7 @@ export function comentariosPage(client, { lista = [], resumen = {}, aj = {}, bas
 }
 
 // ------------------------------------------------------------ campañas de WhatsApp (difusión)
-export function difusionPage(client, { campanas = [], plantillas = null, errorPlantillas = '', directo = false, agente = false, embudos = [], base, app = false, form = {}, seg = null,
+export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [], campanas = [], plantillas = null, errorPlantillas = '', directo = false, agente = false, embudos = [], base, app = false, form = {}, seg = null,
   ESTADOS = {}, FUENTES = {}, FRECUENCIA = 7, ok = '', error = '' }) {
   const f = form.filtros || {};
   const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
@@ -1418,7 +1418,21 @@ export function difusionPage(client, { campanas = [], plantillas = null, errorPl
     ${!directo && !agente ? html`<div class="err">Esta marca todavía no tiene WhatsApp conectado. Conéctalo en <a href="${base}/agente">Lo que sabe tu agente</a>.</div>` : ''}
     <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.2fr) minmax(320px,1fr);align-items:start" class="df">
       <style>@media (max-width:980px){.df{grid-template-columns:1fr!important}} .df select,.df input:not([type=checkbox]){width:100%}</style>
-      <div>${campanas.length ? campanas.map(camp) : html`<div class="card muted">Aún no hay campañas. Crea la primera con el formulario.</div>`}</div>
+      <div>${campanas.length ? campanas.map(camp) : html`<div class="card muted">Aún no hay campañas. Crea la primera con el formulario.</div>`}
+        <form class="card" method="post" action="${base}/difusion/recordatorios" style="display:grid;gap:10px;margin-top:6px">
+          <span class="mono">Automático · recordatorio de cita</span>
+          <p class="muted small" style="margin:0">Antes de cada cita le llega al cliente un WhatsApp con su fecha y hora, para bajar las inasistencias. Si contesta (confirmo, quiero cambiarla), el agente lo atiende.</p>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${rec.activo ? 'checked' : ''} style="width:18px;height:18px">Mandar recordatorios</label>
+          <div style="display:grid;grid-template-columns:1fr 110px 140px;gap:8px">
+            <label class="small muted">Plantilla aprobada<input name="plantilla" value="${rec.plantilla || ''}" placeholder="recordatorio_cita"></label>
+            <label class="small muted">Idioma<input name="idioma" value="${rec.idioma || 'es_MX'}"></label>
+            <label class="small muted">Horas antes<input name="horas" value="${(rec.horas || [24, 2]).join(', ')}" placeholder="24, 2"></label>
+          </div>
+          <label class="small muted">Texto de la plantilla ({{1}} nombre, {{2}} fecha, {{3}} hora)<textarea name="cuerpo" style="min-height:70px" maxlength="1024" placeholder="Hola {{1}}, te recordamos tu cita el {{2}} a las {{3}}. ¿Nos confirmas?">${rec.cuerpo || ''}</textarea></label>
+          <div><button class="btn-accent">Guardar</button></div>
+          ${recRecientes.length ? html`<div class="small"><span class="muted">Últimos recordatorios</span>${recRecientes.map((r) => html`<div style="display:flex;justify-content:space-between;gap:8px;margin-top:6px"><span>${r.nombre || r.telefono} · ${r.horas} h antes</span><span style="color:${r.status === 'enviado' ? '#4ade80' : '#f87171'}">${r.status === 'enviado' ? 'Enviado' : `Error: ${r.error || ''}`}</span></div>`)}</div>` : ''}
+        </form>
+      </div>
       <form class="card" method="post" action="${base}/difusion/nueva" style="display:grid;gap:12px">
         <span class="mono">Nueva campaña</span>
         <label class="small muted">Nombre<input name="nombre" maxlength="80" required value="${form.nombre || ''}" placeholder="Ej.: Reactivar clientes de octubre"></label>

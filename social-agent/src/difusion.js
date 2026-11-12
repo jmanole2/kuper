@@ -155,21 +155,25 @@ export function cambiarEstado(client, id, accion, autor) {
 }
 
 // ------------------------------------------------------------ envío
-const horaLocal = (t) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone || 'America/Mexico_City', hour: '2-digit', hour12: false }).format(t));
-async function mandar(client, camp, lead, tel) {
-  const vals = valores(client, lead, camp.variables);
-  const components = vals.length ? [{ type: 'body', parameters: vals.map((t) => ({ type: 'text', text: t })) }] : [];
-  const texto = camp.cuerpo ? render(camp.cuerpo, vals) : `[plantilla ${camp.plantilla}${vals.length ? `: ${vals.join(' | ')}` : ''}]`;
+export const horaLocal = (t) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: config.timezone || 'America/Mexico_City', hour: '2-digit', hour12: false }).format(t));
+/** Manda una plantilla aprobada a un teléfono (directo con el WhatsApp del panel o por el agente) y la deja en el historial del lead. */
+export async function enviarPlantilla(client, { telefono, plantilla, idioma = 'es_MX', vals = [], texto = '', leadId = null, autor = '' }) {
+  const components = vals.length ? [{ type: 'body', parameters: vals.map((t) => ({ type: 'text', text: String(t).slice(0, 60) })) }] : [];
+  const memo = texto || `[plantilla ${plantilla}${vals.length ? `: ${vals.join(' | ')}` : ''}]`;
   if (directo(client)) {
     const w = wa(client);
     const r = await hooks.fetch(`${graph()}/${w.phone_id}/messages`, { method: 'POST', headers: { Authorization: `Bearer ${w.token}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000),
-      body: JSON.stringify({ messaging_product: 'whatsapp', to: tel, type: 'template', template: { name: camp.plantilla, language: { code: camp.idioma }, components } }) });
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: telefono, type: 'template', template: { name: plantilla, language: { code: idioma }, components } }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || j.error) throw new Error(j.error?.message || `Meta respondió ${r.status}`);
   } else if (agenteConfigurado(client)) {
-    await hooks.agente(client, 'POST', '/plantilla', { telefono: tel, nombre: camp.plantilla, idioma: camp.idioma, parametros: vals, memo: texto });
+    await hooks.agente(client, 'POST', '/plantilla', { telefono, nombre: plantilla, idioma, parametros: vals, memo });
   } else throw new Error('Esta marca no tiene WhatsApp conectado.');
-  try { d().prepare("INSERT INTO lead_mensajes (lead_id, rol, texto, autor) VALUES (?, 'agente', ?, ?)").run(lead.id, texto.slice(0, 2000), `Campaña: ${camp.nombre}`.slice(0, 80)); } catch { /* historial opcional */ }
+  if (leadId) try { d().prepare("INSERT INTO lead_mensajes (lead_id, rol, texto, autor) VALUES (?, 'agente', ?, ?)").run(leadId, memo.slice(0, 2000), String(autor).slice(0, 80) || null); } catch { /* historial opcional */ }
+}
+async function mandar(client, camp, lead, tel) {
+  const vals = valores(client, lead, camp.variables);
+  await enviarPlantilla(client, { telefono: tel, plantilla: camp.plantilla, idioma: camp.idioma, vals, texto: camp.cuerpo ? render(camp.cuerpo, vals) : '', leadId: lead.id, autor: `Campaña: ${camp.nombre}` });
 }
 
 /** Una vuelta del envío: pocas por minuto, en horario y sin pasar el tope del día. */

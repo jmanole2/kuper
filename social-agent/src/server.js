@@ -38,6 +38,7 @@ import * as limpieza from './limpieza.js';
 import * as airtable from './airtable.js';
 import * as comentarios from './engage/comentarios.js';
 import * as difusion from './difusion.js';
+import * as recordatorios from './recordatorios.js';
 import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -1272,9 +1273,10 @@ export function createApp() {
       if (seg) seg.ejemplos = seg.leads.slice(0, 6).map((l) => ({ nombre: l.nombre || l.telefono, telefono: l.telefono,
         texto: form.cuerpo ? difusion.render(form.cuerpo, difusion.valores(req.client, l, form.variables)) : '' }));
       res.status(extra.error ? 400 : 200).send(V.difusionPage(req.client, { campanas: difusion.listar(req.client.id), plantillas: lista, errorPlantillas, directo: difusion.directo(req.client),
+        recordatorios: recordatorios.ajustes(req.client), recRecientes: recordatorios.recientes(req.client.id),
         agente: agente.agenteConfigurado(req.client), embudos: embudo.embudos(req.client), base: base(req), app, form, seg, ESTADOS: difusion.ESTADOS, FUENTES: difusion.FUENTES,
         FRECUENCIA: difusion.FRECUENCIA_DIAS, ok: { creada: 'Campaña creada. Revísala y apruébala para que empiece a enviarse.', aprobar: 'Aprobada: se empieza a enviar en horario (9 a 20 h).', pausar: 'Campaña en pausa.',
-          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.' }[req.query.ok] || '', ...extra }));
+          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.' }[req.query.ok] || '', ...extra }));
     };
     router.get(`${prefix}/difusion`, (req, res) => vista(req, res));
     router.post(`${prefix}/difusion/vista`, (req, res) => vista(req, res, { form: leerForm(req.body || {}) }));
@@ -1282,6 +1284,14 @@ export function createApp() {
       const form = leerForm(req.body || {});
       try { difusion.crear(req.client, form, autor(req)); seg.auditar(req, 'difusion_creada', req.client.nombre); res.redirect(`${base(req)}/difusion?ok=creada`); }
       catch (e) { vista(req, res, { form, error: e.message }); }
+    });
+    router.post(`${prefix}/difusion/recordatorios`, (req, res) => {
+      const r = recordatorios.limpiar(req.body || {});
+      if (r.activo && !/^[a-z0-9_]+$/.test(r.plantilla)) return vista(req, res, { error: 'Para activar los recordatorios pon el nombre de la plantilla aprobada.' });
+      db.updateClient(req.client.id, { config: { ...req.client.config, recordatorios: r } });
+      db.logEvent({ clientId: req.client.id, tipo: 'recordatorios_ajustes', detalle: `${autor(req)}: ${r.activo ? `activos (${r.horas.join(' y ')} h antes)` : 'apagados'}` });
+      seg.auditar(req, 'recordatorios_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/difusion?ok=recordatorios`);
     });
     router.post(`${prefix}/difusion/:difId/:accion`, (req, res) => {
       if (!['aprobar', 'pausar', 'reanudar', 'cancelar', 'reintentar'].includes(req.params.accion)) return res.status(404).send('No encontrado');
