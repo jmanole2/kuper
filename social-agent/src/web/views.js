@@ -1069,6 +1069,17 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
       </div>
     </div>
   </form>
+  ${(() => { const lista = CONOC.avisos(client), vig = new Set(CONOC.avisosVigentes(client).map((a) => a.id));
+    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
+    return html`<div class="card" style="margin-top:18px"><span class="mono">Avisos por tiempo limitado</span>
+    <p class="muted small" style="margin:6px 0 10px">Promociones, cierres por día festivo o productos agotados. Tu agente los usa solo hasta la fecha que pongas y después los olvida solo.</p>
+    ${lista.length ? html`<div style="display:grid;gap:8px;margin-bottom:12px">${lista.map((a) => html`<form method="post" action="${base}/agente/avisos/${a.id}/quitar" style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04)">
+      <div><div>${a.texto}</div><div class="muted small">${vig.has(a.id) ? `Vigente hasta el ${a.hasta}` : `Venció el ${a.hasta}`}</div></div><button class="btn-warn" style="padding:6px 12px;font-size:13px">Quitar</button></form>`)}</div>` : ''}
+    <form method="post" action="${base}/agente/avisos" style="display:grid;grid-template-columns:minmax(0,1fr) 170px auto;gap:8px;align-items:end" class="av">
+      <style>@media (max-width:700px){.av{grid-template-columns:1fr!important}}</style>
+      <div><label>Aviso</label><input name="texto" maxlength="500" required placeholder="Ej.: Este fin de semana 2x1 en hamburguesas clásicas"></div>
+      <div><label>Vale hasta</label><input name="hasta" type="date" min="${hoy}" required></div>
+      <button class="btn-accent">Agregar</button></form></div>`; })()}
   ${(() => { const h = horarioIA(client); const DIAS = [[1, 'Lun'], [2, 'Mar'], [3, 'Mié'], [4, 'Jue'], [5, 'Vie'], [6, 'Sáb'], [0, 'Dom']];
     const hora = (n) => `${n}:00`;
     return html`<form class="card" method="post" action="${base}/agente/horario" style="margin-top:18px"><span class="mono">Horario de la IA</span>

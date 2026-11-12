@@ -140,7 +140,7 @@ export function createApp() {
     const ia = embudo.horarioIA(req.client); // cuándo contesta la IA (lo elige el cliente en el panel)
     const pausado = req.client.config.agente_pausado === true; // botón "Pausar agente" del panel
     // Disponibilidad leída de su Airtable (si lo conectaron): va al final, con prioridad sobre la lista general.
-    const disp = airtable.bloque(req.client);
+    const disp = [airtable.bloque(req.client), conoc.bloqueAvisos(req.client)].filter(Boolean).join('\n\n');
     if (disp && k) k.texto = `${k.texto}\n\n${disp}`;
     if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado });
     res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
@@ -1333,6 +1333,19 @@ export function createApp() {
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
     });
     // Pausar o reanudar el agente: se guarda aquí (el agente lo lee cada 5 min) y se le avisa al momento.
+    // Avisos temporales (promos, cierres, agotados) con fecha de vencimiento.
+    router.post(`${prefix}/agente/avisos`, (req, res) => {
+      try {
+        const lista = conoc.nuevoAviso(req.client, req.body || {}, req.sesion?.user?.nombre || 'Kuper');
+        db.updateClient(req.client.id, { config: { ...req.client.config, avisos_temporales: lista } });
+        db.logEvent({ clientId: req.client.id, tipo: 'aviso_temporal', detalle: `${String(req.body.texto).slice(0, 80)} (hasta ${req.body.hasta})` });
+        res.redirect(`${base(req)}/agente?ok=aviso`);
+      } catch (e) { vista(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/agente/avisos/:avId/quitar`, (req, res) => {
+      db.updateClient(req.client.id, { config: { ...req.client.config, avisos_temporales: conoc.avisos(req.client).filter((a) => a.id !== req.params.avId) } });
+      res.redirect(`${base(req)}/agente?ok=aviso_quitado`);
+    });
     router.post(`${prefix}/agente/pausa`, async (req, res) => {
       const pausado = req.body.pausado === '1';
       const autor = req.sesion?.user?.nombre || 'Kuper';

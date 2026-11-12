@@ -75,3 +75,17 @@ test('pausar llamadas: el botón sale con el servicio de llamadas y el agente de
   assert.equal((await turno()).atiende, 'ia');
   assert.equal((await fetch(`${base}/api/sabor/llamadas/turno`, { headers: { Authorization: 'Bearer mala' } })).status, 401);
 });
+
+test('avisos temporales: valen hasta su fecha y luego se olvidan solos', async () => {
+  const conoc = await import('../src/conocimiento.js');
+  const hoy = new Date('2026-11-12T18:00:00Z');
+  const c = { id: 999, config: {} };
+  assert.throws(() => conoc.nuevoAviso(c, { texto: 'x', hasta: '2026-11-01' }, 'yo', hoy), /hoy o después/);
+  c.config.avisos_temporales = conoc.nuevoAviso(c, { texto: '2x1 en clásicas este fin', hasta: '2026-11-15' }, 'Paty', hoy);
+  c.config.avisos_temporales.push({ id: 'viejo', texto: 'Cerrado el 2 de noviembre', hasta: '2026-11-02' });
+  assert.match(conoc.bloqueAvisos(c, hoy), /2x1 en clásicas este fin \(vale hasta el 15 de noviembre\)/);
+  assert.doesNotMatch(conoc.bloqueAvisos(c, hoy), /Cerrado/);
+  assert.equal(conoc.bloqueAvisos(c, new Date('2026-11-16T18:00:00Z')), '');
+  // al agregar otro se limpian los vencidos
+  assert.equal(conoc.nuevoAviso(c, { texto: 'otro', hasta: '2026-11-20' }, 'x', hoy).some((a) => a.id === 'viejo'), false);
+});

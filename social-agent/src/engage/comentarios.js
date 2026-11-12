@@ -148,7 +148,7 @@ Devuelve una respuesta por cada comentario, con el mismo id.`;
 }
 
 async function decidir(client, aj, comentarios) {
-  const saber = conoc.actual(client.id)?.texto || '';
+  const saber = conoc.textoParaAgente(client);
   const lista = comentarios.map((c) => ({ id: c.id, canal: c.canal, anuncio: !!c.anuncio, post: String(c.post_texto || '').slice(0, 200), usuario: c.usuario || '', comentario: String(c.texto || '').slice(0, 600) }));
   const r = await hooks.ia({ system: instrucciones(client, aj, saber.slice(0, 12000)), schema: SCHEMA, maxTokens: 4000, etiqueta: 'comentarios',
     messages: [{ role: 'user', content: `Comentarios nuevos:\n${JSON.stringify(lista, null, 1)}` }] });

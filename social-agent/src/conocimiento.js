@@ -61,3 +61,32 @@ export function restaurar(clientId, versionId, autor) {
   if (!v) throw new Error('Esa versión no existe');
   return guardar(clientId, { texto: v.texto, datos: JSON.parse(v.datos_json || '{}') }, `${autor || 'alguien'} (restauró v${v.id})`);
 }
+
+// ------------------------------------------------------------ avisos temporales
+// Información que el agente debe saber solo un tiempo (una promoción, un cierre por día festivo, algo agotado).
+// Vive en client.config.avisos_temporales = [{ id, texto, hasta: 'YYYY-MM-DD', autor }] y deja de usarse sola
+// al terminar el día "hasta" (hora de México).
+const hoyLocal = (t = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(t);
+export const avisos = (client) => (Array.isArray(client?.config?.avisos_temporales) ? client.config.avisos_temporales : []);
+export const avisosVigentes = (client, t = new Date()) => avisos(client).filter((a) => a.texto && a.hasta >= hoyLocal(t));
+export function nuevoAviso(client, { texto, hasta }, autor, t = new Date()) {
+  const tx = String(texto || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+  const h = String(hasta || '').slice(0, 10);
+  if (!tx) throw new Error('Escribe el aviso.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(h) || h < hoyLocal(t)) throw new Error('Elige hasta qué día vale (hoy o después).');
+  // Los vencidos se limpian al agregar uno nuevo.
+  const lista = [...avisosVigentes(client, t), { id: Date.now().toString(36), texto: tx, hasta: h, autor: autor ? String(autor).slice(0, 80) : null }].slice(-20);
+  return lista;
+}
+const fechaLarga = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+/** Bloque que se agrega a lo que sabe el agente (va al final y tiene prioridad). */
+export function bloqueAvisos(client, t = new Date()) {
+  const v = avisosVigentes(client, t);
+  return v.length ? `## Avisos por tiempo limitado (tienen prioridad sobre lo anterior)\n${v.map((a) => `- ${a.texto} (vale hasta el ${fechaLarga(a.hasta)})`).join('\n')}` : '';
+}
+/** Texto completo para los agentes: lo que sabe + avisos vigentes. */
+export function textoParaAgente(client, t = new Date()) {
+  const base = actual(client.id)?.texto || '';
+  const b = bloqueAvisos(client, t);
+  return [base, b].filter(Boolean).join('\n\n');
+}
