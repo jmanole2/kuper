@@ -6,6 +6,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { textoEvaluacion } from './evaluacion.mjs';
 
 const RETELL = 'https://api.retellai.com';
 const ESPERA_ANALISIS_MS = 10 * 60 * 1000; // si Retell no ha terminado el resumen, se espera hasta 10 min
@@ -32,7 +33,9 @@ export function aPanel(call) {
     telefono: limpio(telLinea) || limpio(datos.telefono_cliente),
     nombre: limpio(datos.nombre_cliente) || limpio(datos.nombre_contacto),
     email: limpio(datos.correo_cliente) || limpio(datos.correo_contacto),
-    resumen: limpio(call.call_analysis?.call_summary),
+    // Si la demo pide evaluación (rúbrica), la calificación va al final del resumen (el panel guarda hasta 1500 caracteres).
+    resumen: (() => { const r = limpio(call.call_analysis?.call_summary) || '', ev = textoEvaluacion(datos);
+      return ev ? `${r.slice(0, Math.max(0, 1480 - ev.length))}${r ? '\n\n' : ''}${ev}`.slice(0, 1500) : r || null; })(),
     cita: datos.cita_agendada === true || datos.cita_agendada === 'true' || datos.resultado === 'cita',
     transcripcion: (call.transcript_object || [])
       .filter((t) => t.role === 'agent' || t.role === 'user')
@@ -54,11 +57,57 @@ export function resultadoVentas(call) {
   };
 }
 
+/**
+ * ¿La asistente intentó pasar la llamada al equipo y nadie la tomó? Retell no tiene un solo campo para esto:
+ * - disconnection_reason "call_transfer" (o "transfer_bridged"): la transferencia sí se conectó → no.
+ * - disconnection_reason que contiene "transfer" pero indica falla ("transfer_failed", "transfer_cancelled",
+ *   "transfer_no_answer"…) → sí.
+ * - Se llamó a la función transferir_a_humano (aparece en transcript_with_tool_calls como tool_call_invocation)
+ *   y la llamada NO terminó en una transferencia exitosa → sí (la asistente siguió o el cliente colgó esperando).
+ * Solo cuenta para llamadas telefónicas entrantes con número de quien llamó.
+ */
+export function transferenciaFallida(call = {}) {
+  const motivo = String(call.disconnection_reason || '').toLowerCase();
+  if (call.call_type === 'web_call' || call.direction === 'outbound') return false;
+  if (!String(call.from_number || '').replace(/\D/g, '')) return false;
+  if (/^(call_transfer|transfer_bridged|transfer_success(ful)?)$/.test(motivo)) return false;
+  if (/transfer/.test(motivo)) return true;
+  const turnos = Array.isArray(call.transcript_with_tool_calls) ? call.transcript_with_tool_calls : [];
+  return turnos.some((t) => /tool_call_invocation/.test(String(t.role || '')) && /transferir_a_humano|transfer/i.test(String(t.name || t.tool_name || '')));
+}
+
+/** Aviso al panel (correo al equipo) y, si la demo lo pide, plantilla de WhatsApp a quien llamó. */
+export async function seguimientoTransferencia({ call, destino, panelUrl, seguimiento = null, negocio = '' }) {
+  const datos = call.call_analysis?.custom_analysis_data || {};
+  const tel = String(call.from_number || '').replace(/\D/g, '');
+  const nombre = String(datos.nombre_cliente || '').trim();
+  const post = (ruta, cuerpo) => hooks.fetch(`${panelUrl}/api/${encodeURIComponent(destino.slug)}/${ruta}`, {
+    method: 'POST', headers: { Authorization: `Bearer ${destino.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+  let whatsapp = null;
+  if (seguimiento?.plantilla) {
+    try {
+      const r = await post('plantilla', { telefono: `+${tel}`, plantilla: seguimiento.plantilla, idioma: seguimiento.idioma || 'es_MX',
+        parametros: [nombre.split(/\s+/)[0] || 'hola', negocio].filter((x, i) => i === 0 || x), motivo: 'llamada_transferida_sin_contestar' });
+      whatsapp = r.ok ? 'enviado' : `error ${r.status}`;
+    } catch (e) { whatsapp = `error ${e.message}`; }
+  }
+  const texto = [call.call_analysis?.call_summary ? `Resumen: ${call.call_analysis.call_summary}` : '', `Llamó desde +${tel}.`,
+    whatsapp === 'enviado' ? 'Ya se le mandó un WhatsApp para retomar la conversación.' : whatsapp ? `No se pudo mandar el WhatsApp (${whatsapp}).` : 'Devuélvele la llamada o escríbele por WhatsApp.'].filter(Boolean).join('\n');
+  const r = await post('avisos', { correo: true, urgente: true, titulo: 'Llamada transferida sin contestar', telefono: `+${tel}`, nombre: nombre || undefined, origen: 'llamada', texto });
+  if (!r.ok) throw new Error(`aviso ${r.status}`);
+  return { whatsapp };
+}
+
 const conEtiqueta = (datos, etiqueta) => (etiqueta ? { ...datos, nombre: datos.nombre ? `${datos.nombre} (demo ${etiqueta})` : `Demo ${etiqueta}`, resumen: `[Demo ${etiqueta}] ${datos.resumen || ''}`.trim() } : datos);
 
-export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = null, panel, archivo, log = console }) {
+export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = null, panel, archivo, log = console, principal = null }) {
   let enviadas = new Set();
   try { enviadas = new Set(JSON.parse(readFileSync(archivo, 'utf8'))); } catch { /* primera vez */ }
+  // Transferencias sin contestar ya avisadas (se anotan aparte para no repetir el aviso).
+  const archivoSeg = archivo.replace(/\.json$/, '') + '-transferencias.json';
+  let avisadas = new Set();
+  try { avisadas = new Set(JSON.parse(readFileSync(archivoSeg, 'utf8'))); } catch { /* primera vez */ }
+  const guardarSeg = () => { try { mkdirSync(dirname(archivoSeg), { recursive: true }); writeFileSync(archivoSeg, JSON.stringify([...avisadas].slice(-3000))); } catch (e) { log.error(`[panel] ${e.message}`); } };
   const guardar = () => {
     try { mkdirSync(dirname(archivo), { recursive: true }); writeFileSync(archivo, JSON.stringify([...enviadas].slice(-3000))); }
     catch (e) { log.error(`[panel] no pude guardar ${archivo}: ${e.message}`); }
@@ -82,6 +131,8 @@ export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = 
       const etiquetaDe = new Map(demos.map((d) => [d.id, d.etiqueta]));
       // Demos que ya son clientes: sus llamadas van a SU panel (sin etiqueta de demo).
       const panelDe = new Map(demos.filter((d) => d.panel?.slug && d.panel?.key).map((d) => [d.id, d.panel]));
+      // whatsapp_si_no_contestan y nombre del negocio de cada agente (principal y demos).
+      const segDe = new Map([[id, principal], ...demos.map((d) => [d.id, d.seguimiento ? { ...d.seguimiento, negocio: d.etiqueta } : null])]);
       const lista = await retell('POST', '/v3/list-calls', {
         filter_criteria: { agent: [id, idVentas, ...demos.map((d) => d.id)].filter(Boolean).map((agent_id) => ({ agent_id })), call_status: { type: 'enum', op: 'in', value: ['ended', 'not_connected', 'error'] },
           start_timestamp: { type: 'number', op: 'ge', value: ahora - VENTANA_MS } },
@@ -104,6 +155,13 @@ export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = 
         if (r.status === 404 && prospecto) { log.error(`[panel] prospecto ${prospecto} ya no existe`); enviadas.add(resumen.call_id); guardar(); continue; }
         if (!r.ok) throw new Error(`panel ${r.status}: ${(await r.text()).slice(0, 200)}`);
         enviadas.add(resumen.call_id); enviadasAhora += 1; guardar();
+        // Pidió hablar con alguien y nadie tomó la transferencia: aviso al equipo (y WhatsApp si la demo lo pide).
+        if (!prospecto && !avisadas.has(call.call_id) && transferenciaFallida(call)) {
+          const seg = segDe.get(call.agent_id || resumen.agent_id) || null;
+          try { await seguimientoTransferencia({ call, destino, panelUrl: panel.url, seguimiento: seg?.plantilla ? seg : null, negocio: seg?.negocio || '' }); }
+          catch (e) { log.error(`[panel] transferencia sin contestar ${call.call_id}: ${e.message}`); }
+          avisadas.add(call.call_id); guardarSeg(); // una sola vez, aunque el aviso falle (no se insiste)
+        }
       }
       return { enviadas: enviadasAhora };
     } catch (e) {
@@ -115,10 +173,10 @@ export function crearSincronizador({ key, agenteId, ventasId = null, demosIds = 
 }
 
 /** Arranca la sincronización cada minuto. Devuelve null si el panel no está configurado. */
-export function iniciar({ key, agenteId, ventasId = null, demosIds = null, dirDatos }) {
+export function iniciar({ key, agenteId, ventasId = null, demosIds = null, dirDatos, principal = null }) {
   const panel = configPanel();
   if (!panel || !key) return null;
-  const s = crearSincronizador({ key, agenteId, ventasId, demosIds, panel, archivo: join(dirDatos, 'enviadas.json') });
+  const s = crearSincronizador({ key, agenteId, ventasId, demosIds, panel, archivo: join(dirDatos, 'enviadas.json'), principal });
   setTimeout(() => s.sincronizar(), 5000);
   setInterval(() => s.sincronizar(), 60 * 1000).unref();
   console.log(`Llamadas -> panel ${panel.url} (${panel.slug})`);

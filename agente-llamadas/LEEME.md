@@ -154,3 +154,26 @@ como recepcionista de SU negocio: llamada de 2 minutos (una por demo) y chat con
 - Cada demo se guarda 7 días en `datos/instantaneas/` y llega como lead al panel (PANEL_URL, PANEL_SLUG, PANEL_API_KEY).
 - Límites: `DEMO_GRATIS_POR_IP` (3 al día), `DEMO_GRATIS_DIA` (60 al día), 1 llamada de 2 minutos (cuelga a los 10 s de silencio) y 20 mensajes por demo.
 - Necesita la clave de IA en el .env (ANTHROPIC_API_KEY o LLM_API_KEY) para leer la página y para el chat.
+
+## Llamada transferida sin contestar → aviso y WhatsApp
+
+Si la asistente intentó pasar la llamada al equipo (transferir_a_humano) y nadie la tomó, al sincronizar con el panel:
+
+1. Se manda un **aviso con correo** al panel de la marca (`POST /api/<slug>/avisos`, título "Llamada transferida sin contestar",
+   teléfono, nombre y resumen). El correo llega al aviso de la marca y a su asesor.
+2. Si el JSON de la marca o de la demo trae `"whatsapp_si_no_contestan": { "plantilla": "llamada_perdida", "idioma": "es_MX" }`,
+   también se le pide al panel que le mande esa **plantilla de WhatsApp** a quien llamó (`{{1}}` nombre, `{{2}}` negocio).
+   Necesita en el panel el endpoint `POST /api/<slug>/plantilla`:
+   - Pide: `{ telefono: "+52…", plantilla: "nombre_aprobado", idioma: "es_MX", parametros: ["Laura", "Negocio"], motivo: "llamada_transferida_sin_contestar" }`
+   - Responde `200 { ok: true }` si se mandó; cualquier otro código = no se mandó (el aviso lo dice).
+
+Cómo se detecta (Retell no tiene un solo campo): `disconnection_reason` con "transfer" que no sea `call_transfer`/`transfer_bridged`
+(p. ej. `transfer_failed`, `transfer_cancelled`), o la función `transferir_a_humano` aparece en `transcript_with_tool_calls`
+y la llamada no terminó en transferencia exitosa. Solo llamadas telefónicas entrantes con número. Cada llamada se avisa
+una sola vez (`datos/enviadas-transferencias.json`).
+
+## Calificación de llamadas (rúbrica)
+
+Con `"evaluar_llamadas": true` (rúbrica de recepción/ventas por defecto, ver `evaluacion.mjs`) o `"rubrica": ["Saludó…", …]`
+en el JSON, Retell agrega al análisis `calificacion` (1 a 10) y `evaluacion` (qué cumplió, qué faltó y un consejo).
+Llegan al panel al final del resumen de cada llamada. Se aplica al correr `retell.mjs crear` (update.sh).

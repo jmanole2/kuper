@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { configFunciones, definiciones, tokenFunciones } from './funciones.mjs';
 import { agentePorNombre } from './agentes.mjs';
 import { numeroTransferencia, variableTransferencia } from './entrante.mjs';
+import { camposAnalisis } from './evaluacion.mjs';
 import { construirPrompt } from './prompt.mjs';
 
 const API = 'https://api.retellai.com';
@@ -139,6 +140,7 @@ async function crear() {
       { type: 'string', name: 'nombre_cliente', description: 'Nombre completo del cliente, si lo dio.' },
       { type: 'string', name: 'correo_cliente', description: 'Correo del cliente, si lo dio.' },
       { type: 'string', name: 'telefono_cliente', description: 'Número de teléfono o WhatsApp que dio el cliente, solo dígitos con lada (por ejemplo 5512345678). Vacío si no lo dio.' },
+      ...camposAnalisis(cfg), // rúbrica: calificación 1-10 y evaluación (si la demo la pide)
     ],
   };
 

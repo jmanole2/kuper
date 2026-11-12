@@ -372,9 +372,10 @@ async function apiEnvios(req, res) {
     fecha_limite: demo.envios?.fecha_limite || '', aplicantes: envios.preparar(demo, filas), ejemplo: req.method !== 'POST' });
 }
 
-const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio,
+const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio, seguimiento: d.whatsapp_si_no_contestan || null,
   panel: d.panel_slug && llaveDe(d.panel_slug) ? { slug: d.panel_slug, key: llaveDe(d.panel_slug) } : null })))).filter((d) => d.id);
-const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, demosIds, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });
+const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, demosIds, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos'),
+  principal: cfg.whatsapp_si_no_contestan ? { ...cfg.whatsapp_si_no_contestan, negocio: cfg.negocio } : null });
 // Agente de ventas: marca a la siguiente empresa de la lista del panel (necesita RETELL_FROM_NUMBER).
 const marcando = sincro && buscarVentas ? marcador.iniciar({ key: KEY, ventasId: buscarVentas }) : null;
 
