@@ -42,6 +42,8 @@ import * as recordatorios from './recordatorios.js';
 import * as paises from './paises.js';
 import * as docs from './documentos.js';
 import * as cupones from './cupones.js';
+import * as cobros from './pagos-clientes.js';
+import * as atribucion from './atribucion.js';
 import { fichaLead, documentosCard } from './web/embudo.js';
 import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
@@ -72,6 +74,8 @@ export function createApp() {
   // Tipografía del panel (Inter Tight, la misma de los videos), servida localmente.
   app.use('/fonts', express.static(path.join(path.dirname(fileURLToPath(import.meta.resolve('@fontsource/inter-tight/package.json'))), 'files'), { maxAge: '30d', fallthrough: false }));
   app.get('/salud', (_req, res) => res.json({ ok: true }));
+  // A donde regresa quien pagó con un link de cobro por chat.
+  app.get('/pago-listo', (_req, res) => res.send('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pago recibido</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#121110;color:#f4f0e8;font:18px/1.5 system-ui,sans-serif;text-align:center;padding:24px"><div><div style="font-size:54px">✅</div><h1 style="font-weight:400">¡Gracias! Recibimos tu pago</h1><p style="color:#a9a399">Ya puedes regresar a la conversación de WhatsApp.</p></div></body>'));
 
   const upload = multer({
     storage: multer.diskStorage({
@@ -202,6 +206,11 @@ export function createApp() {
       const h = (k) => { try { return decodeURIComponent(String(req.get(k) || '')); } catch { return ''; } };
       res.json({ ok: true, ...(await docs.guardar(req.client, { telefono: h('x-telefono'), nombre: h('x-nombre'), caption: h('x-caption'), mime: req.get('content-type'), buf: req.body })) });
     } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  // Link de pago (lo pide el agente con crear_link_pago): Mercado Pago o Stripe con la cuenta de la marca.
+  api.post('/cobros/link', async (req, res) => {
+    try { res.json({ ok: true, ...(await cobros.crearLink(req.client, { ...(req.body || {}), autor: 'IA' })) }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
   });
   // Cupón para una persona (lo pide el agente con generar_cupon).
   api.post('/cupones', (req, res) => {
@@ -503,6 +512,8 @@ export function createApp() {
   comentariosRoutes(appR, () => '/app', { app: true });
   appR.use('/difusion', servicio('chat'));
   appR.use('/cupones', servicio('chat'));
+  appR.use('/cobros', servicio('chat'));
+  cobrosRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
@@ -919,6 +930,7 @@ export function createApp() {
   comentariosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   difusionRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cuponesRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  cobrosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -1191,7 +1203,7 @@ export function createApp() {
     const verEmbudo = (req, res, extra = {}) => {
       const f = (k, n = 40) => String(req.query[k] || '').slice(0, n);
       const opts = { asesores: embudo.asesores(req.client), embudo: f('e'), ultimos: db.ultimosMensajes(req.client.id), importar: !app,
-        filtros: { q: f('q', 80), asesor: f('asesor'), pais: f('pais', 30), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10) },
+        filtros: { q: f('q', 80), asesor: f('asesor'), pais: f('pais', 30), prioridad: f('prioridad', 12), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10) },
         vista: f('vista') === 'extendida' ? 'extendida' : 'compacta', ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appEmbudoPage(req.client, leadsDe(req.client), opts) : V.adminEmbudoPage(req.client, leadsDe(req.client), opts));
     };
@@ -1200,6 +1212,7 @@ export function createApp() {
     router.post(`${prefix}/embudo/resultado`, (req, res) => {
       try {
         const l = embudo.marcarResultado(req.client, Number(req.body.lead), String(req.body.resultado || ''), req.body.valor, { mover: req.body.mover !== '0' });
+        if (req.body.resultado === 'vendido') atribucion.venta(req.client, l, { valor: l.valor || 0 }).catch(() => {}); // a Meta: qué anuncio vendió
         db.logEvent({ clientId: req.client.id, tipo: 'resultado_lead', detalle: `${l.nombre || l.telefono || l.id}: ${req.body.resultado}${l.valor ? ` $${l.valor}` : ''}` });
         res.json({ ok: true, etapa: l.etapa });
       } catch (e) { res.status(400).json({ error: e.message }); }
@@ -1293,6 +1306,34 @@ export function createApp() {
     router.post(`${prefix}/comentarios/:comId/descartar`, (req, res) => {
       try { comentarios.descartar(req.client, req.params.comId, autor(req)); res.redirect(`${base(req)}/comentarios?ok=descartado&f=por_aprobar`); }
       catch (e) { vista(req, res, { error: e.message }); }
+    });
+  }
+
+  // Cobros por chat (links de pago con la cuenta de la marca) y ventas avisadas a Meta.
+  function cobrosRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
+    const vista = (req, res, extra = {}) => {
+      const creds = db.clientCredentials(req.client);
+      res.status(extra.error ? 400 : 200).send(V.cobrosPage(req.client, { aj: cobros.ajustes(req.client), conv: atribucion.ajustes(req.client), hayToken: Boolean(creds.cobros?.token), hayCapi: Boolean(creds.meta?.capi_token),
+        lista: cobros.listar(req.client.id), resumen: cobros.resumen(req.client.id), PROVEEDORES: cobros.PROVEEDORES, base: base(req), app,
+        etapas: embudo.embudos(req.client).flatMap((e) => e.etapas.map((x) => ({ id: x.id, nombre: x.nombre }))), ok: { ajustes: 'Guardado.', revisado: 'Revisado con el proveedor.' }[req.query.ok] || '', ...extra }));
+    };
+    router.get(`${prefix}/cobros`, (req, res) => vista(req, res));
+    router.post(`${prefix}/cobros/ajustes`, (req, res) => {
+      const b = req.body || {};
+      const creds = db.clientCredentials(req.client);
+      const nuevoToken = String(b.token || '').trim(), nuevoCapi = String(b.capi_token || '').trim();
+      db.updateClient(req.client.id, {
+        config: { ...req.client.config, cobros: { activo: b.activo === '1', proveedor: cobros.PROVEEDORES[b.proveedor] ? b.proveedor : 'mercadopago', etapa_pagado: String(b.etapa_pagado || '').slice(0, 60),
+          monto_max: Math.min(500000, Math.max(10, Number(b.monto_max) || 20000)) }, conversiones: { activo: b.conv_activo === '1', dataset_id: String(b.dataset_id || '').replace(/\D/g, '').slice(0, 30) } },
+        credentials: { ...creds, ...(nuevoToken ? { cobros: { token: nuevoToken.slice(0, 300) } } : {}), ...(nuevoCapi ? { meta: { ...(creds.meta || {}), capi_token: nuevoCapi.slice(0, 600) } } : {}) },
+      });
+      db.logEvent({ clientId: req.client.id, tipo: 'cobros_ajustes', detalle: `${autor(req)}${nuevoToken ? ' · token nuevo' : ''}${nuevoCapi ? ' · token de conversiones nuevo' : ''}` });
+      seg.auditar(req, 'cobros_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/cobros?ok=ajustes`);
+    });
+    router.post(`${prefix}/cobros/revisar`, async (req, res) => {
+      try { await cobros.revisar(req.client); res.redirect(`${base(req)}/cobros?ok=revisado`); } catch (e) { vista(req, res, { error: e.message }); }
     });
   }
 

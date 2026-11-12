@@ -17,6 +17,7 @@ import { processKeywordComments } from './engage/keyword.js';
 import * as comentarios from './engage/comentarios.js';
 import * as difusion from './difusion.js';
 import * as recordatorios from './recordatorios.js';
+import * as cobros from './pagos-clientes.js';
 import { tiene } from './plan.js';
 import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
 import { reporteCorreo } from './web/reporte.js';
@@ -481,6 +482,7 @@ export function generationCandidates(now = new Date()) {
 let generating = false;
 const kwPause = new Map();
 const comPausa = new Map();
+const cobrosPausa = new Map();
 /** Al guardar los ajustes de comentarios, revisa de inmediato. */
 export const resetComentariosPausa = (clientId) => comPausa.delete(clientId);
 /** Al guardar credenciales nuevas, la palabra clave vuelve a intentar de inmediato. */
@@ -505,6 +507,11 @@ export async function tick(now = new Date()) {
       }));
     }
     // Campañas de WhatsApp aprobadas: unos cuantos mensajes por minuto, en horario y con tope diario.
+    // Cobros por chat: cada 2 minutos se pregunta al proveedor si ya pagaron.
+    if (cobros.listo(client) && !(cobrosPausa.get(client.id) > now.getTime())) {
+      cobrosPausa.set(client.id, now.getTime() + 2 * 60_000);
+      enqueue(`cob-${client.id}`, () => cobros.revisar(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'cobro_error', detalle: e.message })));
+    }
     if (recordatorios.ajustes(client).activo) enqueue(`rec-${client.id}`, () => recordatorios.enviar(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'recordatorio_error', detalle: e.message })));
     if (tiene(client, 'chat')) enqueue(`dif-${client.id}`, () => difusion.enviarPendientes(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'difusion_error', detalle: e.message })));
     // Reels aprobados que todavía no tienen su copia en Facebook/TikTok (p. ej. aprobados antes de activar la opción).

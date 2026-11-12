@@ -420,3 +420,23 @@ export function analitica(client, { dias = null, desde: desdeTxt = '', hasta: ha
     asesores: ases, horario: h, totalLeads: leads.length,
   };
 }
+
+/**
+ * Prioridad (0 a 100): qué tan cerca está de comprar y qué tan urgente es atenderlo. Sale de señales que ya
+ * tenemos (etapa, si espera respuesta, qué tan reciente, valor, si vino de un anuncio); no gasta IA.
+ * ultimo: último mensaje { rol } (si espera respuesta del negocio suma).
+ */
+export function puntaje(client, lead, ultimo = null, ahora = Date.now()) {
+  if (['vendido', 'perdido', 'resuelto'].includes(lead.resultado)) return 0;
+  const tipo = etapaDe(client, lead)?.tipo;
+  if (tipo === 'perdido' || tipo === 'cliente' || tipo === 'archivo') return 0;
+  let p = { nuevo: 25, conversacion: 40, cita: 65 }[tipo] ?? 25;
+  if (ultimo?.rol === 'lead') p += 15; // escribió y espera respuesta
+  const horas = (ahora - new Date(String(lead.updated_at || lead.created_at).replace(' ', 'T') + 'Z')) / 3600000;
+  p += horas < 24 ? 15 : horas < 72 ? 5 : horas > 24 * 14 ? -25 : 0;
+  if (Number(lead.valor) > 0) p += 10;
+  if (lead.campana_json || lead.anuncio_id) p += 5;
+  if (lead.prioridad === 'urgente') p += 10;
+  return Math.max(0, Math.min(100, Math.round(p)));
+}
+export const caliente = (n) => n >= 70;

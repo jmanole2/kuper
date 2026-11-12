@@ -2,7 +2,7 @@
 import { html, raw } from './html.js';
 import { paisDeTelefono } from '../paises.js';
 import { config } from '../config.js';
-import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto, estancado } from '../embudo.js';
+import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto, estancado, puntaje, caliente } from '../embudo.js';
 
 const ORIGEN = { manual: ['Agregado a mano', '#c9c3b8'], whatsapp: ['WhatsApp', '#25d366'], instagram: ['Instagram', '#e1306c'], facebook: ['Messenger', '#4f7cff'], llamada: ['Llamada', '#c9f53a'], web: ['Página de citas', '#93b4ff'], chat_web: ['Chat web', '#fbbf24'] };
 const origen = (o) => ORIGEN[o] || [o || 'Otro', '#93b4ff'];
@@ -92,6 +92,7 @@ function filtrarLeads(client, leads, f, ultimos) {
     if (f.asesor && (f.asesor === '-' ? l.asignado_id : String(l.asignado_id) !== f.asesor)) return false;
     if (f.canal && l.origen !== f.canal) return false;
     if (f.pais && paisDeTelefono(l.telefono) !== f.pais) return false;
+    if (f.prioridad === 'calientes' && !caliente(puntaje(client, l, ultimos[l.id]))) return false;
     if (f.estatus && (l.prioridad || 'neutral') !== f.estatus) return false;
     const u = ultimos[l.id];
     if (f.mensajes === 'esperando' && !(u && u.rol === 'lead')) return false;
@@ -112,7 +113,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   const origenes = [...new Set(leads.map((l) => l.origen))];
   const paisesHay = [...new Set(leads.map((l) => paisDeTelefono(l.telefono)).filter(Boolean))];
   leads = filtrarLeads(client, leads.filter((l) => embudoDe(client, l).id === emb.id), filtros, ultimos);
-  const activos = ['asesor', 'pais', 'canal', 'estatus', 'mensajes', 'desde', 'hasta'].filter((k) => filtros[k]).length;
+  const activos = ['asesor', 'pais', 'prioridad', 'canal', 'estatus', 'mensajes', 'desde', 'hasta'].filter((k) => filtros[k]).length;
   const lista = emb.etapas;
   const nombreAsesor = Object.fromEntries(asesores.map((a) => [a.id, a.nombre]));
   const cols = lista.map((e) => ({ e, leads: leads.filter((l) => etapaDe(client, l).id === e.id) }));
@@ -124,7 +125,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
     const u = ultimos[l.id];
     return html`<a class="emb-card" draggable="true" data-id="${l.id}" data-q="${`${n} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase()}" href="${base}/leads/${l.id}/chat"><span class="ck"></span>
       <span class="emb-av" style="background:${oCol}">${iniciales(n)}<i style="background:${oCol}" title="${oTxt}"></i></span>
-      <span style="min-width:0"><strong>${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${ic(pri[1], 14, pri[2])}</span>` : ''}</strong><small>${ic('persona', 12)} ${a || 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
+      <span style="min-width:0"><strong>${caliente(puntaje(client, l, u)) ? html`<span title="Prioridad ${puntaje(client, l, u)}: cerca de comprar">🔥 </span>` : ''}${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${ic(pri[1], 14, pri[2])}</span>` : ''}</strong><small>${ic('persona', 12)} ${a || 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
         <small>${l.control === 'humano' ? raw('<span class="emb-yo">Equipo</span>') : raw('<span class="emb-ia">IA</span>')}${u && u.rol === 'lead' ? raw(' <span class="emb-yo" style="background:rgba(248,113,113,.15);color:#f87171">Espera respuesta</span>') : ''}${est ? html`<span class="emb-est">${ic('campana', 11)} Estancado</span>` : ''}${l.valor ? html` <span class="emb-v">${mxn(l.valor)}</span>` : ''}</small></span>
       <time>${cuando(l.updated_at)}</time>
       ${vista === 'extendida' ? html`<span class="ext">${tagsDe(l).map((t) => html`<i>${t}</i>`)}${tagsDe(l).length ? html`<br>` : ''}${u ? html`<b>${u.rol === 'lead' ? 'Lead' : u.rol === 'humano' ? 'Equipo' : 'IA'}:</b> ${u.texto}` : l.nota ? String(l.nota).slice(0, 160) : html`<span class="muted">${l.telefono || l.email || ''}</span>`}</span>` : ''}</a>`;
@@ -142,6 +143,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
       <select name="fecha"><option value="">Fecha en que llegó</option><option value="actividad" ${raw(filtros.fecha === 'actividad' ? 'selected' : '')}>Última actividad</option></select>
       <div class="row" style="gap:8px;margin-top:6px"><input type="date" name="desde" value="${filtros.desde || ''}"><input type="date" name="hasta" value="${filtros.hasta || ''}"></div>
       <h4 style="margin-top:12px">Estatus</h4>${radio('estatus', [['', 'Todos'], ...Object.entries(PRIORIDADES).map(([k, [t, i, c]]) => [k, i ? html`${ic(i, 14, c)} ${t}` : t])], filtros.estatus)}
+      <h4 style="margin-top:12px">Prioridad</h4>${radio('prioridad', [['', 'Todos'], ['calientes', '🔥 Más cerca de comprar']], filtros.prioridad)}
       ${paisesHay.length > 1 ? html`<h4 style="margin-top:12px">País</h4>${radio('pais', [['', 'Todos'], ...paisesHay.map((p) => [p, p])], filtros.pais)}` : ''}
       <h4 style="margin-top:12px">Canal</h4>${radio('canal', [['', 'Todos'], ...origenes.map((o) => [o, origen(o)[0]])], filtros.canal)}
       ${asesores.length ? html`<h4 style="margin-top:12px">Asesor</h4><select name="asesor"><option value="">Todos</option><option value="-" ${raw(filtros.asesor === '-' ? 'selected' : '')}>No asignados</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(String(a.id) === filtros.asesor ? 'selected' : '')}>${a.nombre}</option>`)}</select>` : ''}

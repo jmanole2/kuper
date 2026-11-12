@@ -157,6 +157,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'comentarios') ? [{ href: '/app/comentarios', icon: 'coment', label: 'Comentarios', on: on === 'comentarios' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/difusion', icon: 'send', label: 'Campañas de WhatsApp', on: on === 'difusion' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cupones', icon: 'ticket', label: 'Cupones', on: on === 'cupones' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/cobros', icon: 'card', label: 'Cobros por chat', on: on === 'cobros' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
   ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
@@ -319,7 +320,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -332,7 +333,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1543,4 +1544,38 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
       </form>
     </div>`;
   return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ cobros por chat
+export function cobrosPage(client, { aj = {}, conv = {}, hayToken = false, hayCapi = false, lista = [], resumen = {}, PROVEEDORES = {}, etapas = [], base, app = false, ok = '', error = '' }) {
+  const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
+  const mxn = (n) => `$${Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 2 })}`;
+  const COL = { pendiente: ['Esperando pago', '#fbbf24'], pagado: ['Pagado', '#4ade80'], vencido: ['Vencido', '#a39d93'] };
+  const body = html`${hero({ kicker: 'Cobros por chat', title: 'Cobros', letra: client.nombre, sub: 'Tu agente manda un link de pago en la conversación; el dinero llega directo a tu cuenta. Al pagar, el lead queda como vendido y la venta se le avisa a Meta para saber qué anuncio vende.',
+      note: ['Últimos 30 días', `${resumen.links || 0} links · ${resumen.pagados || 0} pagados · ${mxn(resumen.total)}`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr);align-items:start" class="cb">
+      <style>@media (max-width:980px){.cb{grid-template-columns:1fr!important}} .cb input,.cb select{width:100%}</style>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="mono">Links de pago</span>
+        ${hayToken ? html`<form method="post" action="${base}/cobros/revisar"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Revisar pagos ahora</button></form>` : ''}</div>
+        ${lista.length ? html`<table style="margin-top:8px;font-size:14px">${lista.map((c) => { const [t, col] = COL[c.status] || [c.status, '#a39d93'];
+          return html`<tr><td><b>${c.concepto}</b><div class="muted small">${fecha(c.created_at)} · ${PROVEEDORES[c.proveedor] || c.proveedor}${c.error ? ` · ${c.error}` : ''}</div></td><td style="text-align:right;white-space:nowrap"><b>${mxn(c.monto)}</b><div class="small" style="color:${col}">${t}</div></td></tr>`; })}</table>`
+          : html`<p class="muted small">Todavía no se ha mandado ningún link.</p>`}
+      </div>
+      <form class="card" method="post" action="${base}/cobros/ajustes" style="display:grid;gap:10px">
+        <span class="mono">Ajustes</span>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Mandar links de pago por chat</label>
+        <label class="small muted">Proveedor<select name="proveedor">${Object.entries(PROVEEDORES).map(([k, t]) => html`<option value="${k}" ${aj.proveedor === k ? 'selected' : ''}>${t}</option>`)}</select></label>
+        <label class="small muted">${aj.proveedor === 'stripe' ? 'Clave secreta de Stripe' : 'Access token de Mercado Pago'} ${hayToken ? '(ya guardado; escribe solo para cambiarlo)' : ''}<input name="token" type="password" autocomplete="off" placeholder="${hayToken ? '••••••••' : 'APP_USR-… o sk_live_…'}"></label>
+        <label class="small muted">Monto máximo por link (MXN)<input name="monto_max" type="number" min="10" value="${aj.monto_max || 20000}"></label>
+        <label class="small muted">Al pagar, mover a la etapa<select name="etapa_pagado"><option value="">— no mover —</option>${etapas.map((e) => html`<option value="${e.id}" ${aj.etapa_pagado === e.id ? 'selected' : ''}>${e.nombre}</option>`)}</select></label>
+        <span class="mono" style="margin-top:8px">Ventas a Meta (qué anuncio vende)</span>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="conv_activo" value="1" ${conv.activo ? 'checked' : ''} style="width:18px;height:18px">Avisar cada venta a Meta</label>
+        <label class="small muted">ID del conjunto de datos (pixel)<input name="dataset_id" value="${conv.dataset_id || ''}" inputmode="numeric" placeholder="123456789012345"></label>
+        <label class="small muted">Token de la API de conversiones ${hayCapi ? '(ya guardado)' : ''}<input name="capi_token" type="password" autocomplete="off" placeholder="${hayCapi ? '••••••••' : 'EAAG…'}"></label>
+        <p class="muted small" style="margin:0">Se avisa cuando pagan un link o cuando marcas un lead como Vendido. Si llegó por un anuncio de clic a WhatsApp, Meta sabe exactamente qué anuncio vendió.</p>
+        <div><button class="btn-accent">Guardar</button></div>
+      </form>
+    </div>`;
+  return page({ title: `Cobros · ${client.nombre}`, side: app ? sideApp('cobros', client) : side('clientes'), body });
 }
