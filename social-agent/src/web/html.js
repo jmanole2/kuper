@@ -88,6 +88,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
 `;
 
 const ICON = {
+  coment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/>',
   funnel: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
   bars: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',

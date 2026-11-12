@@ -36,6 +36,7 @@ import * as waSignup from './whatsappSignup.js';
 import * as importar from './importar.js';
 import * as limpieza from './limpieza.js';
 import * as airtable from './airtable.js';
+import * as comentarios from './engage/comentarios.js';
 import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -474,6 +475,8 @@ export function createApp() {
   embudoRoutes(appR, () => '/app', { app: true });
   appR.use('/agente', servicio('chat'));
   conocimientoRoutes(appR, () => '/app', { app: true });
+  appR.use('/comentarios', servicio('comentarios'));
+  comentariosRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
     const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg, todo: req.query.todo === '1' };
     try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
@@ -678,6 +681,7 @@ export function createApp() {
     if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); view.campanaSel = String(req.query.campana || ''); }
     if (view.tab === 'ventas') { view.prospectos = prospeccion.listar(req.client.id); view.ventasActivo = prospeccion.activo(req.client.id); view.placesListo = !!config.googlePlacesKey; }
     if (view.tab === 'blog') return res.redirect(`/admin/clientes/${req.client.id}/blog`);
+    if (view.tab === 'comentarios') return res.redirect(`/admin/clientes/${req.client.id}/comentarios`);
     if (view.tab === 'llamadas') { view.llamadas = llamadas.listar(req.client.id); view.llamadasMes = llamadas.delMes(req.client.id, metricas.mesActual()); }
     if (view.tab === 'citas') {
       const cfg = agenda.agendaCfg(req.client);
@@ -884,6 +888,7 @@ export function createApp() {
     } catch (e) { res.status(400).send(V.importarPage(req.client, { error: e.message })); }
   });
   conocimientoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  comentariosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -1196,6 +1201,56 @@ export function createApp() {
       const a = embudo.analitica(req.client, { rango: q('rango') || q('dias'), desde: q('desde'), hasta: q('hasta'), asesor: q('asesor') });
       a.listaAsesores = embudo.asesores(req.client);
       res.send(app ? V.appAnaliticaPage(req.client, a) : V.adminAnaliticaPage(req.client, a));
+    });
+  }
+
+  // Agente de comentarios (admin y cliente): ajustes, pausa, aprobar o descartar respuestas.
+  function comentariosRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
+    const vista = (req, res, extra = {}) => {
+      const f = String(req.query.f || '');
+      const meta = db.clientCredentials(req.client).meta || {};
+      const todos = comentarios.listar(req.client.id, { status: ['por_aprobar', 'oculto'].includes(f) ? f : '', limit: 150 });
+      const lista = ['queja', 'compra'].includes(f) ? todos.filter((c) => c.intencion === f) : todos;
+      res.status(extra.error ? 400 : 200).send(V.comentariosPage(req.client, { lista, resumen: comentarios.resumen(req.client.id), aj: comentarios.ajustes(req.client), base: base(req), app, filtro: f,
+        credsOk: Boolean(meta.page_token && (meta.page_id || meta.ig_user_id)), ESTADOS: comentarios.ESTADOS, INTENCIONES: comentarios.INTENCIONES,
+        ok: req.query.ok ? { ajustes: 'Ajustes guardados.', pausa: 'Listo.', aprobado: 'Respuesta enviada.', descartado: 'Descartado.', revisado: `Revisado: ${Number(req.query.n) || 0} comentarios nuevos.` }[req.query.ok] || '' : '', ...extra }));
+    };
+    const cfg = (req, cambios) => {
+      db.updateClient(req.client.id, { config: { ...req.client.config, comentarios: { ...comentarios.ajustes(req.client), ...cambios } } });
+      pipe.resetComentariosPausa(req.client.id);
+    };
+    router.get(`${prefix}/comentarios`, (req, res) => vista(req, res));
+    router.post(`${prefix}/comentarios/ajustes`, (req, res) => {
+      const b = req.body || {};
+      const si = (k) => b[k] === '1';
+      cfg(req, { activo: si('activo'), instagram: si('instagram'), facebook: si('facebook'), anuncios: si('anuncios'), publico: si('publico'), dm: si('dm'), ocultar: si('ocultar'), revision: si('revision'),
+        instrucciones: String(b.instrucciones || '').trim().slice(0, 2000) });
+      db.logEvent({ clientId: req.client.id, tipo: 'comentarios_ajustes', detalle: `${autor(req)}: ${si('activo') ? 'activo' : 'apagado'}${si('revision') ? ', con revisión' : ''}` });
+      seg.auditar(req, 'comentarios_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/comentarios?ok=ajustes`);
+    });
+    router.post(`${prefix}/comentarios/pausa`, (req, res) => {
+      const pausado = req.body.pausado === '1';
+      cfg(req, { pausado });
+      db.logEvent({ clientId: req.client.id, tipo: pausado ? 'comentarios_pausados' : 'comentarios_reanudados', detalle: autor(req) });
+      seg.auditar(req, pausado ? 'comentarios_pausados' : 'comentarios_reanudados', req.client.nombre);
+      res.redirect(`${base(req)}/comentarios?ok=pausa`);
+    });
+    router.post(`${prefix}/comentarios/revisar`, async (req, res) => {
+      try { const r = await comentarios.revisar(req.client); res.redirect(`${base(req)}/comentarios?ok=revisado&n=${r.nuevos || 0}`); }
+      catch (e) { vista(req, res, { error: `No se pudieron revisar los comentarios: ${e.message}` }); }
+    });
+    router.post(`${prefix}/comentarios/:comId/aprobar`, async (req, res) => {
+      try {
+        const st = await comentarios.aprobar(req.client, req.params.comId, { publica: req.body.publica, dm: req.body.dm, autor: autor(req) });
+        if (st === 'error') return vista(req, res, { error: 'Meta no aceptó la respuesta. Revisa el error en el comentario.' });
+        res.redirect(`${base(req)}/comentarios?ok=aprobado`);
+      } catch (e) { vista(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/comentarios/:comId/descartar`, (req, res) => {
+      try { comentarios.descartar(req.client, req.params.comId, autor(req)); res.redirect(`${base(req)}/comentarios?ok=descartado&f=por_aprobar`); }
+      catch (e) { vista(req, res, { error: e.message }); }
     });
   }
 

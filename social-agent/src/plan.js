@@ -8,13 +8,14 @@ export const SERVICIOS = {
   redes: { nombre: 'Redes sociales', desc: 'Publicaciones automáticas en Instagram, Facebook, TikTok y LinkedIn, competencia y palabra clave.', tabs: ['posts', 'competencia', 'palabra'] },
   chat: { nombre: 'Agente de IA (chat)', desc: 'Responde en WhatsApp, Messenger e Instagram y registra cada lead.', tabs: ['leads', 'embudo', 'analitica', 'agente'] },
   agenda: { nombre: 'Agenda de citas', desc: 'Citas en Google Calendar sin encimarse, con recordatorios.', tabs: ['citas'] },
+  comentarios: { nombre: 'Agente de comentarios', desc: 'Contesta los comentarios de Instagram y Facebook (posts y anuncios), lleva al mensaje directo a quien quiere comprar y oculta el spam.', tabs: ['comentarios'] },
   llamadas: { nombre: 'Agente de llamadas', desc: 'Contesta y hace llamadas, agenda citas y deja cada llamada con su resumen.', tabs: ['llamadas', 'ventas'] },
   blog: { nombre: 'Agente de blog', desc: 'Escribe artículos con noticias del momento, con SEO e imagen, para sus sitios web.', tabs: ['blog'] },
   videollamadas: { nombre: 'Agente de videollamadas', desc: 'Atiende videollamadas con un avatar.', tabs: ['videollamadas'], proximamente: true },
 };
 
 const DEFAULT = {
-  servicios: { redes: true, chat: true, agenda: true, llamadas: false, blog: false, videollamadas: false }, // clientes de antes: lo que ya tenían
+  servicios: { redes: true, chat: true, agenda: true, comentarios: false, llamadas: false, blog: false, videollamadas: false }, // clientes de antes: lo que ya tenían
   posts_semana: 3,
   extra_gratis_mes: 1,
   precio_extra: 150,

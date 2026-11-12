@@ -14,6 +14,7 @@ import { fetchCompetitors } from './competitors/instagram.js';
 import { tickBlog } from './blog.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
+import * as comentarios from './engage/comentarios.js';
 import { tiene } from './plan.js';
 import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
 import { reporteCorreo } from './web/reporte.js';
@@ -477,6 +478,9 @@ export function generationCandidates(now = new Date()) {
 
 let generating = false;
 const kwPause = new Map();
+const comPausa = new Map();
+/** Al guardar los ajustes de comentarios, revisa de inmediato. */
+export const resetComentariosPausa = (clientId) => comPausa.delete(clientId);
 /** Al guardar credenciales nuevas, la palabra clave vuelve a intentar de inmediato. */
 export const resetKeywordPause = (clientId) => kwPause.delete(clientId);
 export async function tick(now = new Date()) {
@@ -488,6 +492,14 @@ export async function tick(now = new Date()) {
       enqueue(`kw-${client.id}`, () => processKeywordComments(client).catch((e) => {
         kwPause.set(client.id, Date.now() + 30 * 60_000);
         db.logEvent({ clientId: client.id, tipo: 'palabra_clave_error', detalle: `${e.message} (reintenta en 30 min)` });
+      }));
+    }
+    // Agente de comentarios: cada 5 minutos (si falla, espera 30 min).
+    if (tiene(client, 'comentarios') && comentarios.ajustes(client).activo && !comentarios.ajustes(client).pausado && !(comPausa.get(client.id) > now.getTime())) {
+      comPausa.set(client.id, now.getTime() + 5 * 60_000);
+      enqueue(`com-${client.id}`, () => comentarios.revisar(client, { now }).catch((e) => {
+        comPausa.set(client.id, Date.now() + 30 * 60_000);
+        db.logEvent({ clientId: client.id, tipo: 'comentario_error', detalle: `${e.message} (reintenta en 30 min)` });
       }));
     }
     // Reels aprobados que todavía no tienen su copia en Facebook/TikTok (p. ej. aprobados antes de activar la opción).

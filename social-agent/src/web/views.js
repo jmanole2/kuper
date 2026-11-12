@@ -154,6 +154,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'redes') ? [{ href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }, { href: '/app/embudo', icon: 'funnel', label: 'Embudo de ventas', on: on === 'embudo' }, { href: '/app/analitica', icon: 'bars', label: 'Analítica', on: on === 'analitica' }, { href: '/app/agente', icon: 'brain', label: 'Lo que sabe tu agente', on: on === 'agente' }] : []),
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
+  ...(tiene(client, 'comentarios') ? [{ href: '/app/comentarios', icon: 'coment', label: 'Comentarios', on: on === 'comentarios' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
   ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
@@ -316,7 +317,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -329,7 +330,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -407,7 +408,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   <form method="post" action="/admin/clientes/${client.id}/mascota" enctype="multipart/form-data" class="card row">
     ${client.config?.mascota_path ? html`<img src="/media/${path.basename(client.config.mascota_path)}" style="height:64px">` : ''}
     <input type="file" name="archivo" accept="image/png,image/webp" required style="width:auto"><button class="btn-warn">Subir mascota</button>
-    ${client.config?.mascota_path ? html`<button class="btn-ghost" name="quitar" value="1" formnovalidate>Quitar</button>` : ''}
+    ${client.config?.mascota_path ? html`<button class="btn-warn" name="quitar" value="1" formnovalidate>Quitar</button>` : ''}
     <span class="muted small">PNG con fondo transparente. Sale como protagonista más o menos en 1 de cada 3 piezas.</span></form>
   <h2>Paletas de color</h2>
   <form method="post" action="/admin/clientes/${client.id}/paletas" class="card">
@@ -1088,7 +1089,7 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
       <div><label>Token de acceso${on ? ' (déjalo vacío para conservar el actual)' : ''}</label><input name="token" type="password" autocomplete="off" ${raw(on ? '' : 'required')} placeholder="${on ? '•••••••• guardado' : 'pat…'}"></div>
       <div class="row" style="gap:8px"><button class="btn-accent">${on ? 'Guardar y leer ahora' : 'Conectar'}</button></div>
     </form>
-    ${on ? html`<form method="post" action="${base}/agente/airtable/quitar" style="margin-top:8px" onsubmit="return confirm('¿Desconectar Airtable?')"><button class="btn-ghost" style="padding:6px 12px;font-size:13px">Desconectar</button></form>
+    ${on ? html`<form method="post" action="${base}/agente/airtable/quitar" style="margin-top:8px" onsubmit="return confirm('¿Desconectar Airtable?')"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Desconectar</button></form>
       ${st?.texto ? html`<details style="margin-top:10px"><summary class="small">Ver lo que reciben los agentes</summary><pre style="white-space:pre-wrap;font-size:12.5px;color:#cfc9bf">${st.texto}</pre></details>` : ''}` : ''}
     </div>`; })()}
   <div class="card" style="margin-top:18px"><span class="mono">Archivos para compartir</span>
@@ -1096,7 +1097,7 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
     ${(client.config?.archivos_agente || []).length ? html`<table style="margin-bottom:14px">${(client.config.archivos_agente).map((a) => html`<tr>
       <td><b>${a.nombre}</b><div class="muted small">Lo manda cuando: ${a.cuando || '—'}</div></td>
       <td class="small"><a href="/media/${path.basename(a.archivo)}" target="_blank" style="color:var(--accent)">Ver</a></td>
-      <td style="text-align:right"><form method="post" action="${base}/agente/archivos/${a.id}/borrar" class="inline" onsubmit="return confirm('¿Quitar este archivo?')"><button class="btn-ghost" style="padding:6px 12px;font-size:13px">Quitar</button></form></td></tr>`)}</table>` : html`<p class="muted small">Todavía no hay archivos.</p>`}
+      <td style="text-align:right"><form method="post" action="${base}/agente/archivos/${a.id}/borrar" class="inline" onsubmit="return confirm('¿Quitar este archivo?')"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Quitar</button></form></td></tr>`)}</table>` : html`<p class="muted small">Todavía no hay archivos.</p>`}
     <form method="post" action="${base}/agente/archivos" enctype="multipart/form-data" style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end">
       <div><label>Nombre</label><input name="nombre" required maxlength="60" placeholder="Brochure de Red One"></div>
       <div><label>Cuándo mandarlo</label><input name="cuando" required maxlength="160" placeholder="cuando pidan brochure, presentación o más información"></div>
@@ -1300,4 +1301,77 @@ export function facturacionPage({ ajustes: a, conectado, sandbox, series = [], s
       <td class="small">${f.status === 'emitida' ? html`<a href="/admin/facturacion/${f.id}/pdf">PDF</a> · <a href="/admin/facturacion/${f.id}/xml">XML</a>` : ''}</td></tr>`)}</table></div>`
     : html`<div class="card muted">Todavía no hay facturas. Aparecen aquí con cada cobro de Stripe.</div>`}`;
   return page({ title: 'Facturación', side: side('facturacion'), body });
+}
+
+// ------------------------------------------------------------ agente de comentarios
+export function comentariosPage(client, { lista = [], resumen = {}, aj = {}, base, app = false, filtro = '', ok = '', error = '', credsOk = true, ESTADOS = {}, INTENCIONES = {} }) {
+  const fecha = (t) => (t ? new Date(t).toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
+  const chk = (k, label, ayuda) => html`<label style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><input type="checkbox" name="${k}" value="1" ${aj[k] ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px"><span>${label}<br><span class="muted small">${ayuda}</span></span></label>`;
+  const filtros = [['', 'Todos'], ['por_aprobar', `Por aprobar${resumen.por_aprobar ? ` (${resumen.por_aprobar})` : ''}`], ['queja', 'Quejas'], ['compra', 'Quieren comprar'], ['oculto', 'Ocultos']];
+  const p = aj.pausado;
+  const estado = !aj.activo ? ['Apagado', '#a39d93', 'Actívalo abajo para que empiece a contestar.'] : p ? ['En pausa', '#fbbf24', 'No contesta nada; la configuración se queda igual.']
+    : aj.revision ? ['Activo con revisión', '#93b4ff', 'Prepara las respuestas y tu equipo las aprueba antes de que salgan.'] : ['Activo', '#4ade80', 'Contesta solo cada pocos minutos.'];
+  const tarjeta = (c) => {
+    const [et, col] = ESTADOS[c.status] || [c.status, '#a39d93'];
+    const edita = c.status === 'por_aprobar' || c.status === 'error';
+    return html`<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <span class="chip"><i style="background:${c.canal === 'instagram' ? '#e1306c' : '#4f7cff'}"></i>${c.canal === 'instagram' ? 'Instagram' : 'Facebook'}${c.anuncio ? ' · anuncio' : ''}</span>
+          <b>${c.usuario || 'Alguien'}</b><span class="muted small">${fecha(c.comentado_at || c.created_at)}</span>
+          ${c.intencion ? html`<span class="chip" style="color:${c.intencion === 'queja' ? '#f87171' : c.intencion === 'compra' ? '#c9f53a' : '#cfc9bf'}">${INTENCIONES[c.intencion] || c.intencion}</span>` : ''}
+        </div>
+        <span class="chip"><i style="background:${col}"></i>${et}</span>
+      </div>
+      <p style="margin:10px 0 4px;font-size:16px">“${c.texto || ''}”</p>
+      ${c.post_link ? html`<p class="muted small" style="margin:0"><a href="${c.post_link}" target="_blank" rel="noopener">Ver publicación</a>${c.post_texto ? ` · ${String(c.post_texto).slice(0, 90)}${String(c.post_texto).length > 90 ? '…' : ''}` : ''}</p>` : ''}
+      ${edita ? html`<form method="post" action="${base}/comentarios/${encodeURIComponent(c.comment_id)}/aprobar" style="margin-top:12px;display:grid;gap:8px">
+          ${c.ocultar ? html`<p class="small" style="margin:0;color:#fbbf24">La IA propone ocultarlo (parece spam u ofensivo).</p>` : html`
+          <label class="small muted">Respuesta pública<textarea name="publica" maxlength="1000" style="min-height:60px">${c.publica || ''}</textarea></label>
+          <label class="small muted">Mensaje directo${c.canal === 'instagram' ? '' : ' (Messenger)'}<textarea name="dm" maxlength="1000" style="min-height:60px">${c.dm || ''}</textarea></label>`}
+          ${c.error ? html`<p class="small" style="margin:0;color:#f87171">Error: ${c.error}</p>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-accent">${c.ocultar ? 'Ocultar' : 'Aprobar y enviar'}</button>
+          <button class="btn-warn" formaction="${base}/comentarios/${encodeURIComponent(c.comment_id)}/descartar">Descartar</button></div></form>`
+      : html`${c.publica ? html`<p class="small" style="margin:10px 0 0"><span class="muted">Respuesta pública:</span> ${c.publica}</p>` : ''}
+        ${c.dm ? html`<p class="small" style="margin:6px 0 0"><span class="muted">Mensaje directo:</span> ${c.dm}</p>` : ''}
+        ${c.autor && c.autor !== 'IA' ? html`<p class="muted small" style="margin:6px 0 0">Aprobó: ${c.autor}</p>` : ''}`}
+    </div>`;
+  };
+  const body = html`${hero({ kicker: 'Agente de comentarios', title: 'Comentarios', letra: client.nombre,
+      sub: 'La IA contesta los comentarios de tus publicaciones y anuncios con lo que sabe tu agente, lleva al mensaje directo a quien quiere comprar y oculta el spam.',
+      note: ['Últimos 30 días', `${resumen.total || 0} comentarios · ${resumen.contestados || 0} contestados · ${resumen.compra || 0} quieren comprar`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    ${!credsOk ? html`<div class="err">Falta conectar la página de Facebook e Instagram de esta marca (token de la página). Kuper lo configura.</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);align-items:start" class="cm">
+      <style>@media (max-width:900px){.cm{grid-template-columns:1fr!important}}</style>
+      <div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${filtros.map(([k, t]) => html`<a class="${filtro === k ? 'btn-accent' : 'btn-warn'}" style="text-decoration:none;padding:8px 14px;border-radius:99px" href="${base}/comentarios${k ? `?f=${k}` : ''}">${t}</a>`)}</div>
+        ${lista.length ? lista.map(tarjeta) : html`<div class="card muted">${aj.activo ? 'Todavía no hay comentarios nuevos. Los comentarios que ya existían antes de activarlo no se contestan.' : 'Cuando lo actives, aquí verás cada comentario y lo que contestó la IA.'}</div>`}
+      </div>
+      <div style="display:grid;gap:18px">
+        ${aj.activo ? html`<form class="card" method="post" action="${base}/comentarios/pausa">
+          <input type="hidden" name="pausado" value="${p ? '0' : '1'}">
+          <span class="mono">Estado</span>
+          <p style="margin:6px 0 0;font-size:17px"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:${estado[1]}"></span>${estado[0]}</p>
+          <p class="muted small" style="margin:4px 0 12px">${estado[2]}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="${p ? 'btn-accent' : 'btn-warn'}">${p ? 'Reanudar' : 'Pausar'}</button>
+          ${!p ? html`<button class="btn-warn" formaction="${base}/comentarios/revisar">Revisar ahora</button>` : ''}</div></form>` : ''}
+        <form class="card" method="post" action="${base}/comentarios/ajustes">
+          <span class="mono">Ajustes</span>
+          ${chk('activo', 'Activar el agente de comentarios', 'Empieza con los comentarios que lleguen desde ahora.')}
+          ${chk('instagram', 'Instagram', 'Comentarios de tus publicaciones y reels.')}
+          ${chk('facebook', 'Facebook', 'Comentarios de tu página.')}
+          ${chk('anuncios', 'Anuncios de Facebook', 'También los comentarios de tus anuncios.')}
+          ${chk('publico', 'Contestar en público', 'Una respuesta corta debajo del comentario.')}
+          ${chk('dm', 'Mandar mensaje directo', 'A quien quiere comprar, cotizar o pregunta algo que no va en público.')}
+          ${chk('ocultar', 'Ocultar spam y ofensas', 'Nunca oculta quejas reales.')}
+          ${chk('revision', 'Revisar antes de enviar', 'Nada sale hasta que alguien de tu equipo lo aprueba aquí.')}
+          <label class="small muted" style="display:block;margin-top:10px">Indicaciones para la IA (opcional)
+            <textarea name="instrucciones" maxlength="2000" style="min-height:110px" placeholder="Ej.: No des precios en público, manda el menú por mensaje. A las quejas pide su número de pedido.">${aj.instrucciones || ''}</textarea></label>
+          <p class="muted small">Contesta con lo que tienes en <a href="${base}/agente">Lo que sabe tu agente</a>.</p>
+          <button class="btn-accent">Guardar</button>
+        </form>
+      </div>
+    </div>`;
+  return page({ title: `Comentarios · ${client.nombre}`, side: app ? sideApp('comentarios', client) : side('clientes'), body });
 }
