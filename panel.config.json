@@ -3,7 +3,7 @@
   "height": 960,
   "fps": 20,
   "duration": 6,
-  "gifWidth": 600,
+  "gifWidth": 880,
   "items": ["Competencia", "Blog", null, null, "Citas", "Leads", "Embudo", "Analítica", "WhatsApp", "Posts"],
   "accent": "#C9E33F",
   "particles": 5200

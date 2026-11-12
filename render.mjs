@@ -88,11 +88,11 @@ async function video(out) {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   if (out.endsWith('.gif')) {
     const pal = path.join(frameDir, 'palette.png');
-    const scale = config.gifWidth ? `scale=${config.gifWidth}:-1:flags=lanczos,` : '';
+    const scale = config.gifWidth && config.gifWidth !== config.width ? `scale=${config.gifWidth}:-1:flags=lanczos,` : '';
     await run(FFMPEG, ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(frameDir, 'f_%05d.png'),
-      '-vf', `${scale}palettegen=max_colors=256:stats_mode=full`, pal]);
+      '-vf', `${scale}palettegen=max_colors=256:stats_mode=full:reserve_transparent=0`, pal]);
     await run(FFMPEG, ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(frameDir, 'f_%05d.png'), '-i', pal,
-      '-lavfi', `${scale.replace(/,$/, '')}${scale ? ' [x]; [x]' : ''}[1:v] paletteuse=dither=sierra2_4a:diff_mode=rectangle`, '-loop', '0', out]);
+      '-lavfi', `${scale ? `[0:v] ${scale.replace(/,$/, '')} [x]; [x]` : '[0:v]'}[1:v] paletteuse=dither=${config.gifDither || 'bayer:bayer_scale=5'}:diff_mode=rectangle`, '-loop', '0', out]);
     fs.rmSync(frameDir, { recursive: true, force: true });
     console.log(`wrote ${out}`);
     return;
