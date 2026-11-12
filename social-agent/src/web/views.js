@@ -149,7 +149,11 @@ const side = (on) => [
 ];
 // Barra lateral del cliente (solo su marca).
 const AYUDA = 'https://wa.me/525552173832';
-const sideApp = (on, client) => [
+const sideApp = (on, client) => (client?._caja ? [
+  { href: '/app/cupones', icon: 'ticket', label: 'Canjear cupones', on: true, logo: true },
+  { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta' },
+  { href: '/salir', icon: 'out', label: 'Salir', bottom: true },
+] : [
   { href: '/app', icon: 'home', label: 'Inicio', on: on === 'inicio', logo: true },
   ...(tiene(client, 'redes') ? [{ href: '/app/posts', icon: 'post', label: 'Publicaciones', on: on === 'posts' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }, { href: '/app/embudo', icon: 'funnel', label: 'Embudo de ventas', on: on === 'embudo' }, { href: '/app/analitica', icon: 'bars', label: 'Analítica', on: on === 'analitica' }, { href: '/app/agente', icon: 'brain', label: 'Lo que sabe tu agente', on: on === 'agente' }] : []),
@@ -158,6 +162,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'chat') ? [{ href: '/app/difusion', icon: 'send', label: 'Campañas de WhatsApp', on: on === 'difusion' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cupones', icon: 'ticket', label: 'Cupones', on: on === 'cupones' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cobros', icon: 'card', label: 'Cobros por chat', on: on === 'cobros' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/equipo', icon: 'users', label: 'Equipo', on: on === 'equipo' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
   ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
@@ -166,7 +171,7 @@ const sideApp = (on, client) => [
   { href: '/app/cuenta', icon: 'key', label: 'Mi cuenta', on: on === 'cuenta' },
   { href: `${AYUDA}?text=${encodeURIComponent(`Hola, soy de ${client?.nombre || 'un cliente'} y necesito ayuda con mi panel`)}`, icon: 'help', label: 'Ayuda por WhatsApp', bottom: true },
   { href: '/salir', icon: 'out', label: 'Salir', bottom: true },
-];
+]);
 const kpis = (items) => html`<div class="kpis">${items.map(([n, label, color, hot]) => html`<div class="kpi${hot ? ' hot' : ''}"><b>${n}</b><small><i style="background:${color}"></i>${label}</small></div>`)}</div>`;
 const PCOL = { instagram: '#e1306c', facebook: '#4f7cff', linkedin: '#3d8bd9', tiktok: '#f2f4f8' };
 
@@ -320,7 +325,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -333,7 +338,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -649,6 +654,7 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
     <tr><th>Usuario</th><th>Rol</th><th>Último acceso</th><th>Acciones</th></tr>
     ${lista.map((u) => html`<tr><td><strong>${u.nombre}</strong><div class="muted small">${u.email}</div></td>
       <td><span class="badge" style="color:${u.rol === 'admin' ? '#c9f53a' : '#93b4ff'}">${ROL[u.rol]}${u.cliente ? ` · ${u.cliente}` : ''}</span>${u.extras?.length ? html` <span class="badge" style="color:#fbbf24" title="${clients.filter((c) => u.extras.includes(c.id)).map((c) => c.nombre).join(', ')}">+${u.extras.length} marca${u.extras.length > 1 ? 's' : ''} del grupo</span>` : ''}
+        ${u.rol === 'cliente' ? html`<form class="inline" method="post" action="/admin/usuarios/${u.id}/caja" style="margin-top:6px"><button class="btn-warn" style="padding:4px 10px;font-size:12px">${u.permiso === 'caja' ? 'Solo caja · dar acceso completo' : 'Hacer solo caja'}</button></form>` : ''}
         ${u.rol === 'cliente' ? html`<details style="margin-top:6px"><summary class="muted small" style="cursor:pointer">Marcas del grupo</summary>
           <form method="post" action="/admin/usuarios/${u.id}/marcas" style="margin-top:6px">
             ${clients.filter((c) => c.id !== u.client_id).map((c) => html`<label class="small" style="display:block;margin:2px 0"><input type="checkbox" name="marcas" value="${c.id}" ${raw(u.extras?.includes(c.id) ? 'checked' : '')}> ${c.nombre}</label>`)}
@@ -666,6 +672,7 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
     <label>Correo</label><input name="email" type="email" required placeholder="laura@buensabor.mx">
     <label>Rol</label><select name="rol" onchange="this.form.client_id.disabled=this.value!=='cliente'">
       <option value="cliente">Cliente (solo ve su marca)</option><option value="admin">Administrador (Kuper, ve todo)</option></select>
+    <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" name="caja" value="1"> Solo caja (únicamente canjea cupones en sucursal)</label>
     <label>Marca</label><select name="client_id">${clients.map((c) => html`<option value="${c.id}" ${raw(filtro === c.id ? 'selected' : '')}>${c.nombre}</option>`)}</select>
     <details style="margin-top:10px"><summary class="muted small" style="cursor:pointer">¿Es de un grupo? Elige sus otras marcas</summary>
       ${clients.map((c) => html`<label class="small" style="display:block;margin:2px 0"><input type="checkbox" name="marcas" value="${c.id}"> ${c.nombre}</label>`)}
@@ -1526,7 +1533,7 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
           ${(resumen.porPromocion || []).length ? html`<p class="muted small" style="margin-top:10px">${resumen.porPromocion.map((p) => `${p.promocion}: ${p.dados} dados, ${p.canjeados || 0} canjeados`).join(' · ')}</p>` : ''}
         </div>
       </div>
-      <form class="card" method="post" action="${base}/cupones/promociones" style="display:grid;gap:12px">
+      ${client._caja ? '' : html`<form class="card" method="post" action="${base}/cupones/promociones" enctype="multipart/form-data" style="display:grid;gap:12px">
         <span class="mono">Promociones que puede dar tu agente</span>
         <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Activar cupones</label>
         <label class="small muted">Prefijo del código<input name="prefijo" value="${aj.prefijo || ''}" maxlength="8" placeholder="CHUB" style="text-transform:uppercase"></label>
@@ -1535,13 +1542,16 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
           <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center"><input name="nombre_${i + 1}" value="${p.nombre || ''}" placeholder="Nombre (ej.: Primera compra)">
             <label class="small" style="display:flex;gap:6px;align-items:center;white-space:nowrap"><input type="checkbox" name="activa_${i + 1}" value="1" ${p.activa !== false ? 'checked' : ''}>Activa</label></div>
           <input name="beneficio_${i + 1}" value="${p.beneficio || ''}" placeholder="Qué recibe (ej.: 10 % en la Hamburguesa Clásica)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center"><label class="small muted">Cómo se entrega<select name="modo_${i + 1}"><option value="codigo" ${p.modo !== 'imagen' ? 'selected' : ''}>Código único (se canjea aquí)</option><option value="imagen" ${p.modo === 'imagen' ? 'selected' : ''}>Imagen por WhatsApp (sencillo)</option></select></label>
+            <label class="small muted">Imagen del cupón${p.imagen ? html` · <a href="${mediaSrc(p.imagen)}" target="_blank" rel="noopener">ver actual</a>` : ''}<input type="file" name="imagen_${i + 1}" accept="image/png,image/jpeg,image/webp"></label></div>
+          <input type="hidden" name="imagen_actual_${i + 1}" value="${p.imagen || ''}">
           <textarea name="cuando_${i + 1}" style="min-height:52px" placeholder="Cuándo darlo (ej.: si pregunta el menú y no pide, o si comenta que se le antoja)">${p.cuando || ''}</textarea>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="small muted">Vigencia (horas)<input name="vigencia_${i + 1}" type="number" min="1" value="${p.vigencia_horas || 72}"></label>
             <label class="small muted">Máximo al día (0 = sin límite)<input name="max_${i + 1}" type="number" min="0" value="${p.max_dia || 0}"></label></div>
         </div>`)}
         <p class="muted small" style="margin:0">Deja vacío el beneficio para borrar una promoción. Cada persona recibe un solo cupón vigente por promoción y cada código se canjea una sola vez.</p>
         <div><button class="btn-accent">Guardar promociones</button></div>
-      </form>
+      </form>`}
     </div>`;
   return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
 }
@@ -1578,4 +1588,38 @@ export function cobrosPage(client, { aj = {}, conv = {}, hayToken = false, hayCa
       </form>
     </div>`;
   return page({ title: `Cobros · ${client.nombre}`, side: app ? sideApp('cobros', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ equipo
+export function equipoPage(client, { aj = {}, filas = [], esperando = [], csat = {}, REPARTOS = {}, yo = null, base, app = false, ok = '', error = '' }) {
+  const min = (m) => (m === null || m === undefined ? '—' : m < 60 ? `${Math.round(m)} min` : `${(m / 60).toFixed(1)} h`);
+  const body = html`${hero({ kicker: 'Equipo', title: 'Equipo', letra: client.nombre, sub: 'Quién atiende, qué tan rápido contesta y qué tan contentos quedan los clientes. Los leads nuevos se reparten solos entre quienes están disponibles.',
+      note: ['Satisfacción (30 días)', csat.promedio ? `${csat.promedio} / 5 · ${csat.respondidas} respuestas` : 'Sin encuestas todavía'] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    ${esperando.length ? html`<div class="card" style="border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.06);margin-bottom:16px"><span class="mono" style="color:#f87171">Esperando respuesta del equipo</span>
+      ${esperando.map((l) => html`<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0"><a href="${base}/leads/${l.id}/chat"><b>${l.nombre || l.telefono}</b></a><span class="small muted">desde ${new Date(`${l.espera_desde.replace(' ', 'T')}Z`).toLocaleTimeString('es-MX', { timeZone: config.timezone, hour: 'numeric', minute: '2-digit' })}</span></div>`)}</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);align-items:start" class="eq">
+      <style>@media (max-width:980px){.eq{grid-template-columns:1fr!important}} .eq input,.eq select,.eq textarea{width:100%}</style>
+      <div class="card" style="overflow-x:auto"><span class="mono">Rendimiento (30 días)</span>
+        ${filas.length ? html`<table style="margin-top:8px;font-size:14px"><tr><th>Asesor</th><th>Abiertos</th><th>Esperando</th><th>Respuesta (mediana)</th><th>A tiempo</th><th>Vendidos</th><th>Satisfacción</th><th></th></tr>
+          ${filas.map((f) => html`<tr><td><b>${f.nombre}</b>${f.disponible ? '' : html`<div class="small" style="color:#fbbf24">No disponible</div>`}</td><td>${f.abiertos}</td>
+            <td style="color:${f.esperando ? '#f87171' : 'inherit'}">${f.esperando}</td><td>${min(f.mediana_min)}</td><td>${f.en_sla === null ? '—' : `${f.en_sla} %`}</td><td>${f.vendidos}</td><td>${f.csat ? `${f.csat} ⭐ (${f.csat_n})` : '—'}</td>
+            <td>${yo && (yo.id === f.id || yo.rol === 'admin') ? html`<form method="post" action="${base}/equipo/${f.id}/disponible"><input type="hidden" name="disponible" value="${f.disponible ? '0' : '1'}"><button class="btn-warn" style="padding:4px 10px;font-size:12px">${f.disponible ? 'Pausar' : 'Disponible'}</button></form>` : ''}</td></tr>`)}</table>`
+          : html`<p class="muted small">Aún no hay asesores. Kuper da de alta a tu equipo en Usuarios.</p>`}
+        <p class="muted small" style="margin-top:10px">“A tiempo” = el cliente recibió respuesta del equipo en menos de ${aj.sla_min} min. Cuenta solo las conversaciones que atiende una persona (las de la IA se contestan al momento).</p>
+      </div>
+      <form class="card" method="post" action="${base}/equipo/ajustes" style="display:grid;gap:10px">
+        <span class="mono">Ajustes</span>
+        <label class="small muted">Reparto de leads nuevos<select name="reparto">${Object.entries(REPARTOS).map(([k, t]) => html`<option value="${k}" ${aj.reparto === k ? 'selected' : ''}>${t}</option>`)}</select></label>
+        <label class="small muted">Tiempo meta de respuesta (minutos)<input name="sla_min" type="number" min="1" value="${aj.sla_min}"></label>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="alertas" value="1" ${aj.alertas ? 'checked' : ''} style="width:18px;height:18px">Avisar por correo cuando alguien pase ese tiempo esperando</label>
+        <span class="mono" style="margin-top:6px">Encuesta de satisfacción</span>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="csat_activo" value="1" ${aj.csat.activo ? 'checked' : ''} style="width:18px;height:18px">Preguntar del 1 al 5 al marcar Vendido o Resuelto</label>
+        <label class="small muted">Plantilla aprobada de WhatsApp<input name="csat_plantilla" value="${aj.csat.plantilla || ''}" placeholder="encuesta_atencion"></label>
+        <label class="small muted">Texto (para el historial)<textarea name="csat_texto" style="min-height:60px">${aj.csat.texto || ''}</textarea></label>
+        <input type="hidden" name="csat_idioma" value="${aj.csat.idioma || 'es_MX'}">
+        <div><button class="btn-accent">Guardar</button></div>
+      </form>
+    </div>`;
+  return page({ title: `Equipo · ${client.nombre}`, side: app ? sideApp('equipo', client) : side('clientes'), body });
 }

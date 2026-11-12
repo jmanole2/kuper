@@ -211,6 +211,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('posts', 'origen_id', 'INTEGER'); // post de Instagram del que se reutilizó el video/carrusel
   // Celulares de México: WhatsApp los manda como 521 + 10 dígitos; se guardan como +52 + 10 para no duplicar leads.
   db.exec("UPDATE leads SET telefono = '+52' || substr(telefono, 5) WHERE telefono LIKE '+521%' AND length(telefono) = 14");
+  ensure('users', 'permiso', 'TEXT'); // 'caja': solo canjea cupones
   ensure('leads', 'control', "TEXT NOT NULL DEFAULT 'bot'"); // 'bot' | 'humano' (alguien tomó la conversación)
   ensure('lead_mensajes', 'autor', 'TEXT'); // quién respondió a mano desde el panel
   // Anuncio de Meta del que llegó el lead (el primero; lo manda el agente) y los nombres que se leen de Meta.
@@ -517,14 +518,14 @@ export function setBilling(clientId, fields) {
 // ------------------------------------------------------------------ usuarios del panel
 export const ROLES = { admin: 'Administrador (Kuper)', cliente: 'Cliente' };
 const normEmail = (e) => String(e || '').trim().toLowerCase();
-export function createUser({ email, nombre, rol, client_id = null, password_hash }) {
+export function createUser({ email, nombre, rol, client_id = null, password_hash, permiso = null }) {
   const em = normEmail(email);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) throw new Error('Correo no válido');
   if (!ROLES[rol]) throw new Error('Rol no válido');
   if (rol === 'cliente' && !client_id) throw new Error('Elige la marca del usuario');
   if (getUserByEmail(em)) throw new Error('Ya existe un usuario con ese correo');
-  const r = getDb().prepare('INSERT INTO users (email, nombre, rol, client_id, password_hash) VALUES (?, ?, ?, ?, ?)')
-    .run(em, String(nombre || em).trim().slice(0, 80), rol, rol === 'cliente' ? Number(client_id) : null, password_hash);
+  const r = getDb().prepare('INSERT INTO users (email, nombre, rol, client_id, password_hash, permiso) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(em, String(nombre || em).trim().slice(0, 80), rol, rol === 'cliente' ? Number(client_id) : null, password_hash, rol === 'cliente' && permiso === 'caja' ? 'caja' : null);
   return getUser(Number(r.lastInsertRowid));
 }
 export const getUser = (id) => getDb().prepare('SELECT * FROM users WHERE id = ?').get(id);
@@ -551,6 +552,7 @@ export function setMarcasExtra(userId, ids) {
 }
 export const listUsers = () => getDb().prepare('SELECT u.*, c.nombre AS cliente FROM users u LEFT JOIN clients c ON c.id = u.client_id ORDER BY u.rol, c.nombre, u.nombre').all();
 export const setUserPassword = (id, hash) => getDb().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, id);
+export const setUserPermiso = (id, permiso) => getDb().prepare('UPDATE users SET permiso = ? WHERE id = ?').run(permiso === 'caja' ? 'caja' : null, id);
 export const setUserActivo = (id, activo) => getDb().prepare('UPDATE users SET activo = ? WHERE id = ?').run(activo ? 1 : 0, id);
 export const deleteUser = (id) => getDb().prepare('DELETE FROM users WHERE id = ?').run(id);
 export const touchLogin = (id) => getDb().prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(id);

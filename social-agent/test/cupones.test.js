@@ -66,3 +66,42 @@ test('el agente lo pide por la API y el cajero lo canjea en el panel', async () 
     assert.equal(cup.consultar(cl(), r.codigo).cupon.canjeado_por, 'Caja Polanco');
   } finally { server.close(); }
 });
+
+test('usuario de caja: solo ve el canje de cupones', async () => {
+  const caja = db.createUser({ email: 'solo@chub.mx', nombre: 'Caja Roma', rol: 'cliente', client_id: c.id, password_hash: hashPassword('ClaveSolo2030'), permiso: 'caja' });
+  assert.equal(caja.permiso, 'caja');
+  const server = createApp().listen(0);
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const login = await fetch(`${base}/entrar`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: base }, body: new URLSearchParams({ email: 'solo@chub.mx', password: 'ClaveSolo2030' }) });
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    for (const ruta of ['/app', '/app/leads', '/app/embudo', '/app/cobros', '/app/agente']) {
+      const r = await fetch(`${base}${ruta}`, { headers: { Cookie: cookie }, redirect: 'manual' });
+      assert.equal(r.status, 302, ruta);
+      assert.equal(r.headers.get('location'), '/app/cupones', ruta);
+    }
+    const h = await (await fetch(`${base}/app/cupones`, { headers: { Cookie: cookie } })).text();
+    assert.match(h, /Canjear en sucursal/);
+    assert.doesNotMatch(h, /Promociones que puede dar tu agente/);
+    assert.doesNotMatch(h, /Embudo de ventas/);
+    const p = await fetch(`${base}/app/cupones/promociones`, { method: 'POST', redirect: 'manual', headers: { Cookie: cookie, 'Content-Type': 'application/x-www-form-urlencoded', Origin: base }, body: new URLSearchParams({ activo: '1' }) });
+    assert.equal(p.status, 302);
+    assert.equal(p.headers.get('location'), '/app/cupones');
+    assert.equal(cup.ajustes(cl()).activo, true); // no cambió nada
+  } finally { server.close(); }
+});
+
+test('modo sencillo: se manda la imagen del cupón y queda registrado', () => {
+  const promociones = cup.limpiarPromociones([{ id: 'img', nombre: 'Martes 2x1', beneficio: '2x1 en hamburguesas los martes', modo: 'imagen', imagen: 'subida-123-abc.png', vigencia_horas: 24 },
+    { id: 'sinimg', nombre: 'Sin imagen', beneficio: 'algo', modo: 'imagen' }, { id: 'mal', beneficio: 'x', modo: 'imagen', imagen: '../../etc/passwd' }]);
+  assert.equal(promociones[2].imagen, ''); // no acepta rutas raras
+  db.updateClient(c.id, { config: { ...cl().config, cupones: { activo: true, prefijo: 'CHUB', promociones } } });
+  const r = cup.generar(cl(), { promocion: 'img', telefono: '5577778888' });
+  assert.equal(r.modo, 'imagen');
+  assert.equal(r.codigo, null);
+  assert.match(r.imagen_url, /\/media\/subida-123-abc\.png$/);
+  assert.match(r.texto, /2x1 en hamburguesas los martes.*Muestra esta imagen en sucursal/);
+  assert.equal(cup.generar(cl(), { promocion: 'img', telefono: '5577778888' }).repetido, true);
+  assert.throws(() => cup.generar(cl(), { promocion: 'sinimg', telefono: '5577778888' }), /no tiene imagen/);
+  assert.equal(cup.resumen(c.id).porPromocion.find((p) => p.promocion === 'Martes 2x1').dados, 1);
+});

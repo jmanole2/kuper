@@ -1,12 +1,15 @@
 // Cupones: el agente (o el de comentarios) le da a una persona un código único con un beneficio y vigencia, según la
 // promoción que aplique a la conversación; se canjea en sucursal (el cajero lo valida en el panel).
 //
-// client.config.cupones = { activo, prefijo: 'CHUB', promociones: [{ id, nombre, beneficio, cuando, vigencia_horas, max_dia, activa }] }
+// client.config.cupones = { activo, prefijo: 'CHUB', promociones: [{ id, nombre, beneficio, cuando, vigencia_horas, max_dia, activa, modo, imagen }] }
+//   modo 'codigo' (código único que se canjea en el panel) o 'imagen' (versión sencilla: se manda la imagen del cupón
+//   que subió la marca y en sucursal se acepta al verla; igual se registra a quién se le dio).
 //   beneficio: lo que recibe ("10 % en la Hamburguesa Clásica"); cuando: en qué caso darlo (lo lee la IA).
 // Reglas que se cumplen en código (no las decide la IA): una promoción por persona mientras tenga un cupón vigente
 // de ella, máximo por día por promoción, y un código solo se canjea una vez y antes de vencer.
 import crypto from 'node:crypto';
 import * as db from './db.js';
+import { mediaUrl } from './config.js';
 
 export const DEFAULTS = { activo: false, prefijo: '', promociones: [] };
 export const ajustes = (client) => {
@@ -40,6 +43,8 @@ export function limpiarPromociones(lista) {
     vigencia_horas: Math.min(24 * 90, Math.max(1, Math.round(Number(p.vigencia_horas) || 72))),
     max_dia: Math.min(5000, Math.max(0, Math.round(Number(p.max_dia) || 0))), // 0 = sin límite
     activa: p.activa !== false && p.activa !== '0',
+    modo: p.modo === 'imagen' ? 'imagen' : 'codigo',
+    imagen: /^[\w.-]+\.(png|jpe?g|webp)$/i.test(String(p.imagen || '')) ? String(p.imagen) : '',
   })).filter((p) => p.beneficio);
 }
 
@@ -62,22 +67,24 @@ export function generar(client, { promocion, telefono, usuario, nombre, canal = 
   if (!aj.activo) throw new Error('Los cupones no están activos en esta marca.');
   const p = aj.promociones.find((x) => x.id === String(promocion || '').toLowerCase() && x.activa);
   if (!p) throw new Error('Esa promoción no existe o está pausada.');
+  if (p.modo === 'imagen' && !p.imagen) throw new Error('Esa promoción no tiene imagen todavía.');
   let lead = null;
   try { lead = db.upsertLead(client.id, { telefono, usuario, nombre, origen: canal }); } catch { /* sin datos de contacto */ }
   const persona = lead?.telefono || lead?.usuario || limpia(usuario || telefono, 60);
   if (!persona) throw new Error('Falta a quién se le da el cupón.');
   const vigente = d().prepare(`SELECT * FROM cupones WHERE client_id = ? AND promocion_id = ? AND persona = ? AND canjeado_at IS NULL AND vence_at > ?`).get(client.id, p.id, persona, iso(ahora));
-  if (vigente) return { ...publico(vigente), repetido: true };
+  if (vigente) return p.modo === 'imagen' ? { ...publico(vigente), modo: 'imagen', imagen_url: mediaUrl(p.imagen), codigo: null, repetido: true, texto: `${p.beneficio}. Válido hasta el ${publico(vigente).vence_texto}. Muestra esta imagen en sucursal.` } : { ...publico(vigente), repetido: true };
   if (p.max_dia) {
     const hoy = d().prepare("SELECT COUNT(*) n FROM cupones WHERE client_id = ? AND promocion_id = ? AND date(created_at) = date(?)").get(client.id, p.id, iso(ahora)).n;
     if (hoy >= p.max_dia) throw new Error('Ya se dieron todos los cupones de esta promoción por hoy.');
   }
   const vence = new Date(ahora.getTime() + p.vigencia_horas * 3600000);
-  const codigo = codigoNuevo(aj.prefijo || client.slug);
+  const codigo = p.modo === 'imagen' ? codigoNuevo('IMG') : codigoNuevo(aj.prefijo || client.slug);
   d().prepare(`INSERT INTO cupones (client_id, codigo, promocion_id, promocion, beneficio, lead_id, persona, canal, motivo, vence_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(client.id, codigo, p.id, p.nombre, p.beneficio, lead?.id || null, persona, canal, limpia(motivo, 200), iso(vence), iso(ahora));
   db.logEvent({ clientId: client.id, tipo: 'cupon_generado', detalle: `${codigo} · ${p.nombre} · ${lead?.nombre || persona}` });
-  return publico(d().prepare('SELECT * FROM cupones WHERE codigo = ?').get(codigo));
+  const x = publico(d().prepare('SELECT * FROM cupones WHERE codigo = ?').get(codigo));
+  return p.modo === 'imagen' ? { ...x, modo: 'imagen', imagen_url: mediaUrl(p.imagen), codigo: null, texto: `${p.beneficio}. Válido hasta el ${x.vence_texto}. Muestra esta imagen en sucursal.` } : x;
 }
 const publico = (c) => ({ codigo: c.codigo, beneficio: c.beneficio, promocion: c.promocion, vence_at: c.vence_at, vence_texto: fechaTexto(`${c.vence_at.replace(' ', 'T')}Z`),
   texto: `Tu cupón ${c.codigo}: ${c.beneficio}. Válido hasta el ${fechaTexto(`${c.vence_at.replace(' ', 'T')}Z`)}. Muéstralo en sucursal.` });

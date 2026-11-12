@@ -157,7 +157,7 @@ export function agregarLead(client, body = {}, autor = '') {
 
 // ------------------------------------------------------------ ficha del lead
 export const tagsDe = (lead) => { try { return JSON.parse(lead.tags_json || '[]'); } catch { return []; } };
-export const asesores = (client) => db.getDb().prepare("SELECT id, nombre, email FROM users WHERE client_id = ? AND rol = 'cliente' AND activo = 1 ORDER BY nombre").all(client.id);
+export const asesores = (client) => db.getDb().prepare("SELECT id, nombre, email FROM users WHERE client_id = ? AND rol = 'cliente' AND activo = 1 AND COALESCE(permiso, '') != 'caja' ORDER BY nombre").all(client.id);
 
 export function guardarFicha(client, leadId, body = {}) {
   const lead = db.getLead(client.id, leadId);

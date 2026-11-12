@@ -18,6 +18,7 @@ import * as comentarios from './engage/comentarios.js';
 import * as difusion from './difusion.js';
 import * as recordatorios from './recordatorios.js';
 import * as cobros from './pagos-clientes.js';
+import * as equipo from './equipo.js';
 import { tiene } from './plan.js';
 import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
 import { reporteCorreo } from './web/reporte.js';
@@ -483,6 +484,7 @@ let generating = false;
 const kwPause = new Map();
 const comPausa = new Map();
 const cobrosPausa = new Map();
+const slaPausa = new Map();
 /** Al guardar los ajustes de comentarios, revisa de inmediato. */
 export const resetComentariosPausa = (clientId) => comPausa.delete(clientId);
 /** Al guardar credenciales nuevas, la palabra clave vuelve a intentar de inmediato. */
@@ -507,6 +509,11 @@ export async function tick(now = new Date()) {
       }));
     }
     // Campañas de WhatsApp aprobadas: unos cuantos mensajes por minuto, en horario y con tope diario.
+    // Alertas de conversaciones esperando respuesta del equipo (cada 5 minutos).
+    if (tiene(client, 'chat') && equipo.ajustes(client).alertas && !(slaPausa.get(client.id) > now.getTime())) {
+      slaPausa.set(client.id, now.getTime() + 5 * 60_000);
+      enqueue(`sla-${client.id}`, () => equipo.alertar(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'sla_error', detalle: e.message })));
+    }
     // Cobros por chat: cada 2 minutos se pregunta al proveedor si ya pagaron.
     if (cobros.listo(client) && !(cobrosPausa.get(client.id) > now.getTime())) {
       cobrosPausa.set(client.id, now.getTime() + 2 * 60_000);

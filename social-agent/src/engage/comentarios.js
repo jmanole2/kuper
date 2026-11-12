@@ -241,7 +241,8 @@ export async function revisar(client, { now = new Date() } = {}) {
     if (x.cupon && row.dm && cupones.ajustes(client).activo) {
       try {
         const cup = cupones.generar(client, { promocion: x.cupon, usuario: c.canal === 'instagram' ? c.usuario : `fb:${c.usuario_id || c.usuario}`, nombre: c.canal === 'facebook' ? c.usuario : undefined, canal: c.canal, motivo: `Comentario: ${String(c.texto).slice(0, 120)}` });
-        row.dm = `${row.dm}\n\n🎁 ${cup.texto}`;
+        // Las respuestas privadas a comentarios solo llevan texto: el cupón de imagen va como mensaje que se muestra en sucursal.
+        row.dm = `${row.dm}\n\n🎁 ${cup.modo === 'imagen' ? cup.texto.replace('Muestra esta imagen en sucursal.', 'Muestra este mensaje en sucursal.') : cup.texto}`;
       } catch { /* sin cupón: se manda el mensaje normal */ }
     }
     if (x.avisar) db.logEvent({ clientId: client.id, tipo: 'comentario_atencion', detalle: `${c.canal} ${c.usuario || ''}: "${String(c.texto).slice(0, 140)}"` });

@@ -44,6 +44,7 @@ import * as docs from './documentos.js';
 import * as cupones from './cupones.js';
 import * as cobros from './pagos-clientes.js';
 import * as atribucion from './atribucion.js';
+import * as equipo from './equipo.js';
 import { fichaLead, documentosCard } from './web/embudo.js';
 import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
@@ -163,7 +164,12 @@ export function createApp() {
   });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
-    try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor }); paises.clasificarTelefono(req.client, telefono); res.json({ ok: true }); }
+    try {
+      db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor });
+      paises.clasificarTelefono(req.client, telefono); equipo.repartirTelefono(req.client, telefono);
+      if (rol === 'lead') equipo.capturar(req.client, telefono, texto); // respuesta a la encuesta (1 a 5)
+      res.json({ ok: true });
+    }
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   api.delete('/citas/:eventId', async (req, res) => {
@@ -212,6 +218,22 @@ export function createApp() {
     try { res.json({ ok: true, ...(await cobros.crearLink(req.client, { ...(req.body || {}), autor: 'IA' })) }); }
     catch (e) { res.status(400).json({ error: e.message }); }
   });
+  // Plantilla aprobada de WhatsApp a un número (p. ej. el agente de llamadas cuando nadie tomó la llamada transferida).
+  // { telefono, plantilla, idioma?, parametros?: [], texto?: 'cómo se lee, para el historial' }
+  api.post('/plantilla', async (req, res) => {
+    const b = req.body || {};
+    const tel = String(b.telefono || '').replace(/\D/g, '');
+    const plantilla = String(b.plantilla || '').trim();
+    if (tel.length < 10 || !/^[a-z0-9_]+$/.test(plantilla)) return res.status(400).json({ error: 'Falta el teléfono o el nombre de la plantilla.' });
+    try {
+      let lead = null;
+      try { lead = db.upsertLead(req.client.id, { telefono: tel, nombre: b.nombre || undefined, origen: b.origen || 'llamada' }); } catch { /* sin lead */ }
+      await difusion.enviarPlantilla(req.client, { telefono: tel.length === 10 ? `52${tel}` : tel, plantilla, idioma: String(b.idioma || 'es_MX').slice(0, 10),
+        vals: (Array.isArray(b.parametros) ? b.parametros : []).map((x) => String(x).slice(0, 60)).slice(0, 10), texto: String(b.texto || '').slice(0, 1000), leadId: lead?.id, autor: String(b.autor || 'Agente de llamadas').slice(0, 80) });
+      db.logEvent({ clientId: req.client.id, tipo: 'plantilla_api', detalle: `${plantilla} → ${tel}` });
+      res.json({ ok: true });
+    } catch (e) { res.status(502).json({ error: e.message }); }
+  });
   // Cupón para una persona (lo pide el agente con generar_cupon).
   api.post('/cupones', (req, res) => {
     try { res.json({ ok: true, ...cupones.generar(req.client, req.body || {}) }); }
@@ -230,6 +252,7 @@ export function createApp() {
       let lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
       lead = embudo.datosDelAgente(req.client, lead, req.body || {});
       lead = paises.clasificar(req.client, lead); // etiqueta de país por la lada y asesor de ese país
+      lead = equipo.repartir(req.client, lead); // si aún no tiene asesor, según el reparto de la marca
       campanas.completarCampana(req.client, lead); // nombre de la campaña de Meta, en segundo plano
       res.json({ ok: true, lead });
     }
@@ -399,6 +422,11 @@ export function createApp() {
     req.client = cid && db.getClient(cid);
     if (!req.client) return res.status(404).send('Marca no encontrada');
     if (marcas.length > 1) req.client._marcas = marcas; // la barra lateral muestra "Cambiar de marca"
+    // Usuario de caja: solo la pantalla de canje de cupones (y su cuenta).
+    if (s.user?.permiso === 'caja') {
+      req.client._caja = true;
+      if (!/^\/(cupones(\/canjear)?|cuenta.*|marcas)?$/.test(req.path) || req.path === '/') return res.redirect('/app/cupones');
+    }
     if (req.path === '/marcas') return res.send(V.marcasPage(req.client, marcas));
     res.setHeader('X-Robots-Tag', 'noindex');
     next();
@@ -513,6 +541,8 @@ export function createApp() {
   appR.use('/difusion', servicio('chat'));
   appR.use('/cupones', servicio('chat'));
   appR.use('/cobros', servicio('chat'));
+  appR.use('/equipo', servicio('chat'));
+  equipoRoutes(appR, () => '/app', { app: true });
   cobrosRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
@@ -596,7 +626,7 @@ export function createApp() {
   admin.post('/usuarios', (req, res) => {
     const password = tempPassword();
     try {
-      const u = db.createUser({ email: req.body.email, nombre: req.body.nombre, rol: req.body.rol, client_id: req.body.client_id, password_hash: hashPassword(password) });
+      const u = db.createUser({ email: req.body.email, nombre: req.body.nombre, rol: req.body.rol, client_id: req.body.client_id, password_hash: hashPassword(password), permiso: req.body.caja === '1' ? 'caja' : null });
       if (u.rol === 'cliente' && req.body.marcas) db.setMarcasExtra(u.id, req.body.marcas);
       db.logEvent({ clientId: u.client_id, tipo: 'usuario_creado', detalle: `${u.email} (${u.rol})` });
       seg.auditar(req, 'usuario_creado', `${u.email} (${u.rol})`);
@@ -622,6 +652,11 @@ export function createApp() {
     if (req.usuario.rol !== 'cliente') return res.status(400).send(usersView(req, { error: 'Solo los usuarios de cliente tienen marcas de grupo.' }));
     const ids = db.setMarcasExtra(req.usuario.id, req.body.marcas || []);
     seg.auditar(req, 'marcas_grupo', `${req.usuario.email}: ${ids.length} marcas extra`);
+    res.redirect('/admin/usuarios');
+  });
+  admin.post('/usuarios/:uid/caja', (req, res) => {
+    db.setUserPermiso(req.usuario.id, req.usuario.permiso === 'caja' ? null : 'caja');
+    seg.auditar(req, 'permiso_caja', `${req.usuario.email}: ${req.usuario.permiso === 'caja' ? 'acceso completo' : 'solo caja'}`);
     res.redirect('/admin/usuarios');
   });
   admin.post('/usuarios/:uid/quitar-2fa', (req, res) => {
@@ -931,6 +966,7 @@ export function createApp() {
   difusionRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cuponesRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cobrosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  equipoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -1213,6 +1249,7 @@ export function createApp() {
       try {
         const l = embudo.marcarResultado(req.client, Number(req.body.lead), String(req.body.resultado || ''), req.body.valor, { mover: req.body.mover !== '0' });
         if (req.body.resultado === 'vendido') atribucion.venta(req.client, l, { valor: l.valor || 0 }).catch(() => {}); // a Meta: qué anuncio vendió
+        if (['vendido', 'resuelto'].includes(req.body.resultado)) equipo.enviarEncuesta(req.client, l).catch((e) => db.logEvent({ clientId: req.client.id, tipo: 'csat_error', detalle: e.message }));
         db.logEvent({ clientId: req.client.id, tipo: 'resultado_lead', detalle: `${l.nombre || l.telefono || l.id}: ${req.body.resultado}${l.valor ? ` $${l.valor}` : ''}` });
         res.json({ ok: true, etapa: l.etapa });
       } catch (e) { res.status(400).json({ error: e.message }); }
@@ -1309,6 +1346,29 @@ export function createApp() {
     });
   }
 
+  // Equipo: rendimiento por asesor, reparto automático, alertas de espera y encuesta de satisfacción.
+  function equipoRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const vista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.equipoPage(req.client, { aj: equipo.ajustes(req.client), filas: equipo.rendimiento(req.client),
+      esperando: equipo.esperandoAhora(req.client), csat: equipo.resumenCsat(req.client.id), REPARTOS: equipo.REPARTOS, yo: req.sesion?.user || null, base: base(req), app,
+      ok: { ajustes: 'Guardado.', disponible: 'Listo.' }[req.query.ok] || '', ...extra }));
+    router.get(`${prefix}/equipo`, (req, res) => vista(req, res));
+    router.post(`${prefix}/equipo/ajustes`, (req, res) => {
+      const b = req.body || {};
+      db.updateClient(req.client.id, { config: { ...req.client.config, equipo: { reparto: equipo.REPARTOS[b.reparto] ? b.reparto : 'no', sla_min: Number(b.sla_min) || 15, alertas: b.alertas === '1',
+        csat: { activo: b.csat_activo === '1', plantilla: String(b.csat_plantilla || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 120), idioma: String(b.csat_idioma || 'es_MX').slice(0, 10),
+          texto: String(b.csat_texto || '').trim().slice(0, 500) || undefined } } } });
+      seg.auditar(req, 'equipo_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/equipo?ok=ajustes`);
+    });
+    // Cada asesor marca si está disponible para recibir leads nuevos (el administrador puede hacerlo por cualquiera).
+    router.post(`${prefix}/equipo/:uid/disponible`, (req, res) => {
+      const uid = Number(req.params.uid);
+      if (!req.sesion?.admin && req.sesion?.user?.id !== uid && req.sesion?.user?.rol !== 'admin') return res.status(403).send('Solo puedes cambiar tu propia disponibilidad.');
+      equipo.setDisponible(req.client, uid, req.body.disponible === '1');
+      res.redirect(`${base(req)}/equipo?ok=disponible`);
+    });
+  }
+
   // Cobros por chat (links de pago con la cuenta de la marca) y ventas avisadas a Meta.
   function cobrosRoutes(router, base, { app = false, prefix = '' } = {}) {
     const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
@@ -1354,10 +1414,11 @@ export function createApp() {
         vista(req, res, { codigo: x.cupon.codigo, sucursal: req.body.sucursal, canjeado: true });
       } catch (e) { vista(req, res, { codigo: req.body.codigo, sucursal: req.body.sucursal, error: e.message }); }
     });
-    router.post(`${prefix}/cupones/promociones`, (req, res) => {
+    router.post(`${prefix}/cupones/promociones`, (req, res, next) => upload.any()(req, res, (e) => (e ? vista(req, res, { error: `Imagen: ${e.message}` }) : next())), (req, res) => {
       const b = req.body || {};
+      const archivo = (i) => (req.files || []).find((f) => f.fieldname === `imagen_${i}`);
       const filas = Array.from({ length: 20 }, (_, i) => i + 1).filter((i) => b[`beneficio_${i}`] !== undefined).map((i) => ({ id: b[`id_${i}`], nombre: b[`nombre_${i}`], beneficio: b[`beneficio_${i}`], cuando: b[`cuando_${i}`],
-        vigencia_horas: b[`vigencia_${i}`], max_dia: b[`max_${i}`], activa: b[`activa_${i}`] === '1' }));
+        vigencia_horas: b[`vigencia_${i}`], max_dia: b[`max_${i}`], activa: b[`activa_${i}`] === '1', modo: b[`modo_${i}`], imagen: archivo(i)?.filename || b[`imagen_actual_${i}`] }));
       const promociones = cupones.limpiarPromociones(filas);
       db.updateClient(req.client.id, { config: { ...req.client.config, cupones: { activo: b.activo === '1', prefijo: String(b.prefijo || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8), promociones } } });
       db.logEvent({ clientId: req.client.id, tipo: 'cupones_promociones', detalle: `${autor(req)}: ${promociones.length} promociones` });
