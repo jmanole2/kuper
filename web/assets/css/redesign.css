@@ -1614,6 +1614,10 @@ html.is-bucket-dragging * {
   :root { --np-nav-h: 76px; }
   .np-nav-logo { width: 138px; }               /* ~58 px de alto: ~9 px de aire */
 }
+@media (max-width: 575.98px) {
+  :root { --np-nav-h: 62px; }
+  .np-nav-logo { width: 110px; }               /* ~46 px de alto en teléfono */
+}
 
 /* Cobertura (escritorio): con 21 estados la lista va en 3 columnas para que
    no se encime con "Oficinas" ni con el crédito del mapa. */
@@ -1680,10 +1684,26 @@ html.is-bucket-dragging * {
 
 /* Materia prima: "Master Batch" a la altura de los números de los íconos */
 .material-item-text .material-symbol { display: none; }
-.material-item-text h3 {
-  display: flex; align-items: center;
-  height: 110px; margin-bottom: 71px;   /* ocupa lo que en las demás ocupan nombre y descripción */
+@media (min-width: 821px) {
+  .material-item-text h3 {
+    display: flex; align-items: center;
+    height: 110px; margin-bottom: 71px;   /* ocupa lo que en las demás ocupan nombre y descripción */
+  }
 }
 @media (max-height: 850px) and (min-width: 821px) {
   .material-item-text h3 { height: 88px; margin-bottom: 68px; }
+}
+
+/* ===== Ajustes de teléfono y tableta ===== */
+@media (max-width: 900px) {
+  /* "Impresión y desarrollo" puede ir en dos líneas: no se sale de la pantalla */
+  .np-cat.is-service .np-cat-name { text-wrap: balance; white-space: normal; }
+  .np-cat-footer, .np-cat-sheet { min-width: 0; max-width: 100%; }
+}
+@media (max-width: 575.98px) {
+  /* Tarjeta "Destacado": cifras que caben en su recuadro */
+  .exp-stat strong { font-size: clamp(20px, 6vw, 26px); }
+  .exp-stat span { font-size: 12px; }
+  /* Botón de cotización en una sola línea */
+  .contact-submit span { font-size: 13px; letter-spacing: 0.08em; white-space: nowrap; }
 }
