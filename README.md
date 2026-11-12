@@ -37,3 +37,14 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Kuper panel — orbe animado (GIF)
+
+`src/panel.js` / `src/panel.html`, módulos del anillo, color de acento y nº de partículas en `panel.config.json`.
+El anillo es estático; solo gira el orbe de partículas (una vuelta completa por ciclo, loop perfecto).
+
+```bash
+node render.mjs --page src/panel.html --config panel.config.json --out out/kuper-panel.gif
+node render.mjs --page src/panel.html --config panel.config.json --fps 30 --out out/kuper-panel.mp4
+```
+(Si Playwright no encuentra el navegador: `CHROME_PATH=/opt/pw-browsers/chromium`.)

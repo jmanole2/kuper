@@ -27,7 +27,7 @@ if (opt('fps')) config.fps = Number(opt('fps'));
 const FFMPEG = process.env.FFMPEG || ffmpegPath;
 
 async function openPages(n) {
-  const browser = await chromium.launch({ args: ['--disable-gpu-vsync', '--force-color-profile=srgb'] });
+  const browser = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), args: ['--disable-gpu-vsync', '--force-color-profile=srgb'] });
   const pages = [];
   for (let i = 0; i < n; i++) {
     const page = await browser.newPage({ viewport: { width: 600, height: 1000 } });
@@ -86,6 +86,17 @@ async function video(out) {
   await browser.close();
   console.log(`rendered ${total} frames in ${((Date.now() - started) / 1000).toFixed(1)}s, encoding…`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
+  if (out.endsWith('.gif')) {
+    const pal = path.join(frameDir, 'palette.png');
+    const scale = config.gifWidth ? `scale=${config.gifWidth}:-1:flags=lanczos,` : '';
+    await run(FFMPEG, ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(frameDir, 'f_%05d.png'),
+      '-vf', `${scale}palettegen=max_colors=256:stats_mode=full`, pal]);
+    await run(FFMPEG, ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(frameDir, 'f_%05d.png'), '-i', pal,
+      '-lavfi', `${scale.replace(/,$/, '')}${scale ? ' [x]; [x]' : ''}[1:v] paletteuse=dither=sierra2_4a:diff_mode=rectangle`, '-loop', '0', out]);
+    fs.rmSync(frameDir, { recursive: true, force: true });
+    console.log(`wrote ${out}`);
+    return;
+  }
   await run(FFMPEG, [
     '-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(frameDir, 'f_%05d.png'),
     '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-profile:v', 'high',
