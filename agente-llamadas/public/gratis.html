@@ -175,7 +175,7 @@
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
           </button></div>
           <p class="estado" id="estado">Toca para llamar</p>
-          <span class="reloj" id="reloj">Llamada de prueba de 1 minuto</span>
+          <span class="reloj" id="reloj">Llamada de prueba de 2 minutos</span>
           <div class="charla" id="charla"></div>
         </div>
         <div class="wa-app">
@@ -262,10 +262,10 @@
 
   // ---- Llamada
   const cliente = new RetellWebClient();
-  const terminar = (texto = 'Llamada terminada. Toca para llamar de nuevo.') => { enLlamada = false; $('paso3').classList.remove('en-llamada', 'hablando'); $('estado').textContent = texto; clearInterval(cronometro); $('reloj').textContent = 'Llamada de prueba de 1 minuto'; $('llamar').disabled = false; };
+  const terminar = (texto = 'Llamada terminada. Toca para llamar de nuevo.') => { enLlamada = false; $('paso3').classList.remove('en-llamada', 'hablando'); $('estado').textContent = texto; clearInterval(cronometro); $('reloj').textContent = 'Llamada de prueba de 2 minutos'; $('llamar').disabled = false; };
   cliente.on('call_started', () => {
     enLlamada = true; $('paso3').classList.add('en-llamada'); $('estado').textContent = 'En llamada'; $('llamar').disabled = false;
-    const inicio = Date.now(); cronometro = setInterval(() => { const s = Math.max(0, (demo?.limites?.segundos || 60) - Math.floor((Date.now() - inicio) / 1000)); $('reloj').textContent = `Quedan ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 500);
+    const inicio = Date.now(); cronometro = setInterval(() => { const s = Math.max(0, (demo?.limites?.segundos || 120) - Math.floor((Date.now() - inicio) / 1000)); $('reloj').textContent = `Quedan ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 500);
   });
   cliente.on('agent_start_talking', () => $('paso3').classList.add('hablando'));
   cliente.on('agent_stop_talking', () => $('paso3').classList.remove('hablando'));

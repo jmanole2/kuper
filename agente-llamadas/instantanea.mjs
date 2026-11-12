@@ -1,6 +1,6 @@
 // "Haz tu demo gratis" (kuper.media/demo): la persona pega el link de su negocio (o lo describe), leemos su página,
 // la IA arma la información y en segundos puede hablar con Sofía como si fuera la recepcionista de SU negocio:
-// llamada de voz (máximo 1 minuto, una por demo) y chat con estilo de WhatsApp (máximo 20 mensajes).
+// llamada de voz (máximo 2 minutos, una por demo) y chat con estilo de WhatsApp (máximo 20 mensajes).
 //
 // - Un solo agente de Retell ("Demo instantánea Kuper", demos/instantanea.json) recibe los datos del negocio en
 //   cada llamada como variables: no se crea un agente por visitante.
@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { pedirJSON } from './chat.mjs';
 
 export const hooks = { fetch: (...a) => fetch(...a), lookup: (h) => lookup(h, { all: true }), ia: (...a) => pedirJSON(...a) }; // pruebas
-export const LIMITES = { llamadas: 1, segundos: 60, mensajes: 20, dias: 7 };
+export const LIMITES = { llamadas: 1, segundos: 120, mensajes: 20, dias: 7 };
 const MAX_BYTES = 1_500_000, MAX_TEXTO = 14000;
 
 // ------------------------------------------------------------ leer la página (sin SSRF)
