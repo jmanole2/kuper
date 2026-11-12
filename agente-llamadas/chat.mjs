@@ -18,14 +18,14 @@ function calendario(tz, t = Date.now()) {
 }
 
 /** Instrucciones para el chat: las de la voz con las variables de Retell resueltas y reglas de texto. */
-export function promptChat(cfg, { infoPanel = '', ahora = Date.now() } = {}) {
+export function promptChat(cfg, { infoPanel = '', ahora = Date.now(), variables = {} } = {}) {
   const tz = cfg.zona_horaria || 'America/Mexico_City';
   const base = construirPrompt(cfg, { transferir: '', conFunciones: false })
     .replaceAll(`{{current_time_${tz}}}`, fechaLocal(tz, ahora))
     .replaceAll(`{{current_calendar_${tz}}}`, `\n${calendario(tz, ahora)}`)
     .replaceAll('{{direction}}', 'chat escrito en la página web (no es llamada)')
-    .replaceAll('{{nombre_cliente}}', 'desconocido')
-    .replaceAll('{{motivo_llamada}}', 'ninguno')
+    .replaceAll('{{nombre_cliente}}', variables.nombre_cliente || 'desconocido')
+    .replaceAll('{{motivo_llamada}}', variables.motivo_llamada || 'ninguno')
     .replaceAll('{{modo_llamada}}', 'atender')
     .replaceAll('{{info_panel}}', infoPanel || 'Sin cambios recientes.');
   return `${base}
@@ -67,10 +67,10 @@ export function limpiarMensajes(mensajes) {
  * Siguiente respuesta de la asistente.
  * disponibilidad: async (args) => texto, si la demo consulta disponibilidad en su panel.
  */
-export async function responder({ cfg, mensajes, infoPanel = '', disponibilidad = null, env = process.env }) {
+export async function responder({ cfg, mensajes, infoPanel = '', disponibilidad = null, variables = {}, env = process.env }) {
   const msgs = limpiarMensajes(mensajes);
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new Error('sin_mensaje');
-  const system = promptChat(cfg, { infoPanel });
+  const system = promptChat(cfg, { infoPanel, variables });
   if (!env.ANTHROPIC_API_KEY && env.LLM_API_KEY) return responderOpenRouter({ system, msgs, disponibilidad, env });
   const tools = disponibilidad ? [herramientaDisponibilidad] : undefined;
   for (let ronda = 0; ronda < 4; ronda++) {

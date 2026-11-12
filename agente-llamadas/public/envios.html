@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Envío de pendientes</title>
+<meta name="description" content="Demo: mensajes de WhatsApp con los pendientes de cada aplicante, aprobados por el equipo antes de enviarse.">
+<meta name="theme-color" content="#121110">
+<style>
+  :root { --tinta:#1d1b18; --marfil:#f3f0ea; --suave:#6f6a62; --lima:#d7ff3f; --verde:#2f7d4f; --ambar:#a8650f; --borde:#e2ddd3; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { min-height: 100dvh; color: var(--tinta); font: 15px/1.5 "Inter Tight", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1000px 700px at 0% -10%, rgba(246,238,222,.09), transparent 60%), #121110; padding: 24px 16px 40px; }
+  .hoja { width: min(1120px, 100%); margin: 0 auto; background: linear-gradient(160deg, #f3f0ea, #e9e5dd); border-radius: 28px; padding: 28px 28px 32px; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+  .mono { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: #6d685f; }
+  .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .top img { height: 40px; border-radius: 10px; }
+  .top a { margin-left: auto; color: var(--tinta); font-weight: 600; text-decoration: none; background: #fbfaf7; border-radius: 99px; padding: 8px 14px; font-size: 14px; }
+  h1 { font-weight: 300; font-size: 42px; line-height: 1.05; letter-spacing: -.03em; margin: 18px 0 6px; }
+  .lead { color: var(--suave); margin: 0; max-width: 760px; }
+  .cifras { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0 14px; }
+  .cifras div { background: #fbfaf7; border-radius: 16px; padding: 12px 14px; }
+  .cifras b { display: block; font-size: 24px; font-weight: 400; letter-spacing: -.02em; }
+  .cifras small { color: var(--suave); font-size: 12px; }
+  .barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, .btn { font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1; border-radius: 99px; padding: 11px 16px; border: 1px solid var(--borde); background: #fbfaf7; color: var(--tinta); cursor: pointer; text-decoration: none; }
+  button.prim { background: var(--tinta); color: #f4f0e8; border-color: var(--tinta); }
+  button.prim:disabled { opacity: .45; cursor: not-allowed; }
+  .ayuda { color: var(--suave); font-size: 12.5px; margin: 8px 2px 0; }
+  .ayuda a { color: inherit; }
+  .error { color: #b4232a; font-size: 13.5px; min-height: 1.2em; margin: 6px 2px 0; }
+  .lista { display: grid; gap: 12px; margin-top: 18px; }
+  .ap { background: #fbfaf7; border: 1px solid var(--borde); border-radius: 20px; padding: 16px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 16px; }
+  .ap.aprobado { border-color: #b9d93a; box-shadow: 0 0 0 2px rgba(185,217,58,.35); }
+  .quien b { font-size: 17px; font-weight: 600; }
+  .quien .neg { color: var(--suave); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { font-size: 12.5px; background: #efebe3; border-radius: 99px; padding: 4px 10px; }
+  .chip.pais { background: var(--tinta); color: #f4f0e8; }
+  .ventana { margin-top: 10px; font-size: 12.5px; font-weight: 600; }
+  .ventana.si { color: var(--verde); } .ventana.no { color: var(--ambar); }
+  .wa { background: #e7f5dc; border-radius: 16px 16px 16px 4px; padding: 10px 12px; font-size: 14px; white-space: pre-wrap; }
+  .wa textarea { width: 100%; min-height: 110px; border: 0; background: transparent; font: inherit; color: inherit; resize: vertical; outline: none; }
+  .tipo { font-size: 11.5px; color: var(--suave); margin: 0 0 6px; }
+  .pie { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; font-size: 13.5px; }
+  .pie label { display: flex; gap: 6px; align-items: center; font-weight: 600; cursor: pointer; }
+  .pie input { width: 18px; height: 18px; accent-color: #6f8f12; }
+  .estado { color: var(--suave); }
+  .estado.enviado { color: var(--verde); font-weight: 600; }
+  .pie a { margin-left: auto; color: var(--tinta); font-weight: 600; }
+  h2 { font-weight: 400; font-size: 26px; letter-spacing: -.02em; margin: 28px 0 4px; }
+  .resps { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  .conv { background: #fbfaf7; border: 1px solid var(--borde); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .conv .cab { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+  .conv .cab span { font-weight: 500; font-size: 12px; color: var(--suave); }
+  .burb { padding: 8px 11px; border-radius: 14px; font-size: 13.5px; max-width: 92%; white-space: pre-wrap; }
+  .burb.ia { background: #e7f5dc; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .burb.humano { background: #dbe8ff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .burb.cli { background: #efebe3; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .burb small { display: block; font-size: 10.5px; color: var(--suave); margin-bottom: 2px; }
+  .conv form { display: flex; gap: 6px; }
+  .conv form input { flex: 1; min-width: 0; border: 1px solid var(--borde); border-radius: 99px; padding: 9px 12px; font: inherit; }
+  .explica { margin-top: 26px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .explica div { background: #fbfaf7; border-radius: 18px; padding: 16px; font-size: 14px; color: #3b3833; }
+  .explica b { display: block; margin-bottom: 4px; font-size: 15px; color: var(--tinta); }
+  .vacio { color: var(--suave); font-size: 14px; }
+  @media (max-width: 860px) {
+    body { padding: 0; } .hoja { border-radius: 0; padding: 20px 16px 28px; }
+    h1 { font-size: 32px; } .cifras { grid-template-columns: repeat(2, 1fr); } .ap { grid-template-columns: 1fr; } .explica { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="hoja">
+  <div class="top"><img id="logo" alt="" hidden><span class="mono" id="etiqueta">Demo · envío de pendientes</span><a id="volver" href="/">← Hablar con la asistente</a></div>
+  <h1>Envío de pendientes con aprobación</h1>
+  <p class="lead" id="lead">Cada aplicante recibe por WhatsApp lo que le falta, con el tono de su país. Nada sale sin que alguien del equipo lo apruebe, y las respuestas llegan a un panel donde la IA contesta o una persona toma el control.</p>
+
+  <div class="cifras">
+    <div><b id="cTotal">0</b><small>Aplicantes en la lista</small></div>
+    <div><b id="cAprob">0</b><small>Aprobados para enviar</small></div>
+    <div><b id="cGratis">0</b><small>Gratis (escribieron en 24 h)</small></div>
+    <div><b id="cPlantilla">0</b><small>Con plantilla (costo de Meta)</small></div>
+    <div><b id="cLimite">0 / 250</b><small>Enviados hoy / tope diario</small></div>
+  </div>
+
+  <div class="barra">
+    <button type="button" id="ejemplo">Usar lista de ejemplo</button>
+    <label class="btn" for="csv">Subir CSV</label><input type="file" id="csv" accept=".csv,text/csv" hidden>
+    <button type="button" id="todos">Aprobar todos</button>
+    <button type="button" class="prim" id="enviar" disabled>Enviar aprobados</button>
+  </div>
+  <p class="ayuda">CSV con columnas: <b>nombre, negocio, pais, whatsapp, pendientes</b> (separados por ;) y opcional <b>escribio_hace_h</b>. <a id="plantillaCsv" download="aplicantes-ejemplo.csv">Descargar CSV de ejemplo</a>. La lista no se guarda: es solo para la demo.</p>
+  <p class="error" id="error" role="alert"></p>
+
+  <div class="lista" id="lista"><p class="vacio">Cargando…</p></div>
+
+  <h2>Respuestas</h2>
+  <p class="lead">Cuando un aplicante contesta, la IA le responde al momento. Si hace falta, alguien del equipo de su país toma el control.</p>
+  <div class="resps" id="resps"><p class="vacio">Aún no hay respuestas: aprueba y envía los mensajes.</p></div>
+
+  <div class="explica">
+    <div><b>¿Por qué no nos bloquean?</b>Se envía por la API oficial de WhatsApp, no desde la app con un chip. Los aplicantes aceptan recibir mensajes al registrarse, cada mensaje es personal y pueden darse de baja.</div>
+    <div><b>¿Cuánto cuesta?</b>Si el aplicante escribió en las últimas 24 horas, contestarle es gratis. Si escribimos primero, va como plantilla aprobada por Meta, que cobra centavos de dólar por mensaje según el país.</div>
+    <div><b>¿Cuántos por día?</b>Un número nuevo empieza con un tope de 250 personas al día cuando escribimos primero. Con buena calidad, Meta lo sube a 1,000, 10,000 y más. Por eso conviene arrancar el número semanas antes de la convocatoria.</div>
+  </div>
+</div>
+
+<script type="module">
+  const $ = (id) => document.getElementById(id);
+  const demo = location.pathname.split('/').filter(Boolean)[0] || '';
+  const qs = `?demo=${encodeURIComponent(demo)}`;
+  // Lo que contestaría cada aplicante de ejemplo (para ver a la IA responder de verdad).
+  const RESPUESTAS = {
+    ana: 'Ya grabé el video pero dura 1:20, ¿así sirve o lo tengo que cortar?',
+    diego: 'Hola, ¿la identificación puede ser mi DNI escaneado por los dos lados?',
+    martina: 'Che, ¿el documento tiene que ser el mío o el de mi socio?',
+    juan: '¿Dónde consigo el RUT? Es que lo tiene mi contador',
+    lucas: 'Ya tengo el perfil de TikTok pero recién arrancamos, ¿igual sirve?',
+    camila: '¿El video puede ser vertical, grabado con el celular?',
+    mariana: 'Perdón, ¿me repites qué me falta?',
+    valentina: '¿Puedo mandar el comprobante de ventas la próxima semana?',
+  };
+  let datos = { aplicantes: [], limite_diario: 250, ejemplo: true, asistente: 'La asistente' };
+  let enviadosHoy = 0;
+  const aprobados = new Set(), enviados = new Set();
+
+  const el = (tag, props = {}, ...hijos) => { const e = Object.assign(document.createElement(tag), props); e.append(...hijos.filter((h) => h !== null && h !== undefined)); return e; };
+
+  function contar() {
+    const ap = datos.aplicantes;
+    $('cTotal').textContent = ap.length;
+    $('cAprob').textContent = [...aprobados].filter((id) => !enviados.has(id)).length;
+    $('cGratis').textContent = ap.filter((a) => a.ventana.abierta).length;
+    $('cPlantilla').textContent = ap.filter((a) => !a.ventana.abierta).length;
+    $('cLimite').textContent = `${enviadosHoy} / ${datos.limite_diario}`;
+    const n = [...aprobados].filter((id) => !enviados.has(id)).length;
+    $('enviar').disabled = !n;
+    $('enviar').textContent = n ? `Enviar aprobados (${n})` : 'Enviar aprobados';
+  }
+
+  function pintar() {
+    const lista = $('lista');
+    if (!datos.aplicantes.length) { lista.replaceChildren(el('p', { className: 'vacio', textContent: 'La lista está vacía.' })); contar(); return; }
+    lista.replaceChildren(...datos.aplicantes.map((a) => {
+      const libre = a.ventana.abierta;
+      const texto = libre ? el('textarea', { value: a.mensaje, ariaLabel: `Mensaje para ${a.nombre}` }) : el('div', { textContent: a.mensaje });
+      if (libre) texto.addEventListener('input', () => { a.mensaje = texto.value; });
+      const check = el('input', { type: 'checkbox', checked: aprobados.has(a.id), disabled: enviados.has(a.id) });
+      const estado = el('span', { className: `estado${enviados.has(a.id) ? ' enviado' : ''}`, textContent: enviados.has(a.id) ? 'Enviado ✓✓' : aprobados.has(a.id) ? 'Aprobado: listo para enviar' : 'Pendiente de aprobar' });
+      const tarjeta = el('div', { className: `ap${aprobados.has(a.id) ? ' aprobado' : ''}` },
+        el('div', { className: 'quien' },
+          el('b', { textContent: a.nombre }), el('div', { className: 'neg', textContent: `${a.negocio}${a.whatsapp ? ` · ${a.whatsapp}` : ''}` }),
+          el('div', { className: 'chips' }, el('span', { className: 'chip pais', textContent: a.pais }), ...a.pendientes.map((p) => el('span', { className: 'chip', textContent: p }))),
+          el('div', { className: `ventana ${libre ? 'si' : 'no'}`, textContent: a.ventana.texto })),
+        el('div', {},
+          el('p', { className: 'tipo', textContent: libre ? 'Mensaje libre: lo puedes editar antes de aprobar' : `Plantilla aprobada por Meta para ${a.pais} (texto fijo; cambian nombre, negocio y pendientes)` }),
+          el('div', { className: 'wa' }, texto),
+          el('div', { className: 'pie' }, el('label', {}, check, 'Aprobar'), estado,
+            datos.ejemplo && RESPUESTAS[a.id] ? el('a', { href: `/${demo}?aplicante=${encodeURIComponent(a.id)}`, textContent: 'Probar como este aplicante →' }) : null)));
+      check.addEventListener('change', () => { check.checked ? aprobados.add(a.id) : aprobados.delete(a.id); pintar(); });
+      return tarjeta;
+    }));
+    contar();
+  }
+
+  async function cargar(filas) {
+    $('error').textContent = '';
+    try {
+      const r = await fetch(`/api/envios${qs}`, filas ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filas }) } : {});
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'No se pudo cargar la lista.');
+      if (filas && !d.aplicantes.length) throw new Error('No encontré filas con nombre y pendientes. Revisa las columnas del CSV.');
+      datos = d; aprobados.clear(); enviados.clear(); enviadosHoy = 0;
+      if (d.logo) { $('logo').src = d.logo; $('logo').hidden = false; }
+      $('volver').textContent = `← Hablar con ${d.asistente}`; $('volver').href = `/${demo}`;
+      document.title = `Envío de pendientes · ${d.negocio}`;
+      $('resps').replaceChildren(el('p', { className: 'vacio', textContent: 'Aún no hay respuestas: aprueba y envía los mensajes.' }));
+      pintar();
+    } catch (e) { $('error').textContent = e.message; }
+  }
+
+  // CSV sencillo: comas o punto y coma, comillas dobles opcionales.
+  function leerCsv(texto) {
+    const lineas = texto.replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim());
+    if (lineas.length < 2) return [];
+    const sep = (lineas[0].match(/,/g) || []).length >= (lineas[0].match(/;/g) || []).length ? ',' : '\t';
+    const partir = (l) => { const out = []; let cur = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if (ch === sep && !q) { out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out.map((x) => x.trim()); };
+    const cab = partir(lineas[0]).map((c) => c.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''));
+    return lineas.slice(1).map((l) => { const v = partir(l); return Object.fromEntries(cab.map((c, i) => [c, v[i] ?? ''])); });
+  }
+
+  async function enviar() {
+    const cola = datos.aplicantes.filter((a) => aprobados.has(a.id) && !enviados.has(a.id));
+    if (enviadosHoy + cola.length > datos.limite_diario) { $('error').textContent = `Hoy solo quedan ${datos.limite_diario - enviadosHoy} envíos por el tope diario de Meta; el resto se programa para mañana.`; }
+    $('enviar').disabled = true;
+    const nuevos = [];
+    for (const a of cola.slice(0, datos.limite_diario - enviadosHoy)) {
+      await new Promise((ok) => setTimeout(ok, 350)); // escalonado, como en el envío real
+      enviados.add(a.id); enviadosHoy += 1; nuevos.push(a); pintar();
+    }
+    // Contestan algunos (máximo 3 por envío, para la demo).
+    for (const a of nuevos.filter((x) => RESPUESTAS[x.id] || !datos.ejemplo).slice(0, 3)) conversar(a);
+  }
+
+  async function conversar(a) {
+    const resps = $('resps');
+    if (resps.querySelector('.vacio')) resps.replaceChildren();
+    const caja = el('div', { className: 'conv' });
+    const enIA = el('span', { textContent: 'Contesta la IA' });
+    caja.append(el('div', { className: 'cab' }, el('div', { textContent: `${a.nombre} · ${a.pais}` }), enIA));
+    const burbuja = (cls, quien, texto) => { const b = el('div', { className: `burb ${cls}` }, el('small', { textContent: quien }), texto); caja.insertBefore(b, form); return b; };
+    const form = el('form', {});
+    const entrada = el('input', { placeholder: 'Escribe como el equipo…', ariaLabel: 'Respuesta del equipo' });
+    const tomar = el('button', { type: 'button', textContent: 'Tomar control' });
+    form.append(tomar);
+    caja.append(form);
+    resps.prepend(caja);
+    burbuja('ia', datos.asistente, a.mensaje);
+    const dice = RESPUESTAS[a.id] || 'Hola, ¿dónde mando los documentos?';
+    await new Promise((ok) => setTimeout(ok, 900));
+    burbuja('cli', a.nombre.split(' ')[0], dice);
+    const pensando = burbuja('ia', datos.asistente, 'escribiendo…');
+    try {
+      const r = await fetch(`/api/chat${qs}${datos.ejemplo ? `&aplicante=${encodeURIComponent(a.id)}` : ''}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensajes: [{ rol: 'assistant', texto: a.mensaje }, { rol: 'user', texto: dice }] }) });
+      const d = await r.json().catch(() => ({}));
+      pensando.lastChild.textContent = r.ok ? d.texto : (d.error || 'No pude contestar en este momento.');
+    } catch { pensando.lastChild.textContent = 'No pude contestar en este momento.'; }
+    tomar.addEventListener('click', () => {
+      enIA.textContent = 'Lo atiende el equipo · IA en pausa';
+      tomar.replaceWith(entrada, el('button', { className: 'prim', textContent: 'Enviar' }));
+      entrada.focus();
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const t = entrada.value.trim(); if (!t) return;
+      burbuja('humano', 'Equipo (humano)', t); entrada.value = '';
+    });
+  }
+
+  $('ejemplo').addEventListener('click', () => cargar());
+  $('todos').addEventListener('click', () => { for (const a of datos.aplicantes) if (!enviados.has(a.id)) aprobados.add(a.id); pintar(); });
+  $('enviar').addEventListener('click', enviar);
+  $('csv').addEventListener('change', async (e) => {
+    const f = e.target.files?.[0]; e.target.value = '';
+    if (!f) return;
+    if (f.size > 150_000) { $('error').textContent = 'El archivo es muy grande para la demo (máximo 300 filas).'; return; }
+    cargar(leerCsv(await f.text()));
+  });
+  $('plantillaCsv').href = `data:text/csv;charset=utf-8,${encodeURIComponent('nombre,negocio,pais,whatsapp,pendientes,escribio_hace_h\nAna Torres,Café Origen,México,+52 55 0000 0001,video pitch de un minuto;comprobante de ventas,5\nLucas Fernández,Mate y Yerba,Argentina,+54 9 11 0000 0003,CUIT;link al perfil de TikTok,\n')}`;
+  cargar();
+</script>
+</body>
+</html>

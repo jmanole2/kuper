@@ -15,6 +15,7 @@ import * as marcador from './marcador.mjs';
 import { agentePorNombre as buscarEnRetell } from './agentes.mjs';
 import { numeroTransferencia, respuestaEntrante } from './entrante.mjs';
 import * as chat from './chat.mjs';
+import * as envios from './envios.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
@@ -26,6 +27,8 @@ if (existsSync(dirDemos)) for (const f of readdirSync(dirDemos).filter((x) => /^
   try { demos.set(f.slice(0, -5), JSON.parse(readFileSync(join(dirDemos, f), 'utf8'))); } catch (e) { console.error(`demos/${f}: ${e.message}`); }
 }
 const demoDe = (url) => demos.get(String(url.searchParams.get('demo') || '')) || null;
+// ?aplicante=<id>: probar la demo "como" un aplicante de la lista (envío de pendientes).
+const aplicanteDe = (demo, url) => (demo ? envios.aplicanteDe(demo, String(url.searchParams.get('aplicante') || '')) : null);
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -100,7 +103,11 @@ async function crearLlamada(req, res) {
         // Empresa de mentira para probar: ?ventas=CLAVE&empresa=Clínica Sonrisa&giro=dentista&ciudad=Puebla
         retell_llm_dynamic_variables: Object.fromEntries(['empresa', 'giro', 'ciudad'].map((k) => [k, String(url.searchParams.get(k) || { empresa: 'Clínica Dental Sonrisa', giro: 'dentista', ciudad: 'Ciudad de México' }[k]).slice(0, 80)])),
       } : demo ? { agent_id: await agentePorNombre(demo.nombre_agente), metadata: { origen: `demo-${url.searchParams.get('demo')}` },
-        ...(await infoDelPanel(demo).then((t) => (t ? { retell_llm_dynamic_variables: { info_panel: t } } : {}))) }
+        ...(await infoDelPanel(demo).then((t) => {
+          const a = aplicanteDe(demo, url);
+          const v = { ...(t ? { info_panel: t } : {}), ...(a ? envios.variables(demo, a) : {}) };
+          return Object.keys(v).length ? { retell_llm_dynamic_variables: v } : {};
+        })) }
         : { agent_id: await buscarAgente(), metadata: { origen: 'demo-web' } }),
     });
     const d = await r.json().catch(() => ({}));
@@ -149,7 +156,9 @@ const server = createServer(async (req, res) => {
     const demo = demoDe(new URL(req.url, 'http://x'));
     if (demo) {
       return json(res, 200, { negocio: demo.negocio, asistente: demo.asistente, tipo_de_cita: demo.tipo_de_cita, link_reservas: demo.link_reservas || '',
-        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', logo_alto: Number(demo.pagina?.logo_alto) || 0, logo_oscuro: demo.pagina?.logo_oscuro === true, chat: chat.chatConfigurado(), etiqueta: demo.pagina?.etiqueta || '' });
+        sub: demo.pagina?.sub || '', datos: demo.pagina?.datos || null, pasos: demo.pagina?.pasos || null, logo: demo.pagina?.logo || '', logo_alto: Number(demo.pagina?.logo_alto) || 0, logo_oscuro: demo.pagina?.logo_oscuro === true, chat: chat.chatConfigurado(), etiqueta: demo.pagina?.etiqueta || '',
+        link_extra: demo.pagina?.link_extra || null,
+        aplicante: (() => { const a = aplicanteDe(demo, new URL(req.url, 'http://x')); return a ? { nombre: a.nombre, negocio: a.negocio, pais: envios.paisDe(a.pais), mensaje: envios.mensaje(demo, a) } : null; })() });
     }
     if (esPruebaVentas(new URL(req.url, 'http://x'))) {
       return json(res, 200, { negocio: cfg.negocio, asistente: cfg.ventas.asistente, tipo_de_cita: cfg.tipo_de_cita, link_reservas: cfg.link_reservas || '', ventas: true,
@@ -168,13 +177,16 @@ const server = createServer(async (req, res) => {
   if (ruta === '/funciones/disponibilidad' && req.method === 'POST') return consultarDisponibilidad(req, res);
   if (ruta === '/retell/entrante' && req.method === 'POST') return llamadaEntrante(req, res);
   if (ruta === '/api/chat' && req.method === 'POST') return mensajeChat(req, res);
+  if (ruta === '/api/envios') return apiEnvios(req, res);
   const fn = /^\/funciones\/([a-z_]+)$/.exec(ruta);
   if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
-  const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null);
+  const conEnvios = /^\/([a-z0-9-]+)\/envios\/?$/.exec(ruta);
+  const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null)
+    || (conEnvios && demos.get(conEnvios[1])?.aplicantes ? ['public/envios.html', 'text/html; charset=utf-8'] : null);
   if (archivo && req.method === 'GET') {
     const p = resolve(aqui, archivo[0]);
     if (existsSync(p)) {
-      res.writeHead(200, { 'Content-Type': archivo[1], 'Cache-Control': archivo === archivos['/'] ? 'no-cache' : 'public, max-age=86400' });
+      res.writeHead(200, { 'Content-Type': archivo[1], 'Cache-Control': /html/.test(archivo[1]) ? 'no-cache' : 'public, max-age=86400' });
       return res.end(readFileSync(p));
     }
   }
@@ -244,7 +256,8 @@ async function mensajeChat(req, res) {
   if (!permitirChat(ipDe(req))) return json(res, 429, { error: 'Ya se usaron los mensajes de prueba de hoy. Intenta mañana.' });
   const cfgChat = demo || cfg;
   try {
-    const texto = await chat.responder({ cfg: cfgChat, mensajes: cuerpo.mensajes,
+    const a = aplicanteDe(demo, url);
+    const texto = await chat.responder({ cfg: cfgChat, mensajes: cuerpo.mensajes, variables: a ? envios.variables(demo, a) : {},
       infoPanel: demo ? await infoDelPanel(demo) : '',
       disponibilidad: demo?.panel_slug && llaveDe(demo.panel_slug) ? (args) => disponibilidadDe(demo, args) : null });
     json(res, 200, { texto });
@@ -254,6 +267,19 @@ async function mensajeChat(req, res) {
     json(res, 502, { error: 'No pude contestar en este momento. Intenta de nuevo.' });
   }
 }
+// Envío de pendientes (demo): GET da la lista de ejemplo con sus mensajes; POST arma los mensajes de una lista propia (CSV).
+async function apiEnvios(req, res) {
+  const url = new URL(req.url, 'http://x');
+  const demo = demoDe(url);
+  if (!demo?.aplicantes) return json(res, 404, { error: 'Esta demo no tiene envío de pendientes.' });
+  let filas = demo.aplicantes;
+  if (req.method === 'POST') {
+    try { filas = JSON.parse(await leerCuerpo(req, 200_000) || '{}').filas; } catch { return json(res, 400, { error: 'Lista no válida.' }); }
+  }
+  json(res, 200, { asistente: demo.asistente, negocio: demo.negocio, logo: demo.pagina?.logo || '', limite_diario: Number(demo.envios?.limite_diario) || 250,
+    fecha_limite: demo.envios?.fecha_limite || '', aplicantes: envios.preparar(demo, filas), ejemplo: req.method !== 'POST' });
+}
+
 const demosIds = async () => (await Promise.all([...demos.values()].map(async (d) => ({ id: await agentePorNombre(d.nombre_agente).catch(() => null), etiqueta: d.negocio,
   panel: d.panel_slug && llaveDe(d.panel_slug) ? { slug: d.panel_slug, key: llaveDe(d.panel_slug) } : null })))).filter((d) => d.id);
 const sincro = panel.iniciar({ key: KEY, agenteId: buscarAgente, ventasId: buscarVentas, demosIds, dirDatos: process.env.LLAMADAS_DATOS || join(aqui, 'datos') });

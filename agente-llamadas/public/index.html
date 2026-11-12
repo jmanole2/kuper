@@ -31,7 +31,9 @@
   .pasos li { display: flex; gap: 10px; align-items: baseline; color: #3b3833; font-size: 14px; }
   .pasos li span { font-family: var(--mono); font-size: 11px; color: #8a857c; }
   .reservar { display: none; align-self: flex-start; margin-top: 4px; color: var(--tinta); font-weight: 600; text-decoration: none; background: #fbfaf7; border-radius: 99px; padding: 9px 16px; box-shadow: 0 6px 18px rgba(60,50,30,.08); }
-  .reservar.visible { display: inline-block; }
+  .reservar.visible, #extra:not([hidden]) { display: inline-block; }
+  .como { margin: 0; background: #fbfaf7; border-left: 3px solid #b9d93a; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; color: #3b3833; }
+  .como[hidden] { display: none; }
   footer { margin-top: auto; color: #8a857c; font-size: 12px; }
   /* lado oscuro */
   .oscuro { position: relative; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; overflow: hidden;
@@ -113,6 +115,8 @@
       <li><span>03</span>Al terminar, toca el botón rojo para colgar.</li>
     </ol>
     <a class="reservar" id="reservar" target="_blank" rel="noopener">O agenda tú mismo aquí →</a>
+    <a class="reservar" id="extra" hidden></a>
+    <p class="como" id="como" hidden></p>
     <footer>La conversación puede grabarse para mejorar el servicio. Es un asistente de inteligencia artificial.</footer>
   </section>
   <section class="oscuro">
@@ -203,6 +207,12 @@
     if (c.etiqueta) document.querySelector('.marca .mono').textContent = c.etiqueta;
     const pon = (sel, items, fn) => { if (Array.isArray(items) && items.length) document.querySelector(sel).replaceChildren(...items.map(fn)); };
     pon('.datos', c.datos, ([b, small]) => { const d = document.createElement('div'); d.append(Object.assign(document.createElement('b'), { textContent: b }), Object.assign(document.createElement('small'), { textContent: small })); return d; });
+    if (c.link_extra?.url) { const x = $('extra'); x.href = c.link_extra.url; x.textContent = c.link_extra.texto || 'Ver más →'; x.hidden = false; }
+    if (c.aplicante) {
+      $('titulo').textContent = `${c.asistente} contacta a ${c.aplicante.nombre.split(' ')[0]}`;
+      $('como').textContent = `Estás probando como ${c.aplicante.nombre}, de ${c.aplicante.negocio} (${c.aplicante.pais}). Contesta como lo haría el aplicante: si llamas, ${c.asistente} te habla de tus pendientes; en el chat ya te escribió.`;
+      $('como').hidden = false;
+    }
     if (c.chat) iniciarChat(c);
     pon('.pasos', c.pasos, (t, i) => { const li = document.createElement('li'); li.append(Object.assign(document.createElement('span'), { textContent: String(i + 1).padStart(2, '0') }), t); return li; });
   }).catch(() => {});
@@ -284,7 +294,7 @@
       mensajes.append(d);
       mensajes.scrollTop = mensajes.scrollHeight;
     };
-    const saludo = `¡Hola! Soy ${c.asistente}, de ${c.negocio}. ¿En qué te puedo ayudar?`;
+    const saludo = c.aplicante?.mensaje || `¡Hola! Soy ${c.asistente}, de ${c.negocio}. ¿En qué te puedo ayudar?`;
     modos.addEventListener('click', (e) => {
       const b = e.target.closest('button[data-modo]');
       if (!b) return;

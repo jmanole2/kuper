@@ -30,7 +30,12 @@ Horario de citas: ${cfg.horario} (${cfg.zona_texto || 'hora del centro de Méxic
 
 ## Preguntas frecuentes
 ${lista(cfg.preguntas_frecuentes)}
-${cfg.panel_slug ? `
+${Array.isArray(cfg.aplicantes) && cfg.aplicantes.length ? `
+## Postulaciones registradas (datos de ejemplo)
+Si la persona te dice su nombre o el de su negocio, búscalo aquí y dile exactamente qué le falta y la fecha límite${cfg.envios?.fecha_limite ? ` (${cfg.envios.fecha_limite})` : ''}:
+${lista(cfg.aplicantes.map((x) => `${x.nombre}, de ${x.negocio} (${x.pais}): le falta ${x.pendientes.join(', ')}`))}
+Si no aparece, toma su nombre, su negocio, su país y su WhatsApp, y dile que el equipo revisa su postulación y le escribe.
+` : ''}${cfg.panel_slug ? `
 ## Disponibilidad (regla más importante)
 Para saber si hay oficinas o puestos fijos libres usa SIEMPRE la función consultar_disponibilidad, aunque creas saber la respuesta. Nunca digas que hay o que no hay disponibilidad sin consultarla, y ofrece solo lo que te devuelva. Los precios de las listas son de referencia y NO quieren decir que esa oficina esté libre. Si la persona duda o pregunta "¿estás segura?", vuelve a consultar.
 
