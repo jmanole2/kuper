@@ -1,0 +1,55 @@
+{
+  "width": 1080,
+  "height": 1350,
+  "fps": 20,
+  "duration": 6,
+  "gifWidth": 810,
+  "text": {
+    "pill": "NUEVO SERVICIO · IA PARA EMPRESAS",
+    "headline": [
+      "¿Cuántos clientes estás",
+      "perdiendo por ",
+      "no contestar?"
+    ],
+    "sub": [
+      "Tu empresa ahora puede atender 24/7. Agentes de IA que",
+      "contestan al momento, a cualquier hora, todos los días."
+    ],
+    "orbLabel": "AGENTE IA · EN LÍNEA",
+    "orbBig": "24/7",
+    "orbSmall": [
+      "Sin horarios.",
+      "Sin mensajes en visto."
+    ],
+    "benefits": [
+      [
+        "chat",
+        "Contestan llamadas y mensajes",
+        "WhatsApp, redes sociales y teléfono."
+      ],
+      [
+        "bolt",
+        "Resuelven dudas al instante",
+        "Precios, horarios, servicios y más."
+      ],
+      [
+        "target",
+        "Califican clientes potenciales",
+        "Detectan quién está listo para comprar."
+      ],
+      [
+        "calendar",
+        "Agendan citas y visitas",
+        "Directo en tu calendario, sin intervenir."
+      ]
+    ],
+    "ctaKicker": "NO PIERDAS NI UN SOLO LEAD",
+    "cta": [
+      "¿Quieres automatizar",
+      "tu negocio?"
+    ],
+    "ctaButton": "Escríbenos por DM",
+    "footerLeft": "Agentes de IA para empresas",
+    "footerRight": "kuper.mx"
+  }
+}

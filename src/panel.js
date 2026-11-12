@@ -18,34 +18,7 @@
   const R_WELL = 292, R_DISC = 274;    // dark well + black disc
   const ORB_R = 212;
 
-  // ---------------------------------------------------------------- random
-  function rng(seed) {
-    let s = seed >>> 0;
-    return () => {
-      s = (s + 0x6d2b79f5) >>> 0;
-      let t = s;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  // smooth lumpiness on the sphere: sum of a few random "waves" on direction
-  const R = rng(42);
-  const WAVES = Array.from({ length: 7 }, () => {
-    const z = R() * 2 - 1, a = R() * Math.PI * 2, s = Math.sqrt(1 - z * z);
-    return { d: [s * Math.cos(a), s * Math.sin(a), z], f: 1.5 + R() * 2.5, p: R() * 6.28, amp: 0.018 + R() * 0.025 };
-  });
-  const lump = (x, y, z) => WAVES.reduce((acc, w) => acc + w.amp * Math.sin(w.f * (x * w.d[0] + y * w.d[1] + z * w.d[2]) * 3 + w.p), 0);
-
-  const PTS = [];
-  for (let i = 0; i < CFG.particles; i++) {
-    // fibonacci sphere + jitter
-    const k = (i + 0.5) / CFG.particles;
-    const z = 1 - 2 * k, r = Math.sqrt(1 - z * z), a = i * 2.399963 + (R() - 0.5) * 0.08;
-    const x = r * Math.cos(a), y = r * Math.sin(a);
-    const shell = 1 + lump(x, y, z) - Math.pow(R(), 3) * 0.16;
-    PTS.push({ x: x * shell, y: y * shell, z: z * shell, s: R(), accent: R() < 0.01, tw: R() * 6.28 });
-  }
+  const ORB = window.makeOrb({ particles: CFG.particles, accent: CFG.accent });
 
   // ---------------------------------------------------------------- icons (24px line icons, centred)
   const ICON = {
@@ -113,35 +86,9 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(STATIC, 0, 0);
     const u = (t / CFG.duration) % 1;
-    const ay = u * Math.PI * 2;                       // full turn per loop
-    const ax = 0.32 + 0.06 * Math.sin(u * Math.PI * 2); // gentle wobble, also periodic
-    const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax);
-    const breathe = 1 + 0.015 * Math.sin(u * Math.PI * 4);
-    const out = [];
-    for (const p of PTS) {
-      let x = p.x * cy + p.z * sy, z = -p.x * sy + p.z * cy, y = p.y;
-      const y2 = y * cx - z * sx; z = y * sx + z * cx; y = y2;
-      const f = 3.2 / (3.2 - z);                      // perspective
-      out.push([CX + x * ORB_R * breathe * f, CY + y * ORB_R * breathe * f, z, p]);
-    }
-    out.sort((a, b) => a[2] - b[2]);
     ctx.save();
     ctx.beginPath(); ctx.arc(CX, CY, R_DISC - 2, 0, 7); ctx.clip();
-    for (const [px, py, z, p] of out) {
-      const depth = (z + 1) / 2;                       // 0 back .. 1 front
-      const tw = 0.75 + 0.25 * Math.sin(p.tw + u * Math.PI * 2 * 3);
-      if (p.accent) {
-        ctx.fillStyle = CFG.accent;
-        ctx.globalAlpha = (0.35 + 0.65 * depth) * tw;
-        const s = 3 + 2.5 * depth;
-        ctx.fillRect(px - s / 2, py - s / 2, s, s);
-      } else {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.globalAlpha = (0.12 + 0.8 * depth * depth) * (0.55 + 0.45 * p.s) * tw;
-        const s = 1.4 + 2.2 * depth * (0.5 + 0.5 * p.s);
-        ctx.fillRect(px - s / 2, py - s / 2, s, s);
-      }
-    }
+    ORB.draw(ctx, CX, CY, ORB_R, u);
     ctx.restore();
     ctx.globalAlpha = 1;
   }

@@ -48,3 +48,12 @@ node render.mjs --page src/panel.html --config panel.config.json --out out/kuper
 node render.mjs --page src/panel.html --config panel.config.json --fps 30 --out out/kuper-panel.mp4
 ```
 (Si Playwright no encuentra el navegador: `CHROME_PATH=/opt/pw-browsers/chromium`.)
+
+# Kuper — anuncio "¿Cuántos clientes estás perdiendo por no contestar?" (GIF 4:5)
+
+`src/ad.js` / `src/ad.html`, todos los textos en `ad.config.json`. Estilo negro + lima; solo se mueven el orbe (`src/orb.js`, compartido con el panel) y el punto "en línea".
+
+```bash
+node render.mjs --page src/ad.html --config ad.config.json --out out/kuper-anuncio-24-7.gif
+node render.mjs --page src/ad.html --config ad.config.json --fps 30 --out out/kuper-anuncio-24-7.mp4
+```
