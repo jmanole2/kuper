@@ -33,7 +33,7 @@ com.hooks.ia = async ({ messages, system }) => {
   pedidos.push(system);
   const lista = JSON.parse(messages[0].content.replace(/^Comentarios nuevos:\n/, ''));
   return { data: { respuestas: lista.map((c) => {
-    if (/precio|cuánto/i.test(c.comentario)) return { id: c.id, intencion: 'compra', publica: '¡Te escribimos por mensaje! 🍔', dm: 'La clásica cuesta $129. ¿Para cuántas personas?', ocultar: false, avisar: false };
+    if (/precio|cuánto/i.test(c.comentario)) return { id: c.id, intencion: 'compra', publica: '¡Te escribimos por mensaje! 🍔', dm: 'La clásica cuesta $129. ¿Para cuántas personas?', ocultar: false, avisar: false, cupon: 'primera' };
     if (/gana dinero|http/i.test(c.comentario)) return { id: c.id, intencion: 'spam', publica: '', dm: '', ocultar: true, avisar: false };
     if (/fría|tardó/i.test(c.comentario)) return { id: c.id, intencion: 'queja', publica: 'Lo sentimos mucho, te escribimos para resolverlo.', dm: '', ocultar: false, avisar: true };
     return { id: c.id, intencion: 'etiqueta', publica: '', dm: '', ocultar: false, avisar: false };

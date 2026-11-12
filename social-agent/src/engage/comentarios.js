@@ -17,6 +17,7 @@ import * as db from '../db.js';
 import * as conoc from '../conocimiento.js';
 import { pedirJSON } from '../llm/proveedor.js';
 import { matchesKeyword } from './keyword.js';
+import * as cupones from '../cupones.js';
 
 export const hooks = { graph: (...a) => graphCall(...a), ia: (...a) => pedirJSON(...a) }; // pruebas
 
@@ -125,8 +126,8 @@ async function deFacebook(meta, { anuncios }) {
 // ------------------------------------------------------------ decidir con la IA
 const S = { type: 'string' };
 export const SCHEMA = { type: 'object', additionalProperties: false, required: ['respuestas'], properties: { respuestas: { type: 'array', items: {
-  type: 'object', additionalProperties: false, required: ['id', 'intencion', 'publica', 'dm', 'ocultar', 'avisar'],
-  properties: { id: S, intencion: { type: 'string', enum: Object.keys(INTENCIONES) }, publica: S, dm: S, ocultar: { type: 'boolean' }, avisar: { type: 'boolean' } } } } } };
+  type: 'object', additionalProperties: false, required: ['id', 'intencion', 'publica', 'dm', 'ocultar', 'avisar', 'cupon'],
+  properties: { id: S, intencion: { type: 'string', enum: Object.keys(INTENCIONES) }, publica: S, dm: S, ocultar: { type: 'boolean' }, avisar: { type: 'boolean' }, cupon: S } } } } };
 
 export function instrucciones(client, aj, saber) {
   return `Eres quien contesta los comentarios de Instagram y Facebook de ${client.nombre}. Hablas como la marca: cálido, breve y natural, en el idioma del comentario (español de México si no se nota otro).
@@ -143,7 +144,7 @@ ${saber || '(Sin información cargada: no des precios, horarios ni datos; invita
 - Si es una queja: responde con empatía en público, sin discutir ni dar explicaciones largas, y ofrece seguir por mensaje.
 - Nunca prometas precios, descuentos, disponibilidad ni tiempos que no estén en lo que sabe la marca.
 - No repitas la misma respuesta pública en varios comentarios: varía las palabras.
-${aj.instrucciones ? `\n## Indicaciones de la marca (tienen prioridad)\n${aj.instrucciones}\n` : ''}
+${(() => { const ps = cupones.ajustes(client).activo ? cupones.ajustes(client).promociones.filter((p) => p.activa) : []; return ps.length && aj.dm ? `\n## Cupones\n- cupon: id de una promoción si encaja con el comentario y mandas dm (el código se agrega solo al mensaje directo; no lo escribas tú). Si no aplica, vacío.\n${ps.map((p) => `- "${p.id}": ${p.beneficio}. Cuándo: ${p.cuando || 'cuando ayude a la venta'}`).join('\n')}\n` : '- cupon: siempre vacío.\n'; })()}${aj.instrucciones ? `\n## Indicaciones de la marca (tienen prioridad)\n${aj.instrucciones}\n` : ''}
 Devuelve una respuesta por cada comentario, con el mismo id.`;
 }
 
@@ -237,6 +238,12 @@ export async function revisar(client, { now = new Date() } = {}) {
     if (!x) continue; // la IA no lo contestó: se intenta en la siguiente vuelta
     const row = { comment_id: c.id, canal: c.canal, post_id: c.post_id, post_link: c.post_link, post_texto: c.post_texto, anuncio: c.anuncio, usuario: c.usuario, usuario_id: c.usuario_id,
       texto: c.texto, comentado_at: c.comentado_at, intencion: x.intencion, publica: aj.publico ? x.publica.trim() : '', dm: aj.dm ? x.dm.trim() : '', ocultar: aj.ocultar && x.ocultar, avisar: x.avisar };
+    if (x.cupon && row.dm && cupones.ajustes(client).activo) {
+      try {
+        const cup = cupones.generar(client, { promocion: x.cupon, usuario: c.canal === 'instagram' ? c.usuario : `fb:${c.usuario_id || c.usuario}`, nombre: c.canal === 'facebook' ? c.usuario : undefined, canal: c.canal, motivo: `Comentario: ${String(c.texto).slice(0, 120)}` });
+        row.dm = `${row.dm}\n\n🎁 ${cup.texto}`;
+      } catch { /* sin cupón: se manda el mensaje normal */ }
+    }
     if (x.avisar) db.logEvent({ clientId: client.id, tipo: 'comentario_atencion', detalle: `${c.canal} ${c.usuario || ''}: "${String(c.texto).slice(0, 140)}"` });
     if (aj.revision && (row.publica || row.dm || row.ocultar)) {
       guardar(client.id, c, { intencion: row.intencion, publica: row.publica, dm: row.dm, ocultar: row.ocultar, avisar: row.avisar, status: 'por_aprobar' });

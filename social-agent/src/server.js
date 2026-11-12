@@ -41,6 +41,7 @@ import * as difusion from './difusion.js';
 import * as recordatorios from './recordatorios.js';
 import * as paises from './paises.js';
 import * as docs from './documentos.js';
+import * as cupones from './cupones.js';
 import { fichaLead, documentosCard } from './web/embudo.js';
 import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
@@ -143,7 +144,7 @@ export function createApp() {
     const ia = embudo.horarioIA(req.client); // cuándo contesta la IA (lo elige el cliente en el panel)
     const pausado = req.client.config.agente_pausado === true; // botón "Pausar agente" del panel
     // Disponibilidad leída de su Airtable (si lo conectaron): va al final, con prioridad sobre la lista general.
-    const disp = [airtable.bloque(req.client), conoc.bloqueAvisos(req.client)].filter(Boolean).join('\n\n');
+    const disp = [airtable.bloque(req.client), conoc.bloqueAvisos(req.client), cupones.bloqueAgente(req.client)].filter(Boolean).join('\n\n');
     if (disp && k) k.texto = `${k.texto}\n\n${disp}`;
     if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado });
     res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
@@ -201,6 +202,11 @@ export function createApp() {
       const h = (k) => { try { return decodeURIComponent(String(req.get(k) || '')); } catch { return ''; } };
       res.json({ ok: true, ...(await docs.guardar(req.client, { telefono: h('x-telefono'), nombre: h('x-nombre'), caption: h('x-caption'), mime: req.get('content-type'), buf: req.body })) });
     } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  // Cupón para una persona (lo pide el agente con generar_cupon).
+  api.post('/cupones', (req, res) => {
+    try { res.json({ ok: true, ...cupones.generar(req.client, req.body || {}) }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
   });
   api.post('/documentos/tipo', (req, res) => {
     try { res.json({ ok: true, ...docs.registrarTipo(req.client, req.body || {}) }); }
@@ -496,6 +502,8 @@ export function createApp() {
   appR.use('/comentarios', servicio('comentarios'));
   comentariosRoutes(appR, () => '/app', { app: true });
   appR.use('/difusion', servicio('chat'));
+  appR.use('/cupones', servicio('chat'));
+  cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
     const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg, todo: req.query.todo === '1' };
@@ -910,6 +918,7 @@ export function createApp() {
   conocimientoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   comentariosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   difusionRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  cuponesRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -1284,6 +1293,35 @@ export function createApp() {
     router.post(`${prefix}/comentarios/:comId/descartar`, (req, res) => {
       try { comentarios.descartar(req.client, req.params.comId, autor(req)); res.redirect(`${base(req)}/comentarios?ok=descartado&f=por_aprobar`); }
       catch (e) { vista(req, res, { error: e.message }); }
+    });
+  }
+
+  // Cupones: canje en sucursal (cajero) y promociones que puede dar el agente.
+  function cuponesRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
+    const vista = (req, res, extra = {}) => {
+      const codigo = String(req.query.codigo || extra.codigo || '').slice(0, 30);
+      res.status(extra.error ? 400 : 200).send(V.cuponesPage(req.client, { aj: cupones.ajustes(req.client), lista: cupones.listar(req.client.id, { limit: 60 }), resumen: cupones.resumen(req.client.id),
+        consulta: codigo ? cupones.consultar(req.client, codigo) : null, codigo, base: base(req), app, sucursal: String(req.query.sucursal || extra.sucursal || '').slice(0, 80),
+        ok: { promociones: 'Promociones guardadas. Tu agente ya puede darlas.' }[req.query.ok] || '', ...extra }));
+    };
+    router.get(`${prefix}/cupones`, (req, res) => vista(req, res));
+    router.post(`${prefix}/cupones/canjear`, (req, res) => {
+      try {
+        const x = cupones.canjear(req.client, req.body.codigo, { autor: autor(req), sucursal: req.body.sucursal });
+        seg.auditar(req, 'cupon_canjeado', `${req.client.nombre}: ${x.cupon.codigo}`);
+        vista(req, res, { codigo: x.cupon.codigo, sucursal: req.body.sucursal, canjeado: true });
+      } catch (e) { vista(req, res, { codigo: req.body.codigo, sucursal: req.body.sucursal, error: e.message }); }
+    });
+    router.post(`${prefix}/cupones/promociones`, (req, res) => {
+      const b = req.body || {};
+      const filas = Array.from({ length: 20 }, (_, i) => i + 1).filter((i) => b[`beneficio_${i}`] !== undefined).map((i) => ({ id: b[`id_${i}`], nombre: b[`nombre_${i}`], beneficio: b[`beneficio_${i}`], cuando: b[`cuando_${i}`],
+        vigencia_horas: b[`vigencia_${i}`], max_dia: b[`max_${i}`], activa: b[`activa_${i}`] === '1' }));
+      const promociones = cupones.limpiarPromociones(filas);
+      db.updateClient(req.client.id, { config: { ...req.client.config, cupones: { activo: b.activo === '1', prefijo: String(b.prefijo || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8), promociones } } });
+      db.logEvent({ clientId: req.client.id, tipo: 'cupones_promociones', detalle: `${autor(req)}: ${promociones.length} promociones` });
+      seg.auditar(req, 'cupones_promociones', req.client.nombre);
+      res.redirect(`${base(req)}/cupones?ok=promociones`);
     });
   }
 

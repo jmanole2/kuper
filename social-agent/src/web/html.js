@@ -88,6 +88,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
 `;
 
 const ICON = {
+  ticket: '<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/>',
   send: '<path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>',
   coment: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/>',
   funnel: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',

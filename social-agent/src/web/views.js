@@ -156,6 +156,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
   ...(tiene(client, 'comentarios') ? [{ href: '/app/comentarios', icon: 'coment', label: 'Comentarios', on: on === 'comentarios' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/difusion', icon: 'send', label: 'Campañas de WhatsApp', on: on === 'difusion' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/cupones', icon: 'ticket', label: 'Cupones', on: on === 'cupones' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
   ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
@@ -318,7 +319,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -331,7 +332,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1492,4 +1493,54 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
     <script>(() => { const s = document.getElementById('pl-sel'); if (!s) return; s.addEventListener('change', () => { const o = s.selectedOptions[0]; if (!o || !o.value) return;
       document.getElementById('pl-nombre').value = o.value; document.getElementById('pl-idioma').value = o.dataset.idioma || 'es_MX'; document.getElementById('pl-cuerpo').value = o.dataset.cuerpo || ''; }); })();</script>`;
   return page({ title: `Campañas · ${client.nombre}`, side: app ? sideApp('difusion', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ cupones (canje en sucursal)
+export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consulta = null, codigo = '', sucursal = '', base, app = false, ok = '', error = '', canjeado = false }) {
+  const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
+  const ESTADO = { valido: ['Válido', '#4ade80'], canjeado: ['Ya canjeado', '#fbbf24'], vencido: ['Vencido', '#f87171'], no_existe: ['No existe', '#f87171'] };
+  const promos = [...(aj.promociones || []), {}, {}].slice(0, Math.max(3, (aj.promociones || []).length + 1));
+  const res = consulta ? (() => { const [t, col] = ESTADO[consulta.estado]; const c = consulta.cupon;
+    return html`<div class="card" style="margin-top:14px;border-color:${col}55;background:${col}12">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><b style="font-size:22px;letter-spacing:.06em">${c ? c.codigo : codigo.toUpperCase()}</b><span class="chip" style="font-size:13px"><i style="background:${col}"></i>${canjeado ? 'Canjeado ahora ✓' : t}</span></div>
+      ${c ? html`<p style="font-size:18px;margin:10px 0 4px"><b>${c.beneficio}</b></p>
+        <p class="muted small" style="margin:0">${c.promocion}${consulta.nombre ? ` · ${consulta.nombre}` : ''} · vence ${consulta.vence_texto}${c.canjeado_at ? ` · canjeado ${fecha(c.canjeado_at)}${c.sucursal ? ` en ${c.sucursal}` : ''}${c.canjeado_por ? ` por ${c.canjeado_por}` : ''}` : ''}</p>
+        ${consulta.estado === 'valido' && !canjeado ? html`<form method="post" action="${base}/cupones/canjear" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><input type="hidden" name="codigo" value="${c.codigo}"><input type="hidden" name="sucursal" value="${sucursal}"><button class="btn-accent" style="font-size:17px;padding:14px 22px">Canjear ahora</button></form>` : ''}` : html`<p class="muted" style="margin:8px 0 0">Revisa que esté bien escrito.</p>`}
+    </div>`; })() : '';
+  const body = html`${hero({ kicker: 'Cupones', title: 'Cupones', letra: client.nombre, sub: 'Tu agente da cupones únicos con vigencia según la conversación; en sucursal se validan y canjean aquí.',
+      note: ['Últimos 30 días', `${resumen.dados || 0} dados · ${resumen.canjeados || 0} canjeados (${resumen.tasa || 0} %)`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:start" class="cu">
+      <style>@media (max-width:980px){.cu{grid-template-columns:1fr!important}} .cu input,.cu textarea{width:100%}</style>
+      <div>
+        <form class="card" method="get" action="${base}/cupones">
+          <span class="mono">Canjear en sucursal</span>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px"><input name="codigo" value="${codigo}" placeholder="Código del cupón" autocomplete="off" autocapitalize="characters" style="font-size:20px;letter-spacing:.06em;text-transform:uppercase" required><button class="btn-accent">Buscar</button></div>
+          <label class="small muted" style="display:block;margin-top:8px">Sucursal (opcional)<input name="sucursal" value="${sucursal}" placeholder="Ej.: Polanco"></label>
+        </form>
+        ${res}
+        <div class="card" style="margin-top:18px"><span class="mono">Últimos cupones</span>
+          ${lista.length ? html`<table style="margin-top:8px;font-size:14px">${lista.slice(0, 30).map((c) => html`<tr><td><b>${c.codigo}</b><div class="muted small">${c.promocion} · ${fecha(c.created_at)}</div></td><td style="text-align:right" class="small">${c.canjeado_at ? html`<span style="color:#4ade80">Canjeado${c.sucursal ? ` · ${c.sucursal}` : ''}</span>` : html`<span class="muted">Vence ${fecha(c.vence_at)}</span>`}</td></tr>`)}</table>`
+            : html`<p class="muted small">Aún no se ha dado ningún cupón.</p>`}
+          ${(resumen.porPromocion || []).length ? html`<p class="muted small" style="margin-top:10px">${resumen.porPromocion.map((p) => `${p.promocion}: ${p.dados} dados, ${p.canjeados || 0} canjeados`).join(' · ')}</p>` : ''}
+        </div>
+      </div>
+      <form class="card" method="post" action="${base}/cupones/promociones" style="display:grid;gap:12px">
+        <span class="mono">Promociones que puede dar tu agente</span>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Activar cupones</label>
+        <label class="small muted">Prefijo del código<input name="prefijo" value="${aj.prefijo || ''}" maxlength="8" placeholder="CHUB" style="text-transform:uppercase"></label>
+        ${promos.map((p, i) => html`<div style="border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;display:grid;gap:8px">
+          <input type="hidden" name="id_${i + 1}" value="${p.id || ''}">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center"><input name="nombre_${i + 1}" value="${p.nombre || ''}" placeholder="Nombre (ej.: Primera compra)">
+            <label class="small" style="display:flex;gap:6px;align-items:center;white-space:nowrap"><input type="checkbox" name="activa_${i + 1}" value="1" ${p.activa !== false ? 'checked' : ''}>Activa</label></div>
+          <input name="beneficio_${i + 1}" value="${p.beneficio || ''}" placeholder="Qué recibe (ej.: 10 % en la Hamburguesa Clásica)">
+          <textarea name="cuando_${i + 1}" style="min-height:52px" placeholder="Cuándo darlo (ej.: si pregunta el menú y no pide, o si comenta que se le antoja)">${p.cuando || ''}</textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="small muted">Vigencia (horas)<input name="vigencia_${i + 1}" type="number" min="1" value="${p.vigencia_horas || 72}"></label>
+            <label class="small muted">Máximo al día (0 = sin límite)<input name="max_${i + 1}" type="number" min="0" value="${p.max_dia || 0}"></label></div>
+        </div>`)}
+        <p class="muted small" style="margin:0">Deja vacío el beneficio para borrar una promoción. Cada persona recibe un solo cupón vigente por promoción y cada código se canjea una sola vez.</p>
+        <div><button class="btn-accent">Guardar promociones</button></div>
+      </form>
+    </div>`;
+  return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
 }
