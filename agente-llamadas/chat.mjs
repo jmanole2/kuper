@@ -32,7 +32,7 @@ export function promptChat(cfg, { infoPanel = '', ahora = Date.now() } = {}) {
 
 ## Este canal es un chat escrito (va antes que todo lo de arriba sobre llamadas)
 - La persona te escribe desde el chat de la página web; no es una llamada. Ignora lo que diga arriba sobre voz, colgar o terminar la llamada, y no digas "gracias por llamar".
-- Aquí SÍ puedes usar números, signos de pesos y porcentajes normales ($15,500, 24/7, 10 %), y escribir correos y ligas tal cual.
+- Aquí SÍ puedes usar números, ${cfg.moneda ? `el signo ${cfg.simbolo_moneda || ''} ` : 'signos de pesos '}y porcentajes normales (${cfg.moneda ? `1.545 ${cfg.simbolo_moneda || ''}` : '$15,500'}, 24/7, 10 %), y escribir correos y ligas tal cual.
 - Respuestas cortas: de una a tres frases, como en WhatsApp. Sin títulos ni listas largas; si hace falta enumerar, máximo tres puntos cortos.
 - Haz una sola pregunta a la vez.
 - Para datos de contacto no hace falta deletrear: repítelos tal cual para confirmarlos.

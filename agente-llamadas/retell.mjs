@@ -86,7 +86,14 @@ async function sincronizarTransferencia(llmId) {
 async function elegirVoz(vozId = cfg.voz_id, genero = 'female') {
   if (vozId) return vozId;
   const voces = await api('GET', '/list-voices');
-  const latinas = voces.filter((v) => /mexic|latin|spanish|español/i.test(`${v.accent} ${v.voice_name}`));
+  // acento_voz (opcional, regex): p. ej. "spain|castil|españa" para España.
+  const acento = new RegExp(cfg.acento_voz || 'mexic|latin|spanish|español', 'i');
+  const prov = (v) => !cfg.voz_proveedor || v.provider === cfg.voz_proveedor;
+  let latinas = voces.filter((v) => acento.test(`${v.accent} ${v.voice_name}`) && prov(v));
+  if (!latinas.length && cfg.acento_voz) {
+    console.log(`No hay voz con acento "${cfg.acento_voz}"; uso otra en español (o pon "voz_id").`);
+    latinas = voces.filter((v) => /spanish|español|mexic|latin/i.test(`${v.accent} ${v.voice_name}`) && prov(v));
+  }
   const voz = latinas.find((v) => v.gender === genero) || latinas[0];
   if (!voz) throw new Error('No encontré una voz en español. Corre el comando "voces" y pon una en "voz_id" de negocio.json.');
   console.log(`Voz elegida: ${voz.voice_name} (${voz.accent}, ${voz.provider}) -> ${voz.voice_id}`);
@@ -103,8 +110,10 @@ async function crear() {
   };
   const agente = {
     agent_name: cfg.nombre_agente,
-    language: 'es-419',
+    // idioma_voz: 'es-419' por defecto; 'es-ES' para España, o una lista (["es-ES","en-US","ru-RU"]) para que hable varios idiomas.
+    language: cfg.idioma_voz || 'es-419',
     voice_id: await elegirVoz(),
+    ...(cfg.voz_modelo ? { voice_model: cfg.voz_modelo } : {}),
     // Topes para no gastar créditos si alguien deja la llamada abierta.
     // Qué tanto lo interrumpe un ruido o una palabra suelta (0 a 1; 1 = se calla con cualquier sonido).
     interruption_sensitivity: Number.isFinite(Number(cfg.interrupcion)) ? Number(cfg.interrupcion) : 0.6,

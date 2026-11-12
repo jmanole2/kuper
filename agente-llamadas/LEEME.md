@@ -129,3 +129,15 @@ Cada demo (llamadas.kuper.media/<demo>) tiene arriba a la derecha **Llamar | Cha
 
 - Necesita `ANTHROPIC_API_KEY` o `LLM_API_KEY` (OpenRouter, la misma de los agentes de WhatsApp) en el `.env`. Opcional: `CHAT_MODEL`. Sin clave, el botón de chat no aparece.
 - Límites: `CHAT_POR_IP_DIA` (40 mensajes) y `CHAT_DIA_TOTAL` (1500 al día).
+
+## Demos fuera de México u otros idiomas
+
+Opcionales en el JSON de la demo (si no se ponen, todo queda como siempre: español de México y pesos):
+
+- `habla`: cómo habla, p. ej. "español de España (castellano peninsular)…".
+- `otros_idiomas`: si la persona habla en otro idioma, contesta en ese idioma (p. ej. "inglés, ruso, francés").
+- `idioma_voz`: idioma de Retell. `"es-ES"` para España, o una lista para varios idiomas: `["es-ES","en-US","ru-RU"]` (entre menos idiomas, mejor entiende).
+- `acento_voz` (regex), `voz_proveedor` y `voz_modelo` (p. ej. `elevenlabs` + `eleven_multilingual_v2`) para elegir la voz; o `voz_id` directo.
+- `moneda` y `simbolo_moneda` (p. ej. "euros" y "€"), `zona_texto` (p. ej. "hora de Madrid").
+
+Ejemplo: `demos/nera.json`.
