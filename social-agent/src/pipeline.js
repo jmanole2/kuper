@@ -15,6 +15,7 @@ import { tickBlog } from './blog.js';
 import { randomToken } from './crypto.js';
 import { processKeywordComments } from './engage/keyword.js';
 import * as comentarios from './engage/comentarios.js';
+import * as difusion from './difusion.js';
 import { tiene } from './plan.js';
 import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
 import { reporteCorreo } from './web/reporte.js';
@@ -502,6 +503,8 @@ export async function tick(now = new Date()) {
         db.logEvent({ clientId: client.id, tipo: 'comentario_error', detalle: `${e.message} (reintenta en 30 min)` });
       }));
     }
+    // Campañas de WhatsApp aprobadas: unos cuantos mensajes por minuto, en horario y con tope diario.
+    if (tiene(client, 'chat')) enqueue(`dif-${client.id}`, () => difusion.enviarPendientes(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'difusion_error', detalle: e.message })));
     // Reels aprobados que todavía no tienen su copia en Facebook/TikTok (p. ej. aprobados antes de activar la opción).
     for (const p of db.listPosts({ clientId: client.id, statuses: ['aprobado'], limit: 50 })) shareApproved(p.id);
     // Aviso al cliente de lo que tiene por revisar (un correo al día como máximo).

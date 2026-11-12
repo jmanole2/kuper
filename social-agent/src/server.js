@@ -37,6 +37,7 @@ import * as importar from './importar.js';
 import * as limpieza from './limpieza.js';
 import * as airtable from './airtable.js';
 import * as comentarios from './engage/comentarios.js';
+import * as difusion from './difusion.js';
 import { fichaLead } from './web/embudo.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
@@ -477,6 +478,8 @@ export function createApp() {
   conocimientoRoutes(appR, () => '/app', { app: true });
   appR.use('/comentarios', servicio('comentarios'));
   comentariosRoutes(appR, () => '/app', { app: true });
+  appR.use('/difusion', servicio('chat'));
+  difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
     const cfg = agenda.agendaCfg(req.client), view = { agendaCfg: cfg, todo: req.query.todo === '1' };
     try { view.citas = cfg.calendar_id ? agenda.groupRecurring(await agenda.upcomingEvents(cfg.calendar_id)) : null; } catch { view.citasError = 'No pudimos leer la agenda en este momento.'; }
@@ -889,6 +892,7 @@ export function createApp() {
   });
   conocimientoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   comentariosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  difusionRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -1251,6 +1255,42 @@ export function createApp() {
     router.post(`${prefix}/comentarios/:comId/descartar`, (req, res) => {
       try { comentarios.descartar(req.client, req.params.comId, autor(req)); res.redirect(`${base(req)}/comentarios?ok=descartado&f=por_aprobar`); }
       catch (e) { vista(req, res, { error: e.message }); }
+    });
+  }
+
+  // Campañas de WhatsApp con segmentos y aprobación (admin y cliente).
+  function difusionRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
+    // El formulario manda variables como var_fuente_1, var_texto_1…
+    const leerForm = (b) => ({ ...b, filtros: { embudo: b.embudo, etapas: [].concat(b.etapas || []), tags: b.tags, origen: b.origen, resultado: b.resultado, sin_actividad: b.sin_actividad, max_dias: b.max_dias },
+      variables: Array.from({ length: 10 }, (_, i) => (b[`var_fuente_${i + 1}`] ? { fuente: b[`var_fuente_${i + 1}`], texto: b[`var_texto_${i + 1}`] } : null)).filter(Boolean) });
+    const vista = async (req, res, extra = {}) => {
+      let lista = null, errorPlantillas = '';
+      try { lista = await difusion.plantillas(req.client); } catch (e) { errorPlantillas = e.message; }
+      const form = extra.form || {};
+      const seg = extra.form ? difusion.segmento(req.client, form.filtros) : null;
+      if (seg) seg.ejemplos = seg.leads.slice(0, 6).map((l) => ({ nombre: l.nombre || l.telefono, telefono: l.telefono,
+        texto: form.cuerpo ? difusion.render(form.cuerpo, difusion.valores(req.client, l, form.variables)) : '' }));
+      res.status(extra.error ? 400 : 200).send(V.difusionPage(req.client, { campanas: difusion.listar(req.client.id), plantillas: lista, errorPlantillas, directo: difusion.directo(req.client),
+        agente: agente.agenteConfigurado(req.client), embudos: embudo.embudos(req.client), base: base(req), app, form, seg, ESTADOS: difusion.ESTADOS, FUENTES: difusion.FUENTES,
+        FRECUENCIA: difusion.FRECUENCIA_DIAS, ok: { creada: 'Campaña creada. Revísala y apruébala para que empiece a enviarse.', aprobar: 'Aprobada: se empieza a enviar en horario (9 a 20 h).', pausar: 'Campaña en pausa.',
+          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.' }[req.query.ok] || '', ...extra }));
+    };
+    router.get(`${prefix}/difusion`, (req, res) => vista(req, res));
+    router.post(`${prefix}/difusion/vista`, (req, res) => vista(req, res, { form: leerForm(req.body || {}) }));
+    router.post(`${prefix}/difusion/nueva`, (req, res) => {
+      const form = leerForm(req.body || {});
+      try { difusion.crear(req.client, form, autor(req)); seg.auditar(req, 'difusion_creada', req.client.nombre); res.redirect(`${base(req)}/difusion?ok=creada`); }
+      catch (e) { vista(req, res, { form, error: e.message }); }
+    });
+    router.post(`${prefix}/difusion/:difId/:accion`, (req, res) => {
+      if (!['aprobar', 'pausar', 'reanudar', 'cancelar', 'reintentar'].includes(req.params.accion)) return res.status(404).send('No encontrado');
+      try {
+        if (req.params.accion === 'reintentar') difusion.reintentarErrores(req.client, req.params.difId);
+        else difusion.cambiarEstado(req.client, req.params.difId, req.params.accion, autor(req));
+        seg.auditar(req, `difusion_${req.params.accion}`, req.client.nombre);
+        res.redirect(`${base(req)}/difusion?ok=${req.params.accion}`);
+      } catch (e) { vista(req, res, { error: e.message }); }
     });
   }
 

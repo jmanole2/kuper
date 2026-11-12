@@ -155,6 +155,7 @@ const sideApp = (on, client) => [
   ...(tiene(client, 'chat') ? [{ href: '/app/leads', icon: 'users', label: 'Leads', on: on === 'leads' }, { href: '/app/embudo', icon: 'funnel', label: 'Embudo de ventas', on: on === 'embudo' }, { href: '/app/analitica', icon: 'bars', label: 'Analítica', on: on === 'analitica' }, { href: '/app/agente', icon: 'brain', label: 'Lo que sabe tu agente', on: on === 'agente' }] : []),
   ...(tiene(client, 'agenda') ? [{ href: '/app/citas', icon: 'cal', label: 'Citas', on: on === 'citas' }] : []),
   ...(tiene(client, 'comentarios') ? [{ href: '/app/comentarios', icon: 'coment', label: 'Comentarios', on: on === 'comentarios' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/difusion', icon: 'send', label: 'Campañas de WhatsApp', on: on === 'difusion' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
   ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
@@ -317,7 +318,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -330,7 +331,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1374,4 +1375,83 @@ export function comentariosPage(client, { lista = [], resumen = {}, aj = {}, bas
       </div>
     </div>`;
   return page({ title: `Comentarios · ${client.nombre}`, side: app ? sideApp('comentarios', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ campañas de WhatsApp (difusión)
+export function difusionPage(client, { campanas = [], plantillas = null, errorPlantillas = '', directo = false, agente = false, embudos = [], base, app = false, form = {}, seg = null,
+  ESTADOS = {}, FUENTES = {}, FRECUENCIA = 7, ok = '', error = '' }) {
+  const f = form.filtros || {};
+  const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
+  const n = (x) => Number(x || 0).toLocaleString('es-MX');
+  const etapasTodas = embudos.flatMap((e) => e.etapas.map((x) => ({ id: x.id, nombre: embudos.length > 1 ? `${e.nombre} · ${x.nombre}` : x.nombre })));
+  const sel = (name, opciones, valor) => html`<select name="${name}">${opciones.map(([v, t]) => html`<option value="${v}" ${String(valor ?? '') === String(v) ? 'selected' : ''}>${t}</option>`)}</select>`;
+  const resumenFiltros = (x = {}) => [x.etapas?.length ? `Etapas: ${x.etapas.map((id) => etapasTodas.find((e) => e.id === id)?.nombre || id).join(', ')}` : '', x.tags?.length ? `Etiquetas: ${x.tags.join(', ')}` : '',
+    x.origen ? `Canal: ${x.origen}` : '', x.resultado ? `Resultado: ${x.resultado}` : '', x.sin_actividad !== null && x.sin_actividad !== undefined ? `${x.sin_actividad}+ días sin actividad` : '',
+    x.max_dias !== null && x.max_dias !== undefined ? `Llegaron en los últimos ${x.max_dias} días` : ''].filter(Boolean).join(' · ') || 'Todos los contactos con WhatsApp';
+  const camp = (c) => {
+    const [et, col] = ESTADOS[c.estado] || [c.estado, '#a39d93'];
+    const acc = (a, t, cls = 'btn-warn', conf = '') => html`<button class="${cls}" formaction="${base}/difusion/${c.id}/${a}" ${conf ? raw(`onclick="return confirm('${conf}')"`) : ''}>${t}</button>`;
+    return html`<form method="post" class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><b style="font-size:18px">${c.nombre}</b><span class="chip"><i style="background:${col}"></i>${et}</span></div>
+      <p class="muted small" style="margin:6px 0 0">Plantilla <b>${c.plantilla}</b> (${c.idioma}) · ${resumenFiltros(c.filtros)} · tope ${n(c.tope_diario)} al día</p>
+      ${c.cuerpo ? html`<p class="small" style="margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(74,222,128,.08);white-space:pre-wrap">${c.cuerpo}</p>` : ''}
+      <div class="kpis" style="margin-top:12px">${[[c.total, 'Contactos', '#93b4ff'], [c.enviados, 'Enviados', '#4ade80'], [c.pendientes, 'Pendientes', '#fbbf24'], [c.respondieron, 'Respondieron', '#c9f53a'], [c.errores, 'Errores', '#f87171']]
+        .map(([v, t, k]) => html`<div class="kpi"><b>${n(v)}</b><small><i style="background:${k}"></i>${t}</small></div>`)}</div>
+      ${c.error ? html`<p class="small" style="color:#f87171;margin:8px 0 0">Último error: ${c.error}</p>` : ''}
+      <p class="muted small" style="margin:8px 0 0">Creó ${c.creada_por || '—'} el ${fecha(c.created_at)}${c.aprobada_por ? ` · aprobó ${c.aprobada_por} el ${fecha(c.aprobada_at)}` : ''}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        ${c.estado === 'borrador' ? acc('aprobar', `Aprobar y enviar a ${n(c.total)}`, 'btn-accent', `¿Aprobar? Se enviará a ${c.total} contactos en horario, máximo ${c.tope_diario} al día.`) : ''}
+        ${c.estado === 'enviando' ? acc('pausar', 'Pausar') : ''}${c.estado === 'pausada' ? acc('reanudar', 'Reanudar', 'btn-accent') : ''}
+        ${c.errores ? acc('reintentar', `Reintentar ${n(c.errores)} con error`) : ''}
+        ${['borrador', 'enviando', 'pausada'].includes(c.estado) ? acc('cancelar', 'Cancelar', 'btn-bad', '¿Cancelar la campaña? Los pendientes ya no se envían.') : ''}
+      </div></form>`;
+  };
+  const vars = Array.from({ length: 5 }, (_, i) => {
+    const v = (form.variables || [])[i] || {};
+    return html`<div style="display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;align-items:center"><span class="mono">{{${i + 1}}}</span>
+      ${sel(`var_fuente_${i + 1}`, [['', '— no se usa —'], ...Object.entries(FUENTES)], v.fuente)}<input name="var_texto_${i + 1}" value="${v.texto || ''}" placeholder="Texto fijo (si eliges texto)" maxlength="60"></div>`;
+  });
+  const body = html`${hero({ kicker: 'Campañas de WhatsApp', title: 'Campañas', letra: client.nombre,
+      sub: 'Manda un mensaje a un grupo de tus contactos (por etapa, etiqueta o días sin actividad) con una plantilla aprobada por Meta. Nada sale hasta que alguien lo aprueba.',
+      note: ['Cómo se cuida tu número', `En horario, escalonado, con tope diario, sin repetir a quien recibió otra en ${FRECUENCIA} días y sin escribir a quien pidió su baja`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    ${!directo && !agente ? html`<div class="err">Esta marca todavía no tiene WhatsApp conectado. Conéctalo en <a href="${base}/agente">Lo que sabe tu agente</a>.</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.2fr) minmax(320px,1fr);align-items:start" class="df">
+      <style>@media (max-width:980px){.df{grid-template-columns:1fr!important}} .df select,.df input:not([type=checkbox]){width:100%}</style>
+      <div>${campanas.length ? campanas.map(camp) : html`<div class="card muted">Aún no hay campañas. Crea la primera con el formulario.</div>`}</div>
+      <form class="card" method="post" action="${base}/difusion/nueva" style="display:grid;gap:12px">
+        <span class="mono">Nueva campaña</span>
+        <label class="small muted">Nombre<input name="nombre" maxlength="80" required value="${form.nombre || ''}" placeholder="Ej.: Reactivar clientes de octubre"></label>
+        <span class="mono" style="margin-top:6px">1 · A quién le llega</span>
+        ${etapasTodas.length ? html`<div class="small"><span class="muted">Etapas (si no eliges, todas)</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px">${etapasTodas.map((e) => html`<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="etapas" value="${e.id}" ${(f.etapas || []).includes(e.id) ? 'checked' : ''}>${e.nombre}</label>`)}</div></div>` : ''}
+        <label class="small muted">Con alguna de estas etiquetas (separadas por coma)<input name="tags" value="${(f.tags || []).join(', ')}" placeholder="Ej.: vip, interesado"></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label class="small muted">Canal de origen${sel('origen', [['', 'Todos'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram'], ['facebook', 'Messenger'], ['llamada', 'Llamada'], ['importado', 'Importados']], f.origen)}</label>
+          <label class="small muted">Resultado${sel('resultado', [['', 'Todos'], ['abierto', 'Abiertos'], ['vendido', 'Vendidos'], ['perdido', 'Perdidos'], ['resuelto', 'Resueltos']], f.resultado)}</label>
+          <label class="small muted">Sin actividad hace al menos (días)<input name="sin_actividad" type="number" min="0" value="${f.sin_actividad ?? ''}" placeholder="Ej.: 30"></label>
+          <label class="small muted">Llegaron en los últimos (días)<input name="max_dias" type="number" min="0" value="${f.max_dias ?? ''}" placeholder="Ej.: 90"></label>
+        </div>
+        <span class="mono" style="margin-top:6px">2 · Plantilla aprobada por Meta</span>
+        ${plantillas?.length ? html`<label class="small muted">Elige una de tus plantillas<select id="pl-sel"><option value="">—</option>${plantillas.map((t) => html`<option value="${t.nombre}" data-idioma="${t.idioma}" data-cuerpo="${t.cuerpo}" ${form.plantilla === t.nombre ? 'selected' : ''}>${t.nombre} · ${t.idioma} · ${t.categoria}</option>`)}</select></label>`
+          : html`<p class="muted small" style="margin:0">${errorPlantillas ? `No pude leer tus plantillas (${errorPlantillas}). ` : ''}Escribe el nombre exacto de la plantilla aprobada en tu WhatsApp Manager.</p>`}
+        <div style="display:grid;grid-template-columns:1fr 110px;gap:8px">
+          <label class="small muted">Nombre de la plantilla<input name="plantilla" id="pl-nombre" required value="${form.plantilla || ''}" placeholder="recordatorio_pendientes"></label>
+          <label class="small muted">Idioma<input name="idioma" id="pl-idioma" value="${form.idioma || 'es_MX'}"></label>
+        </div>
+        <label class="small muted">Texto de la plantilla (para ver cómo queda; usa {{1}}, {{2}}…)<textarea name="cuerpo" id="pl-cuerpo" style="min-height:90px" maxlength="1024">${form.cuerpo || ''}</textarea></label>
+        <div class="small" style="display:grid;gap:6px"><span class="muted">Con qué se llena cada variable</span>${vars}</div>
+        <label class="small muted">Máximo al día<input name="tope_diario" type="number" min="1" max="10000" value="${form.tope_diario || 250}"></label>
+        ${seg ? html`<div class="card" style="background:rgba(201,245,58,.06);border-color:rgba(201,245,58,.3)">
+            <b style="font-size:18px">${n(seg.leads.length)} contactos recibirían la campaña</b>
+            <p class="muted small" style="margin:4px 0 8px">Se excluyen ${n(seg.excluidos.sin_whatsapp)} sin WhatsApp, ${n(seg.excluidos.baja)} con baja y ${n(seg.excluidos.recientes)} que recibieron otra campaña en ${FRECUENCIA} días.</p>
+            ${seg.ejemplos.map((e) => html`<div class="small" style="margin:8px 0"><b>${e.nombre}</b> <span class="muted">${e.telefono}</span>${e.texto ? html`<div style="margin-top:4px;padding:8px 10px;border-radius:10px;background:rgba(74,222,128,.08);white-space:pre-wrap">${e.texto}</div>` : ''}</div>`)}
+          </div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-warn" formaction="${base}/difusion/vista" formnovalidate>Ver a quién le llega</button><button class="btn-accent">Crear campaña</button></div>
+        <p class="muted small" style="margin:0">Al crearla queda por aprobar: nada se envía hasta que alguien la aprueba. Si un contacto responde, el agente le contesta como siempre.</p>
+      </form>
+    </div>
+    <script>(() => { const s = document.getElementById('pl-sel'); if (!s) return; s.addEventListener('change', () => { const o = s.selectedOptions[0]; if (!o || !o.value) return;
+      document.getElementById('pl-nombre').value = o.value; document.getElementById('pl-idioma').value = o.dataset.idioma || 'es_MX'; document.getElementById('pl-cuerpo').value = o.dataset.cuerpo || ''; }); })();</script>`;
+  return page({ title: `Campañas · ${client.nombre}`, side: app ? sideApp('difusion', client) : side('clientes'), body });
 }
