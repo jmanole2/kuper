@@ -39,7 +39,10 @@ import * as airtable from './airtable.js';
 import * as comentarios from './engage/comentarios.js';
 import * as difusion from './difusion.js';
 import * as recordatorios from './recordatorios.js';
-import { fichaLead } from './web/embudo.js';
+import * as paises from './paises.js';
+import * as docs from './documentos.js';
+import { fichaLead, documentosCard } from './web/embudo.js';
+import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
 
 // Los videos de TikTok por aprobar muestran la cuenta y sus opciones (las pide TikTok antes de publicar).
@@ -155,7 +158,7 @@ export function createApp() {
   });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
-    try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor }); res.json({ ok: true }); }
+    try { db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor }); paises.clasificarTelefono(req.client, telefono); res.json({ ok: true }); }
     catch (e) { res.status(400).json({ error: e.message }); }
   });
   api.delete('/citas/:eventId', async (req, res) => {
@@ -191,6 +194,18 @@ export function createApp() {
     catch (e) { res.status(/no encontrado/.test(e.message) ? 404 : 400).json({ error: e.message }); }
   });
   // El agente de WhatsApp avisa que alguien necesita a una persona: se marca en el lead y se manda por correo.
+  // Documentos que el contacto mandó por WhatsApp: el agente manda el archivo tal cual (cuerpo binario) con
+  // X-Telefono, X-Nombre y X-Caption (codificados con encodeURIComponent) y Content-Type del archivo.
+  api.post('/documentos', express.raw({ type: () => true, limit: '26mb' }), async (req, res) => {
+    try {
+      const h = (k) => { try { return decodeURIComponent(String(req.get(k) || '')); } catch { return ''; } };
+      res.json({ ok: true, ...(await docs.guardar(req.client, { telefono: h('x-telefono'), nombre: h('x-nombre'), caption: h('x-caption'), mime: req.get('content-type'), buf: req.body })) });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  api.post('/documentos/tipo', (req, res) => {
+    try { res.json({ ok: true, ...docs.registrarTipo(req.client, req.body || {}) }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
+  });
   api.post('/avisos', async (req, res) => {
     try { res.json(await avisosAgente.recibir(req.client, req.body || {})); }
     catch (e) { console.error('[avisos agente]', e.message); res.status(500).json({ error: e.message }); }
@@ -199,6 +214,7 @@ export function createApp() {
     try {
       let lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
       lead = embudo.datosDelAgente(req.client, lead, req.body || {});
+      lead = paises.clasificar(req.client, lead); // etiqueta de país por la lada y asesor de ese país
       campanas.completarCampana(req.client, lead); // nombre de la campaña de Meta, en segundo plano
       res.json({ ok: true, lead });
     }
@@ -1108,10 +1124,22 @@ export function createApp() {
       let estado = null;
       if (agente.agenteConfigurado(req.client)) estado = await agente.llamarAgente(req.client, 'POST', '/estado', agente.identidad(lead), { timeout: 4000 }).catch(() => null);
       const b = `${base(req)}/leads/${lead.id}`;
-      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client), estado, ficha: fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client) }), ...extra };
+      const dcfg = docs.ajustes(req.client);
+      const tarjetaDocs = dcfg.activo ? documentosCard({ docs: docs.listar(req.client.id, lead.id), faltan: docs.faltantes(req.client, lead.id), requeridos: dcfg.requeridos, base: b }) : '';
+      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client), estado, ficha: html`${fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client) })}${tarjetaDocs}`, ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appChatPage(req.client, lead, db.leadMessages(lead.id), opts) : V.leadChatPage(req.client, lead, db.leadMessages(lead.id), opts));
     };
     router.get(`${prefix}/leads/:leadId/chat`, (req, res) => ver(req, res));
+    // Descargar un documento que mandó el contacto (solo de su marca).
+    router.get(`${prefix}/leads/:leadId/documentos/:docId`, (req, res) => {
+      const x = docs.obtener(req.client.id, req.params.docId);
+      if (!x || x.lead_id !== Number(req.params.leadId) || !fs.existsSync(x.ruta)) return res.status(404).send('Documento no encontrado');
+      seg.auditar(req, 'documento_descargado', `${req.client.nombre}: ${x.nombre}`);
+      res.set('Content-Type', x.mime || 'application/octet-stream');
+      res.set('Content-Disposition', `${/^(application\/pdf|image\/)/.test(x.mime || '') ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(x.nombre)}`);
+      res.set('X-Content-Type-Options', 'nosniff');
+      res.sendFile(x.ruta);
+    });
     router.get(`${prefix}/leads/:leadId/chat.json`, (req, res) => {
       const lead = db.getLead(req.client.id, Number(req.params.leadId));
       if (!lead) return res.status(404).json({});
@@ -1154,7 +1182,7 @@ export function createApp() {
     const verEmbudo = (req, res, extra = {}) => {
       const f = (k, n = 40) => String(req.query[k] || '').slice(0, n);
       const opts = { asesores: embudo.asesores(req.client), embudo: f('e'), ultimos: db.ultimosMensajes(req.client.id), importar: !app,
-        filtros: { q: f('q', 80), asesor: f('asesor'), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10) },
+        filtros: { q: f('q', 80), asesor: f('asesor'), pais: f('pais', 30), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10) },
         vista: f('vista') === 'extendida' ? 'extendida' : 'compacta', ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appEmbudoPage(req.client, leadsDe(req.client), opts) : V.adminEmbudoPage(req.client, leadsDe(req.client), opts));
     };
@@ -1316,7 +1344,9 @@ export function createApp() {
           .replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https://connect.facebook.net")
           .replace("connect-src 'self'", "connect-src 'self' https://*.facebook.com https://connect.facebook.net") + "; frame-src https://*.facebook.com");
       }
-      res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, wa, ...extra }));
+      const pd = { paises: paises.ajustes(req.client), docs: docs.ajustes(req.client), presentes: paises.presentes(req.client), asesores: embudo.asesores(req.client),
+        etapas: embudo.embudos(req.client).flatMap((e) => e.etapas.map((x) => ({ id: x.id, nombre: embudo.embudos(req.client).length > 1 ? `${e.nombre} · ${x.nombre}` : x.nombre }))), saEmail: agenda.serviceAccount()?.client_email || '' };
+      res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, wa, pd, ...extra }));
     };
     // "Conectar WhatsApp": la ventana de Meta regresa el código y el número elegido.
     router.post(`${prefix}/agente/whatsapp`, async (req, res) => {
@@ -1333,6 +1363,18 @@ export function createApp() {
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
     });
     // Pausar o reanudar el agente: se guarda aquí (el agente lo lee cada 5 min) y se le avisa al momento.
+    // Países por lada (etiqueta y asesor por país) y documentos por WhatsApp (expediente y Google Drive).
+    router.post(`${prefix}/agente/paises-documentos`, (req, res) => {
+      const b = req.body || {};
+      const asesores = {};
+      for (const [k, v] of Object.entries(b)) if (k.startsWith('asesor_') && Number(v)) asesores[decodeURIComponent(k.slice(7))] = Number(v);
+      const carpeta = String(b.drive_carpeta || '').trim().match(/folders\/([\w-]+)/)?.[1] || String(b.drive_carpeta || '').trim().replace(/[^\w-]/g, '').slice(0, 80);
+      const requeridos = String(b.requeridos || '').split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 15).map((x) => x.slice(0, 60));
+      db.updateClient(req.client.id, { config: { ...req.client.config, paises: { activo: b.paises_activo === '1', asesores },
+        documentos: { activo: b.docs_activo === '1', requeridos, drive_carpeta: carpeta, etapa_completos: String(b.etapa_completos || '').slice(0, 60) } } });
+      db.logEvent({ clientId: req.client.id, tipo: 'paises_documentos', detalle: `${req.sesion?.user?.nombre || 'Kuper'}: países ${b.paises_activo === '1' ? 'sí' : 'no'}, documentos ${b.docs_activo === '1' ? 'sí' : 'no'}` });
+      res.redirect(`${base(req)}/agente?ok=1`);
+    });
     // Avisos temporales (promos, cierres, agotados) con fecha de vencimiento.
     router.post(`${prefix}/agente/avisos`, (req, res) => {
       try {

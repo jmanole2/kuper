@@ -43,14 +43,16 @@ export function serviceAccount() {
   try { return JSON.parse(fs.readFileSync(saFile(), 'utf8')); } catch { return null; }
 }
 const b64u = (b) => Buffer.from(b).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
-let cached = null;
-async function googleToken() {
+const cacheTokens = new Map();
+/** Token de la cuenta de servicio para un permiso (calendario por defecto; Drive para los documentos). */
+export async function googleToken(scope = 'https://www.googleapis.com/auth/calendar') {
+  const cached = cacheTokens.get(scope);
   if (cached && cached.exp - 60 > Date.now() / 1000) return cached.token;
   const sa = serviceAccount();
   if (!sa?.client_email || !sa?.private_key) throw new Error(`Falta la cuenta de servicio de Google (${saFile()}).`);
   const iat = Math.floor(Date.now() / 1000), exp = iat + 3600;
   const head = b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-  const body = b64u(JSON.stringify({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/calendar', aud: sa.token_uri || 'https://oauth2.googleapis.com/token', iat, exp }));
+  const body = b64u(JSON.stringify({ iss: sa.client_email, scope, aud: sa.token_uri || 'https://oauth2.googleapis.com/token', iat, exp }));
   const sig = b64u(crypto.createSign('RSA-SHA256').update(`${head}.${body}`).sign(sa.private_key));
   const res = await fetch(sa.token_uri || 'https://oauth2.googleapis.com/token', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -58,7 +60,7 @@ async function googleToken() {
   });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Google: ${j.error_description || j.error || res.status}`);
-  cached = { token: j.access_token, exp };
+  cacheTokens.set(scope, { token: j.access_token, exp });
   return j.access_token;
 }
 async function gcal(method, p, body) {

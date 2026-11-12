@@ -1,5 +1,6 @@
 // Vistas del embudo de ventas (tablero), la ficha del lead y la analítica.
 import { html, raw } from './html.js';
+import { paisDeTelefono } from '../paises.js';
 import { config } from '../config.js';
 import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto, estancado } from '../embudo.js';
 
@@ -90,6 +91,7 @@ function filtrarLeads(client, leads, f, ultimos) {
     if (t && !`${nombreDe(l)} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase().includes(t)) return false;
     if (f.asesor && (f.asesor === '-' ? l.asignado_id : String(l.asignado_id) !== f.asesor)) return false;
     if (f.canal && l.origen !== f.canal) return false;
+    if (f.pais && paisDeTelefono(l.telefono) !== f.pais) return false;
     if (f.estatus && (l.prioridad || 'neutral') !== f.estatus) return false;
     const u = ultimos[l.id];
     if (f.mensajes === 'esperando' && !(u && u.rol === 'lead')) return false;
@@ -108,8 +110,9 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   const cuenta = Object.fromEntries(todos.map((x) => [x.id, 0]));
   for (const l of leads) cuenta[embudoDe(client, l).id] += 1;
   const origenes = [...new Set(leads.map((l) => l.origen))];
+  const paisesHay = [...new Set(leads.map((l) => paisDeTelefono(l.telefono)).filter(Boolean))];
   leads = filtrarLeads(client, leads.filter((l) => embudoDe(client, l).id === emb.id), filtros, ultimos);
-  const activos = ['asesor', 'canal', 'estatus', 'mensajes', 'desde', 'hasta'].filter((k) => filtros[k]).length;
+  const activos = ['asesor', 'pais', 'canal', 'estatus', 'mensajes', 'desde', 'hasta'].filter((k) => filtros[k]).length;
   const lista = emb.etapas;
   const nombreAsesor = Object.fromEntries(asesores.map((a) => [a.id, a.nombre]));
   const cols = lista.map((e) => ({ e, leads: leads.filter((l) => etapaDe(client, l).id === e.id) }));
@@ -139,6 +142,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
       <select name="fecha"><option value="">Fecha en que llegó</option><option value="actividad" ${raw(filtros.fecha === 'actividad' ? 'selected' : '')}>Última actividad</option></select>
       <div class="row" style="gap:8px;margin-top:6px"><input type="date" name="desde" value="${filtros.desde || ''}"><input type="date" name="hasta" value="${filtros.hasta || ''}"></div>
       <h4 style="margin-top:12px">Estatus</h4>${radio('estatus', [['', 'Todos'], ...Object.entries(PRIORIDADES).map(([k, [t, i, c]]) => [k, i ? html`${ic(i, 14, c)} ${t}` : t])], filtros.estatus)}
+      ${paisesHay.length > 1 ? html`<h4 style="margin-top:12px">País</h4>${radio('pais', [['', 'Todos'], ...paisesHay.map((p) => [p, p])], filtros.pais)}` : ''}
       <h4 style="margin-top:12px">Canal</h4>${radio('canal', [['', 'Todos'], ...origenes.map((o) => [o, origen(o)[0]])], filtros.canal)}
       ${asesores.length ? html`<h4 style="margin-top:12px">Asesor</h4><select name="asesor"><option value="">Todos</option><option value="-" ${raw(filtros.asesor === '-' ? 'selected' : '')}>No asignados</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(String(a.id) === filtros.asesor ? 'selected' : '')}>${a.nombre}</option>`)}</select>` : ''}
       <p class="row" style="gap:8px;margin-top:14px"><button class="btn-accent">Aplicar</button><a class="btn btn-ghost" href="${base}/embudo?e=${emb.id}&vista=${vista}">Limpiar filtros</a></p></form></details>
@@ -333,3 +337,16 @@ export function analiticaSection(client, a, { base }) {
 }
 
 export { TIPOS };
+
+/** Documentos que mandó el contacto por WhatsApp (con su lista de pendientes). */
+export function documentosCard({ docs = [], faltan = [], requeridos = [], base }) {
+  if (!docs.length && !requeridos.length) return '';
+  const kb = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+  return html`<div class="card ficha" style="margin-top:14px"><div class="row spread"><h3>Documentos</h3><span class="badge" style="color:${faltan.length ? '#fbbf24' : '#4ade80'}">${requeridos.length ? (faltan.length ? `Faltan ${faltan.length}` : 'Completos') : `${docs.length}`}</span></div>
+    ${requeridos.length ? html`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px">${requeridos.map((r) => html`<span class="badge" style="color:${faltan.includes(r) ? '#a39d93' : '#4ade80'}">${faltan.includes(r) ? '○' : '✓'} ${r}</span>`)}</div>` : ''}
+    ${docs.length ? docs.map((x) => html`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">
+      <div style="min-width:0"><a href="${base}/documentos/${x.id}" style="font-weight:600;word-break:break-all">📎 ${x.nombre}</a><div class="muted small">${x.tipo || 'Sin clasificar'} · ${kb(x.bytes || 0)}</div></div>
+      ${x.drive_link ? html`<a class="small" href="${x.drive_link}" target="_blank" rel="noopener">Drive ↗</a>` : x.drive_error ? html`<span class="small" style="color:#f87171" title="${x.drive_error}">Drive: error</span>` : ''}</div>`)
+      : html`<p class="muted small" style="margin:0">Todavía no manda documentos por WhatsApp.</p>`}
+  </div>`;
+}

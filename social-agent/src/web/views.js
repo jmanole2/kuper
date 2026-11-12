@@ -1031,7 +1031,7 @@ function conectarWhatsapp(wa, { base, app }) {
 }
 
 // ------------------------------------------------------------ lo que sabe el agente
-export function conocimientoPage(client, k, versiones, { base, app = false, ok = '', error = '', borrador = null, wa = null } = {}) {
+export function conocimientoPage(client, k, versiones, { base, app = false, ok = '', error = '', borrador = null, wa = null, pd = null } = {}) {
   const texto = borrador?.texto ?? k?.texto ?? CONOC.PLANTILLA, datos = borrador?.datos ?? k?.datos ?? {};
   const body = html`${hero({ kicker: 'Agente de IA', title: 'Lo que sabe tu agente', letra: client.nombre,
     sub: 'Servicios, precios, preguntas frecuentes, horarios y dirección. Tu agente lo usa para contestar; lo que no esté aquí, no lo inventa.',
@@ -1069,6 +1069,19 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
       </div>
     </div>
   </form>
+  ${pd ? (() => { const paises = [...new Set([...pd.presentes.map(([p]) => p), ...Object.keys(pd.paises.asesores || {}), ...(pd.presentes.length ? [] : ['México', 'Colombia', 'Perú', 'Argentina'])])];
+    const chk = (name, on, label, ayuda) => html`<label style="display:flex;gap:10px;align-items:flex-start;margin:6px 0"><input type="checkbox" name="${name}" value="1" ${on ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px"><span>${label}<br><span class="muted small">${ayuda}</span></span></label>`;
+    return html`<form class="card" method="post" action="${base}/agente/paises-documentos" style="margin-top:18px;display:grid;gap:12px">
+      <span class="mono">Países y documentos</span>
+      ${chk('paises_activo', pd.paises.activo, 'Clasificar por país según la lada del WhatsApp', '+52 México, +57 Colombia, +51 Perú, +54 Argentina… Cada contacto queda con la etiqueta de su país para filtrar el embudo y las campañas.')}
+      ${pd.asesores.length ? html`<div class="small"><span class="muted">Asignar automáticamente a la persona de cada país</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:6px">${paises.map((p) => html`<label class="small muted">${p}<select name="asesor_${encodeURIComponent(p)}"><option value="">— nadie —</option>${pd.asesores.map((a) => html`<option value="${a.id}" ${Number(pd.paises.asesores?.[p]) === a.id ? 'selected' : ''}>${a.nombre}</option>`)}</select></label>`)}</div></div>` : ''}
+      ${chk('docs_activo', pd.docs.activo, 'Recibir documentos por WhatsApp', 'Los PDF, fotos y videos que manden se guardan en la ficha de cada contacto y, si conectas una carpeta, en tu Google Drive.')}
+      <label class="small muted">Documentos que se piden (uno por línea; el agente palomea los que van llegando)<textarea name="requeridos" style="min-height:96px" placeholder="Constancia fiscal&#10;Identificación&#10;Comprobante de ventas&#10;Video pitch&#10;Perfil de TikTok">${(pd.docs.requeridos || []).join('\n')}</textarea></label>
+      <label class="small muted">Cuando estén todos, mover a la etapa<select name="etapa_completos"><option value="">— no mover —</option>${pd.etapas.map((e) => html`<option value="${e.id}" ${pd.docs.etapa_completos === e.id ? 'selected' : ''}>${e.nombre}</option>`)}</select></label>
+      <label class="small muted">Carpeta de Google Drive (link o ID)<input name="drive_carpeta" value="${pd.docs.drive_carpeta || ''}" placeholder="https://drive.google.com/drive/folders/…"></label>
+      <p class="muted small" style="margin:0">La carpeta debe estar en una <b>unidad compartida</b> de Google Drive, compartida como “Administrador de contenido” con ${pd.saEmail ? html`<b>${pd.saEmail}</b>` : 'la cuenta de servicio del panel'}. Se ordena sola: país / negocio - nombre / archivo.</p>
+      <div><button class="btn-accent">Guardar</button></div></form>`; })() : ''}
   ${(() => { const lista = CONOC.avisos(client), vig = new Set(CONOC.avisosVigentes(client).map((a) => a.id));
     const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
     return html`<div class="card" style="margin-top:18px"><span class="mono">Avisos por tiempo limitado</span>
