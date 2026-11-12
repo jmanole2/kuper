@@ -141,3 +141,16 @@ Opcionales en el JSON de la demo (si no se ponen, todo queda como siempre: espa�
 - `moneda` y `simbolo_moneda` (p. ej. "euros" y "€"), `zona_texto` (p. ej. "hora de Madrid").
 
 Ejemplo: `demos/nera.json`.
+
+## Demo gratis (kuper.media/demo)
+
+La persona pega el link de su negocio (o lo describe), se lee su página, la IA arma la información y prueba a Sofía
+como recepcionista de SU negocio: llamada de hasta 3 minutos y chat con estilo de WhatsApp (20 mensajes).
+
+- Un solo agente de Retell: `demos/instantanea.json` ("Demo instantánea Kuper"). Lo crea `update.sh` como las demás demos.
+  Los datos de cada negocio le llegan en cada llamada como variables.
+- Página: `public/gratis.html` (también en llamadas.kuper.media/gratis). Para kuper.media/demo se sube el mismo archivo
+  como `demo/index.html`: le habla a llamadas.kuper.media (permitido solo desde kuper.media; `DEMO_ORIGENES` en el .env).
+- Cada demo se guarda 7 días en `datos/instantaneas/` y llega como lead al panel (PANEL_URL, PANEL_SLUG, PANEL_API_KEY).
+- Límites: `DEMO_GRATIS_POR_IP` (3 al día), `DEMO_GRATIS_DIA` (60 al día), 2 llamadas y 20 mensajes por demo.
+- Necesita la clave de IA en el .env (ANTHROPIC_API_KEY o LLM_API_KEY) para leer la página y para el chat.

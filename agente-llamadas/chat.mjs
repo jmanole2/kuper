@@ -126,3 +126,30 @@ async function responderOpenRouter({ system, msgs, disponibilidad, env }) {
   }
   return 'Déjame confirmarlo con un asesor. ¿Me compartes tu nombre y tu WhatsApp para que te escriba?';
 }
+
+/** Pide a la IA un objeto JSON (Claude directo u OpenRouter). Devuelve el objeto o lanza error. */
+export async function pedirJSON({ system, texto, env = process.env, maxTokens = 2000 }) {
+  let salida = '';
+  if (env.ANTHROPIC_API_KEY) {
+    const r = await hooks.fetch(`${String(env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '')}/v1/messages`, {
+      method: 'POST', headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: env.CHAT_MODEL || env.ANTHROPIC_MODEL || 'claude-haiku-5-5', max_tokens: maxTokens, system, messages: [{ role: 'user', content: texto }] }),
+      signal: AbortSignal.timeout(45000),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`anthropic ${r.status}: ${d?.error?.message || ''}`.trim());
+    salida = (d.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+  } else if (env.LLM_API_KEY) {
+    const r = await hooks.fetch(`${String(env.LLM_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '')}/chat/completions`, {
+      method: 'POST', headers: { Authorization: `Bearer ${env.LLM_API_KEY}`, 'Content-Type': 'application/json', 'X-Title': 'Kuper demos' },
+      body: JSON.stringify({ model: env.CHAT_MODEL || env.LLM_MODEL || 'anthropic/claude-haiku-5.5', max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: texto }], response_format: { type: 'json_object' } }),
+      signal: AbortSignal.timeout(45000),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) throw new Error(`openrouter ${r.status}: ${d?.error?.message || ''}`.trim());
+    salida = String(d.choices?.[0]?.message?.content || '');
+  } else throw new Error('sin_ia');
+  const m = salida.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('La IA no devolvió JSON');
+  return JSON.parse(m[0]);
+}

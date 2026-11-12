@@ -16,17 +16,80 @@ import { agentePorNombre as buscarEnRetell } from './agentes.mjs';
 import { numeroTransferencia, respuestaEntrante } from './entrante.mjs';
 import * as chat from './chat.mjs';
 import * as envios from './envios.mjs';
+import * as inst from './instantanea.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(resolve(process.env.NEGOCIO_CONFIG || join(aqui, 'negocio.json')), 'utf8'));
 
 // Demos para prospectos: cada archivo demos/<nombre>.json es otra asistente (llamadas.kuper.media/<nombre>).
 const demos = new Map();
+let instCfg = null; // demos/instantanea.json: agente genérico de "Haz tu demo gratis"
 const dirDemos = join(aqui, 'demos');
 if (existsSync(dirDemos)) for (const f of readdirSync(dirDemos).filter((x) => /^[a-z0-9-]+\.json$/.test(x))) {
-  try { demos.set(f.slice(0, -5), JSON.parse(readFileSync(join(dirDemos, f), 'utf8'))); } catch (e) { console.error(`demos/${f}: ${e.message}`); }
+  try {
+    const d = JSON.parse(readFileSync(join(dirDemos, f), 'utf8'));
+    if (d.instantanea) instCfg = d; else demos.set(f.slice(0, -5), d); // la demo instantánea no tiene página propia
+  } catch (e) { console.error(`demos/${f}: ${e.message}`); }
 }
 const demoDe = (url) => demos.get(String(url.searchParams.get('demo') || '')) || null;
+// "Haz tu demo gratis" (kuper.media/demo): cada demo vive 7 días en datos/instantaneas.
+const instantaneas = inst.almacen(join(process.env.LLAMADAS_DATOS || join(aqui, 'datos'), 'instantaneas'));
+const instDe = (url) => (instCfg && url.searchParams.get('instantanea') ? instantaneas.leer(url.searchParams.get('instantanea')) : null);
+// La página vive en kuper.media/demo y le habla a este servidor: solo esos orígenes pueden.
+const ORIGENES = String(process.env.DEMO_ORIGENES || 'https://kuper.media,https://www.kuper.media').split(',').map((x) => x.trim()).filter(Boolean);
+function cors(req, res) {
+  const o = req.headers.origin;
+  if (o && ORIGENES.includes(o)) { res.setHeader('Access-Control-Allow-Origin', o); res.setHeader('Vary', 'Origin'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'); }
+}
+const INST_POR_IP = Number(process.env.DEMO_GRATIS_POR_IP || 3), INST_POR_DIA = Number(process.env.DEMO_GRATIS_DIA || 60);
+let instDia = '', instTotal = 0; const instPorIp = new Map();
+function permitirInst(ip) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (hoy !== instDia) { instDia = hoy; instTotal = 0; instPorIp.clear(); }
+  if (instTotal >= INST_POR_DIA) return 'Hoy ya se hicieron muchas demos. Escríbenos por WhatsApp y te la armamos.';
+  if ((instPorIp.get(ip) || 0) >= INST_POR_IP) return 'Ya hiciste varias demos hoy. Escríbenos por WhatsApp y te ayudamos.';
+  instTotal += 1; instPorIp.set(ip, (instPorIp.get(ip) || 0) + 1);
+  return null;
+}
+const ERRORES_INST = { direccion_no_permitida: 'Ese link no se puede abrir. Revisa que sea la página pública de tu negocio.', no_es_negocio: 'No encontramos información de un negocio en esa página. Cuéntanos en dos líneas qué hace tu negocio.',
+  no_es_pagina: 'Ese link no es una página web. Prueba con la página principal de tu negocio.', sin_ia: 'La demo no está disponible en este momento.' };
+async function crearInstantanea(req, res) {
+  let b;
+  try { b = JSON.parse(await leerCuerpo(req, 20_000) || '{}'); } catch { return json(res, 400, { error: 'Datos no válidos.' }); }
+  if (b.sitio_web_2) return json(res, 400, { error: 'Datos no válidos.' }); // campo trampa para bots
+  const nombre = String(b.nombre || '').trim().slice(0, 80), tel = String(b.whatsapp || '').replace(/\D/g, ''), correo = String(b.correo || '').trim().slice(0, 120);
+  const descripcion = String(b.descripcion || '').trim().slice(0, 2000);
+  if (!nombre || tel.length < 10) return json(res, 400, { error: 'Pon tu nombre y tu WhatsApp (10 dígitos) para mandarte tu demo.' });
+  const url = b.url ? inst.normalizarUrl(b.url) : null;
+  if (b.url && !url) return json(res, 400, { error: 'Ese link no parece válido. Ejemplo: minegocio.com' });
+  if (!url && descripcion.length < 30) return json(res, 400, { error: 'Pega el link de tu negocio o cuéntanos qué hace (mínimo dos líneas).' });
+  const limite = permitirInst(ipDe(req));
+  if (limite) return json(res, 429, { error: limite });
+  try {
+    let sitio = null;
+    if (url) {
+      try { sitio = await inst.leerSitio(url); }
+      catch (e) { if (!descripcion) return json(res, 422, { error: /instagram|facebook|tiktok/i.test(url.hostname) ? 'Las redes sociales no dejan leer su contenido. Cuéntanos en dos líneas qué hace tu negocio.' : ERRORES_INST[e.message] || 'No pudimos abrir esa página. Cuéntanos en dos líneas qué hace tu negocio.', pedir_descripcion: true }); }
+      if (sitio && sitio.texto.length < 200 && !descripcion) return json(res, 422, { error: 'Tu página casi no tiene texto que podamos leer. Cuéntanos en dos líneas qué hace tu negocio.', pedir_descripcion: true });
+    }
+    const negocio = await inst.armarNegocio({ sitio, descripcion });
+    const d = instantaneas.crear({ negocio, logo: sitio?.logo || '', url: sitio?.url || '', contacto: { nombre, whatsapp: tel, correo } });
+    console.log(`${new Date().toISOString()} demo gratis ${d.id}: ${negocio.negocio} (${sitio?.url || 'descripción'})`);
+    avisarLead(d).catch((e) => console.error('[demo gratis lead]', e.message));
+    json(res, 200, { id: d.id, negocio: negocio.negocio, giro: negocio.giro, servicios: negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(), limites: inst.LIMITES });
+  } catch (e) {
+    console.error('[demo gratis]', e.message);
+    json(res, e.message === 'no_es_negocio' ? 422 : 502, { error: ERRORES_INST[e.message] || 'No pudimos armar tu demo en este momento. Intenta de nuevo.', pedir_descripcion: e.message === 'no_es_negocio' });
+  }
+}
+// Cada demo gratis llega como lead al panel de Kuper (PANEL_URL + PANEL_SLUG + PANEL_API_KEY del .env).
+async function avisarLead(d) {
+  const url = String(process.env.PANEL_URL || '').replace(/\/+$/, ''), slug = process.env.PANEL_SLUG, key = process.env.PANEL_API_KEY;
+  if (!url || !slug || !key) return;
+  await fetch(`${url}/api/${encodeURIComponent(slug)}/leads`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
+    body: JSON.stringify({ nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, email: d.contacto.correo || undefined, origen: 'web', empresa: d.negocio.negocio, tags: ['demo gratis'],
+      resumen: `Hizo su demo gratis: ${d.negocio.negocio} (${d.negocio.giro}). ${d.url || 'Sin página web'}.`, nota: `Demo gratis ${d.url || ''}` }) });
+}
 // ?aplicante=<id>: probar la demo "como" un aplicante de la lista (envío de pendientes).
 const aplicanteDe = (demo, url) => (demo ? envios.aplicanteDe(demo, String(url.searchParams.get('aplicante') || '')) : null);
 
@@ -42,6 +105,8 @@ const VENTAS_CLAVE = process.env.VENTAS_CLAVE || '';
 const archivos = {
   '/': ['public/index.html', 'text/html; charset=utf-8'],
   '/vendor/retell-sdk.js': ['public/vendor/retell-sdk.js', 'text/javascript; charset=utf-8'],
+  '/gratis': ['public/gratis.html', 'text/html; charset=utf-8'],
+  '/kuper-blanco.png': ['public/kuper-blanco.png', 'image/png'],
   '/logo.png': [cfg.logo || '../assets/kuper-logo.png', 'image/png'],
 };
 
@@ -87,9 +152,14 @@ function json(res, codigo, datos) {
 async function crearLlamada(req, res) {
   const url = new URL(req.url, 'http://x');
   const demo = demoDe(url);
-  const ventas = !demo && esPruebaVentas(url);
+  const ins = instDe(url);
+  if (url.searchParams.get('instantanea')) {
+    if (!ins) return json(res, 404, { error: 'Tu demo ya no está disponible. Haz una nueva.' });
+    if (ins.llamadas >= inst.LIMITES.llamadas) return json(res, 429, { error: 'Ya usaste las llamadas de tu demo. Escríbenos por WhatsApp para tenerlo en tu negocio.' });
+  }
+  const ventas = !demo && !ins && esPruebaVentas(url);
   if (url.searchParams.has('ventas') && !ventas) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
-  if (!ventas && !demo && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
+  if (!ventas && !demo && !ins && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
   if (!KEY) return json(res, 500, { error: 'El servidor no tiene configurada la clave de Retell.' });
   const ip = ipDe(req);
   const limite = permitir(ip);
@@ -102,7 +172,8 @@ async function crearLlamada(req, res) {
         agent_id: await buscarVentas(), metadata: { origen: 'prueba-ventas' },
         // Empresa de mentira para probar: ?ventas=CLAVE&empresa=Clínica Sonrisa&giro=dentista&ciudad=Puebla
         retell_llm_dynamic_variables: Object.fromEntries(['empresa', 'giro', 'ciudad'].map((k) => [k, String(url.searchParams.get(k) || { empresa: 'Clínica Dental Sonrisa', giro: 'dentista', ciudad: 'Ciudad de México' }[k]).slice(0, 80)])),
-      } : demo ? { agent_id: await agentePorNombre(demo.nombre_agente), metadata: { origen: `demo-${url.searchParams.get('demo')}` },
+      } : ins ? { agent_id: await agentePorNombre(instCfg.nombre_agente), metadata: { origen: 'demo-gratis', demo_gratis: ins.id }, retell_llm_dynamic_variables: inst.variables(ins) }
+      : demo ? { agent_id: await agentePorNombre(demo.nombre_agente), metadata: { origen: `demo-${url.searchParams.get('demo')}` },
         ...(await infoDelPanel(demo).then((t) => {
           const a = aplicanteDe(demo, url);
           const v = { ...(t ? { info_panel: t } : {}), ...(a ? envios.variables(demo, a) : {}) };
@@ -113,6 +184,7 @@ async function crearLlamada(req, res) {
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(`create-web-call ${r.status}: ${JSON.stringify(d)}`);
     console.log(`${new Date().toISOString()} llamada ${d.call_id} desde ${ip}`);
+    if (ins) { ins.llamadas += 1; instantaneas.guardar(ins); }
     json(res, 200, {
       accessToken: d.access_token,
       callId: d.call_id,
@@ -151,6 +223,15 @@ async function atenderFuncion(req, res, nombre) {
 
 const server = createServer(async (req, res) => {
   const ruta = new URL(req.url, 'http://x').pathname;
+  if (ruta.startsWith('/api/') || ruta === '/vendor/retell-sdk.js' || ruta === '/kuper-blanco.png') cors(req, res);
+  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+  if (ruta === '/api/instantanea' && req.method === 'POST') return crearInstantanea(req, res);
+  if (ruta === '/api/instantanea' && req.method === 'GET') {
+    const d = instDe(new URL(req.url, 'http://x'));
+    if (!d) return json(res, 404, { error: 'Tu demo ya no está disponible. Haz una nueva.' });
+    return json(res, 200, { id: d.id, negocio: d.negocio.negocio, giro: d.negocio.giro, servicios: d.negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(),
+      limites: inst.LIMITES, usadas: { llamadas: d.llamadas, mensajes: d.mensajes } });
+  }
   if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro), citas: Boolean(funciones), ventas: marcando ? 'marcando' : buscarVentas ? 'solo_pruebas' : false });
   if (ruta === '/api/config') {
     const demo = demoDe(new URL(req.url, 'http://x'));
@@ -249,12 +330,18 @@ function permitirChat(ip) {
 async function mensajeChat(req, res) {
   const url = new URL(req.url, 'http://x');
   const demo = demoDe(url);
+  const ins = instDe(url);
   if (!chat.chatConfigurado()) return json(res, 503, { error: 'El chat no está disponible en este momento.' });
-  if (!demo && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
+  if (url.searchParams.get('instantanea')) {
+    if (!ins) return json(res, 404, { error: 'Tu demo ya no está disponible. Haz una nueva.' });
+    if (ins.mensajes >= inst.LIMITES.mensajes) return json(res, 429, { error: 'Llegaste al límite de mensajes de tu demo. ¿Lo quieres en tu WhatsApp de verdad? Escríbenos.' });
+  }
+  if (!demo && !ins && CLAVE && url.searchParams.get('c') !== CLAVE) return json(res, 403, { error: 'Este enlace de prueba no es válido.' });
   let cuerpo;
   try { cuerpo = JSON.parse(await leerCuerpo(req, 100_000) || '{}'); } catch { return json(res, 400, { error: 'Mensaje no válido.' }); }
   if (!permitirChat(ipDe(req))) return json(res, 429, { error: 'Ya se usaron los mensajes de prueba de hoy. Intenta mañana.' });
-  const cfgChat = demo || cfg;
+  const cfgChat = ins ? inst.cfgChat(ins, instCfg) : demo || cfg;
+  if (ins) { ins.mensajes += 1; instantaneas.guardar(ins); }
   try {
     const a = aplicanteDe(demo, url);
     const texto = await chat.responder({ cfg: cfgChat, mensajes: cuerpo.mensajes, variables: a ? envios.variables(demo, a) : {},

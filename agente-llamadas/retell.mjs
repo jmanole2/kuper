@@ -120,7 +120,7 @@ async function crear() {
     begin_message: '{{saludo}}',
     start_speaker: 'agent',
     model_config: { type: 'cascading', primary: { model: cfg.modelo }, temperature: 0.2 },
-    default_dynamic_variables: { saludo: saludoEntrante, nombre_cliente: 'desconocido', motivo_llamada: 'ninguno', modo_llamada: 'atender', ...(cfg.panel_slug ? { info_panel: 'Sin cambios recientes.' } : {}) },
+    default_dynamic_variables: { saludo: saludoEntrante, nombre_cliente: 'desconocido', motivo_llamada: 'ninguno', modo_llamada: 'atender', ...(cfg.panel_slug ? { info_panel: 'Sin cambios recientes.' } : {}), ...(cfg.variables_defecto || {}) },
   };
   const agente = {
     agent_name: cfg.nombre_agente,
@@ -131,7 +131,7 @@ async function crear() {
     // Topes para no gastar créditos si alguien deja la llamada abierta.
     // Qué tanto lo interrumpe un ruido o una palabra suelta (0 a 1; 1 = se calla con cualquier sonido).
     interruption_sensitivity: Number.isFinite(Number(cfg.interrupcion)) ? Number(cfg.interrupcion) : 0.6,
-    max_call_duration_ms: 10 * 60 * 1000,
+    max_call_duration_ms: (Number(cfg.duracion_max_seg) || 600) * 1000,
     end_call_after_silence_ms: 30 * 1000,
     post_call_analysis_data: [
       { type: 'system-presets', name: 'call_summary' },
