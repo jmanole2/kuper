@@ -18,6 +18,7 @@ import * as comentarios from './engage/comentarios.js';
 import * as difusion from './difusion.js';
 import * as recordatorios from './recordatorios.js';
 import * as cobros from './pagos-clientes.js';
+import * as correo from './correo.js';
 import * as equipo from './equipo.js';
 import { tiene } from './plan.js';
 import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
@@ -484,6 +485,7 @@ let generating = false;
 const kwPause = new Map();
 const comPausa = new Map();
 const cobrosPausa = new Map();
+const correoPausa = new Map();
 const slaPausa = new Map();
 /** Al guardar los ajustes de comentarios, revisa de inmediato. */
 export const resetComentariosPausa = (clientId) => comPausa.delete(clientId);
@@ -518,6 +520,11 @@ export async function tick(now = new Date()) {
     if (cobros.listo(client) && !(cobrosPausa.get(client.id) > now.getTime())) {
       cobrosPausa.set(client.id, now.getTime() + 2 * 60_000);
       enqueue(`cob-${client.id}`, () => cobros.revisar(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'cobro_error', detalle: e.message })));
+    }
+    // Correo: cada 2 minutos se revisa el buzón; si falla (contraseña, servidor), se espera 30 min.
+    if (correo.listo(client) && !(correoPausa.get(client.id) > now.getTime())) {
+      correoPausa.set(client.id, now.getTime() + 2 * 60_000);
+      enqueue(`mail-${client.id}`, () => correo.revisar(client).catch((e) => { correoPausa.set(client.id, Date.now() + 30 * 60_000); db.logEvent({ clientId: client.id, tipo: 'correo_error', detalle: `${e.message} (reintenta en 30 min)` }); }));
     }
     if (recordatorios.ajustes(client).activo) enqueue(`rec-${client.id}`, () => recordatorios.enviar(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'recordatorio_error', detalle: e.message })));
     if (tiene(client, 'chat')) enqueue(`dif-${client.id}`, () => difusion.enviarPendientes(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'difusion_error', detalle: e.message })));

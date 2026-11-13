@@ -43,6 +43,7 @@ import * as paises from './paises.js';
 import * as docs from './documentos.js';
 import * as cupones from './cupones.js';
 import * as cobros from './pagos-clientes.js';
+import * as correo from './correo.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -589,11 +590,13 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   appR.use('/difusion', servicio('chat'));
   appR.use('/cupones', servicio('chat'));
   appR.use('/cobros', servicio('chat'));
+  appR.use('/correo', servicio('chat'));
   appR.use('/equipo', servicio('chat'));
   appR.use('/asistente', servicio('chat'));
   asistenteRoutes(appR, () => '/app', { app: true });
   equipoRoutes(appR, () => '/app', { app: true });
   cobrosRoutes(appR, () => '/app', { app: true });
+  correoRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
@@ -1023,6 +1026,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   difusionRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cuponesRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cobrosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  correoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   equipoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   asistenteRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
@@ -1242,7 +1246,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const b = `${base(req)}/leads/${lead.id}`;
       const dcfg = docs.ajustes(req.client);
       const tarjetaDocs = dcfg.activo ? documentosCard({ docs: docs.listar(req.client.id, lead.id), faltan: docs.faltantes(req.client, lead.id), requeridos: dcfg.requeridos, base: b }) : '';
-      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client), estado, ficha: html`${fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client) })}${tarjetaDocs}`, ...extra };
+      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client) || (correo.esCorreo(lead) && !!correo.cuenta(req.client)?.usuario), estado, ficha: html`${fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client) })}${tarjetaDocs}`, ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appChatPage(req.client, lead, db.leadMessages(lead.id), opts) : V.leadChatPage(req.client, lead, db.leadMessages(lead.id), opts));
     };
     router.get(`${prefix}/leads/:leadId/chat`, (req, res) => ver(req, res));
@@ -1267,6 +1271,11 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       if (!texto) return res.redirect(`${base(req)}/leads/${lead.id}/chat`);
       const autor = req.sesion?.user?.nombre || 'Equipo Kuper';
       try {
+        if (correo.esCorreo(lead)) { // llegó por correo: se contesta por correo, en el mismo hilo
+          await correo.responderLead(req.client, lead, texto, autor);
+          db.upsertLead(req.client.id, { email: lead.email, control: 'humano' });
+          return res.redirect(`${base(req)}/leads/${lead.id}/chat`);
+        }
         await agente.llamarAgente(req.client, 'POST', '/enviar', { ...agente.identidad(lead), texto, autor });
         db.upsertLead(req.client.id, { ...agente.identidad(lead), control: 'humano' });
         db.logEvent({ clientId: req.client.id, tipo: 'respuesta_manual', detalle: `${autor} → ${lead.nombre || lead.telefono || lead.usuario}` });
@@ -1460,6 +1469,42 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   }
 
   // Cobros por chat (links de pago con la cuenta de la marca) y ventas avisadas a Meta.
+  // Correo como canal: conectar el buzón, aprobar o editar lo que contesta la IA.
+  function correoRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
+    const OK = { ajustes: 'Guardado.', probado: 'Conexión correcta: el panel puede leer y enviar correo.', revisado: 'Buzón revisado.', enviado: 'Respuesta enviada.', descartado: 'Descartado.', inicio: 'Listo: desde ahora se contestan los correos nuevos (los anteriores no se tocan).' };
+    const vista = (req, res, extra = {}) => {
+      const f = ['borrador', 'respondido', 'error'].includes(req.query.f) ? req.query.f : '';
+      res.status(extra.error ? 400 : 200).send(V.correoPage(req.client, { aj: correo.ajustes(req.client), cuenta: correo.cuenta(req.client), lista: correo.listar(req.client.id, { estado: f }),
+        resumen: correo.resumen(req.client.id), PROVEEDORES: correo.PROVEEDORES, MODOS: correo.MODOS, filtro: f, base: base(req), app, ok: OK[req.query.ok] || '', ...extra }));
+    };
+    router.get(`${prefix}/correo`, (req, res) => vista(req, res));
+    router.post(`${prefix}/correo/ajustes`, (req, res) => {
+      const b = req.body || {}, creds = db.clientCredentials(req.client), prev = creds.correo || {};
+      const preset = correo.PROVEEDORES[b.proveedor] || null;
+      const t = (v, n) => String(v || '').trim().slice(0, n);
+      const nueva = { imap_host: t(preset?.imap_host || b.imap_host || prev.imap_host, 120).toLowerCase(), imap_port: Number(preset?.imap_port || b.imap_port || prev.imap_port || 993),
+        smtp_host: t(preset?.smtp_host || b.smtp_host || prev.smtp_host, 120).toLowerCase(), smtp_port: Number(preset?.smtp_port || b.smtp_port || prev.smtp_port || 465),
+        usuario: t(b.usuario || prev.usuario, 160).toLowerCase(), password: t(b.password, 300) || prev.password || '' };
+      if (nueva.usuario && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(nueva.usuario)) return vista(req, res, { error: 'Escribe el correo completo de la cuenta (ej. hola@tumarca.com).' });
+      db.updateClient(req.client.id, { config: { ...req.client.config, correo: { activo: b.activo === '1', modo: correo.MODOS[b.modo] ? b.modo : 'borrador', nombre: t(b.nombre, 80), firma: String(b.firma || '').replace(/\r\n/g, '\n').slice(0, 600) } },
+        credentials: { ...creds, correo: nueva } });
+      db.logEvent({ clientId: req.client.id, tipo: 'correo_ajustes', detalle: `${autor(req)}${t(b.password, 1) ? ' · contraseña nueva' : ''}` });
+      seg.auditar(req, 'correo_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/correo?ok=ajustes`);
+    });
+    router.post(`${prefix}/correo/probar`, async (req, res) => {
+      try { await correo.probar(req.client); res.redirect(`${base(req)}/correo?ok=probado`); } catch (e) { vista(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/correo/revisar`, async (req, res) => {
+      try { const r = await correo.revisar(req.client); res.redirect(`${base(req)}/correo?ok=${r.inicio ? 'inicio' : 'revisado'}`); } catch (e) { vista(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/correo/:id/enviar`, async (req, res) => {
+      try { await correo.enviar(req.client, req.params.id, req.body.texto, { autor: autor(req) }); res.redirect(`${base(req)}/correo?ok=enviado`); } catch (e) { vista(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/correo/:id/descartar`, (req, res) => { correo.descartar(req.client.id, req.params.id); res.redirect(`${base(req)}/correo?ok=descartado`); });
+  }
+
   function cobrosRoutes(router, base, { app = false, prefix = '' } = {}) {
     const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
     const vista = (req, res, extra = {}) => {

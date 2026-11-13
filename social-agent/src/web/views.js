@@ -163,6 +163,7 @@ const sideApp = (on, client) => (client?._caja ? [
   ...(tiene(client, 'chat') ? [{ href: '/app/difusion', icon: 'send', label: 'Campañas de WhatsApp', on: on === 'difusion' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cupones', icon: 'ticket', label: 'Cupones', on: on === 'cupones' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cobros', icon: 'card', label: 'Cobros por chat', on: on === 'cobros' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/correo', icon: 'mail', label: 'Correo', on: on === 'correo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/equipo', icon: 'users', label: 'Equipo', on: on === 'equipo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/asistente', icon: 'brain', label: 'Pregúntale a tu panel', on: on === 'asistente' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
@@ -343,7 +344,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -356,7 +357,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1588,6 +1589,55 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
       </form>`}
     </div>`;
   return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ correo
+export function correoPage(client, { aj = {}, cuenta = null, lista = [], resumen = {}, PROVEEDORES = {}, MODOS = {}, filtro = '', base, app = false, ok = '', error = '' }) {
+  const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
+  const COL = { recibido: ['Recibido', '#93b4ff'], borrador: ['Por aprobar', '#fbbf24'], respondido: ['Contestado', '#4ade80'], descartado: ['Descartado', '#a39d93'], error: ['Error', '#f87171'] };
+  const prov = Object.entries(PROVEEDORES).find(([, p]) => p.imap_host === cuenta?.imap_host)?.[0] || (cuenta?.imap_host ? 'otro' : 'google');
+  const body = html`${hero({ kicker: 'Correo', title: 'Correo', letra: client.nombre, sub: 'La IA contesta los correos de tu marca con lo que sabe tu agente. Cada correo queda como lead con su conversación; lo delicado se lo pasa a tu equipo.',
+      note: ['Últimos 30 días', `${resumen.recibidos || 0} recibidos · ${resumen.respondidos || 0} contestados · ${resumen.por_aprobar || 0} por aprobar`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);align-items:start" class="cr">
+      <style>@media (max-width:980px){.cr{grid-template-columns:1fr!important}} .cr input,.cr select,.cr textarea{width:100%}</style>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="mono">Correos</span>
+        <div class="pills" style="margin:0">${[['', 'Todos'], ['borrador', 'Por aprobar'], ['respondido', 'Contestados'], ['error', 'Con error']].map(([k, t]) => html`<a class="${filtro === k ? 'on' : ''}" href="${base}/correo${k ? `?f=${k}` : ''}">${t}</a>`)}</div></div>
+        ${lista.length ? lista.map((c) => { const [t, col] = COL[c.estado] || [c.estado, '#a39d93'];
+          return html`<div style="border-top:1px solid var(--line);padding:14px 0;display:grid;gap:8px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><b>${c.asunto}</b><div class="muted small">${c.lead_nombre || c.de} · ${c.de} · ${fecha(c.created_at)}${c.lead_id ? html` · <a href="${base}/leads/${c.lead_id}/chat">ver conversación</a>` : ''}</div></div>
+              <span class="badge" style="color:${col}">${t}</span></div>
+            <details><summary class="small muted" style="cursor:pointer">Lo que escribió</summary><p class="small" style="white-space:pre-wrap;margin:8px 0 0">${c.texto}</p></details>
+            ${c.motivo && c.estado === 'borrador' ? html`<div class="small" style="color:#fbbf24">Revísalo: ${c.motivo}</div>` : ''}
+            ${c.error ? html`<div class="small" style="color:#f87171">${c.error}</div>` : ''}
+            ${['borrador', 'error', 'recibido'].includes(c.estado) ? html`<form method="post" action="${base}/correo/${c.id}/enviar" style="display:grid;gap:8px">
+              <textarea name="texto" style="min-height:130px" placeholder="Escribe la respuesta…">${c.borrador || ''}</textarea>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-accent" style="padding:8px 14px">Enviar respuesta</button>
+                <button class="btn-warn" style="padding:8px 14px" formaction="${base}/correo/${c.id}/descartar" formnovalidate>Descartar</button></div></form>` : ''}
+          </div>`; }) : html`<p class="muted small">${aj.activo ? 'Todavía no llegan correos nuevos. Se revisa el buzón cada 2 minutos.' : 'Conecta el correo de tu marca para empezar.'}</p>`}
+      </div>
+      <div style="display:grid;gap:18px">
+        <form class="card" method="post" action="${base}/correo/ajustes" style="display:grid;gap:10px">
+          <span class="mono">Cuenta de correo</span>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Contestar correos con IA</label>
+          <label class="small muted">Tu correo es de<select name="proveedor" onchange="document.getElementById('cr-otro').style.display=this.value==='otro'?'grid':'none'">${Object.entries(PROVEEDORES).map(([k, p]) => html`<option value="${k}" ${prov === k ? 'selected' : ''}>${p.nombre}</option>`)}<option value="otro" ${prov === 'otro' ? 'selected' : ''}>Otro (escribo los servidores)</option></select></label>
+          <div id="cr-otro" style="display:${prov === 'otro' ? 'grid' : 'none'};gap:8px;grid-template-columns:1fr 90px">
+            <input name="imap_host" placeholder="Servidor IMAP (ej. mail.tumarca.com)" value="${cuenta?.imap_host || ''}"><input name="imap_port" type="number" value="${cuenta?.imap_port || 993}" title="Puerto IMAP (993)">
+            <input name="smtp_host" placeholder="Servidor SMTP" value="${cuenta?.smtp_host || ''}"><input name="smtp_port" type="number" value="${cuenta?.smtp_port || 465}" title="Puerto SMTP (465 o 587)"></div>
+          <label class="small muted">Correo de la cuenta<input name="usuario" type="email" value="${cuenta?.usuario || ''}" placeholder="hola@tumarca.com" autocomplete="off"></label>
+          <label class="small muted">Contraseña de aplicación ${cuenta?.password ? '(ya guardada; escribe solo para cambiarla)' : ''}<input name="password" type="password" autocomplete="new-password" placeholder="${cuenta?.password ? '••••••••' : 'Contraseña de aplicación'}"></label>
+          <p class="muted small" style="margin:0">En Google y Outlook se genera en la seguridad de la cuenta ("Contraseñas de aplicación", requiere verificación en dos pasos). Se guarda cifrada y no se vuelve a mostrar.</p>
+          <label class="small muted">Modo<select name="modo">${Object.entries(MODOS).map(([k, t]) => html`<option value="${k}" ${aj.modo === k ? 'selected' : ''}>${t}</option>`)}</select></label>
+          <label class="small muted">Nombre con el que se envía<input name="nombre" value="${aj.nombre || ''}" placeholder="${client.nombre}"></label>
+          <label class="small muted">Firma<textarea name="firma" style="min-height:70px" placeholder="Equipo ${client.nombre}&#10;55 1234 5678 · tumarca.com">${aj.firma || ''}</textarea></label>
+          <div><button class="btn-accent">Guardar</button></div>
+        </form>
+        ${cuenta?.usuario ? html`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap"><form method="post" action="${base}/correo/probar"><button class="btn-warn" style="padding:8px 14px">Probar conexión</button></form>
+          <form method="post" action="${base}/correo/revisar"><button class="btn-warn" style="padding:8px 14px">Revisar buzón ahora</button></form>
+          <p class="muted small" style="margin:0;width:100%">La primera revisión solo marca el punto de partida: los correos que ya tenías no se contestan.</p></div>` : ''}
+      </div>
+    </div>`;
+  return page({ title: `Correo · ${client.nombre}`, side: app ? sideApp('correo', client) : side('clientes'), body });
 }
 
 // ------------------------------------------------------------ cobros por chat
