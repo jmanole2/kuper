@@ -59,3 +59,31 @@ test('consulta en el momento: por sede, personas y tipo; si no hay, lo dice y da
   assert.match(roma.resultado, /Roma Norte: EL NIDO/);
   assert.equal(AT.consultar(db.createClient({ slug: 'x3', nombre: 'X', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, config: {}, credentials: {} }), {}).conectado, false);
 });
+
+test('descripción, características y fotos (de la oficina y de la sucursal) para el agente', async () => {
+  const c = db.createClient({ slug: 'fotos-of', nombre: 'Inhouse F', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, config: {}, credentials: { airtable: { token: 'pat', base: 'appX', tabla: 'tblY' } } });
+  const img = (id, type = 'image/jpeg') => ({ id, url: `https://v5.airtableusercontent.com/${id}`, filename: `${id}.jpg`, type });
+  const registros = [
+    { id: 'rec1', fields: { 'Ubicación': 'La Roma', 'Nombre de Oficina': 'EL NIDO', 'No Oficina': 'INT 3', 'Capacidad Pax': 2, 'Ocupación real': 'DISPONIBLE', 'Descripción': 'Luminosa, con vista al jardín.', 'Características': 'Ventana, aire acondicionado', 'Fotos': [img('attA'), img('attB'), img('doc', 'application/pdf')], 'Fotos de la sucursal': [img('attS')] } },
+    { id: 'rec2', fields: { 'Ubicación': 'La Roma', 'Nombre de Oficina': 'MENTA', 'Ocupación real': 'OCUPADA', 'Fotos de la sucursal': [img('attS'), img('attT')] } },
+  ];
+  const bajadas = [];
+  AT.hooks.fetch = async (url) => {
+    if (url.startsWith('https://api.airtable.com')) return { ok: true, status: 200, json: async () => ({ records: registros }) };
+    bajadas.push(url); return { ok: true, status: 200, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer };
+  };
+  const st = await AT.sincronizar(c);
+  assert.match(st.texto, /EL NIDO \(INT 3\).*Características: Ventana, aire acondicionado\. Luminosa, con vista al jardín\./);
+  assert.equal(st.items[0].fotos.length, 2, 'solo imágenes');
+  assert.match(st.items[0].fotos[0], /\/media\/of-[a-f0-9]{24}\.jpg$/);
+  assert.equal(st.fotos_sede['Roma Norte'].length, 2, 'fotos de la sucursal, sin repetir');
+  assert.equal(bajadas.length, 4);
+  await AT.sincronizar(c);
+  assert.equal(bajadas.length, 4, 'no vuelve a bajar las que ya tiene');
+  const d = AT.consultar(c, { sede: 'roma' });
+  assert.match(d.opciones[0].texto, /tiene 2 fotos/); assert.match(d.resultado, /enviar_fotos/);
+  const f = AT.fotos(c, { oficina: 'el nido' });
+  assert.equal(f.encontrada, true); assert.equal(f.fotos.length, 2); assert.match(f.caracteristicas, /Ventana/);
+  assert.equal(AT.fotos(c, { sede: 'Roma' }).fotos.length, 2);
+  assert.equal(AT.fotos(c, { oficina: 'no existe' }).encontrada, false);
+});

@@ -2,7 +2,10 @@
 // cliente (cifradas): { airtable: { token, base, tabla, vista } }. Cada 15 minutos se lee la vista (p. ej.
 // "Disponibles") y el resultado se agrega a "Lo que sabe tu agente", que leen el agente de WhatsApp y el de llamadas.
 import * as db from './db.js';
-import { config } from './config.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { config, mediaDir, mediaUrl } from './config.js';
 
 export const hooks = { fetch: (...a) => fetch(...a) }; // pruebas
 const CADA_MS = 15 * 60000;
@@ -39,6 +42,30 @@ export async function leerRegistros({ token, base, tabla, vista }) {
   return out;
 }
 
+// ------------------------------------------------------------ fotos
+// Campos de "Adjunto" de Airtable con imágenes. Los de la sucursal (nombre con sucursal/sede/edificio/ubicación)
+// son fotos de la sede; los demás, de la oficina. Los links de Airtable caducan en unas horas, así que se guarda
+// una copia en /media (pública, con nombre imposible de adivinar) y eso es lo que manda el agente.
+const ES_SEDE = /sucursal|sede|edificio|ubicacion|instalaciones|areas comunes/;
+const adjuntos = (f, de) => Object.entries(f).filter(([k, v]) => Array.isArray(v) && v.some((a) => a?.url && /^image\//.test(a.type || '')) && (de === 'sede') === ES_SEDE.test(norm(k)))
+  .flatMap(([, v]) => v.filter((a) => a?.url && /^image\/(jpeg|png|webp)$/.test(a.type || '')));
+const nombreFoto = (a) => `of-${crypto.createHash('sha256').update(`${config.secretKey || ''}:${a.id || a.url}`).digest('hex').slice(0, 24)}.${a.type === 'image/png' ? 'png' : a.type === 'image/webp' ? 'webp' : 'jpg'}`;
+function fotosDe(f, de) { return adjuntos(f, de).slice(0, 6).map((a) => ({ archivo: nombreFoto(a), url: a.url, nombre: a.filename || '' })); }
+/** Baja las fotos que aún no tenemos (máx. 8 MB cada una). Las que fallen se omiten. */
+export async function guardarFotos(lista) {
+  fs.mkdirSync(mediaDir(), { recursive: true });
+  for (const x of lista) {
+    const destino = path.join(mediaDir(), x.archivo);
+    if (fs.existsSync(destino)) continue;
+    try {
+      const r = await hooks.fetch(x.url, { signal: AbortSignal.timeout(20000) });
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (r.ok && buf.length > 0 && buf.length <= 8 * 1024 * 1024) fs.writeFileSync(destino, buf);
+    } catch { /* se intenta en la siguiente lectura */ }
+  }
+}
+const publicas = (lista) => lista.filter((x) => fs.existsSync(path.join(mediaDir(), x.archivo))).map((x) => mediaUrl(x.archivo));
+
 /** Registros → texto para el agente, agrupado por sede. Solo lo disponible (o que se libera). */
 export function aTexto(registros, ahora = new Date(), { soloFilas = false } = {}) {
   const filas = [];
@@ -54,7 +81,8 @@ export function aTexto(registros, ahora = new Date(), { soloFilas = false } = {}
     const pax = Number(campo(f, 'capacidad')) || null, m2 = Number(campo(f, 'metro')) || null;
     const precio = Number(String(campo(f, 'ideal estrategia', 'precio') ?? '').replace(/[$,\s]/g, '')) || null;
     const cuando = ocup === 'disponible' ? 'disponible ya' : libera ? `se libera el ${fecha(libera)}` : 'disponible';
-    filas.push({ sede, nombre: nombre || num, num, tipo: /puesto/i.test(tipo) ? 'puesto fijo' : 'oficina privada', pax, m2, precio, libre_ya: ocup === 'disponible', se_libera: ocup === 'disponible' ? null : libera.slice(0, 10) || null, linea: `- ${[nombre && num ? `${nombre} (${num})` : nombre || num, tipo.toLowerCase()].filter(Boolean).join(', ')}${pax ? `, para ${pax} ${pax === 1 ? 'persona' : 'personas'}` : ''}${m2 ? `, ${m2} m²` : ''}${precio ? `, ${mxn(precio)} al mes + IVA` : ''}: ${cuando}` });
+    const desc = texto(campo(f, 'descripcion')).replace(/\s+/g, ' ').slice(0, 300), caract = texto(campo(f, 'caracteristicas', 'amenidades')).replace(/\s+/g, ' ').slice(0, 300);
+    filas.push({ id: r.id, sede, nombre: nombre || num, num, descripcion: desc, caracteristicas: caract, fotos: fotosDe(f, 'oficina'), tipo: /puesto/i.test(tipo) ? 'puesto fijo' : 'oficina privada', pax, m2, precio, libre_ya: ocup === 'disponible', se_libera: ocup === 'disponible' ? null : libera.slice(0, 10) || null, linea: `- ${[nombre && num ? `${nombre} (${num})` : nombre || num, tipo.toLowerCase()].filter(Boolean).join(', ')}${pax ? `, para ${pax} ${pax === 1 ? 'persona' : 'personas'}` : ''}${m2 ? `, ${m2} m²` : ''}${precio ? `, ${mxn(precio)} al mes + IVA` : ''}: ${cuando}${caract || desc ? `. ${[caract && `Características: ${caract}`, desc].filter(Boolean).join('. ').slice(0, 220)}` : ''}` });
   }
   if (soloFilas) return filas.map(({ linea, ...x }) => ({ ...x, texto: linea.replace(/^- /, '') }));
   const sello = new Intl.DateTimeFormat('es-MX', { timeZone: config.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(ahora);
@@ -80,7 +108,14 @@ export async function sincronizar(client) {
   try {
     const regs = await leerRegistros(a);
     const t = aTexto(regs);
-    const st = { texto: t, items: aTexto(regs, new Date(), { soloFilas: true }), n: (t.match(/^- /gm) || []).length, total: regs.length, at: new Date().toISOString(), error: null };
+    const items = aTexto(regs, new Date(), { soloFilas: true });
+    // Fotos de cada sede (de cualquier registro, aunque la oficina esté ocupada) y de cada oficina disponible.
+    const sedesFotos = {};
+    for (const r of regs) { const f = r.fields || {}; const s = texto(campo(f, 'ubicacion')); if (!s) continue; const k = SEDES[norm(s)] || s; for (const x of fotosDe(f, 'sede')) if (!(sedesFotos[k] ||= []).some((y) => y.archivo === x.archivo) && sedesFotos[k].length < 6) sedesFotos[k].push(x); }
+    await guardarFotos([...items.flatMap((x) => x.fotos || []), ...Object.values(sedesFotos).flat()]);
+    for (const x of items) x.fotos = publicas(x.fotos || []);
+    const fotos_sede = Object.fromEntries(Object.entries(sedesFotos).map(([k, v]) => [k, publicas(v)]).filter(([, v]) => v.length));
+    const st = { texto: t, items, fotos_sede, n: (t.match(/^- /gm) || []).length, total: regs.length, at: new Date().toISOString(), error: null };
     db.kvSet(clave(client.id), JSON.stringify(st));
     return st;
   } catch (e) {
@@ -127,5 +162,24 @@ export function consultar(client, { sede = '', personas = 0, tipo = '' } = {}) {
   const resultado = exactas.length
     ? `Disponibles que cumplen lo que pidió (dato real, actualizado hace ${hace ?? '?'} min):\n${exactas.slice(0, 6).map(linea).join('\n')}`
     : `NO hay disponibilidad${s ? ` en ${sede}` : ''}${p ? ` para ${p} personas` : ''}${t ? ` (${t})` : ''} en este momento. Díselo con claridad, ofrece anotarlo con prioridad para cuando se libere y pásalo con un asesor.${otras.length ? `\nAlternativas disponibles en otras sedes:\n${otras.map(linea).join('\n')}` : ''}`;
-  return { conectado: true, actualizado: st?.at || null, opciones: exactas.slice(0, 6), alternativas: otras, resultado };
+  const conFotos = (x) => (x.fotos?.length ? ` [tiene ${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}: usa enviar_fotos]` : '');
+  const resFotos = exactas.some((x) => x.fotos?.length) ? '\nSi le interesa una opción, ofrécele mandarle las fotos (herramienta enviar_fotos con el nombre de la oficina).' : '';
+  return { conectado: true, actualizado: st?.at || null, opciones: exactas.slice(0, 6).map((x) => ({ ...x, texto: x.texto + conFotos(x) })), alternativas: otras, resultado: resultado + resFotos };
+}
+
+/** Fotos para mandar por WhatsApp: de una oficina (por nombre o número) o de una sede. */
+export function fotos(client, { oficina = '', sede = '' } = {}) {
+  const st = estado(client);
+  const items = Array.isArray(st?.items) ? st.items : [];
+  const o = n2(oficina);
+  let s = n2(sede); s = ALIAS_SEDE[s] || s;
+  if (o) {
+    const x = items.find((i) => [i.nombre, i.num, `${i.nombre} ${i.num}`].some((v) => v && (n2(v) === o || n2(v).includes(o) || o.includes(n2(v)))) && (!s || n2(i.sede).includes(s)));
+    if (x) return { encontrada: true, titulo: `${x.nombre}${x.num && x.num !== x.nombre ? ` (${x.num})` : ''} · ${x.sede}`, fotos: (x.fotos || []).slice(0, 6), descripcion: x.descripcion || '', caracteristicas: x.caracteristicas || '' };
+  }
+  if (s) {
+    const k = Object.keys(st?.fotos_sede || {}).find((n) => n2(n).includes(s) || s.includes(n2(n)));
+    if (k) return { encontrada: true, titulo: `Sucursal ${k}`, fotos: st.fotos_sede[k].slice(0, 6) };
+  }
+  return { encontrada: false, fotos: [], resultado: 'No encontré fotos de eso. Ofrece agendar una visita para que la conozca.' };
 }

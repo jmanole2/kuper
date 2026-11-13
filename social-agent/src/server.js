@@ -182,6 +182,11 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     const q = (k) => String(req.query[k] || '').slice(0, 60);
     res.set('Cache-Control', 'no-store').json(airtable.consultar(req.client, { sede: q('sede'), personas: q('personas'), tipo: q('tipo') }));
   });
+  // Fotos de una oficina o de una sucursal (de su Airtable) para que el agente las mande por WhatsApp. ?oficina=&sede=
+  api.get('/fotos', (req, res) => {
+    const q = (k) => String(req.query[k] || '').slice(0, 80);
+    res.set('Cache-Control', 'no-store').json(airtable.fotos(req.client, { oficina: q('oficina'), sede: q('sede') }));
+  });
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
     try {
