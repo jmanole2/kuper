@@ -68,6 +68,12 @@ async function withTikTokInfo(client, posts) {
 }
 
 export function createApp() {
+  // Etapas "solo equipo" del embudo: se le avisa al agente quién atiende al lead.
+  embudo.hooks.control = (client, lead, humano) => {
+    if (!agente.agenteConfigurado(client) || (!lead.telefono && !lead.usuario)) return;
+    agente.llamarAgente(client, 'POST', '/control', { ...agente.identidad(lead), humano }, { timeout: 8000 })
+      .catch((e) => db.logEvent({ clientId: client.id, tipo: 'control_etapa_error', detalle: e.message }));
+  };
   db.getDb();
   const app = express();
   app.disable('x-powered-by');
@@ -284,6 +290,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       let lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
       const esNuevo = Date.now() - new Date(`${String(lead.created_at).replace(' ', 'T')}Z`) < 15000;
       lead = embudo.datosDelAgente(req.client, lead, req.body || {});
+      lead = embudo.controlPorEtapa(req.client, lead); // si su etapa es "solo equipo", la IA no le contesta
       lead = paises.clasificar(req.client, lead); // etiqueta de país por la lada y asesor de ese país
       lead = equipo.repartir(req.client, lead); // si aún no tiene asesor, según el reparto de la marca
       if (esNuevo) push.avisar(req.client, { titulo: `Nuevo lead: ${lead.nombre || lead.telefono || lead.usuario || 'sin nombre'}`, texto: String(req.body?.nota || '').slice(0, 140), url: `/app/leads/${lead.id}/chat`, lead }).catch(() => {});

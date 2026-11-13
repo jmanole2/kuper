@@ -4,6 +4,9 @@
 import * as db from './db.js';
 import { config } from './config.js';
 
+// Al cambiar quién atiende por la etapa (IA o equipo), el servidor le avisa al agente de WhatsApp.
+export const hooks = { control: null };
+
 export const TIPOS = { nuevo: 'Nuevo', conversacion: 'En conversación', cita: 'Cita o visita', cliente: 'Cliente', perdido: 'Perdido', archivo: 'Base de datos' };
 export const RESULTADOS = { vendido: 'Vendido', perdido: 'Perdido', resuelto: 'Resuelto' };
 const COLORES = { nuevo: '#93b4ff', conversacion: '#fbbf24', cita: '#c9f53a', cliente: '#4ade80', perdido: '#f87171', archivo: '#8a857c' };
@@ -100,10 +103,24 @@ export function moverLead(client, leadId, etapaId, embudoId) {
   if (!emb) throw new Error('Embudo no válido');
   const e = emb.etapas.find((x) => x.id === etapaId);
   if (!e) throw new Error('Etapa no válida');
+  const antes = etapaDe(client, lead);
   const resultado = e.tipo === 'cliente' ? 'vendido' : e.tipo === 'perdido' ? 'perdido' : lead.resultado === 'vendido' || lead.resultado === 'perdido' ? null : lead.resultado;
   db.getDb().prepare("UPDATE leads SET embudo = ?, etapa = ?, estado = ?, resultado = ?, updated_at = datetime('now') WHERE id = ? AND client_id = ?")
     .run(emb.id, e.id, ESTADO_DE[e.tipo] || e.tipo, resultado, leadId, client.id);
-  return db.getLead(client.id, leadId);
+  return controlPorEtapa(client, db.getLead(client.id, leadId), antes);
+}
+
+/** Etapas "solo equipo": ahí la IA no contesta. Al entrar, el lead pasa al equipo; al salir a una etapa con IA, regresa a la IA. */
+export function controlPorEtapa(client, lead, antes = null) {
+  if (!lead) return lead;
+  const ahora = etapaDe(client, lead);
+  let humano = null;
+  if (ahora.solo_equipo && lead.control !== 'humano') humano = true;
+  else if (!ahora.solo_equipo && antes?.solo_equipo && antes.id !== ahora.id && lead.control === 'humano') humano = false;
+  if (humano === null) return lead;
+  db.getDb().prepare('UPDATE leads SET control = ? WHERE id = ?').run(humano ? 'humano' : 'bot', lead.id);
+  try { hooks.control?.(client, lead, humano); } catch { /* el agente se entera en la siguiente sincronización */ }
+  return db.getLead(client.id, lead.id);
 }
 
 /** El agente (o la API) mueve el lead dentro de su embudo: solo hacia adelante, nunca saca a un lead de Clientes o Perdidos.
@@ -224,6 +241,7 @@ export function editarEtapa(client, embudoId, etapaId, accion, valor = '') {
     emb.etapas.splice(i + 1, 0, { id, nombre: v.slice(0, 40), tipo: et.tipo === 'nuevo' ? 'conversacion' : et.tipo });
   } else if (accion === 'tipo') { if (!TIPOS[v]) throw new Error('Tipo no válido'); et.tipo = v; }
   else if (accion === 'estancado') { const d = Number(v); if (v && !(d >= 1 && d <= 365)) throw new Error('Pon un número de días entre 1 y 365.'); if (d) et.estancado_dias = d; else delete et.estancado_dias; }
+  else if (accion === 'solo_equipo') { if (et.solo_equipo) delete et.solo_equipo; else et.solo_equipo = true; }
   else if (accion === 'al_entrar') { if (v && !RESULTADOS[v]) throw new Error('Opción no válida'); if (v && et.al_entrar !== v) et.al_entrar = v; else delete et.al_entrar; }
   else if (accion === 'eliminar') {
     if (emb.etapas.length <= 2) throw new Error('Un embudo necesita al menos dos etapas.');

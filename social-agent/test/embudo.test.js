@@ -168,3 +168,22 @@ test('turno de llamadas: pausa y horario del equipo pasan la llamada al equipo',
   db.updateClient(x.id, { config: { ...x.config, llamadas_pausado: true } });
   assert.deepEqual(E.turnoLlamadas(db.getClient(x.id), martesNoche), { atiende: 'equipo', motivo: 'pausa' });
 });
+
+test('etapas "solo equipo": al entrar la IA deja de contestar y al salir regresa', async () => {
+  const E = await import('../src/embudo.js');
+  const dbm = await import('../src/db.js');
+  const cl = dbm.createClient({ slug: 'eq-etapa', nombre: 'EqEtapa', perfil: { cliente: 'x', pilares_de_contenido: [{ nombre: 'x' }] }, config: {}, credentials: {} });
+  const avisos = []; E.hooks.control = (c, l, humano) => avisos.push(humano);
+  E.editarEtapa(dbm.getClient(cl.id), 'principal', 'cita', 'solo_equipo');
+  assert.equal(E.etapas(dbm.getClient(cl.id)).find((x) => x.id === 'cita').solo_equipo, true);
+  const l = dbm.upsertLead(cl.id, { telefono: '+525511119999', origen: 'whatsapp' });
+  let x = E.moverLead(dbm.getClient(cl.id), l.id, 'cita');
+  assert.equal(x.control, 'humano'); assert.deepEqual(avisos, [true]);
+  x = E.moverLead(dbm.getClient(cl.id), l.id, 'seguimiento');
+  assert.equal(x.control, 'bot'); assert.deepEqual(avisos, [true, false]);
+  x = E.moverLead(dbm.getClient(cl.id), l.id, 'contestado');
+  assert.deepEqual(avisos, [true, false], 'entre etapas con IA no cambia nada');
+  E.editarEtapa(dbm.getClient(cl.id), 'principal', 'cita', 'solo_equipo');
+  assert.equal(E.etapas(dbm.getClient(cl.id)).find((x) => x.id === 'cita').solo_equipo, undefined, 'se apaga con el mismo botón');
+  E.hooks.control = null;
+});

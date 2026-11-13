@@ -161,8 +161,8 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
     ${importar ? html`<a class="btn btn-warn" href="${base}/importar">Importar contactos</a>` : ''}
   </div>
   <div class="emb" id="emb" data-embudo="${emb.id}">
-    ${cols.map(({ e, leads: ls }) => html`<section class="emb-col" data-etapa="${e.id}" data-nombre="${e.nombre}" data-tipo="${e.tipo}" data-est="${e.estancado_dias || ''}" data-al="${e.al_entrar || ''}" style="--c:${colorTipo(e.tipo)}">
-      <div class="emb-h"><b>${e.nombre}</b><span class="hd"><em data-n>${ls.length}</em><button type="button" class="dots" title="Opciones de la etapa">${ic('puntos', 18)}</button></span></div>
+    ${cols.map(({ e, leads: ls }) => html`<section class="emb-col" data-etapa="${e.id}" data-nombre="${e.nombre}" data-tipo="${e.tipo}" data-est="${e.estancado_dias || ''}" data-al="${e.al_entrar || ''}" data-eq="${e.solo_equipo ? '1' : ''}" style="--c:${colorTipo(e.tipo)}">
+      <div class="emb-h"><b>${e.nombre}${e.solo_equipo ? html` <span title="En esta etapa la IA no contesta: atiende tu equipo" style="font-size:11px;font-weight:700;color:#fbbf24;border:1px solid rgba(251,191,36,.4);border-radius:99px;padding:1px 7px;margin-left:4px;white-space:nowrap">Solo equipo</span>` : ''}</b><span class="hd"><em data-n>${ls.length}</em><button type="button" class="dots" title="Opciones de la etapa">${ic('puntos', 18)}</button></span></div>
       <div class="emb-list">${ls.slice(0, 150).map(card)}${ls.length > 150 ? html`<p class="muted small" style="text-align:center">y ${ls.length - 150} más (usa el buscador o los filtros)</p>` : ''}</div>
       <div class="emb-f"><span>Valor</span><b data-v>${mxn(ls.reduce((s, l) => s + (Number(l.valor) || 0), 0))}</b></div>
     </section>`)}
@@ -204,6 +204,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
     menu=document.createElement('div');menu.className='cmenu';
     const op=(k,ic,t,sub='',cls='')=>'<button type="button" data-k="'+k+'" class="'+cls+'">'+ic+'<span>'+t+(sub?'<small>'+sub+'</small>':'')+'</span></button>';
     menu.innerHTML=op('sel',ICS.sel,'Seleccionar leads','Elige varios · Shift para un rango')+op('ren',ICS.lapiz,'Cambiar nombre')+op('add',ICS.mas,'Agregar etapa','Se agrega después de esta')
+      +op('eq',ICS.sel,col.dataset.eq?'Que la IA vuelva a contestar aquí':'Que aquí solo conteste el equipo',col.dataset.eq?'Ahora: solo equipo':'Al entrar un lead, la IA deja de contestarle')
       +op('est',ICS.campana,'Marcar lead estancado',est?'Después de '+est+' días sin moverse':'Avisa si se queda quieto varios días')
       +'<div class="it">'+ICS.engrane+'<span style="flex:1">Configuración de la etapa<small>Qué significa esta etapa</small><select data-k="tipo">'+Object.entries(TIPOS).map(([k,t])=>'<option value="'+k+'"'+(k===col.dataset.tipo?' selected':'')+'>'+t+'</option>').join('')+'</select></span></div>'
       +'<hr><div class="cap">Al entrar un lead, abrir el formulario de</div>'
@@ -218,6 +219,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
       else if(k==='add'){const v=prompt('Nombre de la nueva etapa');if(v)etapa(col,'agregar',v);}
       else if(k==='est'){const v=prompt('¿Después de cuántos días sin moverse se marca como estancado? (vacío = no marcar)',est||'3');if(v!==null)etapa(col,'estancado',v);}
       else if(k==='al')etapa(col,'al_entrar',x.dataset.v);
+      else if(k==='eq')etapa(col,'solo_equipo','1');
       else if(k==='del'){if(confirm('¿Eliminar la etapa "'+col.dataset.nombre+'"? Sus leads pasan a la etapa de al lado.'))etapa(col,'eliminar');}}));}));
   document.addEventListener('click',cerrar);addEventListener('scroll',cerrar,true);
   // Al soltar en una etapa que pide un formulario (Vendido, Perdido, Resuelto)
