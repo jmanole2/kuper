@@ -44,6 +44,7 @@ import * as docs from './documentos.js';
 import * as cupones from './cupones.js';
 import * as cobros from './pagos-clientes.js';
 import * as correo from './correo.js';
+import * as copiloto from './copiloto.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -1288,6 +1289,13 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         db.logEvent({ clientId: req.client.id, tipo: 'respuesta_manual', detalle: `${autor} → ${lead.nombre || lead.telefono || lead.usuario}` });
         res.redirect(`${base(req)}/leads/${lead.id}/chat`);
       } catch (e) { await ver(req, res, { error: e.message, borrador: texto }); }
+    });
+    // Ayuda de IA para quien contesta: sugerir, resumir, traducir (solo propone texto).
+    router.post(`${prefix}/leads/:leadId/ia`, express.json({ limit: '40kb' }), async (req, res) => {
+      const lead = db.getLead(req.client.id, Number(req.params.leadId));
+      if (!lead) return res.status(404).json({ error: 'Lead no encontrado' });
+      try { res.json(await copiloto.ayudar(req.client, lead, String(req.body?.accion || ''), req.body?.texto)); }
+      catch (e) { res.status(/límite|no válida|todavía no/.test(e.message) ? 400 : 502).json({ error: /límite|no válida|todavía no/.test(e.message) ? e.message : 'La IA no respondió. Intenta de nuevo.' }); }
     });
     router.post(`${prefix}/leads/:leadId/ficha`, async (req, res) => {
       const lead = leadDe(req, res); if (!lead) return;

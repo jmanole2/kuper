@@ -631,9 +631,19 @@ export function leadChatPage(client, lead, mensajes, { back = null, sideBar = nu
     <form method="post" action="${base}/control" class="inline"><input type="hidden" name="humano" value="${humano ? '0' : '1'}"><button class="${humano ? 'btn-accent' : 'btn-warn'}">${humano ? 'Devolver al agente' : 'Tomar control'}</button></form>
   </div>` : ''}
   <div class="card chat" id="chat">${raw(chatBurbujas(mensajes))}</div>
+  ${base ? html`<div id="ia-caja" class="card" style="display:none;max-width:760px;margin:10px 0;font-size:14px"></div>` : ''}
   ${puedeResponder && base ? html`<form class="resp" method="post" action="${base}/responder">
-    <textarea name="texto" maxlength="4000" placeholder="Escribe tu respuesta… (al enviar, el agente se pausa en esta conversación)" required>${borrador}</textarea>
-    <p class="row"><button class="btn-accent">Enviar por WhatsApp</button><span class="muted small">Sale desde el número del agente. ${humano ? 'Cuando termines, toca "Devolver al agente".' : ''}</span></p></form>`
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">${[['sugerir', '✨ Sugerir respuesta'], ['resumir', 'Resumir conversación'], ['traducir', 'Traducir']].map(([k, t]) => html`<button type="button" class="btn-warn" data-ia="${k}" style="padding:6px 12px;font-size:13px">${t}</button>`)}</div>
+    <textarea name="texto" id="resp-texto" maxlength="4000" placeholder="Escribe tu respuesta… (al enviar, el agente se pausa en esta conversación)" required>${borrador}</textarea>
+    <p class="row"><button class="btn-accent">${lead.origen === 'correo' || (!lead.telefono && !lead.usuario && lead.email) ? 'Enviar por correo' : 'Enviar por WhatsApp'}</button><span class="muted small">${lead.origen === 'correo' ? 'Sale desde el correo de tu marca, en el mismo hilo.' : 'Sale desde el número del agente.'} ${humano ? 'Cuando termines, toca "Devolver al agente".' : ''}</span></p></form>
+  ${raw(`<script>(()=>{const B=${JSON.stringify(base)},caja=document.getElementById('ia-caja'),ta=document.getElementById('resp-texto');
+  const esc=(s)=>String(s).replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  document.querySelectorAll('[data-ia]').forEach((b)=>b.addEventListener('click',async()=>{const a=b.dataset.ia,txt=b.textContent;b.disabled=true;b.textContent='Pensando…';
+    try{const r=await fetch(B+'/ia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:a,texto:a==='resumir'?'':ta.value})});const j=await r.json();if(!r.ok)throw new Error(j.error||'No se pudo');
+      if(a==='sugerir'||(a==='traducir'&&j.borrador)){ta.value=j.texto;ta.focus();if(a==='traducir'){caja.style.display='block';caja.innerHTML='<b>Traducido al '+esc(j.idioma||'idioma del cliente')+'.</b> Revísalo antes de enviar.';}}
+      else if(a==='resumir'){caja.style.display='block';caja.innerHTML='<span class="mono">Resumen</span><ul style="margin:8px 0">'+j.resumen.map((x)=>'<li>'+esc(x)+'</li>').join('')+'</ul><b>Siguiente paso:</b> '+esc(j.siguiente_paso);}
+      else{caja.style.display='block';caja.innerHTML='<span class="mono">Lo que escribió el cliente'+(j.idioma?' ('+esc(j.idioma)+')':'')+'</span><p style="white-space:pre-wrap;margin:8px 0 0">'+esc(j.texto)+'</p>';}}
+    catch(e){caja.style.display='block';caja.textContent=e.message;}finally{b.disabled=false;b.textContent=txt;}}));})();</script>`)}`
     : html`<p class="muted small" style="max-width:760px">Para responder desde aquí, Kuper tiene que conectar este panel con tu agente (URL del agente en Configuración).</p>`}
   </div>${raw(String(ficha || ''))}</div>
   ${raw(`<script>(()=>{const c=document.getElementById('chat');c.scrollTop=c.scrollHeight;const u=${JSON.stringify(base ? `${base}/chat.json` : '')};if(!u)return;let last=c.innerHTML;
