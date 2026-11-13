@@ -46,6 +46,7 @@ import * as cobros from './pagos-clientes.js';
 import * as correo from './correo.js';
 import * as copiloto from './copiloto.js';
 import * as sitioweb from './sitioweb.js';
+import * as ayuda from './ayuda.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -600,6 +601,11 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   appR.use('/cupones', servicio('chat'));
   appR.use('/cobros', servicio('chat'));
   appR.use('/correo', servicio('chat'));
+  // Chat de ayuda de Kuper (burbuja "¿Dudas?" en todo el panel).
+  appR.post('/ayuda', express.json({ limit: '40kb' }), async (req, res) => {
+    try { res.json(await ayuda.preguntar(req.client, req.sesion?.user, req.body?.pregunta, req.body?.historial)); }
+    catch (e) { res.status(/Escribe|muchas preguntas/.test(e.message) ? 400 : 502).json({ error: /Escribe|muchas preguntas/.test(e.message) ? e.message : 'No pude contestar en este momento.' }); }
+  });
   appR.use('/equipo', servicio('chat'));
   appR.use('/asistente', servicio('chat'));
   asistenteRoutes(appR, () => '/app', { app: true });

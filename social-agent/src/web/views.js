@@ -1725,7 +1725,7 @@ export function equipoPage(client, { aj = {}, filas = [], esperando = [], csat =
 // ------------------------------------------------------------ asistente del panel
 export function asistentePage(client, { base, app = false }) {
   const ejemplos = ['¿Cuántos leads llegaron esta semana y de qué país?', '¿Quién está esperando respuesta ahorita?', '¿Cuáles son los 5 leads más cerca de comprar?', 'Asigna a Ana los leads nuevos sin asesor', 'Marca como urgentes los que llevan más de 2 días esperando'];
-  const body = html`${hero({ kicker: 'Asistente', title: 'Pregúntale a tu panel', letra: client.nombre, sub: 'Pregunta en español sobre tus leads, conversaciones, asesores y anuncios, o pídele que haga algo (mover, asignar, etiquetar, preparar una campaña): siempre te pide confirmar antes. Contesta con tus datos y te deja los links para abrir cada conversación. Solo consulta: no cambia nada.' })}
+  const body = html`${hero({ kicker: 'Asistente', title: 'Pregúntale a tu panel', letra: client.nombre, sub: 'Pregunta en español sobre tus leads, conversaciones, asesores y anuncios, o pídele que haga algo (mover, asignar, etiquetar, preparar una campaña): siempre te pide confirmar antes. Contesta con tus datos y te deja los links para abrir cada conversación.' })}
   <div class="card" style="max-width:860px">
     <div id="as-msgs" style="display:flex;flex-direction:column;gap:10px;min-height:120px;max-height:56vh;overflow-y:auto;padding:4px"></div>
     <div id="as-ej" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${ejemplos.map((e) => html`<button type="button" class="btn-warn" style="padding:7px 12px;font-size:13px" data-ej="${e}">${e}</button>`)}</div>

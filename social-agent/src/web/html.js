@@ -116,11 +116,36 @@ export const icon = (k) => `<svg viewBox="0 0 24 24">${ICON[k] || ''}</svg>`;
  * side: lista de enlaces de la barra lateral [{href, icon, label, on, bottom}] (panel de agencia).
  * Sin side: página simple (portal del cliente, login).
  */
+
+// Chat de ayuda de Kuper (solo en el panel de las marcas): dudas de cómo usar el panel.
+const AYUDA_WA = 'https://wa.me/525552173832?text=' + encodeURIComponent('Hola, necesito ayuda con mi panel de Kuper');
+const AYUDA_HTML = `<style>
+#ky-b{position:fixed;right:18px;bottom:18px;z-index:60;border:0;border-radius:99px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);font:700 14px/1 inherit;box-shadow:0 12px 30px rgba(0,0,0,.35);cursor:pointer;display:flex;gap:8px;align-items:center}
+#ky-p{position:fixed;right:18px;bottom:76px;z-index:61;width:min(380px,calc(100vw - 24px));height:min(540px,calc(100vh - 110px));display:none;flex-direction:column;background:#1a1816;border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden}
+#ky-p.on{display:flex}#ky-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+#ky-m{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.ky-x{padding:9px 12px;border-radius:14px;max-width:88%;white-space:pre-wrap;line-height:1.45}.ky-yo{align-self:flex-end;background:rgba(255,255,255,.1)}.ky-el{align-self:flex-start;background:rgba(198,255,61,.1)}
+#ky-f{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)}#ky-f input{flex:1}
+@media print{#ky-b,#ky-p{display:none!important}}</style>
+<button id="ky-b" type="button" aria-label="Ayuda">?<span>¿Dudas?</span></button>
+<div id="ky-p" role="dialog" aria-label="Ayuda de Kuper"><div id="ky-h"><b>Ayuda de Kuper</b><button type="button" id="ky-c" style="background:none;border:0;color:inherit;font-size:20px;cursor:pointer" aria-label="Cerrar">×</button></div>
+<div id="ky-m"><div class="ky-x ky-el">Hola 👋 Pregúntame cómo usar tu panel: por ejemplo "¿cómo pauso al agente?" o "¿cómo mando una campaña?".</div></div>
+<form id="ky-f" autocomplete="off"><input id="ky-q" maxlength="600" placeholder="Escribe tu duda…"><button class="btn-accent" style="padding:8px 12px">Enviar</button></form></div>
+<script>(()=>{const p=document.getElementById('ky-p'),m=document.getElementById('ky-m'),f=document.getElementById('ky-f'),q=document.getElementById('ky-q'),h=[];
+document.getElementById('ky-b').onclick=()=>{p.classList.toggle('on');if(p.classList.contains('on'))q.focus();};document.getElementById('ky-c').onclick=()=>p.classList.remove('on');
+const add=(t,c)=>{const d=document.createElement('div');d.className='ky-x '+c;d.textContent=t;m.append(d);m.scrollTop=m.scrollHeight;return d;};
+f.onsubmit=async(e)=>{e.preventDefault();const t=q.value.trim();if(!t)return;q.value='';add(t,'ky-yo');const w=add('…','ky-el');
+try{const r=await fetch('/app/ayuda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pregunta:t,historial:h})});const j=await r.json();if(!r.ok)throw new Error(j.error);
+w.textContent=j.respuesta;h.push({rol:'yo',texto:t},{rol:'ayuda',texto:j.respuesta});
+if(j.hablar_con_kuper){const a=document.createElement('a');a.href=${JSON.stringify(AYUDA_WA)};a.target='_blank';a.rel='noopener';a.textContent='Escribir a Kuper por WhatsApp →';a.style.cssText='display:block;margin-top:8px;font-weight:700';w.append(a);}}
+catch(err){w.textContent=(err instanceof TypeError?'No pude conectarme.':(err.message||'No pude contestar.'))+' ';const a=document.createElement('a');a.href=${JSON.stringify(AYUDA_WA)};a.target='_blank';a.textContent='Escríbenos por WhatsApp';w.append(a);}m.scrollTop=m.scrollHeight;};})();</script>`;
+
 export function page({ title, body, side = null, brand = '', mark = 'K' }) {
+  const ayuda = side && side.some((l) => l.href === '/app') ? AYUDA_HTML : '';
   const nav = side ? `<aside class="side"><a class="logo" href="${esc(side.find((l) => l.logo)?.href || '/admin')}" title="Inicio">${esc(mark)}</a>
 ${side.filter((l) => !l.bottom).map((l) => `<a class="nav${l.on ? ' on' : ''}" href="${esc(l.href)}">${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}
 <div class="bottom">${side.filter((l) => l.bottom).map((l) => `<a class="nav" href="${esc(l.href)}"${l.href.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${icon(l.icon)}<span>${esc(l.label)}</span></a>`).join('')}</div></aside>` : '';
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#121110"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/app-icono-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Kuper"><title>${esc(title)}</title><style>${CSS}</style></head><body>
-<div class="${side ? 'layout' : 'solo'}">${nav}<div>${brand ? `<div class="top"><span class="brand">${esc(brand)}</span></div>` : ''}<main>${body}</main></div></div><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script></body></html>`;
+<div class="${side ? 'layout' : 'solo'}">${nav}<div>${brand ? `<div class="top"><span class="brand">${esc(brand)}</span></div>` : ''}<main>${body}</main></div></div>${ayuda}<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script></body></html>`;
 }
