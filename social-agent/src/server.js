@@ -46,6 +46,7 @@ import * as cobros from './pagos-clientes.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
+import * as asistente from './asistente.js';
 import { fichaLead, documentosCard } from './web/embudo.js';
 import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
@@ -567,6 +568,8 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   appR.use('/cupones', servicio('chat'));
   appR.use('/cobros', servicio('chat'));
   appR.use('/equipo', servicio('chat'));
+  appR.use('/asistente', servicio('chat'));
+  asistenteRoutes(appR, () => '/app', { app: true });
   equipoRoutes(appR, () => '/app', { app: true });
   cobrosRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
@@ -999,6 +1002,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   cuponesRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cobrosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   equipoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  asistenteRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
     const raw = String(req.body.agente_url || '').trim().replace(/\/+$/, '');
     if (raw && !/^https:\/\/[a-z0-9.-]+(:\d+)?(\/[\w.-]*)*$/i.test(raw)) return res.status(400).send(clientView(req.client, 'La URL del agente debe empezar con https:// (ej. https://agente.kuper.mx)', undefined, undefined, { tab: 'config' }));
@@ -1375,6 +1379,17 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     router.post(`${prefix}/comentarios/:comId/descartar`, (req, res) => {
       try { comentarios.descartar(req.client, req.params.comId, autor(req)); res.redirect(`${base(req)}/comentarios?ok=descartado&f=por_aprobar`); }
       catch (e) { vista(req, res, { error: e.message }); }
+    });
+  }
+
+  // Asistente del panel: preguntas en español sobre los datos de la marca (solo lectura).
+  function asistenteRoutes(router, base, { app = false, prefix = '' } = {}) {
+    router.get(`${prefix}/asistente`, (req, res) => res.send(V.asistentePage(req.client, { base: base(req), app })));
+    router.post(`${prefix}/asistente/preguntar`, express.json({ limit: '40kb' }), async (req, res) => {
+      try {
+        const r = await asistente.preguntar(req.client, req.sesion?.user, req.body?.pregunta, req.body?.historial);
+        res.json({ ...r, leads: r.leads.map((l) => ({ ...l, url: `${base(req)}/leads/${l.id}/chat` })) });
+      } catch (e) { res.status(/preguntas hoy|Escribe/.test(e.message) ? 400 : 502).json({ error: /preguntas hoy|Escribe/.test(e.message) ? e.message : 'No pude contestar en este momento. Intenta de nuevo.' }); }
     });
   }
 

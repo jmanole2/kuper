@@ -163,6 +163,7 @@ const sideApp = (on, client) => (client?._caja ? [
   ...(tiene(client, 'chat') ? [{ href: '/app/cupones', icon: 'ticket', label: 'Cupones', on: on === 'cupones' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cobros', icon: 'card', label: 'Cobros por chat', on: on === 'cobros' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/equipo', icon: 'users', label: 'Equipo', on: on === 'equipo' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/asistente', icon: 'brain', label: 'Pregúntale a tu panel', on: on === 'asistente' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
   ...(tiene(client, 'videollamadas') ? [{ href: '/app/videollamadas', icon: 'video', label: 'Videollamadas', on: on === 'videollamadas' }] : []),
   ...(client?._marcas?.length > 1 ? [{ href: '/app/marcas', icon: 'grid', label: `${client.nombre} · cambiar de marca`, on: on === 'marcas' }] : []),
@@ -1637,4 +1638,33 @@ export function equipoPage(client, { aj = {}, filas = [], esperando = [], csat =
       </form>
     </div>`;
   return page({ title: `Equipo · ${client.nombre}`, side: app ? sideApp('equipo', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ asistente del panel
+export function asistentePage(client, { base, app = false }) {
+  const ejemplos = ['¿Cuántos leads llegaron esta semana y de qué país?', '¿Quién está esperando respuesta ahorita?', '¿Qué asesor tiene más leads abiertos?', '¿Cuáles son los 5 leads más cerca de comprar?', '¿De qué preguntan más?'];
+  const body = html`${hero({ kicker: 'Asistente', title: 'Pregúntale a tu panel', letra: client.nombre, sub: 'Pregunta en español sobre tus leads, conversaciones, asesores y anuncios. Contesta con tus datos y te deja los links para abrir cada conversación. Solo consulta: no cambia nada.' })}
+  <div class="card" style="max-width:860px">
+    <div id="as-msgs" style="display:flex;flex-direction:column;gap:10px;min-height:120px;max-height:56vh;overflow-y:auto;padding:4px"></div>
+    <div id="as-ej" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${ejemplos.map((e) => html`<button type="button" class="btn-warn" style="padding:7px 12px;font-size:13px" data-ej="${e}">${e}</button>`)}</div>
+    <form id="as-form" style="display:flex;gap:8px" autocomplete="off"><input id="as-q" maxlength="600" placeholder="Escribe tu pregunta…" style="flex:1"><button class="btn-accent" id="as-btn">Preguntar</button></form>
+  </div>
+  <script>(() => {
+    const msgs = document.getElementById('as-msgs'), form = document.getElementById('as-form'), q = document.getElementById('as-q'), btn = document.getElementById('as-btn');
+    const historial = [];
+    const burbuja = (quien, texto, leads = []) => { const d = document.createElement('div'); d.style.cssText = 'padding:10px 14px;border-radius:16px;max-width:92%;white-space:pre-wrap;' + (quien === 'yo' ? 'align-self:flex-end;background:rgba(255,255,255,.08)' : 'align-self:flex-start;background:rgba(201,245,58,.1)');
+      d.textContent = texto;
+      if (leads.length) { const ul = document.createElement('div'); ul.style.cssText = 'margin-top:8px;display:grid;gap:4px';
+        for (const l of leads) { const a = document.createElement('a'); a.href = l.url; a.textContent = '→ ' + l.nombre + (l.etapa ? ' · ' + l.etapa : '') + (l.pais ? ' · ' + l.pais : ''); a.style.fontSize = '14px'; ul.append(a); } d.append(ul); }
+      msgs.append(d); msgs.scrollTop = msgs.scrollHeight; return d; };
+    const preguntar = async (texto) => {
+      if (!texto || btn.disabled) return; q.value = ''; burbuja('yo', texto); btn.disabled = true; const espera = burbuja('as', 'Revisando tus datos…');
+      try { const r = await fetch('${base}/asistente/preguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pregunta: texto, historial }) });
+        const j = await r.json(); espera.remove(); if (!r.ok) throw new Error(j.error); burbuja('as', j.respuesta, j.leads || []);
+        historial.push({ rol: 'yo', texto }, { rol: 'asistente', texto: j.respuesta }); }
+      catch (e) { espera.remove(); burbuja('as', e.message || 'No pude contestar.'); } finally { btn.disabled = false; q.focus(); } };
+    form.addEventListener('submit', (e) => { e.preventDefault(); preguntar(q.value.trim()); });
+    document.getElementById('as-ej').addEventListener('click', (e) => { const b = e.target.closest('[data-ej]'); if (b) preguntar(b.dataset.ej); });
+  })();</script>`;
+  return page({ title: `Asistente · ${client.nombre}`, side: app ? sideApp('asistente', client) : side('clientes'), body });
 }
