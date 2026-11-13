@@ -41,3 +41,25 @@ test('pregunta desde el panel: responde con links solo a leads de la marca', asy
     assert.doesNotMatch(visto, /Secreto/);
   } finally { server.close(); }
 });
+
+test('acciones: propone, la persona confirma y se vuelve a validar todo', async () => {
+  const cli = db.getClient(c.id);
+  const ana = db.getDb().prepare("SELECT id FROM users WHERE email = 'ana@a.mx'").get().id;
+  const ajeno = db.listLeads(otra.id)[0].id;
+  as.hooks.ia = async () => ({ data: { respuesta: 'Asigno a Ana, confírmalo.', leads: [], accion: { tipo: 'asignar', resumen: 'Asignar a Ana', leads: [l1.id, ajeno], destino: '', asesor_id: ana, valor: '', campana: { nombre: '', plantilla: '', etapas: [], tags: [], origen: '', sin_actividad: 0 } } } });
+  const r = await as.preguntar(cli, { id: 1 }, 'asigna a Ana');
+  assert.deepEqual(r.accion.leads, [l1.id], 'quita leads de otra marca');
+  assert.equal(db.getLead(c.id, l1.id).asignado_id, null, 'no hace nada sin confirmar');
+  assert.match(as.ejecutar(cli, { nombre: 'Ana' }, r.accion).mensaje, /1 lead/);
+  assert.equal(db.getLead(c.id, l1.id).asignado_id, ana);
+  assert.throws(() => as.ejecutar(cli, {}, { tipo: 'asignar', leads: [ajeno], asesor_id: ana }), /No encontré/);
+  assert.throws(() => as.ejecutar(cli, {}, { tipo: 'asignar', leads: [l1.id], asesor_id: 99999 }), /no es de tu cuenta/);
+  assert.throws(() => as.ejecutar(cli, {}, { tipo: 'mover', leads: [l1.id], destino: 'x/y' }), /no existe/);
+  as.ejecutar(cli, {}, { tipo: 'etiquetar', leads: [l1.id], valor: 'VIP' });
+  as.ejecutar(cli, {}, { tipo: 'etiquetar', leads: [l1.id], valor: 'vip' });
+  assert.deepEqual(JSON.parse(db.getLead(c.id, l1.id).tags_json).filter((t) => t === 'vip'), ['vip']);
+  as.ejecutar(cli, {}, { tipo: 'prioridad', leads: [l1.id], valor: 'urgente' });
+  assert.equal(db.getLead(c.id, l1.id).prioridad, 'urgente');
+  const camp = as.ejecutar(cli, { nombre: 'Ana' }, { tipo: 'campana', campana: { nombre: 'Recordatorio', plantilla: 'recordatorio_docs', etapas: [], tags: ['vip'], origen: '', sin_actividad: 0 } });
+  assert.match(camp.mensaje, /borrador/);
+});

@@ -1660,8 +1660,8 @@ export function equipoPage(client, { aj = {}, filas = [], esperando = [], csat =
 
 // ------------------------------------------------------------ asistente del panel
 export function asistentePage(client, { base, app = false }) {
-  const ejemplos = ['¿Cuántos leads llegaron esta semana y de qué país?', '¿Quién está esperando respuesta ahorita?', '¿Qué asesor tiene más leads abiertos?', '¿Cuáles son los 5 leads más cerca de comprar?', '¿De qué preguntan más?'];
-  const body = html`${hero({ kicker: 'Asistente', title: 'Pregúntale a tu panel', letra: client.nombre, sub: 'Pregunta en español sobre tus leads, conversaciones, asesores y anuncios. Contesta con tus datos y te deja los links para abrir cada conversación. Solo consulta: no cambia nada.' })}
+  const ejemplos = ['¿Cuántos leads llegaron esta semana y de qué país?', '¿Quién está esperando respuesta ahorita?', '¿Cuáles son los 5 leads más cerca de comprar?', 'Asigna a Ana los leads nuevos sin asesor', 'Marca como urgentes los que llevan más de 2 días esperando'];
+  const body = html`${hero({ kicker: 'Asistente', title: 'Pregúntale a tu panel', letra: client.nombre, sub: 'Pregunta en español sobre tus leads, conversaciones, asesores y anuncios, o pídele que haga algo (mover, asignar, etiquetar, preparar una campaña): siempre te pide confirmar antes. Contesta con tus datos y te deja los links para abrir cada conversación. Solo consulta: no cambia nada.' })}
   <div class="card" style="max-width:860px">
     <div id="as-msgs" style="display:flex;flex-direction:column;gap:10px;min-height:120px;max-height:56vh;overflow-y:auto;padding:4px"></div>
     <div id="as-ej" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">${ejemplos.map((e) => html`<button type="button" class="btn-warn" style="padding:7px 12px;font-size:13px" data-ej="${e}">${e}</button>`)}</div>
@@ -1675,10 +1675,24 @@ export function asistentePage(client, { base, app = false }) {
       if (leads.length) { const ul = document.createElement('div'); ul.style.cssText = 'margin-top:8px;display:grid;gap:4px';
         for (const l of leads) { const a = document.createElement('a'); a.href = l.url; a.textContent = '→ ' + l.nombre + (l.etapa ? ' · ' + l.etapa : '') + (l.pais ? ' · ' + l.pais : ''); a.style.fontSize = '14px'; ul.append(a); } d.append(ul); }
       msgs.append(d); msgs.scrollTop = msgs.scrollHeight; return d; };
+    // Lo que el asistente propone hacer: solo se hace si la persona lo confirma.
+    const propuesta = (b, accion) => {
+      const box = document.createElement('div'); box.style.cssText = 'margin-top:10px;padding:10px 12px;border:1px solid rgba(198,255,61,.35);border-radius:12px;display:grid;gap:8px';
+      const t = document.createElement('b'); t.textContent = accion.resumen + (accion.leads && accion.leads.length && accion.tipo !== 'campana' ? ' (' + accion.leads.length + ' leads)' : ''); box.append(t);
+      const fila = document.createElement('div'); fila.style.cssText = 'display:flex;gap:8px';
+      const si = document.createElement('button'); si.type = 'button'; si.className = 'btn-accent'; si.textContent = 'Sí, hazlo'; si.style.cssText = 'padding:7px 14px;font-size:13px';
+      const no = document.createElement('button'); no.type = 'button'; no.className = 'btn-warn'; no.textContent = 'Cancelar'; no.style.cssText = 'padding:7px 14px;font-size:13px';
+      no.onclick = () => { box.textContent = 'Cancelado.'; };
+      si.onclick = async () => { si.disabled = no.disabled = true; si.textContent = 'Haciéndolo…';
+        try { const r = await fetch('${base}/asistente/accion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion }) });
+          const j = await r.json(); if (!r.ok) throw new Error(j.error); box.textContent = j.mensaje + ' ';
+          if (j.url) { const a = document.createElement('a'); a.href = j.url; a.textContent = 'Ver'; box.append(a); } }
+        catch (e) { box.textContent = e.message || 'No se pudo.'; } };
+      fila.append(si, no); box.append(fila); b.append(box); msgs.scrollTop = msgs.scrollHeight; };
     const preguntar = async (texto) => {
       if (!texto || btn.disabled) return; q.value = ''; burbuja('yo', texto); btn.disabled = true; const espera = burbuja('as', 'Revisando tus datos…');
       try { const r = await fetch('${base}/asistente/preguntar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pregunta: texto, historial }) });
-        const j = await r.json(); espera.remove(); if (!r.ok) throw new Error(j.error); burbuja('as', j.respuesta, j.leads || []);
+        const j = await r.json(); espera.remove(); if (!r.ok) throw new Error(j.error); const b = burbuja('as', j.respuesta, j.leads || []); if (j.accion) propuesta(b, j.accion);
         historial.push({ rol: 'yo', texto }, { rol: 'asistente', texto: j.respuesta }); }
       catch (e) { espera.remove(); burbuja('as', e.message || 'No pude contestar.'); } finally { btn.disabled = false; q.focus(); } };
     form.addEventListener('submit', (e) => { e.preventDefault(); preguntar(q.value.trim()); });

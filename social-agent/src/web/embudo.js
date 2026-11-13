@@ -296,6 +296,26 @@ function barrasHora(horas, h) {
 }
 const barras = (items, col) => { const max = Math.max(1e-9, ...items.map((x) => x[1])); return html`<div class="an-bars">${items.map(([t, n, c, etiqueta]) => html`<div><span>${t}</span><i style="width:${Math.max(1, Math.round((n / max) * 100))}%;--c:${c || col}"></i><em>${etiqueta ?? n}</em></div>`)}</div>`; };
 
+// Temas detectados con IA y sugerencias para lo que sabe el agente.
+function temasIACard(t, base, aviso = '') {
+  const fecha = t?.fecha ? new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(t.fecha)) : '';
+  return html`<div class="card" style="grid-column:1/-1"><span class="mono">Con IA</span>
+    <div class="row spread" style="flex-wrap:wrap;gap:10px;align-items:center"><h3 style="margin:6px 0 0">De qué habla tu gente y qué le falta saber a tu agente</h3>
+      <form method="post" action="${base}/analitica/temas-ia"><button class="btn-accent" style="padding:8px 14px">${t ? 'Volver a analizar' : 'Analizar conversaciones'}</button></form></div>
+    ${aviso ? html`<p class="small" style="margin:8px 0 0">${aviso}</p>` : ''}
+    ${!t ? html`<p class="muted small">La IA lee las conversaciones de los últimos 30 días (sin teléfonos ni correos), agrupa lo que más preguntan, detecta lo que tu agente no supo contestar y te propone qué agregarle.</p>` : html`
+      <p class="muted small">${t.conversaciones} conversaciones de los últimos ${t.dias} días · analizado el ${fecha}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:8px">
+        <div><b>Lo que más preguntan</b>${t.temas.map((x) => html`<div style="padding:7px 0;border-bottom:1px solid var(--line)"><span>${x.tema}</span> <span class="muted small">· ${x.conversaciones} conv.</span><div class="muted small">“${x.ejemplo}”</div></div>`)}</div>
+        <div><b>Lo que tu agente no supo contestar</b>${t.sin_respuesta.length ? t.sin_respuesta.map((x) => html`<div style="padding:7px 0;border-bottom:1px solid var(--line)">${x.pregunta} <span class="muted small">· ${x.veces} ${x.veces === 1 ? 'vez' : 'veces'}</span></div>`) : html`<p class="muted small">Nada: contestó todo. 🎉</p>`}</div>
+      </div>
+      ${t.sugerencias.length ? html`<b style="display:block;margin-top:16px">Sugerencias para tu agente</b>
+        <div style="display:grid;gap:10px;margin-top:8px">${t.sugerencias.map((s, i) => html`<form method="post" action="${base}/analitica/sugerencia" style="padding:12px;border:1px solid var(--line);border-radius:14px;display:grid;gap:6px">
+          <input type="hidden" name="i" value="${i}"><b>${s.titulo}</b><span class="muted small">${s.por_que}</span>
+          ${s.agregada ? html`<span class="small" style="color:var(--accent)">✓ Ya está en lo que sabe tu agente</span>` : html`<textarea name="texto" style="min-height:80px">${s.texto}</textarea>
+          <div><button class="btn-warn" style="padding:7px 12px;font-size:13px">Agregar a lo que sabe mi agente</button> <span class="muted small">Si dice [completar], cámbialo por el dato real antes.</span></div>`}</form>`)}</div>` : ''}`}
+  </div>`;
+}
 export function analiticaSection(client, a, { base }) {
   const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
   const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -328,6 +348,7 @@ export function analiticaSection(client, a, { base }) {
       <p class="muted small">Tiempo típico (mediana) en contestar cada mensaje. Agente: ${a.respondidosAgente} respuestas · Equipo: ${a.respondidosEquipo} respuestas. Primera respuesta a un lead nuevo: agente ${minTxt(a.primeraAgente)}, equipo ${minTxt(a.primeraEquipo)}.</p></div>
     <div class="card"><span class="mono">Qué preguntan</span><h3 style="margin:6px 0 0">Temas del primer mensaje</h3>${barras(a.temas.map(([t, n]) => [t, n]), '#c9f53a')}
       <p class="muted small">De ${a.conPrimerMsg} conversaciones nuevas; un mensaje puede tocar varios temas.</p></div>
+    ${temasIACard(a.temasIA, base, a.aviso)}
     ${(a.porEmbudo || [{ nombre: 'Leads por etapa', etapas: a.porEtapa }]).filter((emb, i) => i === 0 || emb.etapas.some((e) => e.n)).map((emb) => html`<div class="card"><span class="mono">Embudo</span><h3 style="margin:6px 0 0">${(a.porEmbudo || []).length > 1 ? emb.nombre : 'Leads por etapa'}</h3>${barras(emb.etapas.map((e) => [e.nombre, e.n, colorTipo(e.tipo)]))}</div>`)}
     <div class="card"><span class="mono">Canales</span><h3 style="margin:6px 0 0">De dónde llegan</h3>${a.canales.length ? barras(a.canales.map(([o, n]) => [origen(o)[0], n, origen(o)[1]])) : html`<p class="muted">Sin leads nuevos en el periodo.</p>`}</div>
     <div class="card"><span class="mono">Días</span><h3 style="margin:6px 0 0">Leads nuevos por día</h3>${barras(a.semana.map((n, i) => [DIAS[i], n]).slice(1).concat([[DIAS[0], a.semana[0]]]), '#93b4ff')}</div>

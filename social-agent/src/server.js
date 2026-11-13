@@ -47,6 +47,7 @@ import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
 import * as asistente from './asistente.js';
+import * as temasIA from './temas-ia.js';
 import { fichaLead, documentosCard } from './web/embudo.js';
 import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
@@ -1345,7 +1346,19 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const q = (k, n = 12) => String(req.query[k] || '').slice(0, n);
       const a = embudo.analitica(req.client, { rango: q('rango') || q('dias'), desde: q('desde'), hasta: q('hasta'), asesor: q('asesor') });
       a.listaAsesores = embudo.asesores(req.client);
+      a.temasIA = temasIA.ultimo(req.client); a.aviso = String(req.query.aviso || '').slice(0, 200);
       res.send(app ? V.appAnaliticaPage(req.client, a) : V.adminAnaliticaPage(req.client, a));
+    });
+    const volver = (req, res, txt) => res.redirect(`${base(req)}/analitica?aviso=${encodeURIComponent(txt)}`);
+    router.post(`${prefix}/analitica/temas-ia`, async (req, res) => {
+      try {
+        const r = await temasIA.analizar(req.client, { forzar: !app && !!req.sesion?.admin, autor: req.sesion?.user?.nombre || 'Kuper' });
+        volver(req, res, `Listo: ${r.temas.length} temas y ${r.sugerencias.length} sugerencias.`);
+      } catch (e) { volver(req, res, /muy pocas|hace poco/.test(e.message) ? e.message : 'No se pudo analizar en este momento. Intenta de nuevo.'); }
+    });
+    router.post(`${prefix}/analitica/sugerencia`, (req, res) => {
+      try { temasIA.agregarSugerencia(req.client, req.body.i, req.body.texto, req.sesion?.user?.nombre || 'Kuper'); volver(req, res, 'Listo: tu agente ya lo sabe (en unos minutos lo usa).'); }
+      catch (e) { volver(req, res, e.message); }
     });
   }
 
@@ -1407,6 +1420,14 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         const r = await asistente.preguntar(req.client, req.sesion?.user, req.body?.pregunta, req.body?.historial);
         res.json({ ...r, leads: r.leads.map((l) => ({ ...l, url: `${base(req)}/leads/${l.id}/chat` })) });
       } catch (e) { res.status(/preguntas hoy|Escribe/.test(e.message) ? 400 : 502).json({ error: /preguntas hoy|Escribe/.test(e.message) ? e.message : 'No pude contestar en este momento. Intenta de nuevo.' }); }
+    });
+    // La persona confirmó lo que propuso el asistente (mover, asignar, etiquetar, campaña…).
+    router.post(`${prefix}/asistente/accion`, express.json({ limit: '40kb' }), (req, res) => {
+      try {
+        const r = asistente.ejecutar(req.client, req.sesion?.user, req.body?.accion);
+        seg.auditar(req, 'asistente_accion', `${req.client.nombre}: ${req.body?.accion?.tipo}`);
+        res.json({ mensaje: r.mensaje, url: r.url ? `${base(req)}/${r.url}` : '' });
+      } catch (e) { res.status(400).json({ error: e.message }); }
     });
   }
 
