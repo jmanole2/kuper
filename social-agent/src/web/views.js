@@ -165,6 +165,7 @@ const sideApp = (on, client) => (client?._caja ? [
   ...(tiene(client, 'chat') ? [{ href: '/app/cobros', icon: 'card', label: 'Cobros por chat', on: on === 'cobros' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/correo', icon: 'mail', label: 'Correo', on: on === 'correo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/anuncios', icon: 'chart', label: 'Anuncios', on: on === 'anuncios' }] : []),
+  ...(tiene(client, 'chat') && client?.config?.carritos ? [{ href: '/app/carritos', icon: 'ticket', label: 'Carritos abandonados', on: on === 'carritos' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/equipo', icon: 'users', label: 'Equipo', on: on === 'equipo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/asistente', icon: 'brain', label: 'Pregúntale a tu panel', on: on === 'asistente' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
@@ -345,7 +346,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['anuncios', 'Anuncios'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['anuncios', 'Anuncios'], ['carritos', 'Carritos'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -358,7 +359,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'anuncios' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'anuncios' || k === 'carritos' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1604,6 +1605,44 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
       </form>`}
     </div>`;
   return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ carritos abandonados
+export function carritosPage(client, { aj = {}, haySecreto = false, lista = [], resumen = {}, webhook = '', api = '', base, app = false, ok = '', error = '' }) {
+  const mxn = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-MX')}`;
+  const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
+  const COL = { abierto: ['Esperando', '#93b4ff'], recordado: ['Recordado', '#fbbf24'], recuperado: ['Recuperado', '#4ade80'], comprado: ['Compró solo', '#a39d93'], sin_telefono: ['Sin teléfono', '#a39d93'], error: ['Error', '#f87171'] };
+  const body = html`${hero({ kicker: 'Tienda en línea', title: 'Carritos abandonados', letra: client.nombre, sub: 'Quien deja su compra a medias recibe un WhatsApp con su link para terminarla. Si compra después del recordatorio, cuenta como recuperado.',
+      note: ['Últimos 30 días', `${resumen.abandonados || 0} carritos · ${resumen.recuperados || 0} recuperados · ${mxn(resumen.dinero)}${resumen.tasa !== null && resumen.tasa !== undefined ? ` · ${resumen.tasa}%` : ''}`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);align-items:start" class="ct">
+      <style>@media (max-width:980px){.ct{grid-template-columns:1fr!important}} .ct input,.ct select{width:100%}</style>
+      <div class="card" style="overflow-x:auto"><span class="mono">Carritos</span>
+        ${lista.length ? html`<table style="margin-top:8px;font-size:14px">${lista.map((x) => { const [t, col] = COL[x.estado] || [x.estado, '#a39d93'];
+          return html`<tr><td><b>${x.nombre || x.telefono || x.email || 'Sin datos'}</b><div class="muted small">${fecha(x.created_at)} · ${x.productos || ''}${x.error ? ` · ${x.error}` : ''}</div></td>
+            <td style="white-space:nowrap">${mxn(x.total)}</td><td>${x.lead_id ? html`<a class="small" href="${base}/leads/${x.lead_id}/chat">chat</a>` : ''}</td><td style="text-align:right"><span class="badge" style="color:${col}">${t}</span></td></tr>`; })}</table>`
+          : html`<p class="muted small">Todavía no llegan carritos. Conecta tu tienda con los datos de la derecha.</p>`}</div>
+      <div style="display:grid;gap:18px">
+        <form class="card" method="post" action="${base}/carritos/ajustes" style="display:grid;gap:10px"><span class="mono">Recordatorio por WhatsApp</span>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Mandar recordatorios</label>
+          <label class="small muted">Plantilla aprobada de WhatsApp<input name="plantilla" value="${aj.plantilla || ''}" placeholder="carrito_pendiente"></label>
+          <p class="muted small" style="margin:0">La plantilla recibe {{1}} = nombre y {{2}} = link para terminar la compra. Ej.: "Hola {{1}}, tu carrito te espera 🛒 Termina tu compra aquí: {{2}}".</p>
+          <label class="small muted">Mandarlo después de (horas)<input name="horas" type="number" min="0.25" max="48" step="0.25" value="${aj.horas || 1}"></label>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="segundo" value="1" ${aj.segundo ? 'checked' : ''} style="width:18px;height:18px">Segundo recordatorio si no compra</label>
+          <label class="small muted">…después de (horas)<input name="horas2" type="number" min="1" max="168" value="${aj.horas2 || 24}"></label>
+          <label class="small muted">Plantilla del segundo (opcional, ej. con un cupón)<input name="plantilla2" value="${aj.plantilla2 || ''}" placeholder="carrito_cupon"></label>
+          <label class="small muted">Idioma de la plantilla<input name="idioma" value="${aj.idioma || 'es_MX'}"></label>
+          <label class="small muted">Shopify: clave para firmar webhooks ${haySecreto ? '(ya guardada)' : ''}<input name="shopify_secret" type="password" autocomplete="off" placeholder="${haySecreto ? '••••••••' : 'Se ve en Shopify al crear el webhook'}"></label>
+          <p class="muted small" style="margin:0">Solo se manda de 9:00 a 21:00 y a carritos de los últimos 7 días. Meta cobra cada plantilla.</p>
+          <div><button class="btn-accent">Guardar</button></div></form>
+        <div class="card"><span class="mono">Conectar tu tienda</span>
+          <p class="small" style="margin:8px 0 4px"><b>Shopify:</b> Configuración → Notificaciones → Webhooks → crea dos webhooks en JSON con esta URL: "Creación de pago" (checkouts/create) y "Creación de pedido" (orders/create).</p>
+          <input readonly value="${webhook}" onclick="this.select()" style="font-size:12px">
+          <p class="small" style="margin:12px 0 4px"><b>Otra tienda (WooCommerce, propia):</b> que tu sistema mande el carrito a esta dirección con la llave API del panel (la pide Kuper).</p>
+          <input readonly value="${api}" onclick="this.select()" style="font-size:12px"></div>
+      </div>
+    </div>`;
+  return page({ title: `Carritos · ${client.nombre}`, side: app ? sideApp('carritos', client) : side('clientes'), body });
 }
 
 // ------------------------------------------------------------ anuncios

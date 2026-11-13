@@ -49,6 +49,7 @@ import * as sitioweb from './sitioweb.js';
 import * as ayuda from './ayuda.js';
 import * as pruebasAgente from './pruebas-agente.js';
 import * as anuncios from './anuncios.js';
+import * as carritos from './carritos.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -134,6 +135,15 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     if (!billing.verificarFirma(raw, req.headers['stripe-signature'])) return res.status(400).send('Firma no válida');
     try { await billing.procesarEvento(JSON.parse(raw)); res.json({ received: true }); }
     catch (e) { console.error('[stripe]', e.message); res.status(500).json({ error: 'No se pudo procesar' }); }
+  });
+
+  // ------------------------------------------------------------ carritos abandonados de Shopify (firma HMAC de su tienda)
+  app.post('/webhooks/carrito/:slug/shopify', express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
+    const c = db.listClients().find((x) => x.slug === req.params.slug);
+    const raw = Buffer.isBuffer(req.body) ? req.body : Buffer.from('');
+    if (!c || !carritos.firmaShopifyValida(c, raw, req.get('x-shopify-hmac-sha256'))) return res.status(401).send('Firma no válida');
+    try { carritos.webhookShopify(c, String(req.get('x-shopify-topic') || ''), JSON.parse(raw.toString('utf8'))); res.json({ ok: true }); }
+    catch (e) { console.error('[shopify]', e.message); res.status(400).json({ error: 'No se pudo procesar' }); }
   });
 
   // ------------------------------------------------------------ API para el agente de WhatsApp
@@ -250,6 +260,14 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   // El agente de WhatsApp avisa que alguien necesita a una persona: se marca en el lead y se manda por correo.
   // Documentos que el contacto mandó por WhatsApp: el agente manda el archivo tal cual (cuerpo binario) con
   // X-Telefono, X-Nombre y X-Caption (codificados con encodeURIComponent) y Content-Type del archivo.
+  // Carrito de cualquier tienda en línea (WooCommerce, Tiendanube, propia): { id, telefono, nombre, email, total, url, productos, estado: 'abierto'|'pagado' }
+  api.post('/carritos', (req, res) => {
+    const b = req.body || {};
+    try {
+      if (b.estado === 'pagado' && !b.url && !b.total) return res.json({ ok: true, carrito: carritos.pedido(req.client, { carrito_id: b.id, telefono: b.telefono }) });
+      res.json({ ok: true, carrito: carritos.registrar(req.client, { ...b, origen: 'api', pagado: b.estado === 'pagado' }) });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
   api.post('/documentos', express.raw({ type: () => true, limit: '26mb' }), async (req, res) => {
     try {
       const h = (k) => { try { return decodeURIComponent(String(req.get(k) || '')); } catch { return ''; } };
@@ -604,6 +622,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   appR.use('/cobros', servicio('chat'));
   appR.use('/correo', servicio('chat'));
   appR.use('/anuncios', servicio('chat'));
+  appR.use('/carritos', servicio('chat'));
   // Chat de ayuda de Kuper (burbuja "¿Dudas?" en todo el panel).
   appR.post('/ayuda', express.json({ limit: '40kb' }), async (req, res) => {
     try { res.json(await ayuda.preguntar(req.client, req.sesion?.user, req.body?.pregunta, req.body?.historial)); }
@@ -616,6 +635,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   cobrosRoutes(appR, () => '/app', { app: true });
   correoRoutes(appR, () => '/app', { app: true });
   anunciosRoutes(appR, () => '/app', { app: true });
+  carritosRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
@@ -1047,6 +1067,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   cobrosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   correoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   anunciosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  carritosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   equipoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   asistenteRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
@@ -1496,6 +1517,25 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   }
 
   // Cobros por chat (links de pago con la cuenta de la marca) y ventas avisadas a Meta.
+  // Carrito abandonado: ajustes, recordatorios y recuperados.
+  function carritosRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const vista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.carritosPage(req.client, { aj: carritos.ajustes(req.client), haySecreto: !!carritos.secreto(req.client),
+      lista: carritos.listar(req.client.id), resumen: carritos.resumen(req.client.id), webhook: `${config.publicBaseUrl}/webhooks/carrito/${req.client.slug}/shopify`, api: `${config.publicBaseUrl}/api/${req.client.slug}/carritos`,
+      base: base(req), app, ok: req.query.ok ? 'Guardado.' : '', ...extra }));
+    router.get(`${prefix}/carritos`, (req, res) => vista(req, res));
+    router.post(`${prefix}/carritos/ajustes`, (req, res) => {
+      const b = req.body || {}, creds = db.clientCredentials(req.client);
+      const pl = (x) => String(x || '').trim().replace(/\s+/g, '_').toLowerCase().slice(0, 120);
+      if (b.activo === '1' && !/^[a-z0-9_]+$/.test(pl(b.plantilla))) return vista(req, res, { error: 'Escribe el nombre de la plantilla aprobada de WhatsApp (en minúsculas, sin espacios).' });
+      const secretoNuevo = String(b.shopify_secret || '').trim().slice(0, 200);
+      db.updateClient(req.client.id, { config: { ...req.client.config, carritos: { activo: b.activo === '1', plantilla: pl(b.plantilla), idioma: String(b.idioma || 'es_MX').slice(0, 10),
+        horas: Math.min(48, Math.max(0.25, Number(b.horas) || 1)), segundo: b.segundo === '1', horas2: Math.min(168, Math.max(1, Number(b.horas2) || 24)), plantilla2: pl(b.plantilla2) } },
+        credentials: { ...creds, ...(secretoNuevo ? { carritos: { shopify_secret: secretoNuevo } } : {}) } });
+      seg.auditar(req, 'carritos_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/carritos?ok=1`);
+    });
+  }
+
   // Anuncios: qué anuncio de Meta vende (gasto vs leads y ventas), recomendaciones de la IA y públicos para Meta.
   function anunciosRoutes(router, base, { app = false, prefix = '' } = {}) {
     const OK = { cuenta: 'Guardado.', recomendado: 'Listo: la IA revisó tus anuncios.' };
