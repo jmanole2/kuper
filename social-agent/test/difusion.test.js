@@ -87,3 +87,18 @@ test('si fallan varios seguidos, la campaña se pausa', async () => {
   assert.ok(dif.metricas(c.id).enviados >= 3);
   assert.throws(() => dif.cambiarEstado(client, c.id, 'aprobar', 'x'), /no aplica/);
 });
+
+test('automática: cada día agrega a quien entra al segmento y no se termina', async () => {
+  db.getDb().exec('DELETE FROM difusion_envios');
+  const c = dif.crear(client, { nombre: 'Recompra 30 días', plantilla: 'recompra', filtros: { tags: 'recompra' }, recurrente: '1' }, 'x');
+  assert.equal(c.recurrente, 1);
+  dif.cambiarEstado(client, c.id, 'aprobar', 'x');
+  await dif.enviarPendientes(client, { ahora: enHorario });
+  assert.equal(dif.obtener(client.id, c.id).estado, 'enviando'); // vacía pero sigue activa
+  lead('Nuevo cliente', '5215566667777', { tags: ['recompra'] });
+  db.getDb().prepare("UPDATE difusiones SET revisada_at = datetime('now', '-1 day') WHERE id = ?").run(c.id);
+  const r = await dif.enviarPendientes(client, { ahora: enHorario });
+  assert.equal(r.enviados, 1);
+  db.getDb().prepare("UPDATE difusiones SET revisada_at = datetime('now', '-1 day') WHERE id = ?").run(c.id);
+  assert.equal((await dif.enviarPendientes(client, { ahora: enHorario })).enviados, 0); // no repite a la misma persona
+});

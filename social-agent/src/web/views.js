@@ -1441,7 +1441,7 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
     const [et, col] = ESTADOS[c.estado] || [c.estado, '#a39d93'];
     const acc = (a, t, cls = 'btn-warn', conf = '') => html`<button class="${cls}" formaction="${base}/difusion/${c.id}/${a}" ${conf ? raw(`onclick="return confirm('${conf}')"`) : ''}>${t}</button>`;
     return html`<form method="post" class="card" style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><b style="font-size:18px">${c.nombre}</b><span class="chip"><i style="background:${col}"></i>${et}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><b style="font-size:18px">${c.nombre}${c.recurrente ? html` <span class="badge" style="color:#93b4ff">Automática</span>` : ''}</b><span class="chip"><i style="background:${col}"></i>${et}</span></div>
       <p class="muted small" style="margin:6px 0 0">Plantilla <b>${c.plantilla}</b> (${c.idioma}) · ${resumenFiltros(c.filtros)} · tope ${n(c.tope_diario)} al día</p>
       ${c.cuerpo ? html`<p class="small" style="margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(74,222,128,.08);white-space:pre-wrap">${c.cuerpo}</p>` : ''}
       <div class="kpis" style="margin-top:12px">${[[c.total, 'Contactos', '#93b4ff'], [c.enviados, 'Enviados', '#4ade80'], [c.pendientes, 'Pendientes', '#fbbf24'], [c.respondieron, 'Respondieron', '#c9f53a'], [c.errores, 'Errores', '#f87171']]
@@ -1505,6 +1505,7 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
         <label class="small muted">Texto de la plantilla (para ver cómo queda; usa {{1}}, {{2}}…)<textarea name="cuerpo" id="pl-cuerpo" style="min-height:90px" maxlength="1024">${form.cuerpo || ''}</textarea></label>
         <div class="small" style="display:grid;gap:6px"><span class="muted">Con qué se llena cada variable</span>${vars}</div>
         <label class="small muted">Máximo al día<input name="tope_diario" type="number" min="1" max="10000" value="${form.tope_diario || 250}"></label>
+        <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" name="recurrente" value="1" ${form.recurrente === '1' ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px"><span>Automática<br><span class="muted small">Cada día se manda a quien vaya entrando al segmento (por ejemplo, “30 días sin pedir”). Una vez por persona.</span></span></label>
         ${seg ? html`<div class="card" style="background:rgba(201,245,58,.06);border-color:rgba(201,245,58,.3)">
             <b style="font-size:18px">${n(seg.leads.length)} contactos recibirían la campaña</b>
             <p class="muted small" style="margin:4px 0 8px">Se excluyen ${n(seg.excluidos.sin_whatsapp)} sin WhatsApp, ${n(seg.excluidos.baja)} con baja y ${n(seg.excluidos.recientes)} que recibieron otra campaña en ${FRECUENCIA} días.</p>

@@ -43,6 +43,10 @@ export function ensureTables() {
     telefono TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pendiente', error TEXT, enviado_at TEXT,
     PRIMARY KEY (difusion_id, lead_id));
   CREATE INDEX IF NOT EXISTS difusion_envios_lead ON difusion_envios(lead_id, enviado_at);`);
+  const cols = db.getDb().prepare('PRAGMA table_info(difusiones)').all().map((c) => c.name);
+  // Automática: cada día agrega a quien vaya entrando al segmento (una vez por persona por campaña).
+  if (!cols.includes('recurrente')) db.getDb().exec('ALTER TABLE difusiones ADD COLUMN recurrente INTEGER NOT NULL DEFAULT 0');
+  if (!cols.includes('revisada_at')) db.getDb().exec('ALTER TABLE difusiones ADD COLUMN revisada_at TEXT');
 }
 
 // ------------------------------------------------------------ segmentos
@@ -125,7 +129,8 @@ export function crear(client, b, autor) {
   if (!/^[a-z0-9_]+$/.test(plantilla)) throw new Error('Elige la plantilla aprobada de WhatsApp (nombre en minúsculas, sin espacios).');
   const filtros = limpiarFiltros(b.filtros || b);
   const seg = segmento(client, filtros);
-  if (!seg.leads.length) throw new Error('El segmento no tiene contactos con WhatsApp. Ajusta los filtros.');
+  const recurrente = b.recurrente === true || b.recurrente === '1';
+  if (!seg.leads.length && !recurrente) throw new Error('El segmento no tiene contactos con WhatsApp. Ajusta los filtros.');
   const cuerpo = String(b.cuerpo || '').slice(0, 1024);
   const n = Math.max(cuantasVariables(cuerpo), (b.variables || []).length);
   const variables = Array.from({ length: n }, (_, i) => {
@@ -133,8 +138,8 @@ export function crear(client, b, autor) {
     return { fuente: FUENTES[v.fuente] ? v.fuente : 'texto', texto: String(v.texto || '').slice(0, 60) };
   });
   const tope = Math.min(10000, Math.max(1, Number(b.tope_diario) || 250));
-  const r = d().prepare(`INSERT INTO difusiones (client_id, nombre, filtros_json, plantilla, idioma, cuerpo, variables_json, tope_diario, creada_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(client.id, nombre, JSON.stringify(filtros), plantilla, String(b.idioma || 'es_MX').slice(0, 10), cuerpo, JSON.stringify(variables), tope, autor || null);
+  const r = d().prepare(`INSERT INTO difusiones (client_id, nombre, filtros_json, plantilla, idioma, cuerpo, variables_json, tope_diario, creada_por, recurrente, revisada_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
+    .run(client.id, nombre, JSON.stringify(filtros), plantilla, String(b.idioma || 'es_MX').slice(0, 10), cuerpo, JSON.stringify(variables), tope, autor || null, recurrente ? 1 : 0);
   const id = Number(r.lastInsertRowid);
   const ins = d().prepare('INSERT OR IGNORE INTO difusion_envios (difusion_id, lead_id, telefono) VALUES (?, ?, ?)');
   d().exec('BEGIN');
@@ -182,11 +187,20 @@ export async function enviarPendientes(client, { ahora = hooks.ahora() } = {}) {
   if (h < HORAS[0] || h >= HORAS[1]) return { enviados: 0, fuera_de_horario: true };
   let enviados = 0;
   for (const camp of d().prepare("SELECT * FROM difusiones WHERE client_id = ? AND estado = 'enviando' ORDER BY id").all(client.id).map(fila)) {
+    if (camp.recurrente && (!camp.revisada_at || Date.now() - new Date(`${camp.revisada_at.replace(' ', 'T')}Z`) > 20 * 3600000)) {
+      // Una vez al día: quien entró al segmento y nunca recibió esta campaña se agrega a la cola.
+      const ins = d().prepare('INSERT OR IGNORE INTO difusion_envios (difusion_id, lead_id, telefono) VALUES (?, ?, ?)');
+      let nuevos = 0;
+      for (const l of segmento(client, camp.filtros, { ahora }).leads) nuevos += ins.run(camp.id, l.id, String(l.telefono).replace(/\D/g, '')).changes;
+      d().prepare("UPDATE difusiones SET revisada_at = datetime('now') WHERE id = ?").run(camp.id);
+      if (nuevos) db.logEvent({ clientId: client.id, tipo: 'difusion_automatica', detalle: `${camp.nombre}: ${nuevos} contactos nuevos` });
+    }
     const hoy = d().prepare("SELECT COUNT(*) n FROM difusion_envios WHERE difusion_id = ? AND status = 'enviado' AND date(enviado_at) = date('now')").get(camp.id).n;
     const cupo = Math.min(POR_VUELTA - enviados, camp.tope_diario - hoy);
     if (cupo <= 0) continue;
     const pendientes = d().prepare("SELECT * FROM difusion_envios WHERE difusion_id = ? AND status = 'pendiente' LIMIT ?").all(camp.id, cupo);
     if (!pendientes.length) {
+      if (camp.recurrente) continue; // las automáticas siguen activas: mañana pueden entrar más
       d().prepare("UPDATE difusiones SET estado = 'terminada', updated_at = datetime('now') WHERE id = ?").run(camp.id);
       db.logEvent({ clientId: client.id, tipo: 'difusion_terminada', detalle: camp.nombre });
       continue;
