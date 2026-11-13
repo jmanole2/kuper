@@ -1109,6 +1109,10 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
   <form method="post" action="${base}/agente" style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);align-items:start" class="kn">
     <style>@media (max-width:900px){.kn{grid-template-columns:1fr!important}}</style>
     <div class="card"><span class="mono">Información para tu agente</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;padding:12px;border:1px dashed var(--line);border-radius:14px">
+        <input name="url" placeholder="¿Tienes página web? Escríbela (ej. tumarca.com)" style="flex:1;min-width:220px">
+        <button class="btn-warn" formaction="${base}/agente/desde-web" formnovalidate onclick="this.textContent='Leyendo tu página…'">Llenar desde mi página</button>
+        <p class="muted small" style="margin:0;width:100%">La IA lee tu página y arma un borrador aquí abajo (conserva lo que ya tenías). No se guarda hasta que lo revises y toques Guardar.</p></div>
       <textarea name="texto" maxlength="${CONOC.MAX_TEXTO}" style="min-height:460px;margin-top:10px;font:14px/1.55 ui-monospace,Menlo,monospace">${texto}</textarea>
       <p class="muted small">Escribe frases cortas y claras. Puedes usar títulos con # y listas con -. Se actualiza en tu agente en unos minutos.</p>
       <button class="btn-accent">Guardar</button></div>

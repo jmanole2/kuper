@@ -45,6 +45,7 @@ import * as cupones from './cupones.js';
 import * as cobros from './pagos-clientes.js';
 import * as correo from './correo.js';
 import * as copiloto from './copiloto.js';
+import * as sitioweb from './sitioweb.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -1651,6 +1652,15 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));
       try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
+    });
+    // Llenar "Lo que sabe tu agente" desde su página web: la IA arma un borrador; no se guarda hasta que lo revisan.
+    router.post(`${prefix}/agente/desde-web`, async (req, res) => {
+      const k = conoc.actual(req.client.id);
+      try {
+        const r = await sitioweb.borradorDesdeWeb(req.client, req.body.url);
+        db.logEvent({ clientId: req.client.id, tipo: 'conocimiento_desde_web', detalle: r.url });
+        vista(req, res, { ok: `Listo: armé la información con ${r.url}. Revísala, completa lo que diga [completar] y toca Guardar (todavía no se ha guardado).`, borrador: { texto: r.texto, datos: k?.datos || {} } });
+      } catch (e) { vista(req, res, { error: e.message }); }
     });
     // Pausar o reanudar el agente: se guarda aquí (el agente lo lee cada 5 min) y se le avisa al momento.
     // Países por lada (etiqueta y asesor por país) y documentos por WhatsApp (expediente y Google Drive).
