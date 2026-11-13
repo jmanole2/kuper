@@ -1108,7 +1108,7 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
       <button class="${p ? 'btn-accent' : 'btn-warn'}" onclick="return confirm('${p ? '¿Reanudar las llamadas?' : '¿Pausar las llamadas? Todas pasarán a tu equipo.'}')">${p ? 'Reanudar llamadas' : 'Pausar llamadas'}</button></form>`; })() : ''}
   <form method="post" action="${base}/agente" style="display:grid;gap:18px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);align-items:start" class="kn">
     <style>@media (max-width:900px){.kn{grid-template-columns:1fr!important}}</style>
-    <div class="card"><span class="mono">Información para tu agente</span>
+    <div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><span class="mono">Información para tu agente</span><a class="btn btn-warn" style="padding:6px 12px;font-size:13px" href="${base}/agente/probar">Probar agente</a></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;padding:12px;border:1px dashed var(--line);border-radius:14px">
         <input name="url" placeholder="¿Tienes página web? Escríbela (ej. tumarca.com)" style="flex:1;min-width:220px">
         <button class="btn-warn" formaction="${base}/agente/desde-web" formnovalidate onclick="this.textContent='Leyendo tu página…'">Llenar desde mi página</button>
@@ -1603,6 +1603,49 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
       </form>`}
     </div>`;
   return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ probar agente
+export function probarAgentePage(client, { preguntas = [], ultimo = null, conectado = false, base, app = false, ok = '', error = '' }) {
+  const porId = Object.fromEntries((ultimo?.resultados || []).map((r) => [r.id, r]));
+  const fecha = ultimo?.fecha ? new Date(ultimo.fecha).toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+  const body = html`${hero({ kicker: 'Agente de IA', title: 'Probar agente', letra: client.nombre, sub: 'Escríbele como si fueras un cliente: contesta tu agente real, con lo que sabe hoy, pero en modo prueba (no agenda, no guarda ni le escribe a nadie).',
+      tabs: [[`${base}/agente`, '← Lo que sabe tu agente', false]], note: ultimo ? ['Preguntas de control', `${ultimo.aprobadas} de ${ultimo.total} bien · ${fecha}`] : ['Preguntas de control', 'Agrega las preguntas que siempre debe contestar bien'] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    ${conectado ? '' : html`<div class="err">Esta marca todavía no tiene su agente conectado al panel; la prueba no puede contestar.</div>`}
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr);align-items:start" class="pa">
+      <style>@media (max-width:980px){.pa{grid-template-columns:1fr!important}} .pa input,.pa textarea{width:100%}</style>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><span class="mono">Chat de prueba</span><button type="button" class="btn-warn" id="pr-nuevo" style="padding:6px 12px;font-size:13px">Empezar de nuevo</button></div>
+        <div id="pr-msgs" style="display:flex;flex-direction:column;gap:10px;min-height:260px;max-height:60vh;overflow-y:auto;padding:10px 2px"></div>
+        <form id="pr-form" style="display:flex;gap:8px" autocomplete="off"><input id="pr-q" maxlength="1500" placeholder="Escribe como cliente… (ej. ¿cuánto cuesta?)" style="flex:1"><button class="btn-accent" id="pr-btn">Enviar</button></form>
+        <p class="muted small" style="margin:8px 0 0">Las acciones que haría (agendar, guardar datos, mandar un cupón…) se muestran debajo de su respuesta, pero no se hacen.</p></div>
+      <div style="display:grid;gap:18px">
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="mono">Preguntas de control</span>
+          ${preguntas.length ? html`<form method="post" action="${base}/agente/pruebas/correr"><button class="btn-warn" style="padding:6px 12px;font-size:13px">Correr ahora</button></form>` : ''}</div>
+          <p class="muted small" style="margin:6px 0 10px">Se corren solas cada vez que cambias lo que sabe tu agente. Si una que salía bien empieza a fallar, te avisamos al celular.</p>
+          ${preguntas.map((q) => { const r = porId[q.id];
+            return html`<div style="border-top:1px solid var(--line);padding:10px 0;display:grid;gap:4px">
+              <div style="display:flex;justify-content:space-between;gap:8px"><b>${q.pregunta}</b>${r ? html`<span class="badge" style="color:${r.aprobada ? '#4ade80' : '#f87171'}">${r.aprobada ? 'Bien' : 'Revisar'}</span>` : ''}</div>
+              ${q.debe ? html`<span class="small muted">Debe: ${q.debe}</span>` : ''}${q.no_debe ? html`<span class="small muted">No debe: ${q.no_debe}</span>` : ''}
+              ${r ? html`<details><summary class="small muted" style="cursor:pointer">${r.comentario || 'Ver respuesta'}</summary><p class="small" style="white-space:pre-wrap;margin:6px 0 0">${r.respuesta}</p></details>` : ''}
+              <form method="post" action="${base}/agente/pruebas/${q.id}/quitar"><button class="btn-warn" style="padding:4px 10px;font-size:12px">Quitar</button></form></div>`; })}
+          <form method="post" action="${base}/agente/pruebas" style="display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px">
+            <input name="pregunta" maxlength="400" placeholder="Pregunta del cliente (ej. ¿Cuánto cuesta una oficina para 4?)" required>
+            <input name="debe" maxlength="400" placeholder="Debe contestar… (ej. desde $12,500 al mes + IVA)">
+            <input name="no_debe" maxlength="400" placeholder="No debe… (opcional, ej. prometer descuentos)">
+            <div><button class="btn-accent" style="padding:8px 14px">Agregar pregunta</button></div></form></div>
+      </div>
+    </div>
+  ${raw(`<script>(()=>{const B=${JSON.stringify(base)},m=document.getElementById('pr-msgs'),f=document.getElementById('pr-form'),q=document.getElementById('pr-q'),btn=document.getElementById('pr-btn');let h=[];
+  const NOM={consultar_servicios:'Consultó servicios',consultar_disponibilidad:'Consultó disponibilidad',horarios_disponibles:'Consultó horarios',agendar_llamada:'Agendaría una cita',registrar_cita:'Registraría la cita',guardar_lead:'Guardaría sus datos',escalar_humano:'Pasaría con una persona',hablar_con_persona:'Pasaría con una persona',generar_cupon:'Daría un cupón',crear_link_pago:'Mandaría un link de pago',enviar_fotos:'Mandaría fotos',compartir_recurso:'Mandaría un archivo',ofrecer_opciones:'Mandaría botones',programar_seguimiento:'Programaría un seguimiento',registrar_documento:'Registraría un documento',no_contactar:'Dejaría de escribirle',detener_bot:'Se pausaría',cancelar_llamada:'Cancelaría la cita'};
+  const burb=(quien,t)=>{const d=document.createElement('div');d.style.cssText='padding:10px 14px;border-radius:16px;max-width:88%;white-space:pre-wrap;'+(quien==='yo'?'align-self:flex-end;background:rgba(255,255,255,.1)':'align-self:flex-start;background:rgba(198,255,61,.1)');d.textContent=t;m.append(d);m.scrollTop=m.scrollHeight;return d;};
+  document.getElementById('pr-nuevo').onclick=()=>{h=[];m.innerHTML='';q.focus();};
+  f.onsubmit=async(e)=>{e.preventDefault();const t=q.value.trim();if(!t||btn.disabled)return;q.value='';burb('yo',t);h.push({rol:'cliente',texto:t});btn.disabled=true;const w=burb('el','Escribiendo…');
+    try{const r=await fetch(B+'/agente/probar/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mensajes:h})});const j=await r.json();if(!r.ok)throw new Error(j.error);
+      w.textContent=j.respuesta;h.push({rol:'agente',texto:j.respuesta});
+      if(j.acciones&&j.acciones.length){const a=document.createElement('div');a.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:8px';j.acciones.forEach((x)=>{const s=document.createElement('span');s.className='badge';s.style.color=x.simulada?'#fbbf24':'#93b4ff';s.textContent=(NOM[x.herramienta]||x.herramienta)+(x.simulada?' (prueba)':'');a.append(s);});w.append(a);}}
+    catch(err){w.textContent=err instanceof TypeError?'No pude conectarme.':(err.message||'No respondió.');h.pop();}finally{btn.disabled=false;q.focus();m.scrollTop=m.scrollHeight;}};})();</script>`)}`;
+  return page({ title: `Probar agente · ${client.nombre}`, side: app ? sideApp('agente', client) : side('clientes'), body });
 }
 
 // ------------------------------------------------------------ correo

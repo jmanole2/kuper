@@ -47,6 +47,7 @@ import * as correo from './correo.js';
 import * as copiloto from './copiloto.js';
 import * as sitioweb from './sitioweb.js';
 import * as ayuda from './ayuda.js';
+import * as pruebasAgente from './pruebas-agente.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -1393,7 +1394,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       } catch (e) { volver(req, res, /muy pocas|hace poco/.test(e.message) ? e.message : 'No se pudo analizar en este momento. Intenta de nuevo.'); }
     });
     router.post(`${prefix}/analitica/sugerencia`, (req, res) => {
-      try { temasIA.agregarSugerencia(req.client, req.body.i, req.body.texto, req.sesion?.user?.nombre || 'Kuper'); volver(req, res, 'Listo: tu agente ya lo sabe (en unos minutos lo usa).'); }
+      try { temasIA.agregarSugerencia(req.client, req.body.i, req.body.texto, req.sesion?.user?.nombre || 'Kuper'); pruebasAgente.programar(req.client); volver(req, res, 'Listo: tu agente ya lo sabe (en unos minutos lo usa).'); }
       catch (e) { volver(req, res, e.message); }
     });
   }
@@ -1656,8 +1657,24 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     router.get(`${prefix}/agente`, (req, res) => vista(req, res, { ok: req.query.aviso ? String(req.query.aviso).slice(0, 300) : req.query.ok ? 'Guardado. Tu agente lo usa desde su siguiente respuesta.' : '' }));
     router.post(`${prefix}/agente`, (req, res) => {
       const datos = Object.fromEntries(Object.keys(conoc.CAMPOS).map((k) => [k, req.body[`dato_${k}`]]));
-      try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); res.redirect(`${base(req)}/agente?ok=1`); }
+      try { conoc.guardar(req.client.id, { texto: req.body.texto, datos }, req.sesion?.user?.nombre || 'Kuper'); pruebasAgente.programar(req.client); res.redirect(`${base(req)}/agente?ok=1`); }
       catch (e) { vista(req, res, { error: e.message, borrador: { texto: req.body.texto, datos } }); }
+    });
+    // Probar agente: chat de prueba con el agente real (sin efectos) y preguntas de control.
+    const verProbar = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.probarAgentePage(req.client, { preguntas: pruebasAgente.lista(req.client), ultimo: pruebasAgente.resultado(req.client),
+      conectado: agente.agenteConfigurado(req.client), base: base(req), app, ok: { agregada: 'Pregunta agregada.', quitada: 'Pregunta quitada.', corriendo: 'Corriendo las pruebas: tarda unos segundos por pregunta. Recarga en un momento.' }[req.query.ok] || '', ...extra }));
+    router.get(`${prefix}/agente/probar`, (req, res) => verProbar(req, res));
+    router.post(`${prefix}/agente/probar/chat`, express.json({ limit: '60kb' }), async (req, res) => {
+      try { const r = await pruebasAgente.probar(req.client, req.body?.mensajes); res.json({ respuesta: r.respuesta, acciones: r.acciones || [] }); }
+      catch (e) { res.status(502).json({ error: /no tiene su agente/.test(e.message) ? e.message : 'El agente no respondió. Intenta de nuevo.' }); }
+    });
+    router.post(`${prefix}/agente/pruebas`, (req, res) => {
+      try { pruebasAgente.agregar(req.client, req.body || {}); res.redirect(`${base(req)}/agente/probar?ok=agregada`); } catch (e) { verProbar(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/agente/pruebas/:id/quitar`, (req, res) => { pruebasAgente.quitar(req.client, String(req.params.id)); res.redirect(`${base(req)}/agente/probar?ok=quitada`); });
+    router.post(`${prefix}/agente/pruebas/correr`, (req, res) => {
+      pruebasAgente.correr(req.client, { motivo: 'manual' }).catch(() => {});
+      res.redirect(`${base(req)}/agente/probar?ok=corriendo`);
     });
     // Llenar "Lo que sabe tu agente" desde su página web: la IA arma un borrador; no se guarda hasta que lo revisan.
     router.post(`${prefix}/agente/desde-web`, async (req, res) => {
