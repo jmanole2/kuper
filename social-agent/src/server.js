@@ -45,6 +45,7 @@ import * as cupones from './cupones.js';
 import * as cobros from './pagos-clientes.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
+import * as push from './push.js';
 import { fichaLead, documentosCard } from './web/embudo.js';
 import { html } from './web/html.js';
 import { tiktokAuthUrl, exchangeTikTokCode, revokeTikTok, tiktokConfigured, freshTikTokCreds, tiktokCreatorInfo } from './publishers/tiktok.js';
@@ -75,6 +76,22 @@ export function createApp() {
   // Tipografía del panel (Inter Tight, la misma de los videos), servida localmente.
   app.use('/fonts', express.static(path.join(path.dirname(fileURLToPath(import.meta.resolve('@fontsource/inter-tight/package.json'))), 'files'), { maxAge: '30d', fallthrough: false }));
   app.get('/salud', (_req, res) => res.json({ ok: true }));
+  // App instalable (PWA): manifiesto, íconos y service worker (avisos al celular y página sin conexión).
+  const dirApp = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'app');
+  app.get('/manifest.webmanifest', (_req, res) => res.type('application/manifest+json').send(JSON.stringify({
+    name: 'Kuper · Panel', short_name: 'Kuper', start_url: '/app', scope: '/', display: 'standalone', background_color: '#121110', theme_color: '#121110', lang: 'es-MX',
+    icons: [{ src: '/app-icono-192.png', sizes: '192x192', type: 'image/png' }, { src: '/app-icono-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/app-icono-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] })));
+  for (const n of ['192', '512', '512-maskable']) app.get(`/app-icono-${n}.png`, (_req, res) => res.set('Cache-Control', 'public, max-age=604800').sendFile(path.join(dirApp, `icono-${n}.png`)));
+  app.get('/sw.js', (_req, res) => res.type('text/javascript').set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/' }).send(`
+const SIN_RED = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#121110;color:#f4f0e8;font:17px system-ui;text-align:center;padding:24px"><div><div style="font-size:44px">📡</div><p>Sin conexión. Revisa tu internet y vuelve a intentar.</p></div></body>';
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', (e) => { if (e.request.mode === 'navigate') e.respondWith(fetch(e.request).catch(() => new Response(SIN_RED, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }))); });
+self.addEventListener('push', (e) => { let d = {}; try { d = e.data.json(); } catch {} e.waitUntil(self.registration.showNotification(d.titulo || 'Kuper', { body: d.texto || '', icon: '/app-icono-192.png', badge: '/app-icono-192.png', tag: d.tag, data: { url: d.url || '/app' } })); });
+self.addEventListener('notificationclick', (e) => { e.notification.close(); const url = e.notification.data?.url || '/app';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ws) => { for (const w of ws) if ('focus' in w) { w.navigate(url); return w.focus(); } return self.clients.openWindow(url); })); });
+`));
   // A donde regresa quien pagó con un link de cobro por chat.
   app.get('/pago-listo', (_req, res) => res.send('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pago recibido</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#121110;color:#f4f0e8;font:18px/1.5 system-ui,sans-serif;text-align:center;padding:24px"><div><div style="font-size:54px">✅</div><h1 style="font-weight:400">¡Gracias! Recibimos tu pago</h1><p style="color:#a9a399">Ya puedes regresar a la conversación de WhatsApp.</p></div></body>'));
 
@@ -167,7 +184,13 @@ export function createApp() {
     try {
       db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor });
       paises.clasificarTelefono(req.client, telefono); equipo.repartirTelefono(req.client, telefono);
-      if (rol === 'lead') equipo.capturar(req.client, telefono, texto); // respuesta a la encuesta (1 a 5)
+      if (rol === 'lead') {
+        equipo.capturar(req.client, telefono, texto); // respuesta a la encuesta (1 a 5)
+        // Si la conversación la atiende una persona, se le avisa al celular.
+        const dig = String(telefono || '').replace(/\D/g, '').slice(-10);
+        const l = dig ? db.getDb().prepare("SELECT * FROM leads WHERE client_id = ? AND telefono LIKE ? ORDER BY updated_at DESC LIMIT 1").get(req.client.id, `%${dig}`) : null;
+        if (l?.control === 'humano') push.avisar(req.client, { titulo: `${l.nombre || l.telefono} te escribió`, texto: String(texto || '').slice(0, 140), url: `/app/leads/${l.id}/chat`, lead: l }).catch(() => {});
+      }
       res.json({ ok: true });
     }
     catch (e) { res.status(400).json({ error: e.message }); }
@@ -250,9 +273,11 @@ export function createApp() {
   api.post('/leads', (req, res) => {
     try {
       let lead = db.upsertLead(req.client.id, { ...req.body, origen: req.body?.origen || 'whatsapp' });
+      const esNuevo = Date.now() - new Date(`${String(lead.created_at).replace(' ', 'T')}Z`) < 15000;
       lead = embudo.datosDelAgente(req.client, lead, req.body || {});
       lead = paises.clasificar(req.client, lead); // etiqueta de país por la lada y asesor de ese país
       lead = equipo.repartir(req.client, lead); // si aún no tiene asesor, según el reparto de la marca
+      if (esNuevo) push.avisar(req.client, { titulo: `Nuevo lead: ${lead.nombre || lead.telefono || lead.usuario || 'sin nombre'}`, texto: String(req.body?.nota || '').slice(0, 140), url: `/app/leads/${lead.id}/chat`, lead }).catch(() => {});
       campanas.completarCampana(req.client, lead); // nombre de la campaña de Meta, en segundo plano
       res.json({ ok: true, lead });
     }
@@ -555,6 +580,13 @@ export function createApp() {
     const mes = /^\d{4}-\d{2}$/.test(req.query.mes || '') ? req.query.mes : metricas.mesActual();
     res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: '/app/reporte?', meses: metricas.ultimosMeses(), side: V.appSide('reporte', req.client) }));
   });
+  // Avisos al celular: cada persona activa las notificaciones en su dispositivo.
+  appR.get('/push/llave', (req, res) => res.json({ llave: push.vapid().publicKey }));
+  appR.post('/push/suscribir', express.json({ limit: '8kb' }), (req, res) => {
+    if (!req.sesion.user) return res.status(400).json({ error: 'Entra con tu usuario para recibir avisos.' });
+    try { push.suscribir(req.sesion.user, req.client?.id, req.body); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  appR.post('/push/quitar', express.json({ limit: '8kb' }), (req, res) => { if (req.sesion.user) push.quitar(req.sesion.user, req.body?.endpoint); res.json({ ok: true }); });
   appR.get('/cuenta', (req, res) => {
     if (!req.sesion.user) return res.send(V.cuentaMaestraPage());
     res.send(V.cuentaPage(req.sesion.user, { client: req.sesion.user.client_id ? db.getClient(req.sesion.user.client_id) : null, ok: String(req.query.ok || '').slice(0, 200), error: String(req.query.error || '').slice(0, 300) }));

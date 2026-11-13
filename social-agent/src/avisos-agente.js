@@ -5,6 +5,7 @@ import * as db from './db.js';
 import { config } from './config.js';
 import { sendMail, smtpConfigured } from './notify.js';
 import { asignarPorTurno } from './embudo.js';
+import * as push from './push.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 export const hooks = { send: (m) => sendMail(m) }; // pruebas
@@ -19,6 +20,7 @@ export async function recibir(client, body = {}) {
     if (texto) db.getDb().prepare('UPDATE leads SET resumen = ? WHERE id = ?').run(texto.slice(0, 1500), lead.id);
   } catch { /* aviso sin teléfono ni usuario: solo se manda el correo */ }
   db.logEvent({ clientId: client.id, tipo: 'aviso_agente', detalle: `${titulo}${lead?.nombre ? ` · ${lead.nombre}` : ''}` });
+  push.avisar(client, { titulo: `${body.urgente ? '🔴 ' : ''}${titulo}`, texto: `${lead?.nombre || body.nombre || ''} ${texto}`.trim(), url: lead ? `/app/leads/${lead.id}/chat` : '/app/leads', lead }).catch(() => {});
 
   // Si el lead tiene asesor, el correo le llega a él (y al correo de avisos del cliente).
   const asesor = lead?.asignado_id ? db.getUser(lead.asignado_id) : null;

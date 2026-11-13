@@ -7,6 +7,7 @@
 import * as db from './db.js';
 import { config } from './config.js';
 import { sendMail, smtpConfigured } from './notify.js';
+import * as push from './push.js';
 
 export const hooks = { send: (m) => sendMail(m), enviar: null, ahora: () => new Date() }; // pruebas
 export const REPARTOS = { no: 'No repartir (se asigna a mano)', turnos: 'Por turnos (uno y uno)', menos_carga: 'Al que tenga menos leads abiertos' };
@@ -101,15 +102,17 @@ export function esperandoAhora(client, ahora = hooks.ahora()) {
 /** Avisa por correo (al asesor y al correo de avisos) de cada conversación que pasó el tiempo meta, una vez por espera. */
 export async function alertar(client, { ahora = hooks.ahora() } = {}) {
   const aj = ajustes(client);
-  if (!aj.alertas || !smtpConfigured()) return { enviadas: 0 };
+  if (!aj.alertas) return { enviadas: 0 };
   let enviadas = 0;
   for (const l of esperandoAhora(client, ahora)) {
     const k = `sla_alerta:${l.id}:${l.espera_desde}`;
     if (db.kvGet(k)) continue;
     db.kvSet(k, '1');
     const asesor = l.asignado_id ? db.getUser(l.asignado_id) : null;
+    const minutos = Math.round((ahora - new Date(`${l.espera_desde.replace(' ', 'T')}Z`)) / 60000);
+    push.avisar(client, { titulo: `⏱️ ${l.nombre || l.telefono} lleva ${minutos} min esperando`, texto: 'Contesta antes de que se vaya.', url: `/app/leads/${l.id}/chat`, lead: l }).catch(() => {});
     const para = [asesor?.activo ? asesor.email : '', String(client.config.notificaciones?.email || '').trim()].filter(Boolean).join(', ');
-    if (!para) continue;
+    if (!para || !smtpConfigured()) continue;
     const min = Math.round((ahora - new Date(`${l.espera_desde.replace(' ', 'T')}Z`)) / 60000);
     await hooks.send({ to: para, subject: `⏱️ ${l.nombre || l.telefono || 'Un cliente'} lleva ${min} min esperando respuesta`.slice(0, 140),
       text: `${l.nombre || l.telefono} escribió hace ${min} minutos y nadie del equipo le ha contestado (meta: ${aj.sla_min} min).\n${config.publicBaseUrl}/app/leads/${l.id}/chat`,

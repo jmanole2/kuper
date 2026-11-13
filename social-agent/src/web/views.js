@@ -968,6 +968,21 @@ export function cuentaPage(user, { error = '', ok = '', client = null, dosPasos 
     <label>Repite la nueva</label><input type="password" name="nueva2" autocomplete="new-password" minlength="10" required>
     <p><button class="btn-accent">Guardar</button></p></form>
   ${client && user.rol === 'cliente' && tiene(client, 'redes') ? tiktokCard(client) : ''}
+  ${user.rol === 'cliente' ? html`<div class="card" style="max-width:520px;margin-top:18px"><span class="mono">Avisos en este celular o compu</span>
+    <p class="muted small" style="margin:6px 0 10px">Te avisamos al momento de un lead nuevo o de un cliente que espera respuesta. En el celular, primero instala el panel: en el menú del navegador toca “Agregar a pantalla de inicio”.</p>
+    <button class="btn-accent" type="button" id="btnAvisos">Activar avisos</button> <span class="small muted" id="estAvisos"></span>
+    <script>(() => { const b = document.getElementById('btnAvisos'), e = document.getElementById('estAvisos');
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) { b.disabled = true; e.textContent = 'Este navegador no acepta avisos. En iPhone, instala el panel en la pantalla de inicio y ábrelo desde ahí.'; return; }
+      const b64 = (s) => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map((c) => c.charCodeAt(0))); };
+      navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription()).then((s) => { if (s) { b.textContent = 'Desactivar avisos'; e.textContent = 'Activos en este dispositivo.'; } });
+      b.addEventListener('click', async () => {
+        const reg = await navigator.serviceWorker.ready; const actual = await reg.pushManager.getSubscription();
+        if (actual) { await fetch('/app/push/quitar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: actual.endpoint }) }); await actual.unsubscribe(); b.textContent = 'Activar avisos'; e.textContent = 'Desactivados.'; return; }
+        if (await Notification.requestPermission() !== 'granted') { e.textContent = 'No diste permiso de notificaciones.'; return; }
+        const { llave } = await (await fetch('/app/push/llave')).json();
+        const s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(llave) });
+        const r = await fetch('/app/push/suscribir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
+        e.textContent = r.ok ? 'Listo: te llegarán los avisos aquí.' : 'No se pudo activar.'; if (r.ok) b.textContent = 'Desactivar avisos'; }); })();</script></div>` : ''}
   <div class="card" style="max-width:520px;margin-top:18px"><span class="mono">Verificación en dos pasos</span>
     ${user.totp_enc ? html`<p><span class="badge" style="color:#4ade80">Activa</span> Al entrar te pedimos un código de tu app de autenticación.</p>
       <form method="post" action="/app/cuenta/2fa/quitar" class="row"><input name="codigo" inputmode="numeric" maxlength="7" required placeholder="Código actual" style="max-width:180px"><button class="btn-warn">Quitarla</button></form>`
