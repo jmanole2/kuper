@@ -48,6 +48,7 @@ import * as copiloto from './copiloto.js';
 import * as sitioweb from './sitioweb.js';
 import * as ayuda from './ayuda.js';
 import * as pruebasAgente from './pruebas-agente.js';
+import * as anuncios from './anuncios.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -602,6 +603,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   appR.use('/cupones', servicio('chat'));
   appR.use('/cobros', servicio('chat'));
   appR.use('/correo', servicio('chat'));
+  appR.use('/anuncios', servicio('chat'));
   // Chat de ayuda de Kuper (burbuja "¿Dudas?" en todo el panel).
   appR.post('/ayuda', express.json({ limit: '40kb' }), async (req, res) => {
     try { res.json(await ayuda.preguntar(req.client, req.sesion?.user, req.body?.pregunta, req.body?.historial)); }
@@ -613,6 +615,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   equipoRoutes(appR, () => '/app', { app: true });
   cobrosRoutes(appR, () => '/app', { app: true });
   correoRoutes(appR, () => '/app', { app: true });
+  anunciosRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
@@ -1043,6 +1046,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   cuponesRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   cobrosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   correoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  anunciosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   equipoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   asistenteRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
@@ -1492,6 +1496,35 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   }
 
   // Cobros por chat (links de pago con la cuenta de la marca) y ventas avisadas a Meta.
+  // Anuncios: qué anuncio de Meta vende (gasto vs leads y ventas), recomendaciones de la IA y públicos para Meta.
+  function anunciosRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const OK = { cuenta: 'Guardado.', recomendado: 'Listo: la IA revisó tus anuncios.' };
+    const vista = async (req, res, extra = {}) => {
+      const dias = [7, 30, 90].includes(Number(req.query.dias)) ? Number(req.query.dias) : 30;
+      const rend = await anuncios.rendimiento(req.client, { dias });
+      res.status(extra.error ? 400 : 200).send(V.anunciosPage(req.client, { rend, aj: anuncios.ajustes(req.client), listo: anuncios.listo(req.client), ia: anuncios.ultimasRecomendaciones(req.client),
+        publicos: anuncios.publicos(req.client), SEGMENTOS: anuncios.SEGMENTOS, base: base(req), app, ok: OK[req.query.ok] || (req.query.publico ? `Público listo en Meta: ${String(req.query.publico).slice(0, 120)}` : ''), ...extra }));
+    };
+    router.get(`${prefix}/anuncios`, (req, res, next) => vista(req, res).catch(next));
+    router.post(`${prefix}/anuncios/cuenta`, (req, res) => {
+      const c = String(req.body.cuenta || '').trim().replace(/^act_/, '');
+      if (c && !/^\d{5,20}$/.test(c)) return vista(req, res, { error: 'El ID de la cuenta publicitaria son solo números (lo ves en el Administrador de anuncios, junto al nombre de la cuenta).' });
+      db.updateClient(req.client.id, { config: { ...req.client.config, anuncios: { ...anuncios.ajustes(req.client), cuenta: c ? `act_${c}` : '' } } });
+      res.redirect(`${base(req)}/anuncios?ok=cuenta`);
+    });
+    router.post(`${prefix}/anuncios/recomendar`, async (req, res, next) => {
+      try { await anuncios.recomendar(req.client, await anuncios.rendimiento(req.client, { dias: Number(req.body.dias) || 30 })); res.redirect(`${base(req)}/anuncios?ok=recomendado`); }
+      catch (e) { vista(req, res, { error: /Todavía no hay/.test(e.message) ? e.message : 'La IA no pudo revisar los anuncios en este momento.' }).catch(next); }
+    });
+    router.post(`${prefix}/anuncios/publico`, async (req, res, next) => {
+      try {
+        const r = await anuncios.crearPublico(req.client, { segmento: String(req.body.segmento || ''), similar: req.body.similar === '1' });
+        seg.auditar(req, 'publico_meta', `${req.client.nombre}: ${req.body.segmento}`);
+        res.redirect(`${base(req)}/anuncios?publico=${encodeURIComponent(`${r.contactos} contactos${r.similar_id ? ' + público similar' : ''}`)}`);
+      } catch (e) { vista(req, res, { error: e.message }).catch(next); }
+    });
+  }
+
   // Correo como canal: conectar el buzón, aprobar o editar lo que contesta la IA.
   function correoRoutes(router, base, { app = false, prefix = '' } = {}) {
     const autor = (req) => req.sesion?.user?.nombre || 'Kuper';

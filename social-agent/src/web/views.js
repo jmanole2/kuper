@@ -164,6 +164,7 @@ const sideApp = (on, client) => (client?._caja ? [
   ...(tiene(client, 'chat') ? [{ href: '/app/cupones', icon: 'ticket', label: 'Cupones', on: on === 'cupones' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/cobros', icon: 'card', label: 'Cobros por chat', on: on === 'cobros' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/correo', icon: 'mail', label: 'Correo', on: on === 'correo' }] : []),
+  ...(tiene(client, 'chat') ? [{ href: '/app/anuncios', icon: 'chart', label: 'Anuncios', on: on === 'anuncios' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/equipo', icon: 'users', label: 'Equipo', on: on === 'equipo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/asistente', icon: 'brain', label: 'Pregúntale a tu panel', on: on === 'asistente' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
@@ -344,7 +345,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['anuncios', 'Anuncios'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -357,7 +358,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'anuncios' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1603,6 +1604,48 @@ export function cuponesPage(client, { aj = {}, lista = [], resumen = {}, consult
       </form>`}
     </div>`;
   return page({ title: `Cupones · ${client.nombre}`, side: app ? sideApp('cupones', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ anuncios
+export function anunciosPage(client, { rend, aj = {}, listo = false, ia = null, publicos = {}, SEGMENTOS = {}, base, app = false, ok = '', error = '' }) {
+  const mxn = (n) => (n === null || n === undefined ? '—' : `$${Math.round(n).toLocaleString('es-MX')}`);
+  const t = rend.totales;
+  const ACC = { escalar: ['Escalar', '#4ade80'], pausar: ['Pausar', '#f87171'], revisar: ['Revisar', '#fbbf24'], mantener: ['Mantener', '#93b4ff'] };
+  const body = html`${hero({ kicker: 'Anuncios', title: 'Qué anuncio vende', letra: client.nombre, sub: 'Lo que gastó cada anuncio de Meta junto a los leads, conversaciones y ventas que trajo de verdad. La IA te dice qué escalar, qué pausar y qué probar.',
+      note: [`Últimos ${rend.dias} días`, `${mxn(t.gasto)} gastados · ${t.leads} leads · ${t.ventas} ventas · ${t.roas === null ? 'ROAS —' : `ROAS ${t.roas.toFixed(1)}x`}`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}${rend.error ? html`<div class="err">${rend.error}</div>` : ''}
+    <div class="pills" style="margin:0 0 14px">${[7, 30, 90].map((d) => html`<a class="${rend.dias === d ? 'on' : ''}" href="${base}/anuncios?dias=${d}">${d} días</a>`)}</div>
+    <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:18px">
+      ${[['Gastado', mxn(t.gasto)], ['Costo por lead', mxn(t.cpl)], ['Costo por venta', mxn(t.costo_venta)], ['Ventas', `${t.ventas} · ${mxn(t.ingreso)}`], ['Retorno (ROAS)', t.roas === null ? '—' : `${t.roas.toFixed(1)}x`]].map(([k, v]) => html`<div class="card" style="padding:14px 16px"><span class="mono">${k}</span><p style="font-size:24px;margin:6px 0 0">${v}</p></div>`)}
+    </div>
+    <div class="card" style="overflow-x:auto;margin-bottom:18px"><span class="mono">Por anuncio</span>
+      ${rend.filas.length ? html`<table style="margin-top:8px;font-size:14px"><tr><th>Anuncio</th><th>Gasto</th><th>Leads</th><th>Conversan</th><th>Ventas</th><th>Costo/lead</th><th>Costo/venta</th><th>ROAS</th></tr>
+        ${rend.filas.map((f) => html`<tr><td><b>${f.anuncio}</b><div class="muted small">${[f.campana, f.conjunto].filter(Boolean).join(' · ')}</div></td><td>${mxn(f.gasto)}</td><td>${f.leads}</td><td>${f.conversaciones}</td><td>${f.ventas}${f.ingreso ? html`<div class="muted small">${mxn(f.ingreso)}</div>` : ''}</td>
+          <td>${mxn(f.cpl)}</td><td>${mxn(f.costo_venta)}</td><td style="color:${f.roas === null ? 'inherit' : f.roas >= 2 ? '#4ade80' : f.roas < 1 ? '#f87171' : '#fbbf24'}">${f.roas === null ? '—' : `${f.roas.toFixed(1)}x`}</td></tr>`)}</table>`
+        : html`<p class="muted small">Sin anuncios con datos en este periodo. Los leads se ligan a su anuncio cuando escriben desde un anuncio de clic a WhatsApp, Instagram o Messenger.</p>`}
+      <p class="muted small" style="margin:10px 0 0">"Conversan" = leads que escribieron más de un mensaje. Las ventas son los leads marcados como Vendido (o que pagaron un link). ${rend.con_cuenta ? '' : 'Sin la cuenta publicitaria solo se ven los anuncios que ya trajeron leads; con ella también ves los que gastan sin traer nada.'}</p></div>
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);align-items:start" class="an2">
+      <style>@media (max-width:980px){.an2{grid-template-columns:1fr!important}} .an2 input,.an2 select{width:100%}</style>
+      <div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="mono">Recomendaciones de la IA</span>
+        <form method="post" action="${base}/anuncios/recomendar"><input type="hidden" name="dias" value="${rend.dias}"><button class="btn-accent" style="padding:7px 14px;font-size:13px" onclick="this.textContent='Revisando…'">${ia ? 'Volver a revisar' : 'Revisar mis anuncios'}</button></form></div>
+        ${ia ? html`<p style="margin:10px 0">${ia.resumen}</p>
+          ${ia.acciones.map((a) => { const [txt, col] = ACC[a.accion] || [a.accion, '#a39d93']; return html`<div style="border-top:1px solid var(--line);padding:8px 0"><span class="badge" style="color:${col}">${txt}</span> <b>${a.anuncio}</b><div class="small muted">${a.por_que}</div></div>`; })}
+          ${ia.ideas.length ? html`<span class="mono" style="display:block;margin-top:14px">Ideas para anuncios nuevos</span>${ia.ideas.map((x) => html`<div style="border-top:1px solid var(--line);padding:8px 0"><b>${x.titulo}</b><p class="small" style="margin:4px 0">${x.texto}</p><span class="small muted">${x.por_que}</span></div>`)}` : ''}`
+          : html`<p class="muted small">La IA revisa la tabla y te dice qué anuncio escalar, cuál pausar y cuál revisar, y te propone textos para anuncios nuevos con lo que preguntan quienes sí compran.</p>`}
+      </div>
+      <div style="display:grid;gap:18px">
+        <form class="card" method="post" action="${base}/anuncios/cuenta" style="display:grid;gap:8px"><span class="mono">Cuenta publicitaria de Meta</span>
+          <input name="cuenta" value="${String(aj.cuenta || '').replace(/^act_/, '')}" placeholder="ID de la cuenta (solo números)" inputmode="numeric">
+          <p class="muted small" style="margin:0">${listo ? 'Token de anuncios conectado.' : 'Falta el token de anuncios (lo conecta Kuper).'} El ID está en el Administrador de anuncios, junto al nombre de la cuenta.</p>
+          <div><button class="btn-warn" style="padding:7px 14px">Guardar</button></div></form>
+        <form class="card" method="post" action="${base}/anuncios/publico" style="display:grid;gap:8px"><span class="mono">Mandar un público a Meta</span>
+          <select name="segmento">${Object.entries(SEGMENTOS).map(([k, v]) => html`<option value="${k}">${v}${publicos[k] ? ` · último: ${publicos[k].contactos}` : ''}</option>`)}</select>
+          <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="similar" value="1" checked style="width:18px;height:18px">Crear también un público similar (1% México)</label>
+          <p class="muted small" style="margin:0">Con tus compradores, Meta busca gente parecida para tus anuncios. Se mandan cifrados (Meta no ve los datos tal cual). Meta pide al menos 100 contactos.</p>
+          <div><button class="btn-accent" style="padding:7px 14px">Mandar a Meta</button></div></form>
+      </div>
+    </div>`;
+  return page({ title: `Anuncios · ${client.nombre}`, side: app ? sideApp('anuncios', client) : side('clientes'), body });
 }
 
 // ------------------------------------------------------------ probar agente
