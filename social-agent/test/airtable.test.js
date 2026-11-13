@@ -81,7 +81,7 @@ test('descripción, características y fotos (de la oficina y de la sucursal) pa
   await AT.sincronizar(c);
   assert.equal(bajadas.length, 4, 'no vuelve a bajar las que ya tiene');
   const d = AT.consultar(c, { sede: 'roma' });
-  assert.match(d.opciones[0].texto, /tiene 2 fotos/); assert.match(d.resultado, /enviar_fotos/);
+  assert.match(d.opciones[0].texto, /\[con fotos\]/); assert.match(d.resultado, /enviar_fotos/);
   const f = AT.fotos(c, { oficina: 'el nido' });
   assert.equal(f.encontrada, true); assert.equal(f.fotos.length, 2); assert.match(f.caracteristicas, /Ventana/);
   assert.equal(AT.fotos(c, { sede: 'Roma' }).fotos.length, 2);

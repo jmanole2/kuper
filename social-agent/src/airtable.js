@@ -162,8 +162,8 @@ export function consultar(client, { sede = '', personas = 0, tipo = '' } = {}) {
   const resultado = exactas.length
     ? `Disponibles que cumplen lo que pidió (dato real, actualizado hace ${hace ?? '?'} min):\n${exactas.slice(0, 6).map(linea).join('\n')}`
     : `NO hay disponibilidad${s ? ` en ${sede}` : ''}${p ? ` para ${p} personas` : ''}${t ? ` (${t})` : ''} en este momento. Díselo con claridad, ofrece anotarlo con prioridad para cuando se libere y pásalo con un asesor.${otras.length ? `\nAlternativas disponibles en otras sedes:\n${otras.map(linea).join('\n')}` : ''}`;
-  const conFotos = (x) => (x.fotos?.length ? ` [tiene ${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}: usa enviar_fotos]` : '');
-  const resFotos = exactas.some((x) => x.fotos?.length) ? '\nSi le interesa una opción, ofrécele mandarle las fotos (herramienta enviar_fotos con el nombre de la oficina).' : '';
+  const conFotos = (x) => (x.fotos?.length ? ` [con fotos]` : '');
+  const resFotos = exactas.some((x) => x.fotos?.length) ? '\nPor chat: si le interesa una opción [con fotos], ofrécele mandárselas (enviar_fotos con el nombre de la oficina). Por teléfono: descríbela con sus características y ofrece mandarle las fotos por WhatsApp.' : '';
   return { conectado: true, actualizado: st?.at || null, opciones: exactas.slice(0, 6).map((x) => ({ ...x, texto: x.texto + conFotos(x) })), alternativas: otras, resultado: resultado + resFotos };
 }
 
