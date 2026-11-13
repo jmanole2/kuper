@@ -169,8 +169,9 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     // Disponibilidad leída de su Airtable (si lo conectaron): va al final, con prioridad sobre la lista general.
     const disp = [airtable.bloque(req.client), conoc.bloqueAvisos(req.client), cupones.bloqueAgente(req.client)].filter(Boolean).join('\n\n');
     if (disp && k) k.texto = `${k.texto}\n\n${disp}`;
-    if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado });
-    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado } : { version: 0, texto: '', datos: {}, archivos, ia, pausado });
+    if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado, campanas_ajenas: campanas.ajenasParaAgente(req.client) });
+    const campanas_ajenas = campanas.ajenasParaAgente(req.client); // el agente les contesta que se equivocaron de número
+    res.set('Cache-Control', 'no-store').json(k ? { version: k.version, texto: k.texto, datos: k.datos, actualizado: k.actualizado, archivos, ia, pausado, campanas_ajenas } : { version: 0, texto: '', datos: {}, archivos, ia, pausado, campanas_ajenas });
   });
   // Agente de llamadas: en cada llamada que entra pregunta si contesta la asistente o la pasa al equipo
   // (botón "Pausar llamadas" y horario de la IA del panel).
@@ -280,6 +281,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       lead = equipo.repartir(req.client, lead); // si aún no tiene asesor, según el reparto de la marca
       if (esNuevo) push.avisar(req.client, { titulo: `Nuevo lead: ${lead.nombre || lead.telefono || lead.usuario || 'sin nombre'}`, texto: String(req.body?.nota || '').slice(0, 140), url: `/app/leads/${lead.id}/chat`, lead }).catch(() => {});
       campanas.completarCampana(req.client, lead); // nombre de la campaña de Meta, en segundo plano
+      lead = campanas.aplicarAjena(req.client, lead); // anuncio de otra empresa: fuera de reportes
       res.json({ ok: true, lead });
     }
     catch (e) { res.status(400).json({ error: e.message }); }
@@ -554,7 +556,19 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     return req.post && req.post.client_id === req.client.id ? next() : res.status(404).send('Post no encontrado');
   });
   postActions(appR, (req) => `/app/posts#post-${req.post.id}`);
-  appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id), db.leadMessageCounts(req.client.id), appPosts(req.client), String(req.query.campana || ''))));
+  appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id, { ajenas: req.query.ajenas === '1' }), db.leadMessageCounts(req.client.id), appPosts(req.client), String(req.query.campana || ''), { verAjenas: req.query.ajenas === '1', aviso: String(req.query.aviso || '').slice(0, 200) })));
+  // "No es nuestra": un anuncio de otra empresa que manda gente a este WhatsApp.
+  appR.post('/leads/campana-ajena', (req, res) => {
+    try {
+      const r = campanas.marcarAjena(req.client, req.body.campana, { mensaje: req.body.mensaje, autor: req.sesion?.user?.nombre || 'Kuper' });
+      seg.auditar(req, 'campana_ajena', `${req.client.nombre}: ${req.body.campana}`);
+      res.redirect(`/app/leads?aviso=${encodeURIComponent(`Listo: ${r.leads} leads fuera de tus reportes. Si llega alguien más de ese anuncio, el agente le contesta que se equivocó de número.`)}`);
+    } catch (e) { res.redirect(`/app/leads?aviso=${encodeURIComponent(e.message)}`); }
+  });
+  appR.post('/leads/campana-ajena/quitar', (req, res) => {
+    const n = campanas.quitarAjena(req.client, String(req.body.campana || ''));
+    res.redirect(`/app/leads?aviso=${encodeURIComponent(`Listo: ${n} leads de vuelta en tus reportes.`)}`);
+  });
   appR.get('/leads.csv', servicio('chat'), (req, res) => enviarCsv(req, res));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
   chatRoutes(appR, () => '/app', { app: true, prefix: '' });

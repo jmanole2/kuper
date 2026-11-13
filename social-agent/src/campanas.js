@@ -51,3 +51,42 @@ export function leadsCsv(leads, { estados = {} } = {}) {
   const filas = leads.map((l) => ({ ...l, campana_txt: etiquetaCampana(l), estado: estados[l.estado] || l.estado, usuario: l.usuario ? `@${l.usuario}` : '' }));
   return '﻿' + [COLS.map(([, t]) => t).join(','), ...filas.map((f) => COLS.map(([k]) => celda(f[k])).join(','))].join('\r\n') + '\r\n';
 }
+
+// ------------------------------------------------------------ campañas que no son de la marca
+// Un anuncio de otra empresa que manda gente a este WhatsApp (p. ej. una página ajena conectada al número).
+// Marcarla saca a esos leads de listas y reportes, los que lleguen después del mismo anuncio también, y el agente
+// les contesta una sola vez con un mensaje fijo (se lo pasa el panel en /conocimiento).
+export const MENSAJE_AJENA = 'Hola, gracias por escribir. Parece que este mensaje llegó por error: este WhatsApp no tiene relación con la promoción que viste. Te sugerimos contactar directamente a la marca del anuncio. ¡Saludos!';
+export const ajenas = (client) => (Array.isArray(client?.config?.campanas_ajenas) ? client.config.campanas_ajenas : []);
+export function marcarAjena(client, etiqueta, { mensaje = '', autor = '' } = {}) {
+  const et = String(etiqueta || '').trim();
+  if (!et || et === 'Orgánico') throw new Error('Elige una campaña de anuncio.');
+  const todos = [...db.listLeads(client.id, { limit: 100000 }), ...db.listLeads(client.id, { limit: 100000, ajenas: true })];
+  const deEsta = todos.filter((l) => etiquetaCampana(l) === et);
+  const anuncios = [...new Set(deEsta.map((l) => l.anuncio_id).filter(Boolean))];
+  const upd = db.getDb().prepare('UPDATE leads SET ajena = 1 WHERE id = ?');
+  for (const l of deEsta) upd.run(l.id);
+  const lista = [...ajenas(client).filter((a) => a.etiqueta !== et), { etiqueta: et.slice(0, 200), anuncio_ids: anuncios.slice(0, 50), mensaje: String(mensaje || '').trim().slice(0, 600) || MENSAJE_AJENA, desde: new Date().toISOString(), autor: String(autor).slice(0, 80) }];
+  db.updateClient(client.id, { config: { ...client.config, campanas_ajenas: lista.slice(-30) } });
+  db.logEvent({ clientId: client.id, tipo: 'campana_ajena', detalle: `${et}: ${deEsta.length} leads fuera de reportes` });
+  return { leads: deEsta.length, anuncios };
+}
+export function quitarAjena(client, etiqueta) {
+  const a = ajenas(client).find((x) => x.etiqueta === etiqueta);
+  if (!a) return 0;
+  const leads = db.listLeads(client.id, { limit: 100000, ajenas: true }).filter((l) => etiquetaCampana(l) === etiqueta || (l.anuncio_id && a.anuncio_ids.includes(l.anuncio_id)));
+  const upd = db.getDb().prepare('UPDATE leads SET ajena = 0 WHERE id = ?');
+  for (const l of leads) upd.run(l.id);
+  db.updateClient(client.id, { config: { ...client.config, campanas_ajenas: ajenas(client).filter((x) => x.etiqueta !== etiqueta) } });
+  return leads.length;
+}
+/** Para un lead que acaba de llegar: si viene de una campaña marcada como ajena, lo saca de reportes. */
+export function aplicarAjena(client, lead) {
+  if (!lead || lead.ajena) return lead;
+  const a = ajenas(client).find((x) => (lead.anuncio_id && x.anuncio_ids?.includes(lead.anuncio_id)) || x.etiqueta === etiquetaCampana(lead));
+  if (!a) return lead;
+  db.getDb().prepare('UPDATE leads SET ajena = 1 WHERE id = ?').run(lead.id);
+  return { ...lead, ajena: 1 };
+}
+/** Lo que el agente necesita saber (sin datos de personas). */
+export const ajenasParaAgente = (client) => ajenas(client).map((a) => ({ anuncio_ids: a.anuncio_ids || [], titulo: a.etiqueta, mensaje: a.mensaje }));

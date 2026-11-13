@@ -3,6 +3,7 @@ import path from 'node:path';
 import { html, raw, esc, page } from './html.js';
 import { STATUS, PLATFORMS, LEAD_ESTADOS, ultimaHistoria, clientCredentials } from '../db.js';
 import { etiquetaCampana } from '../campanas.js';
+import * as CAMP from '../campanas.js';
 import { localDate, localTime } from '../schedule.js';
 import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
@@ -904,8 +905,19 @@ export function appProximamentePage(client, servicio) {
   return page({ title: `${s.nombre} · ${client.nombre}`, side: sideApp(servicio, client), body });
 }
 
-export function appLeadsPage(client, leads, chats, posts = [], campanaSel = '') {
-  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app', { campanaSel })}` });
+export function appLeadsPage(client, leads, chats, posts = [], campanaSel = '', { verAjenas = false, aviso = '' } = {}) {
+  const lista = Array.isArray(client.config?.campanas_ajenas) ? client.config.campanas_ajenas : [];
+  const ajenasBox = verAjenas ? html`<div class="card" style="margin-bottom:14px"><span class="mono">Campañas que no son tuyas</span>
+      <p class="muted small" style="margin:6px 0 10px">Estos leads llegaron por anuncios de otra empresa. No cuentan en tus reportes y el agente les contesta que se equivocaron de número.</p>
+      ${lista.map((a) => html`<form method="post" action="/app/leads/campana-ajena/quitar" style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0"><input type="hidden" name="campana" value="${a.etiqueta}"><span><b>${a.etiqueta}</b> <span class="muted small">desde ${String(a.desde || '').slice(0, 10)}</span></span><button class="btn-warn" style="padding:6px 12px;font-size:13px">Sí es nuestra</button></form>`)}
+      <p style="margin:8px 0 0"><a href="/app/leads">← Volver a mis leads</a></p></div>` : '';
+  const marcar = !verAjenas && campanaSel && campanaSel !== 'Orgánico' ? html`<details class="card" style="margin-bottom:14px"><summary style="cursor:pointer"><b>¿Esta campaña no es tuya?</b> <span class="muted small">Sácala de tus reportes</span></summary>
+      <form method="post" action="/app/leads/campana-ajena" style="display:grid;gap:8px;margin-top:10px"><input type="hidden" name="campana" value="${campanaSel}">
+        <p class="muted small" style="margin:0">Los leads de “${campanaSel}” dejan de contar en tu embudo, analítica y reportes. Si alguien más llega de ese anuncio, el agente le contesta una sola vez con este mensaje y no sigue la conversación.</p>
+        <textarea name="mensaje" style="min-height:70px" maxlength="600">${CAMP.MENSAJE_AJENA}</textarea>
+        <div><button class="btn-warn" onclick="return confirm('¿Marcar “${campanaSel.replace(/'/g, '')}” como campaña que no es tuya?')">No es nuestra</button></div></form></details>` : '';
+  const verLink = !verAjenas && lista.length ? html`<p class="small" style="margin:0 0 10px"><a href="/app/leads?ajenas=1">Ver campañas que no son tuyas (${lista.length})</a></p>` : '';
+  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}${ajenasBox}${marcar}${verLink}${leadsSection(client, leads, chats, '/app', { campanaSel, urlLeads: verAjenas ? '/app/leads?ajenas=1' : '/app/leads' })}` });
 }
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
   return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false, url: '/app/citas' })}` });

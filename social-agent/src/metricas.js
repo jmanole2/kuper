@@ -83,7 +83,7 @@ export function resumenMes(client, mes) {
   const d = getDb(), id = client.id;
   const posts = d.prepare("SELECT id, plataforma, tema, image_path, video_path, published_at, external_url FROM posts WHERE client_id = ? AND status = 'publicado' AND published_at IS NOT NULL").all(id).filter((p) => enMes(p.published_at, mes));
   const msgs = d.prepare("SELECT m.rol, m.created_at FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ?").all(id).filter((m) => enMes(m.created_at, mes));
-  const leads = d.prepare('SELECT estado, origen, created_at, cita_inicio, updated_at FROM leads WHERE client_id = ?').all(id);
+  const leads = d.prepare('SELECT estado, origen, created_at, cita_inicio, updated_at FROM leads WHERE client_id = ? AND ajena = 0').all(id);
   const nuevos = leads.filter((l) => enMes(l.created_at, mes));
   const porOrigen = nuevos.reduce((o, l) => ({ ...o, [l.origen]: (o[l.origen] || 0) + 1 }), {});
   const citas = leads.filter((l) => enMes(l.cita_inicio, mes)).length;

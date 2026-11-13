@@ -36,7 +36,7 @@ const asesoresDe = (client, { soloDisponibles = false } = {}) => d().prepare(`SE
 export const setDisponible = (client, userId, si) => d().prepare('UPDATE users SET disponible = ? WHERE id = ? AND client_id = ?').run(si ? 1 : 0, userId, client.id);
 
 // ------------------------------------------------------------ reparto
-const abiertos = (client, asesorId) => d().prepare(`SELECT COUNT(*) n FROM leads WHERE client_id = ? AND asignado_id = ? AND resultado IS NULL AND estado != 'perdido' AND datetime(updated_at) >= datetime('now', '-14 days')`).get(client.id, asesorId).n;
+const abiertos = (client, asesorId) => d().prepare(`SELECT COUNT(*) n FROM leads WHERE client_id = ? AND ajena = 0 AND asignado_id = ? AND resultado IS NULL AND estado != 'perdido' AND datetime(updated_at) >= datetime('now', '-14 days')`).get(client.id, asesorId).n;
 /** Asigna un lead sin asesor según el reparto de la marca. Devuelve el lead (actualizado o igual). */
 export function repartir(client, lead) {
   const aj = ajustes(client);

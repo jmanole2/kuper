@@ -63,3 +63,24 @@ test('panel: columna Campaña, filtro y descarga (admin y cliente)', async () =>
     assert.equal((await fetch(`${base}/admin/clientes/${c.id}/leads.csv`, { headers: { cookie: luis }, redirect: 'manual' })).status !== 200, true, 'un cliente no baja leads por el admin');
   } finally { server.close(); }
 });
+
+test('"No es nuestra": saca la campaña de listas y reportes y marca a los nuevos del mismo anuncio', () => {
+  for (const t of ['+525560000001', '+525560000002']) db.upsertLead(c.id, { telefono: t, origen: 'whatsapp', campana: { anuncio_id: '777', titulo: '¡Regístrate y descubre ASICS!' } });
+  const antes = db.listLeads(c.id).length;
+  const cli = () => db.getClient(c.id);
+  assert.throws(() => campanas.marcarAjena(cli(), 'Orgánico'));
+  const r = campanas.marcarAjena(cli(), '¡Regístrate y descubre ASICS!', { mensaje: '' });
+  assert.equal(r.leads, 2); assert.deepEqual(r.anuncios, ['777']);
+  assert.equal(db.listLeads(c.id).length, antes - 2);
+  assert.equal(db.listLeads(c.id, { ajenas: true }).length, 2);
+  const agente = campanas.ajenasParaAgente(cli());
+  assert.deepEqual(agente[0].anuncio_ids, ['777']); assert.equal(agente[0].mensaje, campanas.MENSAJE_AJENA);
+  // Llega alguien más del mismo anuncio (aunque el título cambie)
+  const nuevo = campanas.aplicarAjena(cli(), db.upsertLead(c.id, { telefono: '+525560000003', campana: { anuncio_id: '777', titulo: 'Otro texto' } }));
+  assert.equal(nuevo.ajena, 1);
+  assert.equal(campanas.aplicarAjena(cli(), db.upsertLead(c.id, { telefono: '+525560000004' })).ajena, 0, 'orgánico no se toca');
+  // Deshacer
+  assert.equal(campanas.quitarAjena(cli(), '¡Regístrate y descubre ASICS!'), 3);
+  assert.equal(db.listLeads(c.id, { ajenas: true }).length, 0);
+  assert.equal(campanas.ajenas(cli()).length, 0);
+});

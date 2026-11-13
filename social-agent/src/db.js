@@ -212,6 +212,7 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   // Celulares de México: WhatsApp los manda como 521 + 10 dígitos; se guardan como +52 + 10 para no duplicar leads.
   db.exec("UPDATE leads SET telefono = '+52' || substr(telefono, 5) WHERE telefono LIKE '+521%' AND length(telefono) = 14");
   ensure('users', 'permiso', 'TEXT'); // 'caja': solo canjea cupones
+  ensure('leads', 'ajena', 'INTEGER NOT NULL DEFAULT 0'); // llegó de una campaña que no es de la marca: fuera de listas y reportes
   ensure('leads', 'control', "TEXT NOT NULL DEFAULT 'bot'"); // 'bot' | 'humano' (alguien tomó la conversación)
   ensure('lead_mensajes', 'autor', 'TEXT'); // quién respondió a mano desde el panel
   // Anuncio de Meta del que llegó el lead (el primero; lo manda el agente) y los nombres que se leen de Meta.
@@ -557,8 +558,8 @@ export const setUserActivo = (id, activo) => getDb().prepare('UPDATE users SET a
 export const deleteUser = (id) => getDb().prepare('DELETE FROM users WHERE id = ?').run(id);
 export const touchLogin = (id) => getDb().prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(id);
 
-export const listLeads = (clientId, { estado, limit = 300 } = {}) => getDb()
-  .prepare(`SELECT * FROM leads WHERE client_id = ? ${estado ? 'AND estado = ?' : ''} ORDER BY updated_at DESC LIMIT ?`)
+export const listLeads = (clientId, { estado, limit = 300, ajenas = false } = {}) => getDb()
+  .prepare(`SELECT * FROM leads WHERE client_id = ? AND ajena = ${ajenas ? 1 : 0} ${estado ? 'AND estado = ?' : ''} ORDER BY updated_at DESC LIMIT ?`)
   .all(...[clientId, ...(estado ? [estado] : []), limit]);
 /** Nombres de campaña, conjunto y anuncio leídos de Meta para todos los leads de ese anuncio. */
 export const setNombresAnuncio = (clientId, anuncioId, { campana, conjunto, anuncio }) => getDb()

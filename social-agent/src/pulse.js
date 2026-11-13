@@ -63,7 +63,7 @@ export async function pulse(clients, { now = new Date(), conCitas = true, client
   const events = db.prepare(`SELECT id, client_id, tipo, detalle, created_at FROM events WHERE created_at >= ?${f} ORDER BY id DESC`).all(desde);
   const msgs = db.prepare(`SELECT m.id, m.rol, m.texto, m.created_at, m.lead_id, l.nombre, l.telefono, l.usuario, l.client_id FROM lead_mensajes m
     JOIN leads l ON l.id = m.lead_id WHERE m.created_at >= ?${clientId ? ' AND l.client_id = ' + Number(clientId) : ''} ORDER BY m.id DESC`).all(desde);
-  const leads = db.prepare(`SELECT estado, origen, created_at FROM leads WHERE 1=1${f}`).all();
+  const leads = db.prepare(`SELECT estado, origen, created_at FROM leads WHERE ajena = 0${f}`).all();
   const posts = db.prepare(`SELECT status, COUNT(*) n FROM posts WHERE 1=1${f} GROUP BY status`).all();
   const pc = Object.fromEntries(posts.map((r) => [r.status, r.n]));
 

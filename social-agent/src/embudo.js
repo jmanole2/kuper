@@ -352,7 +352,7 @@ export function analitica(client, { dias = null, desde: desdeTxt = '', hasta: ha
   const desdeSql = desde.toISOString().slice(0, 19).replace('T', ' '), finSql = fin.toISOString().slice(0, 19).replace('T', ' ');
   const d = db.getDb();
   const asesorId = asesor === '-' ? '-' : Number(asesor) || null;
-  const leads = d.prepare('SELECT * FROM leads WHERE client_id = ?').all(client.id)
+  const leads = d.prepare('SELECT * FROM leads WHERE client_id = ? AND ajena = 0').all(client.id)
     .filter((l) => !asesorId || (asesorId === '-' ? !l.asignado_id : l.asignado_id === asesorId));
   const ids = new Set(leads.map((l) => l.id));
   const msgs = d.prepare(`SELECT m.lead_id, m.rol, m.autor, m.texto, m.created_at FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id
