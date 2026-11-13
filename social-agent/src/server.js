@@ -556,19 +556,21 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     return req.post && req.post.client_id === req.client.id ? next() : res.status(404).send('Post no encontrado');
   });
   postActions(appR, (req) => `/app/posts#post-${req.post.id}`);
+  // "No es nuestra": un anuncio de otra empresa que manda gente a este WhatsApp (marca y admin).
+  const rutasAjenas = (router, prefix, urlLeads) => {
+    const ir = (req, res, txt) => { const u = urlLeads(req); res.redirect(`${u}${u.includes('?') ? '&' : '?'}aviso=${encodeURIComponent(txt)}`); };
+    router.post(`${prefix}/campana-ajena`, (req, res) => {
+      try {
+        const r = campanas.marcarAjena(req.client, req.body.campana, { mensaje: req.body.mensaje, autor: req.sesion?.user?.nombre || 'Kuper' });
+        seg.auditar(req, 'campana_ajena', `${req.client.nombre}: ${req.body.campana}`);
+        ir(req, res, `Listo: ${r.leads} leads fuera de los reportes. Si llega alguien más de ese anuncio, el agente le contesta que se equivocó de número.`);
+      } catch (e) { ir(req, res, e.message); }
+    });
+    router.post(`${prefix}/campana-ajena/quitar`, (req, res) => ir(req, res, `Listo: ${campanas.quitarAjena(req.client, String(req.body.campana || ''))} leads de vuelta en los reportes.`));
+  };
+  appR.use('/campana-ajena', servicio('chat'));
+  rutasAjenas(appR, '', () => '/app/leads');
   appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id, { ajenas: req.query.ajenas === '1' }), db.leadMessageCounts(req.client.id), appPosts(req.client), String(req.query.campana || ''), { verAjenas: req.query.ajenas === '1', aviso: String(req.query.aviso || '').slice(0, 200) })));
-  // "No es nuestra": un anuncio de otra empresa que manda gente a este WhatsApp.
-  appR.post('/leads/campana-ajena', (req, res) => {
-    try {
-      const r = campanas.marcarAjena(req.client, req.body.campana, { mensaje: req.body.mensaje, autor: req.sesion?.user?.nombre || 'Kuper' });
-      seg.auditar(req, 'campana_ajena', `${req.client.nombre}: ${req.body.campana}`);
-      res.redirect(`/app/leads?aviso=${encodeURIComponent(`Listo: ${r.leads} leads fuera de tus reportes. Si llega alguien más de ese anuncio, el agente le contesta que se equivocó de número.`)}`);
-    } catch (e) { res.redirect(`/app/leads?aviso=${encodeURIComponent(e.message)}`); }
-  });
-  appR.post('/leads/campana-ajena/quitar', (req, res) => {
-    const n = campanas.quitarAjena(req.client, String(req.body.campana || ''));
-    res.redirect(`/app/leads?aviso=${encodeURIComponent(`Listo: ${n} leads de vuelta en tus reportes.`)}`);
-  });
   appR.get('/leads.csv', servicio('chat'), (req, res) => enviarCsv(req, res));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
   chatRoutes(appR, () => '/app', { app: true, prefix: '' });
@@ -801,7 +803,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       return res.send(reportePage(req.client, metricas.resumenMes(req.client, mes), { base: `/admin/clientes/${req.client.id}?tab=reporte&`, meses: metricas.ultimosMeses(), side: V.adminSide() }));
     }
     const view = { tab: String(req.query.tab || 'posts'), filtro: String(req.query.f || ''), red: String(req.query.red || '') };
-    if (view.tab === 'leads') { view.leads = db.listLeads(req.client.id); view.chats = db.leadMessageCounts(req.client.id); view.campanaSel = String(req.query.campana || ''); }
+    if (view.tab === 'leads') { view.verAjenas = req.query.ajenas === '1'; view.aviso = String(req.query.aviso || '').slice(0, 200); view.leads = db.listLeads(req.client.id, { ajenas: view.verAjenas }); view.chats = db.leadMessageCounts(req.client.id); view.campanaSel = String(req.query.campana || ''); }
     if (view.tab === 'ventas') { view.prospectos = prospeccion.listar(req.client.id); view.ventasActivo = prospeccion.activo(req.client.id); view.placesListo = !!config.googlePlacesKey; }
     if (view.tab === 'blog') return res.redirect(`/admin/clientes/${req.client.id}/blog`);
     if (view.tab === 'comentarios') return res.redirect(`/admin/clientes/${req.client.id}/comentarios`);
@@ -1057,6 +1059,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     const fac = facturacion.listar({ limit: 100000 }).find((f) => f.id === Number(req.params.fid));
     try { await enviarArchivoFactura(res, fac, req.params.tipo); } catch (e) { res.status(404).send(e.message); }
   });
+  rutasAjenas(admin, '/clientes/:cid', (req) => `/admin/clientes/${req.client.id}?tab=leads`);
   admin.post('/clientes/:cid/leads/:leadId', (req, res) => {
     db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado));
     res.redirect(`/admin/clientes/${req.client.id}?tab=leads`);

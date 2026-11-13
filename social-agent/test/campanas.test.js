@@ -84,3 +84,14 @@ test('"No es nuestra": saca la campaña de listas y reportes y marca a los nuevo
   assert.equal(db.listLeads(c.id, { ajenas: true }).length, 0);
   assert.equal(campanas.ajenas(cli()).length, 0);
 });
+
+test('la tarjeta "No es nuestra" sale en la vista de la marca y en la de admin', async () => {
+  const V = await import('../src/web/views.js');
+  db.upsertLead(c.id, { telefono: '+525560000009', campana: { anuncio_id: '888', titulo: 'Promo ajena' } });
+  const cli = db.getClient(c.id);
+  const app = V.appLeadsPage(cli, db.listLeads(cli.id), {}, [], 'Promo ajena');
+  assert.match(app, /¿Esta campaña no es tuya\?/); assert.match(app, /action="\/app\/campana-ajena"/);
+  const adm = V.clientFormPage(cli, { tab: 'leads', leads: db.listLeads(cli.id), chats: {}, campanaSel: 'Promo ajena' });
+  assert.match(adm, new RegExp(`action="/admin/clientes/${cli.id}/campana-ajena"`));
+  assert.match(V.appLeadsPage(cli, db.listLeads(cli.id), {}, [], ''), /márcala como “No es nuestra”/);
+});
