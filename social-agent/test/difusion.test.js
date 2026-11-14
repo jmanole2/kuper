@@ -102,3 +102,23 @@ test('automática: cada día agrega a quien entra al segmento y no se termina', 
   db.getDb().prepare("UPDATE difusiones SET revisada_at = datetime('now', '-1 day') WHERE id = ?").run(c.id);
   assert.equal((await dif.enviarPendientes(client, { ahora: enHorario })).enviados, 0); // no repite a la misma persona
 });
+
+test('crear plantilla desde el panel: valida, manda ejemplos y la deja en revisión', async () => {
+  const antes = dif.hooks.fetch;
+  const pedidas = [];
+  dif.hooks.fetch = async (url, o = {}) => { pedidas.push({ url: String(url), metodo: o.method || 'GET', body: o.body ? JSON.parse(o.body) : null });
+    if (o.method === 'POST') return new Response(JSON.stringify({ id: '999', status: 'PENDING', category: 'UTILITY' }));
+    return new Response(JSON.stringify({ data: [{ name: 'recordatorio_cita', language: 'es_MX', status: 'PENDING', category: 'UTILITY', components: [{ type: 'BODY', text: 'Hola {{1}}' }] }, { name: 'vieja', language: 'es_MX', status: 'REJECTED', rejected_reason: 'INVALID_FORMAT', category: 'MARKETING', components: [] }] })); };
+  await assert.rejects(dif.crearPlantilla(client, { nombre: 'x', categoria: 'UTILITY', cuerpo: 'Hola {{1}}, tu cita es el {{2}}.', ejemplos: ['Ana'] }), /ejemplo para cada variable/);
+  await assert.rejects(dif.crearPlantilla(client, { nombre: 'x', categoria: 'UTILITY', cuerpo: '{{1}} tu cita' , ejemplos: ['Ana'] }), /empiece o termine/);
+  await assert.rejects(dif.crearPlantilla(client, { nombre: 'x', categoria: 'OTRA', cuerpo: 'Hola' }), /categoría/);
+  const r = await dif.crearPlantilla(client, { nombre: 'Recordatorio de Cita', categoria: 'UTILITY', cuerpo: 'Hola {{1}}, tu cita es el {{2}}.', ejemplos: ['Ana', '20 de noviembre'], pie: 'Responde BAJA para no recibir más' });
+  assert.equal(r.nombre, 'recordatorio_de_cita'); assert.equal(r.estado, 'PENDING');
+  const p = pedidas.find((x) => x.metodo === 'POST');
+  assert.match(p.url, /\/W\/message_templates$/);
+  assert.deepEqual(p.body.components[0].example.body_text, [['Ana', '20 de noviembre']]); assert.equal(p.body.components[1].type, 'FOOTER');
+  const todas = await dif.todasPlantillas(client);
+  assert.equal(todas.length, 2); assert.equal(todas[1].motivo, 'INVALID_FORMAT');
+  assert.equal((await dif.plantillas(client)).length, 0, 'en campañas solo salen las aprobadas');
+  dif.hooks.fetch = antes;
+});

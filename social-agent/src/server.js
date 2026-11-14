@@ -1666,16 +1666,17 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       variables: Array.from({ length: 10 }, (_, i) => (b[`var_fuente_${i + 1}`] ? { fuente: b[`var_fuente_${i + 1}`], texto: b[`var_texto_${i + 1}`] } : null)).filter(Boolean) });
     const vista = async (req, res, extra = {}) => {
       let lista = null, errorPlantillas = '';
-      try { lista = await difusion.plantillas(req.client); } catch (e) { errorPlantillas = e.message; }
+      let todas = null;
+      try { todas = await difusion.todasPlantillas(req.client); lista = todas && todas.filter((t) => t.estado === 'APPROVED'); } catch (e) { errorPlantillas = e.message; }
       const form = extra.form || {};
       const seg = extra.form ? difusion.segmento(req.client, form.filtros) : null;
       if (seg) seg.ejemplos = seg.leads.slice(0, 6).map((l) => ({ nombre: l.nombre || l.telefono, telefono: l.telefono,
         texto: form.cuerpo ? difusion.render(form.cuerpo, difusion.valores(req.client, l, form.variables)) : '' }));
-      res.status(extra.error ? 400 : 200).send(V.difusionPage(req.client, { campanas: difusion.listar(req.client.id), plantillas: lista, errorPlantillas, directo: difusion.directo(req.client),
+      res.status(extra.error ? 400 : 200).send(V.difusionPage(req.client, { campanas: difusion.listar(req.client.id), plantillas: lista, todas, CATEGORIAS: difusion.CATEGORIAS, errorPlantillas, directo: difusion.directo(req.client),
         recordatorios: recordatorios.ajustes(req.client), recRecientes: recordatorios.recientes(req.client.id),
         agente: agente.agenteConfigurado(req.client), embudos: embudo.embudos(req.client), base: base(req), app, form, seg, ESTADOS: difusion.ESTADOS, FUENTES: difusion.FUENTES,
         FRECUENCIA: difusion.FRECUENCIA_DIAS, ok: { creada: 'Campaña creada. Revísala y apruébala para que empiece a enviarse.', aprobar: 'Aprobada: se empieza a enviar en horario (9 a 20 h).', pausar: 'Campaña en pausa.',
-          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.' }[req.query.ok] || '', ...extra }));
+          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.', plantilla: 'Plantilla enviada a Meta. Normalmente la aprueban en minutos; su estado aparece en "Tus plantillas".' }[req.query.ok] || '', ...extra }));
     };
     router.get(`${prefix}/difusion`, (req, res) => vista(req, res));
     router.post(`${prefix}/difusion/vista`, (req, res) => vista(req, res, { form: leerForm(req.body || {}) }));
@@ -1683,6 +1684,14 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const form = leerForm(req.body || {});
       try { difusion.crear(req.client, form, autor(req)); seg.auditar(req, 'difusion_creada', req.client.nombre); res.redirect(`${base(req)}/difusion?ok=creada`); }
       catch (e) { vista(req, res, { form, error: e.message }); }
+    });
+    router.post(`${prefix}/difusion/plantilla`, async (req, res) => {
+      const b = req.body || {};
+      try {
+        await difusion.crearPlantilla(req.client, { nombre: b.nombre, categoria: b.categoria, idioma: b.idioma, cuerpo: b.cuerpo, pie: b.pie, ejemplos: Array.from({ length: 10 }, (_, i) => b[`ejemplo_${i + 1}`]) });
+        seg.auditar(req, 'plantilla_creada', `${req.client.nombre}: ${b.nombre}`);
+        res.redirect(`${base(req)}/difusion?ok=plantilla#plantillas`);
+      } catch (e) { vista(req, res, { error: `Plantilla: ${e.message}`, plantillaForm: b }); }
     });
     router.post(`${prefix}/difusion/recordatorios`, (req, res) => {
       const r = recordatorios.limpiar(req.body || {});

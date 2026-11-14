@@ -86,15 +86,44 @@ const wa = (client) => db.clientCredentials(client).whatsapp || {};
 export const directo = (client) => Boolean(wa(client).token && wa(client).phone_id);
 const graph = () => `https://graph.facebook.com/${config.whatsappApp?.graph || 'v23.0'}`;
 
-/** Plantillas aprobadas de la cuenta de WhatsApp del cliente (si se conectó desde el panel). */
-export async function plantillas(client) {
+/** Todas las plantillas de la cuenta de WhatsApp del cliente (si se conectó desde el panel), con su estado en Meta. */
+export async function todasPlantillas(client) {
   const w = wa(client);
   if (!w.token || !w.waba_id) return null;
-  const r = await hooks.fetch(`${graph()}/${w.waba_id}/message_templates?fields=name,language,status,category,components&limit=100`, { headers: { Authorization: `Bearer ${w.token}` }, signal: AbortSignal.timeout(15000) });
+  const r = await hooks.fetch(`${graph()}/${w.waba_id}/message_templates?fields=name,language,status,category,components,rejected_reason&limit=100`, { headers: { Authorization: `Bearer ${w.token}` }, signal: AbortSignal.timeout(15000) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) throw new Error(j.error?.message || `Meta respondió ${r.status}`);
-  return (j.data || []).filter((t) => t.status === 'APPROVED').map((t) => ({ nombre: t.name, idioma: t.language, categoria: t.category,
+  return (j.data || []).map((t) => ({ nombre: t.name, idioma: t.language, categoria: t.category, estado: t.status, motivo: t.rejected_reason && t.rejected_reason !== 'NONE' ? t.rejected_reason : '',
     cuerpo: (t.components || []).find((c) => c.type === 'BODY')?.text || '' }));
+}
+/** Plantillas aprobadas (las que se pueden usar en campañas). */
+export async function plantillas(client) {
+  const l = await todasPlantillas(client);
+  return l === null ? null : l.filter((t) => t.estado === 'APPROVED');
+}
+export const CATEGORIAS = { MARKETING: 'Marketing (promociones, recompra, novedades)', UTILITY: 'Utilidad (recordatorios, avisos de un trámite o pedido)' };
+/** Crea una plantilla en la cuenta de WhatsApp del cliente y la manda a revisión de Meta. */
+export async function crearPlantilla(client, { nombre, categoria, idioma = 'es_MX', cuerpo, ejemplos = [], pie = '' }) {
+  const w = wa(client);
+  if (!w.token || !w.waba_id) throw new Error('Para crear plantillas desde aquí, conecta primero tu WhatsApp en "Lo que sabe tu agente".');
+  const n = String(nombre || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
+  if (!n) throw new Error('Ponle nombre a la plantilla (ej. recordatorio_cita).');
+  if (!CATEGORIAS[categoria]) throw new Error('Elige la categoría.');
+  const texto = String(cuerpo || '').replace(/\r\n/g, '\n').trim();
+  if (!texto || texto.length > 1024) throw new Error('Escribe el texto (máximo 1024 caracteres).');
+  const nv = cuantasVariables(texto);
+  const vals = Array.from({ length: nv }, (_, i) => String(ejemplos[i] || '').trim().slice(0, 60));
+  if (vals.some((v) => !v)) throw new Error(`Meta pide un ejemplo para cada variable ({{1}}…{{${nv}}}). Escribe cómo se vería con un cliente real.`);
+  if (/^\s*\{\{\d+\}\}|\{\{\d+\}\}\s*$/.test(texto)) throw new Error('Meta no acepta que el texto empiece o termine con una variable. Agrega una palabra antes o después.');
+  const components = [{ type: 'BODY', text: texto, ...(nv ? { example: { body_text: [vals] } } : {}) }];
+  const p = String(pie || '').trim().slice(0, 60);
+  if (p) components.push({ type: 'FOOTER', text: p });
+  const r = await hooks.fetch(`${graph()}/${w.waba_id}/message_templates`, { method: 'POST', headers: { Authorization: `Bearer ${w.token}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ name: n, language: String(idioma || 'es_MX').slice(0, 10), category: categoria, components }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j.error?.error_user_msg || j.error?.message || `Meta respondió ${r.status}`);
+  db.logEvent({ clientId: client.id, tipo: 'plantilla_creada', detalle: `${n} (${categoria}): ${j.status || 'PENDING'}` });
+  return { nombre: n, estado: j.status || 'PENDING', id: j.id };
 }
 export const cuantasVariables = (cuerpo) => Math.max(0, ...[...String(cuerpo || '').matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1])));
 

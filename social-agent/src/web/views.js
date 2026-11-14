@@ -1461,7 +1461,7 @@ export function comentariosPage(client, { lista = [], resumen = {}, aj = {}, bas
 }
 
 // ------------------------------------------------------------ campañas de WhatsApp (difusión)
-export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [], campanas = [], plantillas = null, errorPlantillas = '', directo = false, agente = false, embudos = [], base, app = false, form = {}, seg = null,
+export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [], campanas = [], plantillas = null, todas = null, CATEGORIAS = {}, plantillaForm = {}, errorPlantillas = '', directo = false, agente = false, embudos = [], base, app = false, form = {}, seg = null,
   ESTADOS = {}, FUENTES = {}, FRECUENCIA = 7, ok = '', error = '' }) {
   const f = form.filtros || {};
   const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
@@ -1499,6 +1499,30 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
       note: ['Cómo se cuida tu número', `En horario, escalonado, con tope diario, sin repetir a quien recibió otra en ${FRECUENCIA} días y sin escribir a quien pidió su baja`] })}
     ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
     ${!directo && !agente ? html`<div class="err">Esta marca todavía no tiene WhatsApp conectado. Conéctalo en <a href="${base}/agente">Lo que sabe tu agente</a>.</div>` : ''}
+    ${todas !== null ? (() => { const EST = { APPROVED: ['Aprobada', '#4ade80'], PENDING: ['En revisión', '#fbbf24'], IN_APPEAL: ['En revisión', '#fbbf24'], REJECTED: ['Rechazada', '#f87171'], PAUSED: ['Pausada', '#a39d93'], DISABLED: ['Desactivada', '#a39d93'] };
+      const pf = plantillaForm || {};
+      return html`<div id="plantillas" style="display:grid;gap:18px;grid-template-columns:minmax(0,1fr) minmax(320px,1fr);align-items:start;margin-bottom:18px" class="pl2">
+      <style>@media (max-width:980px){.pl2{grid-template-columns:1fr!important}} .pl2 input,.pl2 select,.pl2 textarea{width:100%}</style>
+      <div class="card"><span class="mono">Tus plantillas de WhatsApp</span>
+        ${todas.length ? todas.map((t) => { const [e, col] = EST[t.estado] || [t.estado, '#a39d93'];
+          return html`<div style="border-top:1px solid var(--line);padding:10px 0;display:grid;gap:4px"><div style="display:flex;justify-content:space-between;gap:8px"><b>${t.nombre}</b><span class="badge" style="color:${col}">${e}</span></div>
+            <span class="small muted">${t.categoria === 'MARKETING' ? 'Marketing' : t.categoria === 'UTILITY' ? 'Utilidad' : t.categoria} · ${t.idioma}${t.motivo ? ` · Motivo: ${t.motivo}` : ''}</span>
+            <span class="small" style="white-space:pre-wrap">${t.cuerpo}</span></div>`; }) : html`<p class="muted small">Todavía no tienes plantillas. Crea la primera aquí al lado; Meta la revisa y normalmente la aprueba en minutos.</p>`}
+      </div>
+      <form class="card" method="post" action="${base}/difusion/plantilla" style="display:grid;gap:8px"><span class="mono">Crear plantilla</span>
+        <p class="muted small" style="margin:0">Las plantillas son los mensajes que Meta deja mandar a quien no te ha escrito en las últimas 24 horas (campañas, recordatorios, carritos). Se crean en tu cuenta de WhatsApp y Meta las revisa.</p>
+        <label class="small muted">Nombre (solo para identificarla)<input name="nombre" required maxlength="60" value="${pf.nombre || ''}" placeholder="recordatorio_cita"></label>
+        <div style="display:grid;grid-template-columns:1fr 110px;gap:8px"><label class="small muted">Categoría<select name="categoria">${Object.entries(CATEGORIAS).map(([k, v]) => html`<option value="${k}" ${pf.categoria === k ? 'selected' : ''}>${v}</option>`)}</select></label>
+          <label class="small muted">Idioma<input name="idioma" value="${pf.idioma || 'es_MX'}"></label></div>
+        <label class="small muted">Texto (usa {{1}}, {{2}}… para lo que cambia, ej. el nombre)<textarea name="cuerpo" id="np-cuerpo" required maxlength="1024" style="min-height:110px" placeholder="Hola {{1}}, te recordamos tu cita del {{2}}. Responde SÍ para confirmar.">${pf.cuerpo || ''}</textarea></label>
+        <div id="np-ej" style="display:grid;gap:6px"></div>
+        <label class="small muted">Pie (opcional)<input name="pie" maxlength="60" value="${pf.pie || ''}" placeholder="Responde BAJA para no recibir más mensajes"></label>
+        <div><button class="btn-accent" style="padding:8px 14px">Mandar a revisión de Meta</button></div>
+        ${raw(`<script>(()=>{const t=document.getElementById('np-cuerpo'),box=document.getElementById('np-ej'),prev=${JSON.stringify(Array.from({ length: 10 }, (_, i) => pf[`ejemplo_${i + 1}`] || ''))};
+          const pinta=()=>{const n=Math.max(0,...[...t.value.matchAll(/\\{\\{(\\d+)\\}\\}/g)].map(m=>+m[1]));const v=[...box.querySelectorAll('input')].map(i=>i.value);box.innerHTML='';
+            for(let i=1;i<=Math.min(n,10);i++){const l=document.createElement('label');l.className='small muted';l.textContent='Ejemplo para {{'+i+'}} (lo pide Meta)';const x=document.createElement('input');x.name='ejemplo_'+i;x.required=true;x.maxLength=60;x.value=v[i-1]||prev[i-1]||'';x.placeholder=i===1?'Ana':'';l.append(x);box.append(l);}};
+          t.addEventListener('input',pinta);pinta();})();</script>`)}
+      </form></div>`; })() : ''}
     <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.2fr) minmax(320px,1fr);align-items:start" class="df">
       <style>@media (max-width:980px){.df{grid-template-columns:1fr!important}} .df select,.df input:not([type=checkbox]){width:100%}</style>
       <div>${campanas.length ? campanas.map(camp) : html`<div class="card muted">Aún no hay campañas. Crea la primera con el formulario.</div>`}
