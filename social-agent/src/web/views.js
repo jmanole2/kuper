@@ -1056,6 +1056,13 @@ function conectarWhatsapp(wa, { base, app }) {
         <label class="small muted">ID de la cuenta de WhatsApp (WABA ID)<input id="wa-waba" inputmode="numeric" placeholder="1632154828399441" style="width:100%"></label>
         <label class="small muted">ID del número de teléfono (Phone number ID)<input id="wa-phone" inputmode="numeric" placeholder="1374873522382080" style="width:100%"></label>
         <p class="muted small" style="margin:0">Los ves en WhatsApp Manager → Números de teléfono, o en tu app de Meta → WhatsApp → Configuración de la API. Úsalo solo si Meta no comparte la cuenta sola.</p></div></details>
+    ${app ? '' : html`<details style="margin-top:8px"><summary class="small muted" style="cursor:pointer">Solo Kuper: conectar con token de usuario del sistema</summary>
+      <form method="post" action="${base}/agente/whatsapp/token" style="display:grid;gap:6px;max-width:420px;margin-top:8px" autocomplete="off">
+        <label class="small muted">Token de usuario del sistema (con whatsapp_business_management y whatsapp_business_messaging)<input name="token" type="password" required autocomplete="new-password" style="width:100%"></label>
+        <label class="small muted">ID de la cuenta de WhatsApp (Messaging account ID)<input name="waba_id" required inputmode="numeric" style="width:100%"></label>
+        <label class="small muted">ID del número (Phone number ID)<input name="phone_number_id" required inputmode="numeric" style="width:100%"></label>
+        <p class="muted small" style="margin:0">Para números del propio negocio dueño de la app mientras Meta aprueba el acceso avanzado. Solo da acceso al panel (plantillas, campañas); no toca el agente. El token se guarda cifrado.</p>
+        <div><button class="btn-warn" style="padding:7px 14px">Conectar al panel</button></div></form></details>`}
     <form id="wa-form" method="post" action="${base}/agente/whatsapp" hidden><input name="code"><input name="waba_id"><input name="phone_number_id"><input name="evento"><input name="numero"><input name="pagina"></form>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
     <script>${raw(`(function () {

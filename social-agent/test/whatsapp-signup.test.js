@@ -139,3 +139,16 @@ test('agente viejo sin /whatsapp: se guarda solo en el panel y no se toca su web
   assert.equal(w.token, 'EAAG-token-negocio'); assert.equal(w.solo_panel, true);
   agente.hooks.fetch = antes;
 });
+
+test('Kuper: conectar el panel con token de usuario del sistema (valida número y cuenta; solo panel)', async () => {
+  const W4 = await import('../src/whatsappSignup.js');
+  const k = db.createClient({ slug: 'kuper-token', nombre: 'Kuper', perfil, config: {}, credentials: { api_key: 'k', agente_url: 'https://viejo.kuper.test' } });
+  const antes = W4.hooks.fetch;
+  W4.hooks.fetch = async (url, o) => { const u = new URL(url); if (u.pathname.endsWith('/1632154828399441/message_templates')) return { ok: true, status: 200, json: async () => ({ data: [] }) }; return meta(url, o); };
+  await assert.rejects(W4.conectarConToken(db.getClient(k.id), { token: '', waba_id: '1', phone_number_id: '2' }), /Pega el token/);
+  const r = await W4.conectarConToken(db.getClient(k.id), { token: ' EAAsys ', waba_id: '1632154828399441', phone_number_id: '1374873522382080' });
+  assert.equal(r.numero, '+52 1 55 1234 5678');
+  const w = db.clientCredentials(db.getClient(k.id)).whatsapp;
+  assert.equal(w.token, 'EAAsys'); assert.equal(w.solo_panel, true); assert.equal(w.waba_id, '1632154828399441');
+  W4.hooks.fetch = antes;
+});

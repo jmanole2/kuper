@@ -1744,6 +1744,15 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     // Conectar WhatsApp abriendo directo la ventana de Meta (sin el SDK del navegador): Meta regresa a /agente/whatsapp/regreso
     // con la autorización y se canjea con esa misma dirección. Un "state" de un solo uso amarra el regreso a esta marca.
     const regresoUrl = (req) => `${config.publicBaseUrl}${base(req)}/agente/whatsapp/regreso`;
+    // Solo administradores de Kuper: conectar el panel con un token de usuario del sistema (el negocio dueño de la app).
+    router.post(`${prefix}/agente/whatsapp/token`, async (req, res) => {
+      if (!req.sesion?.admin) return res.status(403).send('Solo administradores');
+      try {
+        const r = await waSignup.conectarConToken(req.client, { token: req.body.token, waba_id: req.body.waba_id, phone_number_id: req.body.phone_number_id });
+        seg.auditar(req, 'whatsapp_conectado_token', `${req.client.nombre}: ${r.numero}`);
+        res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(`WhatsApp conectado al panel con token del sistema: ${r.numero}. No se cambió nada en el agente.`)}`);
+      } catch (e) { console.error('[whatsapp conectar]', e.message); vista(req, res, { error: `WhatsApp: ${e.message}` }); }
+    });
     router.get(`${prefix}/agente/whatsapp/abrir`, (req, res) => {
       if (!waSignup.configurado()) return vista(req, res, { error: 'WhatsApp: falta configurar la app de Meta de Kuper en el panel.' });
       const state = nodeCrypto.randomBytes(18).toString('hex');

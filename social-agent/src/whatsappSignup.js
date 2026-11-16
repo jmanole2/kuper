@@ -36,6 +36,20 @@ export function estado(client) {
 
 /** Respaldo: si la ventana de Meta no avisó qué cuenta y número se eligieron, se le pregunta a Meta qué compartió el negocio
  *  con la app (debug_token → cuentas de WhatsApp con permiso) y sus números. Si hay uno solo, se usa ese. */
+/** Solo para el negocio dueño de la app (acceso estándar): conectar con un token de usuario del sistema de su propio
+ *  portafolio, la cuenta de WhatsApp y el número. No toca el agente ni el webhook: solo da acceso al panel. */
+export async function conectarConToken(client, { token, waba_id, phone_number_id }) {
+  const t = String(token || '').replace(/["'\s]/g, ''), waba = String(waba_id || '').replace(/\D/g, '').slice(0, 25), phone = String(phone_number_id || '').replace(/\D/g, '').slice(0, 25);
+  if (!t || !waba || !phone) throw new Error('Pega el token, el ID de la cuenta de WhatsApp y el ID del número.');
+  const p = await graph('GET', phone, { token: t, query: { fields: 'id,display_phone_number,verified_name' } }).catch((e) => { throw new Error(`Meta no aceptó el token para ese número: ${e.message}`); });
+  await graph('GET', `${waba}/message_templates`, { token: t, query: { limit: '1' } }).catch((e) => { throw new Error(`El token no tiene acceso a esa cuenta de WhatsApp: ${e.message}`); });
+  const prev = db.clientCredentials(db.getClient(client.id)).whatsapp || {};
+  db.updateClient(client.id, { credentials: { ...db.clientCredentials(db.getClient(client.id)), whatsapp: { ...prev, waba_id: waba, phone_id: phone, token: t, solo_panel: true,
+    numero: p.display_phone_number || '', nombre: p.verified_name || '', conectado_at: new Date().toISOString() } } });
+  db.logEvent({ clientId: client.id, tipo: 'whatsapp_conectado', detalle: `${p.display_phone_number || phone} (token de usuario del sistema, solo panel)` });
+  return { numero: p.display_phone_number || phone, nombre: p.verified_name || '' };
+}
+
 export async function resolverActivos(token, { numero = '' } = {}) {
   const dbg = await graph('GET', 'debug_token', { query: { input_token: token, access_token: `${config.whatsappApp.id}|${config.whatsappApp.secret}` } });
   const scopes = dbg.data?.granular_scopes || [];
