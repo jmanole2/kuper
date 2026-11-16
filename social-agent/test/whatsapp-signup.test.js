@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 Object.assign(process.env, { DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'wasignup-')), SECRET_KEY: 'x', LOG_EVENTOS: '0', ADMIN_PASSWORD: 'maestra-123',
-  META_APP_ID: '1817877119391171', META_CONFIG_ID: '999888777', META_APP_SECRET: 'secreto-kuper' });
+  META_APP_ID: '1817877119391171', PUBLIC_BASE_URL: 'https://redes.kuper.media', META_CONFIG_ID: '999888777', META_APP_SECRET: 'secreto-kuper' });
 const db = await import('../src/db.js');
 const W = await import('../src/whatsappSignup.js');
 const agente = await import('../src/agente.js');
@@ -23,6 +23,7 @@ const meta = async (url, opts = {}) => {
   llamadas.push({ ruta: u.pathname, query: Object.fromEntries(u.searchParams), body, auth: opts.headers?.Authorization });
   const json = (x, status = 200) => ({ ok: status < 300, status, json: async () => x });
   if (u.hostname === 'inhouse.kuper.media') return json({ ok: true, phone_id: body.phone_id });
+  if (u.pathname.endsWith('/oauth/access_token') && u.searchParams.get('code') === 'codigo-jssdk') return u.searchParams.get('redirect_uri') === 'https://redes.kuper.media/admin/clientes/1/agente' ? json({ access_token: 'EAAG-token-negocio' }) : json({ error: { message: 'Error validating verification code. Please make sure your redirect_uri is identical to the one you used in the OAuth dialog request' } }, 400);
   if (u.pathname.endsWith('/oauth/access_token')) return u.searchParams.get('code') === 'codigo-bueno' ? json({ access_token: 'EAAG-token-negocio' }) : json({ error: { message: 'código inválido' } }, 400);
   if (u.pathname.endsWith('/subscribed_apps')) return json({ success: true });
   if (u.pathname.endsWith('/register') || u.pathname.endsWith('/smb_app_data')) return json({ success: true });
@@ -89,4 +90,10 @@ test('si la ventana de Meta no avisa la cuenta y el número, se le pregunta a Me
   assert.equal(dbg.query.input_token, 'EAAG-token-negocio'); assert.equal(dbg.query.access_token, '1817877119391171|secreto-kuper');
   const w = db.clientCredentials(db.getClient(c.id)).whatsapp;
   assert.equal(w.waba_id, '1632154828399441'); assert.equal(w.phone_id, '1374873522382080'); assert.equal(w.coexistencia, true);
+});
+
+test('si Meta pide la misma dirección de regreso, se reintenta con la de la página del botón (solo del panel)', async () => {
+  const r = await W.conectar(db.getClient(c.id), { code: 'codigo-jssdk', waba_id: '1632154828399441', phone_number_id: '1374873522382080', evento: 'FINISH', pagina: 'https://redes.kuper.media/admin/clientes/1/agente' });
+  assert.equal(r.numero, '+52 1 55 1234 5678');
+  await assert.rejects(W.conectar(db.getClient(c.id), { code: 'codigo-jssdk', waba_id: '1', phone_number_id: '2', pagina: 'https://otro-sitio.test/x' }), /redirect_uri/);
 });

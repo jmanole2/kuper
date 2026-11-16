@@ -55,7 +55,7 @@ export async function resolverActivos(token, { numero = '' } = {}) {
   throw e;
 }
 
-export async function conectar(client, { code, waba_id, phone_number_id, evento = '', numero = '' } = {}) {
+export async function conectar(client, { code, waba_id, phone_number_id, evento = '', numero = '', pagina = '' } = {}) {
   if (!configurado()) throw new Error('Falta configurar la app de Meta de Kuper en el panel (META_APP_ID, META_CONFIG_ID y META_APP_SECRET).');
   const creds = db.clientCredentials(client);
   if (!creds.agente_url || !creds.api_key) throw new Error('Primero pon la URL del agente de WhatsApp de esta marca (Configuración).');
@@ -64,8 +64,19 @@ export async function conectar(client, { code, waba_id, phone_number_id, evento 
   const coexistencia = /WHATSAPP_BUSINESS_APP_ONBOARDING/.test(String(evento)) || String(evento) === 'coexistencia';
 
   // 1. Código -> token del negocio.
-  const { access_token: token } = await graph('GET', 'oauth/access_token', { query: { client_id: config.whatsappApp.id, client_secret: config.whatsappApp.secret, code } });
-  if (!token) throw new Error('Meta no regresó el token. Intenta otra vez.');
+  // Con el SDK de Meta en el navegador, Meta puede pedir la misma dirección de regreso con la que abrió la ventana: se prueba
+  // sin ella y con la de la página del botón (solo direcciones del propio panel).
+  const base = String(config.publicBaseUrl || '').replace(/\/+$/, '');
+  const pag = /^https:\/\/[^\s]+$/.test(pagina) && base && pagina.startsWith(base) ? pagina.split('#')[0] : '';
+  const intentos = [null, pag, pag && (pag.endsWith('/') ? pag.slice(0, -1) : `${pag}/`), base && `${base}/`].filter((x, i, a) => x !== '' && a.indexOf(x) === i);
+  let token = null, ultimo = null;
+  for (const redirect of intentos) {
+    try {
+      ({ access_token: token } = await graph('GET', 'oauth/access_token', { query: { client_id: config.whatsappApp.id, client_secret: config.whatsappApp.secret, code, ...(redirect ? { redirect_uri: redirect } : {}) } }));
+      break;
+    } catch (e) { ultimo = e; if (!/redirect_uri/i.test(e.message)) throw e; }
+  }
+  if (!token) throw ultimo || new Error('Meta no regresó el token. Intenta otra vez.');
   // La ventana no avisó la cuenta y el número: se le pregunta a Meta qué se compartió.
   if (!waba || !phone) { const r = await resolverActivos(token, { numero }); waba = r.waba_id; phone = r.phone_number_id; }
   const verify = crypto.randomBytes(18).toString('hex');

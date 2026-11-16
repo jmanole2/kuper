@@ -1051,7 +1051,7 @@ function conectarWhatsapp(wa, { base, app }) {
     <p class="muted small" style="margin:8px 0 0"><strong>Mi WhatsApp Business:</strong> conservas tu número y tu app en el celular (escanearás un código QR). <strong>Número nuevo:</strong> un número que no tenga WhatsApp; te llega un código por SMS.</p>
     <p id="wa-msg" style="margin:10px 0 0;font-weight:600;color:#fbbf24"></p>
     <label class="small muted" style="display:block;margin-top:10px;max-width:320px">Número a conectar (solo si compartes varios)<input id="wa-numero" placeholder="55 1234 5678" inputmode="tel" style="width:100%"></label>
-    <form id="wa-form" method="post" action="${base}/agente/whatsapp" hidden><input name="code"><input name="waba_id"><input name="phone_number_id"><input name="evento"><input name="numero"></form>
+    <form id="wa-form" method="post" action="${base}/agente/whatsapp" hidden><input name="code"><input name="waba_id"><input name="phone_number_id"><input name="evento"><input name="numero"><input name="pagina"></form>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
     <script>${raw(`(function () {
       var sesion = null, msg = function (t) { document.getElementById('wa-msg').textContent = t; };
@@ -1078,13 +1078,13 @@ function conectarWhatsapp(wa, { base, app }) {
           diag('respuesta_login', { con_code: !!code, estado: r && r.status });
           if (!code) return msg('No se completó la conexión (Meta no regresó la autorización). Si cerraste la ventana, intenta otra vez.');
           var n = 0, esperar = setInterval(function () {
-            if (sesion || ++n > 60) {
+            if (sesion || ++n > 24) {
               clearInterval(esperar);
               diag('fin_espera', { con_sesion: !!sesion, con_numero: !!(sesion && sesion.phone_number_id), evento: sesion && sesion.evento });
               // Si la ventana no avisó la cuenta y el número, el servidor se los pregunta a Meta con la autorización.
               var f = document.getElementById('wa-form');
               f.code.value = code; f.waba_id.value = (sesion && sesion.waba_id) || ''; f.phone_number_id.value = (sesion && sesion.phone_number_id) || '';
-              f.evento.value = (sesion && sesion.evento) || (coex ? 'coexistencia' : ''); f.numero.value = (document.getElementById('wa-numero') || {}).value || '';
+              f.evento.value = (sesion && sesion.evento) || (coex ? 'coexistencia' : ''); f.numero.value = (document.getElementById('wa-numero') || {}).value || ''; f.pagina.value = location.origin + location.pathname;
               msg('Conectando tu número…'); f.submit();
             }
           }, 250);

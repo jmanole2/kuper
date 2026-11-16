@@ -1742,7 +1742,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     });
     router.post(`${prefix}/agente/whatsapp`, async (req, res) => {
       try {
-        const r = await waSignup.conectar(req.client, { code: String(req.body.code || ''), waba_id: req.body.waba_id, phone_number_id: req.body.phone_number_id, evento: String(req.body.evento || ''), numero: String(req.body.numero || '').slice(0, 20) });
+        const r = await waSignup.conectar(req.client, { code: String(req.body.code || ''), waba_id: req.body.waba_id, phone_number_id: req.body.phone_number_id, evento: String(req.body.evento || ''), numero: String(req.body.numero || '').slice(0, 20), pagina: String(req.body.pagina || '').slice(0, 300) });
         seg.auditar(req, 'whatsapp_conectado', `${req.client.nombre}: ${r.numero}`);
         res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(`WhatsApp conectado: ${r.numero}${r.nombre ? ` (${r.nombre})` : ''}. Tu agente ya contesta en ese número.${r.coexistencia ? ' Sigues pudiendo usar tu app de WhatsApp Business.' : ''}${r.avisos.length ? ` Ojo: ${r.avisos.join(' ')}` : ''}`)}`);
       } catch (e) { console.error('[whatsapp conectar]', e.message); vista(req, res, { error: `WhatsApp: ${e.message}` }); }
