@@ -93,8 +93,39 @@ export async function todasPlantillas(client) {
   const r = await hooks.fetch(`${graph()}/${w.waba_id}/message_templates?fields=name,language,status,category,components,rejected_reason&limit=100`, { headers: { Authorization: `Bearer ${w.token}` }, signal: AbortSignal.timeout(15000) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) throw new Error(j.error?.message || `Meta respondió ${r.status}`);
-  return (j.data || []).map((t) => ({ nombre: t.name, idioma: t.language, categoria: t.category, estado: t.status, motivo: t.rejected_reason && t.rejected_reason !== 'NONE' ? t.rejected_reason : '',
-    cuerpo: (t.components || []).find((c) => c.type === 'BODY')?.text || '' }));
+  if (!Array.isArray(j.data)) throw new Error('Meta respondió algo inesperado al pedir las plantillas.');
+  return j.data.map((t) => ({ nombre: t.name, idioma: t.language, categoria: t.category, estado: t.status, motivo: t.rejected_reason && t.rejected_reason !== 'NONE' ? t.rejected_reason : '',
+    cuerpo: (t.components || []).find((c) => c.type === 'BODY')?.text || '', ...requisitos(t.components) }));
+}
+/** Qué pide una plantilla además del texto: encabezado (texto con variable o multimedia) y botones con link variable. */
+export function requisitos(components = []) {
+  const h = components.find((c) => c.type === 'HEADER');
+  const body = components.find((c) => c.type === 'BODY');
+  const botones = (components.find((c) => c.type === 'BUTTONS')?.buttons || []);
+  return {
+    vars_cuerpo: cuantasVariables(body?.text || ''),
+    encabezado: !h ? '' : h.format === 'TEXT' ? (cuantasVariables(h.text) ? 'texto_variable' : 'texto') : String(h.format || '').toLowerCase(),
+    encabezado_texto: h?.format === 'TEXT' ? h.text || '' : '',
+    botones_url_variable: botones.filter((b) => b.type === 'URL' && /\{\{\d+\}\}/.test(b.url || '')).length,
+    botones: botones.map((b) => b.text).filter(Boolean),
+  };
+}
+const cacheReq = new Map();
+/** Revisa (con lo que dice Meta de la plantilla) que la campaña mande todo lo que la plantilla pide. */
+async function revisarPlantilla(client, plantilla, idioma, vals) {
+  const k = `${client.id}:${plantilla}:${idioma}`;
+  let t = cacheReq.get(k);
+  if (!t || Date.now() - t.ts > 10 * 60000) {
+    try { const l = await todasPlantillas(client); if (l === null) return; /* sin la cuenta de WhatsApp no se puede consultar: decide Meta */ t = { ts: Date.now(), p: (l || []).find((x) => x.nombre === plantilla && x.idioma === idioma) || null, existe: (l || []).filter((x) => x.nombre === plantilla).map((x) => x.idioma) }; }
+    catch { return; } // sin poder consultar, se intenta igual
+    if (t.p?.estado === 'APPROVED') cacheReq.set(k, t); // solo se recuerda lo aprobado: si la acaban de crear, se vuelve a consultar
+  }
+  if (!t.p) throw new Error(t.existe?.length ? `La plantilla "${plantilla}" no existe en idioma "${idioma}" (sí en: ${t.existe.join(', ')}). Cambia el idioma de la campaña.` : `No encontré la plantilla "${plantilla}" en tu cuenta de WhatsApp.`);
+  if (t.p.estado !== 'APPROVED') throw new Error(`La plantilla "${plantilla}" todavía no está aprobada por Meta.`);
+  if (['image', 'video', 'document', 'location'].includes(t.p.encabezado)) throw new Error(`La plantilla "${plantilla}" tiene encabezado de ${t.p.encabezado === 'image' ? 'imagen' : t.p.encabezado === 'video' ? 'video' : t.p.encabezado === 'document' ? 'documento' : 'ubicación'} y el panel todavía no lo manda. Usa una plantilla sin encabezado multimedia.`);
+  if (t.p.encabezado === 'texto_variable') throw new Error(`La plantilla "${plantilla}" tiene una variable en el encabezado y el panel todavía no la llena. Usa una plantilla con encabezado fijo o sin encabezado.`);
+  if (t.p.botones_url_variable) throw new Error(`La plantilla "${plantilla}" tiene un botón con link variable y el panel todavía no lo llena. Usa una plantilla con link fijo.`);
+  if (vals.length < t.p.vars_cuerpo) throw new Error(`La plantilla "${plantilla}" pide ${t.p.vars_cuerpo} dato(s) en el texto ({{1}}…{{${t.p.vars_cuerpo}}}) y la campaña llena ${vals.length}. Configúralos en "Con qué se llena cada variable".`);
 }
 /** Plantillas aprobadas (las que se pueden usar en campañas). */
 export async function plantillas(client) {
@@ -207,6 +238,7 @@ export async function enviarPlantilla(client, { telefono, plantilla, idioma = 'e
   const components = vals.length ? [{ type: 'body', parameters: vals.map((t) => ({ type: 'text', text: String(t).slice(0, 60) })) }] : [];
   const memo = texto || `[plantilla ${plantilla}${vals.length ? `: ${vals.join(' | ')}` : ''}]`;
   if (directo(client)) {
+    await revisarPlantilla(client, plantilla, idioma, vals);
     const w = wa(client);
     const r = await hooks.fetch(`${graph()}/${w.phone_id}/messages`, { method: 'POST', headers: { Authorization: `Bearer ${w.token}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000),
       body: JSON.stringify({ messaging_product: 'whatsapp', to: telefono, type: 'template', template: { name: plantilla, language: { code: idioma }, components } }) });

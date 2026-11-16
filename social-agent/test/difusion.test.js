@@ -23,7 +23,7 @@ const llamadas = [];
 let falla = false;
 dif.hooks.fetch = async (url, opts = {}) => {
   llamadas.push({ url: String(url), body: opts.body ? JSON.parse(opts.body) : null });
-  if (String(url).includes('message_templates')) return new Response(JSON.stringify({ data: [{ name: 'reactivar', language: 'es_MX', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Hola {{1}}, te extrañamos en {{2}}' }] }, { name: 'x', status: 'REJECTED' }] }));
+  if (String(url).includes('message_templates')) return new Response(JSON.stringify({ data: [{ name: 'recompra', language: 'es_MX', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Te extrañamos' }] }, { name: 'bienvenido', language: 'en', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Hola' }] }, { name: 'reactivar', language: 'es_MX', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Hola {{1}}, te extrañamos en {{2}}' }] }, { name: 'x', status: 'REJECTED' }] }));
   if (falla) return new Response(JSON.stringify({ error: { message: 'Template name does not exist' } }), { status: 400 });
   return new Response(JSON.stringify({ messages: [{ id: 'wamid' }] }));
 };
@@ -39,9 +39,10 @@ test('segmento: filtra y excluye sin WhatsApp y con baja', () => {
 });
 
 test('plantillas aprobadas de la cuenta y variables', async () => {
-  const p = await dif.plantillas(client);
-  assert.deepEqual(p.map((t) => t.nombre), ['reactivar']);
-  assert.equal(dif.cuantasVariables(p[0].cuerpo), 2);
+  const todas = await dif.plantillas(client);
+  assert.ok(todas.some((t) => t.nombre === 'reactivar'));
+  const p = todas.filter((t) => t.nombre === 'reactivar');
+  assert.equal(dif.cuantasVariables(p[0].cuerpo), 2); assert.equal(p[0].vars_cuerpo, 2);
   assert.equal(dif.render(p[0].cuerpo, dif.valores(client, ana, [{ fuente: 'nombre' }, { fuente: 'texto', texto: 'Dental' }])), 'Hola Ana, te extrañamos en Dental');
 });
 
@@ -73,13 +74,13 @@ test('nada sale sin aprobar; aprobada se envía escalonada, en horario y no repi
 test('si fallan varios seguidos, la campaña se pausa', async () => {
   db.getDb().exec('DELETE FROM difusion_envios');
   for (let i = 0; i < 4; i++) lead(`P${i}`, `52155444444${i}0`);
-  const c = dif.crear(client, { nombre: 'Mala', plantilla: 'no_existe' }, 'x');
+  const c = dif.crear(client, { nombre: 'Mala', plantilla: 'recompra' }, 'x');
   dif.cambiarEstado(client, c.id, 'aprobar', 'x');
   falla = true;
   await dif.enviarPendientes(client, { ahora: enHorario });
   const x = dif.obtener(client.id, c.id);
   assert.equal(x.estado, 'pausada');
-  assert.match(x.error, /does not exist/);
+  assert.match(x.error, /does not exist|No encontré/);
   falla = false;
   assert.equal(dif.reintentarErrores(client, c.id), 3);
   dif.cambiarEstado(client, c.id, 'reanudar', 'x');
@@ -149,7 +150,7 @@ test('borrar plantilla desde el panel', async () => {
 test('"Enviar ahora": campañas chicas salen en el momento aunque sea fuera de horario; las grandes no', async () => {
   const antes = dif.hooks.fetch;
   const mandados = [];
-  dif.hooks.fetch = async (url, o = {}) => { if (o.method === 'POST' && String(url).endsWith('/messages')) mandados.push(JSON.parse(o.body).to); return new Response(JSON.stringify({ messages: [{ id: 'w' }] })); };
+  dif.hooks.fetch = async (url, o = {}) => { if (String(url).includes('message_templates')) return antes(url, o); if (o.method === 'POST' && String(url).endsWith('/messages')) mandados.push(JSON.parse(o.body).to); return new Response(JSON.stringify({ messages: [{ id: 'w' }] })); };
   const p = db.upsertLead(client.id, { nombre: 'Prueba', telefono: '5215599990000', origen: 'whatsapp' });
   db.getDb().prepare('UPDATE leads SET tags_json = ? WHERE id = ?').run(JSON.stringify(['prueba']), p.id);
   const c = dif.crear(client, { nombre: 'Demo ahora', plantilla: 'bienvenido', idioma: 'en', filtros: { tags: 'prueba' } }, 'Juan');
@@ -164,4 +165,14 @@ test('"Enviar ahora": campañas chicas salen en el momento aunque sea fuera de h
   for (let i = 0; i < 12; i++) db.getDb().prepare('INSERT OR IGNORE INTO difusion_envios (difusion_id, lead_id, telefono) VALUES (?, ?, ?)').run(grande.id, 990000 + i, String(i));
   await assert.rejects(dif.enviarAhora(client, grande.id, 'Juan'), /hasta 10 contactos/);
   dif.hooks.fetch = antes;
+});
+
+test('antes de mandar revisa que la campaña llene lo que pide la plantilla', async () => {
+  const k = dif.crear(client, { nombre: 'Sin variables', plantilla: 'reactivar', filtros: { tags: 'vip' } }, 'x');
+  const r = await dif.enviarAhora(client, k.id, 'x');
+  assert.equal(r.enviados, 0); assert.match(r.error, /pide 2 dato/);
+  const m = dif.crear(client, { nombre: 'Idioma', plantilla: 'bienvenido', idioma: 'es_MX', filtros: { tags: 'vip' } }, 'x');
+  assert.match((await dif.enviarAhora(client, m.id, 'x')).error, /no existe en idioma "es_MX" \(sí en: en\)/);
+  assert.deepEqual(dif.requisitos([{ type: 'HEADER', format: 'IMAGE' }, { type: 'BODY', text: 'Hola {{1}}' }, { type: 'BUTTONS', buttons: [{ type: 'URL', text: 'Ver', url: 'https://x.mx/{{1}}' }] }]),
+    { vars_cuerpo: 1, encabezado: 'image', encabezado_texto: '', botones_url_variable: 1, botones: ['Ver'] });
 });
