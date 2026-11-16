@@ -37,3 +37,18 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Kuper Media — landing page (`site/`)
+
+Static one-page site (no build step, no dependencies): `site/index.html`, `site/styles.css`, `site/main.js`.
+Layout and interactions follow the structure of the reference terminal-industries.com (floating glass nav, scroll-driven
+canvas hero with letter-by-letter headlines, grid wall, product cards, savings calculator, scrubbed steps with a rolling
+counter, tabbed carousel, contact form, tabbed FAQ) with Kuper's own brand, copy and code-drawn visuals.
+
+```bash
+cd site && python3 -m http.server 4173   # http://localhost:4173
+```
+
+- Contact form: set `CONTACT_ENDPOINT` at the top of `site/main.js` (it POSTs JSON). While empty, the form only validates.
+- Calculator formula and prices ($5,499 setup, $499/month) live in `calc()` in `site/main.js` and in the page copy.
+- Fonts (Inter Tight, JetBrains Mono — both OFL) are bundled in `site/fonts/`.
