@@ -1667,7 +1667,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   function difusionRoutes(router, base, { app = false, prefix = '' } = {}) {
     const autor = (req) => req.sesion?.user?.nombre || 'Kuper';
     // El formulario manda variables como var_fuente_1, var_texto_1…
-    const leerForm = (b) => ({ ...b, filtros: { embudo: b.embudo, etapas: [].concat(b.etapas || []), tags: b.tags, origen: b.origen, resultado: b.resultado, sin_actividad: b.sin_actividad, max_dias: b.max_dias },
+    const leerForm = (b) => ({ ...b, filtros: difusion.limpiarFiltros({ embudo: b.embudo, etapas: [].concat(b.etapas || []), tags: b.tags, origen: b.origen, resultado: b.resultado, sin_actividad: b.sin_actividad, max_dias: b.max_dias }),
       variables: Array.from({ length: 10 }, (_, i) => (b[`var_fuente_${i + 1}`] ? { fuente: b[`var_fuente_${i + 1}`], texto: b[`var_texto_${i + 1}`] } : null)).filter(Boolean) });
     const vista = async (req, res, extra = {}) => {
       let lista = null, errorPlantillas = '';

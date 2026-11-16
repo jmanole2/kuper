@@ -1576,7 +1576,7 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
         <span class="mono" style="margin-top:6px">1 · A quién le llega</span>
         ${etapasTodas.length ? html`<div class="small"><span class="muted">Etapas (si no eliges, todas)</span>
           <div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px">${etapasTodas.map((e) => html`<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="etapas" value="${e.id}" ${(f.etapas || []).includes(e.id) ? 'checked' : ''}>${e.nombre}</label>`)}</div></div>` : ''}
-        <label class="small muted">Con alguna de estas etiquetas (separadas por coma)<input name="tags" value="${(f.tags || []).join(', ')}" placeholder="Ej.: vip, interesado"></label>
+        <label class="small muted">Con alguna de estas etiquetas (separadas por coma)<input name="tags" value="${(Array.isArray(f.tags) ? f.tags : String(f.tags || '').split(',')).map((t) => String(t).trim()).filter(Boolean).join(', ')}" placeholder="Ej.: vip, interesado"></label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <label class="small muted">Canal de origen${sel('origen', [['', 'Todos'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram'], ['facebook', 'Messenger'], ['llamada', 'Llamada'], ['importado', 'Importados']], f.origen)}</label>
           <label class="small muted">Resultado${sel('resultado', [['', 'Todos'], ['abierto', 'Abiertos'], ['vendido', 'Vendidos'], ['perdido', 'Perdidos'], ['resuelto', 'Resueltos']], f.resultado)}</label>

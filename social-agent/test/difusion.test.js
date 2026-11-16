@@ -122,3 +122,13 @@ test('crear plantilla desde el panel: valida, manda ejemplos y la deja en revisi
   assert.equal((await dif.plantillas(client)).length, 0, 'en campañas solo salen las aprobadas');
   dif.hooks.fetch = antes;
 });
+
+test('"Ver a quién le llega" con etiquetas escritas no truena y filtra', async () => {
+  const V = await import('../src/web/views.js');
+  const filtros = dif.limpiarFiltros({ tags: 'VIP, prueba', etapas: [], sin_actividad: '', max_dias: '' });
+  assert.deepEqual(filtros.tags, ['vip', 'prueba']);
+  const h = V.difusionPage(client, { form: { filtros, nombre: 'Demo' }, seg: { leads: [], excluidos: { sin_whatsapp: 0, baja: 0, recientes: 0 }, ejemplos: [] }, base: '/app', app: true });
+  assert.match(h, /value="vip, prueba"/);
+  const h2 = V.difusionPage(client, { form: { filtros: { tags: 'prueba' } }, base: '/app', app: true });
+  assert.match(h2, /value="prueba"/, 'aunque llegue como texto');
+});
