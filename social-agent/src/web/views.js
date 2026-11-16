@@ -1535,7 +1535,8 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
       <style>@media (max-width:980px){.pl2{grid-template-columns:1fr!important}} .pl2 input,.pl2 select,.pl2 textarea{width:100%}</style>
       <div class="card"><span class="mono">Tus plantillas de WhatsApp</span>
         ${todas.length ? todas.map((t) => { const [e, col] = EST[t.estado] || [t.estado, '#a39d93'];
-          return html`<div style="border-top:1px solid var(--line);padding:10px 0;display:grid;gap:4px"><div style="display:flex;justify-content:space-between;gap:8px"><b>${t.nombre}</b><span class="badge" style="color:${col}">${e}</span></div>
+          return html`<div style="border-top:1px solid var(--line);padding:10px 0;display:grid;gap:4px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${t.nombre}</b><span style="display:flex;gap:6px;align-items:center"><span class="badge" style="color:${col}">${e}</span>
+              <form method="post" action="${base}/difusion/plantilla/borrar" style="margin:0" onsubmit="return confirm('¿Borrar la plantilla ${t.nombre}? Se borra de tu WhatsApp en todos sus idiomas y no se puede deshacer.')"><input type="hidden" name="nombre" value="${t.nombre}"><button class="btn-warn" style="padding:4px 10px;font-size:12px">Borrar</button></form></span></div>
             <span class="small muted">${t.categoria === 'MARKETING' ? 'Marketing' : t.categoria === 'UTILITY' ? 'Utilidad' : t.categoria} · ${t.idioma}${t.motivo ? ` · Motivo: ${t.motivo}` : ''}</span>
             <span class="small" style="white-space:pre-wrap">${t.cuerpo}</span></div>`; }) : html`<p class="muted small">Todavía no tienes plantillas. Crea la primera aquí al lado; Meta la revisa y normalmente la aprueba en minutos.</p>`}
       </div>

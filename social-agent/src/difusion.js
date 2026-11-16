@@ -102,6 +102,18 @@ export async function plantillas(client) {
   return l === null ? null : l.filter((t) => t.estado === 'APPROVED');
 }
 export const CATEGORIAS = { MARKETING: 'Marketing (promociones, recompra, novedades)', UTILITY: 'Utilidad (recordatorios, avisos de un trámite o pedido)' };
+/** Borra una plantilla (todos sus idiomas) de la cuenta de WhatsApp del cliente. */
+export async function borrarPlantilla(client, nombre) {
+  const w = wa(client);
+  if (!w.token || !w.waba_id) throw new Error('Conecta primero tu WhatsApp para administrar plantillas.');
+  const n = String(nombre || '').trim();
+  if (!/^[a-z0-9_]{1,512}$/.test(n)) throw new Error('Nombre de plantilla no válido.');
+  const r = await hooks.fetch(`${graph()}/${w.waba_id}/message_templates?name=${encodeURIComponent(n)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${w.token}` }, signal: AbortSignal.timeout(15000) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j.error?.error_user_msg || j.error?.message || `Meta respondió ${r.status}`);
+  db.logEvent({ clientId: client.id, tipo: 'plantilla_borrada', detalle: n });
+  return true;
+}
 /** Crea una plantilla en la cuenta de WhatsApp del cliente y la manda a revisión de Meta. */
 export async function crearPlantilla(client, { nombre, categoria, idioma = 'es_MX', cuerpo, ejemplos = [], pie = '' }) {
   const w = wa(client);

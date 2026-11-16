@@ -132,3 +132,16 @@ test('"Ver a quién le llega" con etiquetas escritas no truena y filtra', async 
   const h2 = V.difusionPage(client, { form: { filtros: { tags: 'prueba' } }, base: '/app', app: true });
   assert.match(h2, /value="prueba"/, 'aunque llegue como texto');
 });
+
+test('borrar plantilla desde el panel', async () => {
+  const antes = dif.hooks.fetch;
+  const pedidas = [];
+  dif.hooks.fetch = async (url, o = {}) => { pedidas.push({ url: String(url), metodo: o.method }); return new Response(JSON.stringify({ success: true })); };
+  await dif.borrarPlantilla(client, 'test_for_meta');
+  assert.equal(pedidas[0].metodo, 'DELETE'); assert.match(pedidas[0].url, /\/W\/message_templates\?name=test_for_meta$/);
+  await assert.rejects(dif.borrarPlantilla(client, 'x; drop'), /no válido/);
+  const V = await import('../src/web/views.js');
+  const h = V.difusionPage(client, { todas: [{ nombre: 'test_for_meta', idioma: 'es_MX', categoria: 'MARKETING', estado: 'APPROVED', cuerpo: 'x' }], CATEGORIAS: {}, base: '/app', app: true });
+  assert.match(h, /difusion\/plantilla\/borrar/);
+  dif.hooks.fetch = antes;
+});

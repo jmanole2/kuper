@@ -1681,7 +1681,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         recordatorios: recordatorios.ajustes(req.client), recRecientes: recordatorios.recientes(req.client.id),
         agente: agente.agenteConfigurado(req.client), embudos: embudo.embudos(req.client), base: base(req), app, form, seg, ESTADOS: difusion.ESTADOS, FUENTES: difusion.FUENTES,
         FRECUENCIA: difusion.FRECUENCIA_DIAS, ok: { creada: 'Campaña creada. Revísala y apruébala para que empiece a enviarse.', aprobar: 'Aprobada: se empieza a enviar en horario (9 a 20 h).', pausar: 'Campaña en pausa.',
-          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.', plantilla: 'Plantilla enviada a Meta. Normalmente la aprueban en minutos; su estado aparece en "Tus plantillas".' }[req.query.ok] || '', ...extra }));
+          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.', plantilla_borrada: 'Plantilla borrada de tu cuenta de WhatsApp.', plantilla: 'Plantilla enviada a Meta. Normalmente la aprueban en minutos; su estado aparece en "Tus plantillas".' }[req.query.ok] || '', ...extra }));
     };
     router.get(`${prefix}/difusion`, (req, res) => vista(req, res));
     router.post(`${prefix}/difusion/vista`, (req, res) => vista(req, res, { form: leerForm(req.body || {}) }));
@@ -1697,6 +1697,13 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         seg.auditar(req, 'plantilla_creada', `${req.client.nombre}: ${b.nombre}`);
         res.redirect(`${base(req)}/difusion?ok=plantilla#plantillas`);
       } catch (e) { vista(req, res, { error: `Plantilla: ${e.message}`, plantillaForm: b }); }
+    });
+    router.post(`${prefix}/difusion/plantilla/borrar`, async (req, res) => {
+      try {
+        await difusion.borrarPlantilla(req.client, req.body.nombre);
+        seg.auditar(req, 'plantilla_borrada', `${req.client.nombre}: ${req.body.nombre}`);
+        res.redirect(`${base(req)}/difusion?ok=plantilla_borrada#plantillas`);
+      } catch (e) { vista(req, res, { error: `Plantilla: ${e.message}` }); }
     });
     router.post(`${prefix}/difusion/recordatorios`, (req, res) => {
       const r = recordatorios.limpiar(req.body || {});
