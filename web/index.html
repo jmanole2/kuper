@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuper — Agentes de IA a la medida</title>
+<meta name="description" content="Kuper crea agentes de IA a la medida para tu negocio, directo en WhatsApp.">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+
+<div id="loader"><div class="loader-in"><span class="mono">Doblando papel</span><b id="loader-n">0</b></div></div>
+
+<canvas id="gl"></canvas>
+<div class="grain"></div>
+<div id="cursor"></div>
+
+<header class="nav">
+  <a class="brand" href="#intro">KUPER</a>
+  <nav>
+    <a href="#intro" data-nav="intro">Intro</a>
+    <a href="#proceso" data-nav="proceso">Proceso</a>
+    <a href="#agente" data-nav="agente">Agente</a>
+    <a href="#contacto" data-nav="contacto">Contacto</a>
+  </nav>
+</header>
+
+<aside class="tab"><i></i><span id="tab-label">Agente · 01</span></aside>
+<div class="rail"><i id="rail-bar"></i></div>
+
+<div class="hint" id="hint"><span class="ring">↓</span><span class="mono">Desliza para continuar</span></div>
+
+<!-- HUD: anillos punteados alrededor del objeto en la escena de estudio -->
+<svg id="hud" viewBox="-300 -300 600 600" aria-hidden="true">
+  <circle r="215" class="dash spin-a"/>
+  <circle r="262" class="dash thin spin-b"/>
+  <g class="ticks">
+    <path d="M0-228v12M0 216v12M-228 0h12M216 0h12"/>
+  </g>
+  <path class="dash" d="M-290-240h260M30 240h260M-290-110v330M290-240v330"/>
+  <circle class="dot" cx="240" cy="-215" r="6"/>
+</svg>
+
+<main>
+  <section id="intro" data-scene="hero" style="--h:220vh">
+    <div class="pin">
+      <p class="kicker mono" data-show="0,.45">Hecho para tu negocio. Vive en WhatsApp.</p>
+      <h1 class="mega" data-show="0,.45">KUPER</h1>
+      <p class="lead right" data-show="0,.5" data-split>Un agente que escucha, entiende y responde por ti. Cada pliegue pensado a la medida de tu negocio.</p>
+      <div class="card-note" data-show="0,.4">
+        <h3 data-split>Agentes de IA a la medida</h3>
+        <hr>
+        <p>Tu empresa, al siguiente nivel con IA.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="estudio" data-scene="studio" style="--h:340vh">
+    <div class="pin">
+      <p class="phrase left" data-show=".14,.42" data-split>Tan simple,</p>
+      <p class="phrase rightc" data-show=".3,.42" data-split>que cabe en un chat.</p>
+      <p class="phrase left" data-show=".5,.8" data-split>Tan tuyo,</p>
+      <p class="phrase rightc" data-show=".64,.8" data-split>que habla como tu marca.</p>
+      <p class="foot mono" data-show=".14,.9">* No requiere apps nuevas</p>
+    </div>
+  </section>
+
+  <section id="proceso" data-scene="layers" style="--h:460vh">
+    <div class="pin">
+      <article class="feat" data-show=".08,.36">
+        <span class="badge">01</span>
+        <h3>Nos cuentas de tu negocio</h3>
+        <p data-split>Horarios, servicios, precios y tono. Con eso doblamos la primera capa: lo que tu agente sabe.</p>
+      </article>
+      <article class="feat" data-show=".4,.66">
+        <span class="badge">02</span>
+        <h3>Creamos tu agente</h3>
+        <p data-split>Montamos cuentas e infraestructura. La segunda capa conecta tu agente con WhatsApp, sin que toques nada.</p>
+      </article>
+      <article class="feat" data-show=".7,.96">
+        <span class="badge">03</span>
+        <h3>Responde por ti</h3>
+        <p data-split>La capa visible: atiende, cotiza y agenda a cualquier hora, mientras tú sigues con lo tuyo.</p>
+      </article>
+      <div class="formula" data-show=".08,.96"><span>Tres capas, un solo agente</span><b>1 + 1 + 1 = ∞</b></div>
+      <h2 class="stack" data-show=".08,.96" data-split>Eleva la atención de tu negocio</h2>
+    </div>
+  </section>
+
+  <section id="macro" data-scene="macro" style="--h:240vh">
+    <div class="pin">
+      <p class="phrase center" data-show=".2,.9" data-split>Cada detalle, hecho a mano. Bueno, casi.</p>
+    </div>
+  </section>
+
+  <section id="agente" class="solid">
+    <div class="quotes">
+      <blockquote data-reveal>
+        <p>“Antes contestaba mensajes a medianoche. Ahora duermo y el agente <em>cotiza</em> por mí.”</p>
+        <cite class="mono">Dueña de estudio · ejemplo ilustrativo</cite>
+      </blockquote>
+      <blockquote data-reveal>
+        <p>“Mis clientes creen que contraté a alguien. Técnicamente, <em>sí</em>.”</p>
+        <cite class="mono">Taller mecánico · ejemplo ilustrativo</cite>
+      </blockquote>
+    </div>
+    <div class="bento">
+      <div class="tile t-a" data-reveal><h2>Vive en WhatsApp.<br>No pide descargas.</h2><canvas class="mini" data-mini="bubble"></canvas></div>
+      <div class="tile t-b" data-reveal><h3>Configuración inicial</h3><b class="price">$5,499</b><p>Cuentas, infraestructura e información de tu negocio.</p></div>
+      <div class="tile t-c" data-reveal><h3>Mantenimiento y soporte</h3><b class="price">$499<small>/mes</small></b><p>Ajustes, mejoras y acompañamiento continuo.</p></div>
+      <div class="tile t-d" data-reveal>
+        <ol class="steps"><li><span>01.</span>Cuentas</li><li><span>02.</span>Infraestructura</li><li><span>03.</span>Info negocio</li><li><span>04.</span>Pago</li></ol>
+      </div>
+      <div class="tile t-e" data-reveal>
+        <div class="chat">
+          <p class="in">¡Hola! Soy tu agente de IA.</p>
+          <p class="out">¿Cuánto cuesta?</p>
+          <p class="in">Te comparto los precios:</p>
+          <p class="in typing"><i></i><i></i><i></i></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" data-scene="footer" style="--h:100vh">
+    <div class="pin end">
+      <h2 class="closing" data-show="-1,2" data-split>Si un papel doblado te trajo hasta aquí, imagina lo que un agente puede hacer por tu marca.</h2>
+      <a class="cta" href="https://wa.me/" data-show="-1,2">Hablemos por WhatsApp</a>
+      <div class="foot-grid" data-show="-1,2">
+        <div class="share"><span class="mono accent">Hecho con papel y código</span><span class="mono">Compártelo si te gustó</span><button id="copy" class="pill">Copiar enlace</button></div>
+        <div><span class="mono dim">Un proyecto de</span><span>KUPER y AGENCIA BE</span></div>
+        <div><span class="mono dim">Agentes de IA</span><span>Kuper Media</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

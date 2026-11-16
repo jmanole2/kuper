@@ -37,3 +37,16 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Kuper — página web 3D (`web/`)
+
+Landing con recorrido de cámara guiado por scroll, hecha con three.js (sin build): `web/index.html`, `web/style.css`, `web/main.js`.
+Todo es procedural (geometría, texturas de papel, sombras de follaje); three.js y las fuentes van incluidas en `web/vendor` y `web/fonts`.
+
+```bash
+cd web && python3 -m http.server 4173   # abrir http://localhost:4173
+```
+
+- Textos: `web/index.html`. Colores: variables `:root` en `web/style.css`.
+- Recorrido de cámara y estados por sección: arreglo `KEYS` en `web/main.js`.
+- El botón de WhatsApp apunta a `https://wa.me/` — falta poner el número.
