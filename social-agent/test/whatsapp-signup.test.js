@@ -97,3 +97,30 @@ test('si Meta pide la misma dirección de regreso, se reintenta con la de la pá
   assert.equal(r.numero, '+52 1 55 1234 5678');
   await assert.rejects(W.conectar(db.getClient(c.id), { code: 'codigo-jssdk', waba_id: '1', phone_number_id: '2', pagina: 'https://otro-sitio.test/x' }), /redirect_uri/);
 });
+
+test('conectar sin el SDK: ventana de Meta con dirección fija, regreso con state de un solo uso', async () => {
+  const W2 = await import('../src/whatsappSignup.js');
+  const u = new URL(W2.urlAutorizacion({ redirect: 'https://redes.kuper.media/app/agente/whatsapp/regreso', state: 'abc', coexistencia: true }));
+  assert.equal(u.hostname, 'www.facebook.com'); assert.match(u.pathname, /\/dialog\/oauth$/);
+  assert.equal(u.searchParams.get('config_id'), '999888777'); assert.equal(u.searchParams.get('response_type'), 'code');
+  assert.equal(JSON.parse(u.searchParams.get('extras')).featureType, 'whatsapp_business_app_onboarding');
+  // El canje usa exactamente la misma dirección de regreso.
+  const r = await W2.conectar(db.getClient(c.id), { code: 'codigo-jssdk', evento: 'coexistencia', redirect: 'https://redes.kuper.media/admin/clientes/1/agente' });
+  assert.equal(r.numero, '+52 1 55 1234 5678');
+  const server = createApp().listen(0); const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const login = await fetch(`${base}/entrar`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'ana@inhouse.mx', password: 'ClaveAna20301' }) });
+    const cookie = (login.headers.get('set-cookie') || '').split(';')[0];
+    const a = await fetch(`${base}/app/agente/whatsapp/abrir?coex=1`, { headers: { cookie }, redirect: 'manual' });
+    assert.equal(a.status, 302);
+    const meta = new URL(a.headers.get('location'));
+    assert.equal(meta.hostname, 'www.facebook.com'); assert.match(meta.searchParams.get('redirect_uri'), /\/app\/agente\/whatsapp\/regreso$/);
+    const state = meta.searchParams.get('state');
+    const malo = await fetch(`${base}/app/agente/whatsapp/regreso?code=x&state=otro`, { headers: { cookie }, redirect: 'manual' });
+    assert.match(await malo.text(), /caducó o no corresponde/);
+    const cancel = await fetch(`${base}/app/agente/whatsapp/regreso?error=access_denied&error_description=Permissions+error&state=${state}`, { headers: { cookie }, redirect: 'manual' });
+    assert.match(await cancel.text(), /Permissions error/);
+    const otra = await fetch(`${base}/app/agente/whatsapp/regreso?code=codigo-bueno&state=${state}`, { headers: { cookie }, redirect: 'manual' });
+    assert.match(await otra.text(), /caducó/, 'el state es de un solo uso');
+  } finally { server.close(); }
+});

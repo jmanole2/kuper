@@ -1046,8 +1046,8 @@ function conectarWhatsapp(wa, { base, app }) {
   if (!wa.agente) return html`<div class="card" style="margin-bottom:18px">${titulo}${estado}<p class="muted small" style="margin:8px 0 0">${app ? 'Kuper está terminando de preparar tu agente; en cuanto esté listo aparece aquí el botón.' : 'Falta la URL del agente de WhatsApp de esta marca (Configuración) para poder conectar.'}</p></div>`;
   return html`<div class="card" style="margin-bottom:18px">${titulo}${estado}
     <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:12px">
-      <button type="button" class="btn-accent" onclick="waConectar(true)">${e.conectado ? 'Volver a conectar' : 'Conectar mi WhatsApp Business'}</button>
-      <button type="button" class="btn-warn" onclick="waConectar(false)">Usar un número nuevo</button></div>
+      <button type="button" class="btn-accent" onclick="waAbrir(true)">${e.conectado ? 'Volver a conectar' : 'Conectar mi WhatsApp Business'}</button>
+      <button type="button" class="btn-warn" onclick="waAbrir(false)">Usar un número nuevo</button></div>
     <p class="muted small" style="margin:8px 0 0"><strong>Mi WhatsApp Business:</strong> conservas tu número y tu app en el celular (escanearás un código QR). <strong>Número nuevo:</strong> un número que no tenga WhatsApp; te llega un código por SMS.</p>
     <p id="wa-msg" style="margin:10px 0 0;font-weight:600;color:#fbbf24"></p>
     <label class="small muted" style="display:block;margin-top:10px;max-width:320px">Número a conectar (solo si compartes varios)<input id="wa-numero" placeholder="55 1234 5678" inputmode="tel" style="width:100%"></label>
@@ -1067,6 +1067,11 @@ function conectarWhatsapp(wa, { base, app }) {
         else if (d.event === 'CANCEL') msg('Se cerró la ventana antes de terminar' + (d.data && d.data.current_step ? ' (paso: ' + d.data.current_step + ')' : '') + '. Intenta otra vez.');
         else if (d.event === 'ERROR') msg('Meta marcó un error: ' + ((d.data && d.data.error_message) || 'intenta otra vez.'));
       });
+      // Se abre la ventana de Meta en esta misma pestaña y Meta regresa al panel (más confiable que el SDK en ventana emergente).
+      window.waAbrir = function (coex) {
+        msg('Abriendo Meta…');
+        location.href = '${base}/agente/whatsapp/abrir?coex=' + (coex ? '1' : '0') + '&numero=' + encodeURIComponent((document.getElementById('wa-numero') || {}).value || '');
+      };
       window.waConectar = function (coex) {
         if (!window.FB) return msg('La ventana de Meta todavía está cargando. Espera un segundo y vuelve a tocar el botón.');
         sesion = null; msg('Abriendo la ventana de Meta…');

@@ -55,7 +55,16 @@ export async function resolverActivos(token, { numero = '' } = {}) {
   throw e;
 }
 
-export async function conectar(client, { code, waba_id, phone_number_id, evento = '', numero = '', pagina = '' } = {}) {
+/** Dirección de la ventana de Meta (sin el SDK del navegador): regresa a una dirección fija del panel, que es la misma
+ *  con la que después se canjea la autorización (así Meta no rechaza el código por la dirección de regreso). */
+export function urlAutorizacion({ redirect, state, coexistencia = false }) {
+  const extras = { setup: {}, sessionInfoVersion: '3', ...(coexistencia ? { featureType: 'whatsapp_business_app_onboarding' } : {}) };
+  const q = new URLSearchParams({ client_id: config.whatsappApp.id, config_id: config.whatsappApp.configId, response_type: 'code', override_default_response_type: 'true',
+    redirect_uri: redirect, state, extras: JSON.stringify(extras) });
+  return `https://www.facebook.com/${config.whatsappApp.graph}/dialog/oauth?${q}`;
+}
+
+export async function conectar(client, { code, waba_id, phone_number_id, evento = '', numero = '', pagina = '', redirect = '' } = {}) {
   if (!configurado()) throw new Error('Falta configurar la app de Meta de Kuper en el panel (META_APP_ID, META_CONFIG_ID y META_APP_SECRET).');
   const creds = db.clientCredentials(client);
   if (!creds.agente_url || !creds.api_key) throw new Error('Primero pon la URL del agente de WhatsApp de esta marca (Configuración).');
@@ -68,7 +77,7 @@ export async function conectar(client, { code, waba_id, phone_number_id, evento 
   // sin ella y con la de la página del botón (solo direcciones del propio panel).
   const base = String(config.publicBaseUrl || '').replace(/\/+$/, '');
   const pag = /^https:\/\/[^\s]+$/.test(pagina) && base && pagina.startsWith(base) ? pagina.split('#')[0] : '';
-  const intentos = [null, pag, pag && (pag.endsWith('/') ? pag.slice(0, -1) : `${pag}/`), base && `${base}/`].filter((x, i, a) => x !== '' && a.indexOf(x) === i);
+  const intentos = redirect ? [redirect] : [null, pag, pag && (pag.endsWith('/') ? pag.slice(0, -1) : `${pag}/`), base && `${base}/`].filter((x, i, a) => x !== '' && a.indexOf(x) === i);
   let token = null, ultimo = null;
   for (const redirect of intentos) {
     try {

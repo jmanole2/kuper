@@ -1,5 +1,6 @@
 // Servidor web: panel de agencia (/admin), portal de aprobación del cliente (/p/:token)
 // y archivos de medios públicos (/media) que Instagram/Facebook descargan al publicar.
+import nodeCrypto from 'node:crypto';
 import express from 'express';
 import multer from 'multer';
 import path from 'node:path';
@@ -1739,6 +1740,28 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const limpio = Object.fromEntries(Object.entries(b).filter(([k]) => /^[a-z_]{1,20}$/.test(k)).map(([k, v]) => [k, typeof v === 'boolean' || typeof v === 'number' ? v : String(v ?? '').slice(0, 120)]));
       console.log(`[whatsapp signup] ${req.client.nombre}: ${JSON.stringify(limpio)}`);
       res.json({ ok: true });
+    });
+    // Conectar WhatsApp abriendo directo la ventana de Meta (sin el SDK del navegador): Meta regresa a /agente/whatsapp/regreso
+    // con la autorización y se canjea con esa misma dirección. Un "state" de un solo uso amarra el regreso a esta marca.
+    const regresoUrl = (req) => `${config.publicBaseUrl}${base(req)}/agente/whatsapp/regreso`;
+    router.get(`${prefix}/agente/whatsapp/abrir`, (req, res) => {
+      if (!waSignup.configurado()) return vista(req, res, { error: 'WhatsApp: falta configurar la app de Meta de Kuper en el panel.' });
+      const state = nodeCrypto.randomBytes(18).toString('hex');
+      db.kvSet(`wa_state:${state}`, JSON.stringify({ c: req.client.id, coex: req.query.coex === '1', n: String(req.query.numero || '').slice(0, 20), t: Date.now() }));
+      console.log(`[whatsapp signup] ${req.client.nombre}: {"paso":"abrir_directo","coexistencia":${req.query.coex === '1'}}`);
+      res.redirect(waSignup.urlAutorizacion({ redirect: regresoUrl(req), state, coexistencia: req.query.coex === '1' }));
+    });
+    router.get(`${prefix}/agente/whatsapp/regreso`, async (req, res) => {
+      const state = String(req.query.state || '').replace(/[^a-f0-9]/g, '');
+      let st = null; try { st = JSON.parse(db.kvGet(`wa_state:${state}`) || 'null'); } catch { /* sin state */ }
+      if (state) db.kvSet(`wa_state:${state}`, 'null'); // un solo uso
+      if (!st || st.c !== req.client.id || Date.now() - st.t > 30 * 60000) return vista(req, res, { error: 'WhatsApp: la conexión caducó o no corresponde a esta marca. Vuelve a tocar "Conectar".' });
+      if (req.query.error) return vista(req, res, { error: `WhatsApp: ${String(req.query.error_description || req.query.error_reason || 'se canceló la ventana de Meta').replace(/\+/g, ' ').slice(0, 200)}` });
+      try {
+        const r = await waSignup.conectar(req.client, { code: String(req.query.code || ''), evento: st.coex ? 'coexistencia' : '', numero: st.n, redirect: regresoUrl(req) });
+        seg.auditar(req, 'whatsapp_conectado', `${req.client.nombre}: ${r.numero}`);
+        res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(`WhatsApp conectado: ${r.numero}${r.nombre ? ` (${r.nombre})` : ''}. Tu agente ya contesta en ese número.${r.avisos?.length ? ` ${r.avisos.join(' ')}` : ''}`)}`);
+      } catch (e) { console.error('[whatsapp conectar]', e.message); vista(req, res, { error: `WhatsApp: ${e.message}` }); }
     });
     router.post(`${prefix}/agente/whatsapp`, async (req, res) => {
       try {
