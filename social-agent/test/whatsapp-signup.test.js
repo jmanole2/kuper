@@ -26,6 +26,8 @@ const meta = async (url, opts = {}) => {
   if (u.pathname.endsWith('/oauth/access_token')) return u.searchParams.get('code') === 'codigo-bueno' ? json({ access_token: 'EAAG-token-negocio' }) : json({ error: { message: 'código inválido' } }, 400);
   if (u.pathname.endsWith('/subscribed_apps')) return json({ success: true });
   if (u.pathname.endsWith('/register') || u.pathname.endsWith('/smb_app_data')) return json({ success: true });
+  if (u.pathname.endsWith('/debug_token')) return json({ data: { granular_scopes: [{ scope: 'whatsapp_business_management', target_ids: ['1632154828399441'] }, { scope: 'business_management' }] } });
+  if (u.pathname.endsWith('/1632154828399441/phone_numbers')) return json({ data: [{ id: '1374873522382080', display_phone_number: '+52 1 55 1234 5678', verified_name: 'Inhouse Work' }] });
   if (u.pathname.endsWith('/1374873522382080')) return json({ display_phone_number: '+52 1 55 1234 5678', verified_name: 'Inhouse Work' });
   return json({ error: { message: 'ruta desconocida ' + u.pathname } }, 404);
 };
@@ -61,7 +63,7 @@ test('coexistencia: no se registra, se sincronizan contactos', async () => {
 
 test('errores claros: código malo o sin agente', async () => {
   await assert.rejects(W.conectar(db.getClient(c.id), { code: 'malo', waba_id: '1', phone_number_id: '2' }), /código inválido/);
-  await assert.rejects(W.conectar(db.getClient(c.id), { code: 'x', waba_id: '', phone_number_id: '' }), /no regresó el número/);
+  await assert.rejects(W.conectar(db.getClient(c.id), { code: '', waba_id: '', phone_number_id: '' }), /no regresó la autorización/);
   const sin = db.createClient({ slug: 'sin', nombre: 'Sin agente', perfil, config: {}, credentials: {} });
   await assert.rejects(W.conectar(sin, { code: 'codigo-bueno', waba_id: '1', phone_number_id: '2' }), /URL del agente/);
 });
@@ -78,4 +80,13 @@ test('la página del agente muestra el botón y deja abrir la ventana de Meta', 
     assert.match(p.headers.get('content-security-policy'), /connect\.facebook\.net/);
     assert.equal(p.headers.get('cross-origin-opener-policy'), 'same-origin-allow-popups');
   } finally { server.close(); }
+});
+
+test('si la ventana de Meta no avisa la cuenta y el número, se le pregunta a Meta qué se compartió', async () => {
+  const r = await W.conectar(db.getClient(c.id), { code: 'codigo-bueno', waba_id: '', phone_number_id: '', evento: 'coexistencia' });
+  assert.equal(r.numero, '+52 1 55 1234 5678');
+  const dbg = llamadas.find((x) => x.ruta.endsWith('/debug_token'));
+  assert.equal(dbg.query.input_token, 'EAAG-token-negocio'); assert.equal(dbg.query.access_token, '1817877119391171|secreto-kuper');
+  const w = db.clientCredentials(db.getClient(c.id)).whatsapp;
+  assert.equal(w.waba_id, '1632154828399441'); assert.equal(w.phone_id, '1374873522382080'); assert.equal(w.coexistencia, true);
 });
