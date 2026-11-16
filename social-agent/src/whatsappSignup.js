@@ -98,14 +98,22 @@ export async function conectar(client, { code, waba_id, phone_number_id, evento 
   const verify = crypto.randomBytes(18).toString('hex');
 
   // 2. El agente recibe la conexión antes de suscribir (Meta verifica su webhook con este verify token).
-  await llamarAgente(client, 'POST', '/whatsapp', { token, phone_id: phone, waba_id: waba, verify_token: verify, app_secret: config.whatsappApp.secret });
+  //    Un agente viejo que no sabe recibirla (responde "no encontrado") ya tiene su número funcionando con sus propias
+  //    claves: entonces solo se guarda el acceso en el panel (plantillas y campañas) y NO se toca el agente ni el número.
+  let soloPanel = false;
+  try { await llamarAgente(client, 'POST', '/whatsapp', { token, phone_id: phone, waba_id: waba, verify_token: verify, app_secret: config.whatsappApp.secret }); }
+  catch (e) { if (e.code === 'no_encontrado' || /no ha escrito al agente|404/.test(e.message)) soloPanel = true; else throw e; }
 
+  let pin = creds.whatsapp?.pin || String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+  const avisos = [];
+  if (soloPanel) {
+    avisos.push('Tu agente ya contestaba en este número: no se cambió nada en él; el panel ahora puede ver y crear tus plantillas y mandar campañas.');
+    pin = creds.whatsapp?.pin || null;
+  } else {
   // 3. Mensajes de esta cuenta -> webhook de su agente.
   await graph('POST', `${waba}/subscribed_apps`, { token, body: { override_callback_uri: `${creds.agente_url.replace(/\/+$/, '')}/webhook`, verify_token: verify } });
 
   // 4. Número nuevo: registrarlo. Coexistencia: ya está registrado en la app; se sincronizan sus contactos.
-  let pin = creds.whatsapp?.pin || String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
-  const avisos = [];
   if (coexistencia) {
     try { await graph('POST', `${phone}/smb_app_data`, { token, body: { messaging_product: 'whatsapp', sync_type: 'smb_app_state_sync' } }); }
     catch (e) { avisos.push(`No se pudieron sincronizar los contactos (${e.message}).`); }
@@ -114,10 +122,11 @@ export async function conectar(client, { code, waba_id, phone_number_id, evento 
     try { await graph('POST', `${phone}/register`, { token, body: { messaging_product: 'whatsapp', pin } }); }
     catch (e) { avisos.push(`El número no se pudo registrar todavía (${e.message}).`); }
   }
+  }
   const info = await graph('GET', phone, { token, query: { fields: 'display_phone_number,verified_name' } }).catch(() => ({}));
 
   db.updateClient(client.id, { credentials: { ...db.clientCredentials(db.getClient(client.id)), whatsapp: {
-    waba_id: waba, phone_id: phone, token, pin, coexistencia, numero: info.display_phone_number || '', nombre: info.verified_name || '', conectado_at: new Date().toISOString() } } });
+    waba_id: waba, phone_id: phone, token, pin, coexistencia, solo_panel: soloPanel, numero: info.display_phone_number || '', nombre: info.verified_name || '', conectado_at: new Date().toISOString() } } });
   db.logEvent({ clientId: client.id, tipo: 'whatsapp_conectado', detalle: `${info.display_phone_number || phone}${coexistencia ? ' (coexistencia)' : ''}` });
   return { numero: info.display_phone_number || phone, nombre: info.verified_name || '', coexistencia, avisos };
 }

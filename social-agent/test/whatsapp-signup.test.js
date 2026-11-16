@@ -124,3 +124,18 @@ test('conectar sin el SDK: ventana de Meta con dirección fija, regreso con stat
     assert.match(await otra.text(), /caducó/, 'el state es de un solo uso');
   } finally { server.close(); }
 });
+
+test('agente viejo sin /whatsapp: se guarda solo en el panel y no se toca su webhook ni el número', async () => {
+  const W3 = await import('../src/whatsappSignup.js');
+  const viejo = db.createClient({ slug: 'kuper-viejo', nombre: 'Kuper', perfil, config: {}, credentials: { api_key: 'k', agente_url: 'https://viejo.kuper.test' } });
+  const antes = agente.hooks.fetch;
+  agente.hooks.fetch = async (url) => (String(url).startsWith('https://viejo.kuper.test') ? { ok: false, status: 404, json: async () => ({ error: 'no_encontrado', mensaje: 'Este contacto no ha escrito al agente.' }) } : meta(url));
+  const n = llamadas.length;
+  const r = await W3.conectar(db.getClient(viejo.id), { code: 'codigo-bueno', waba_id: '1632154828399441', phone_number_id: '1374873522382080', evento: 'coexistencia' });
+  assert.match(r.avisos.join(' '), /no se cambió nada/);
+  const nuevas = llamadas.slice(n).map((x) => x.ruta);
+  assert.ok(!nuevas.some((x) => x.endsWith('/subscribed_apps') || x.endsWith('/register') || x.endsWith('/smb_app_data')), nuevas.join(','));
+  const w = db.clientCredentials(db.getClient(viejo.id)).whatsapp;
+  assert.equal(w.token, 'EAAG-token-negocio'); assert.equal(w.solo_panel, true);
+  agente.hooks.fetch = antes;
+});
