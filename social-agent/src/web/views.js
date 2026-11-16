@@ -1510,6 +1510,7 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
       <p class="muted small" style="margin:8px 0 0">Creó ${c.creada_por || '—'} el ${fecha(c.created_at)}${c.aprobada_por ? ` · aprobó ${c.aprobada_por} el ${fecha(c.aprobada_at)}` : ''}</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         ${c.estado === 'borrador' ? acc('aprobar', `Aprobar y enviar a ${n(c.total)}`, 'btn-accent', `¿Aprobar? Se enviará a ${c.total} contactos en horario, máximo ${c.tope_diario} al día.`) : ''}
+        ${['borrador', 'enviando', 'pausada'].includes(c.estado) && (c.pendientes ?? c.total) > 0 && (c.pendientes ?? c.total) <= 10 ? acc('enviar-ahora', 'Enviar ahora', 'btn-accent', `¿Enviar ahora a ${n(c.pendientes ?? c.total)} contacto(s)? Se manda en este momento, sin esperar el horario.`) : ''}
         ${c.estado === 'enviando' ? acc('pausar', 'Pausar') : ''}${c.estado === 'pausada' ? acc('reanudar', 'Reanudar', 'btn-accent') : ''}
         ${c.errores ? acc('reintentar', `Reintentar ${n(c.errores)} con error`) : ''}
         ${['borrador', 'enviando', 'pausada'].includes(c.estado) ? acc('cancelar', 'Cancelar', 'btn-bad', '¿Cancelar la campaña? Los pendientes ya no se envían.') : ''}

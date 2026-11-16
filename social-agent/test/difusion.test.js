@@ -145,3 +145,23 @@ test('borrar plantilla desde el panel', async () => {
   assert.match(h, /difusion\/plantilla\/borrar/);
   dif.hooks.fetch = antes;
 });
+
+test('"Enviar ahora": campañas chicas salen en el momento aunque sea fuera de horario; las grandes no', async () => {
+  const antes = dif.hooks.fetch;
+  const mandados = [];
+  dif.hooks.fetch = async (url, o = {}) => { if (o.method === 'POST' && String(url).endsWith('/messages')) mandados.push(JSON.parse(o.body).to); return new Response(JSON.stringify({ messages: [{ id: 'w' }] })); };
+  const p = db.upsertLead(client.id, { nombre: 'Prueba', telefono: '5215599990000', origen: 'whatsapp' });
+  db.getDb().prepare('UPDATE leads SET tags_json = ? WHERE id = ?').run(JSON.stringify(['prueba']), p.id);
+  const c = dif.crear(client, { nombre: 'Demo ahora', plantilla: 'bienvenido', idioma: 'en', filtros: { tags: 'prueba' } }, 'Juan');
+  assert.equal(c.estado, 'borrador');
+  const r = await dif.enviarAhora(client, c.id, 'Juan');
+  assert.equal(r.enviados, 1); assert.deepEqual(mandados, ['525599990000']);
+  const fin = dif.obtener(client.id, c.id);
+  assert.equal(fin.estado, 'terminada'); assert.equal(fin.aprobada_por, 'Juan');
+  await assert.rejects(dif.enviarAhora(client, c.id, 'Juan'), /terminó/);
+  const grande = dif.crear(client, { nombre: 'Grande', plantilla: 'bienvenido', filtros: {} }, 'Juan');
+  db.getDb().prepare('INSERT INTO difusion_envios (difusion_id, lead_id, telefono) VALUES (?, ?, ?)').run(grande.id, 999001, '1');
+  for (let i = 0; i < 12; i++) db.getDb().prepare('INSERT OR IGNORE INTO difusion_envios (difusion_id, lead_id, telefono) VALUES (?, ?, ?)').run(grande.id, 990000 + i, String(i));
+  await assert.rejects(dif.enviarAhora(client, grande.id, 'Juan'), /hasta 10 contactos/);
+  dif.hooks.fetch = antes;
+});

@@ -266,6 +266,31 @@ export async function enviarPendientes(client, { ahora = hooks.ahora() } = {}) {
   return { enviados };
 }
 
+/** Campañas chicas (pruebas, hasta MAX_AHORA contactos): se aprueban y se mandan en el momento, sin esperar el horario. */
+export const MAX_AHORA = 10;
+export async function enviarAhora(client, id, autor) {
+  let c = obtener(client.id, id);
+  if (!c) throw new Error('Campaña no encontrada.');
+  if (!['borrador', 'enviando', 'pausada'].includes(c.estado)) throw new Error('Esa campaña ya terminó o se canceló.');
+  const pendientes = d().prepare("SELECT * FROM difusion_envios WHERE difusion_id = ? AND status = 'pendiente'").all(c.id);
+  if (pendientes.length > MAX_AHORA) throw new Error(`"Enviar ahora" es solo para campañas de hasta ${MAX_AHORA} contactos (esta tiene ${pendientes.length}). Las grandes se mandan en horario para cuidar tu número.`);
+  if (c.estado !== 'enviando') {
+    d().prepare("UPDATE difusiones SET estado = 'enviando', aprobada_por = COALESCE(aprobada_por, ?), aprobada_at = COALESCE(aprobada_at, datetime('now')), updated_at = datetime('now') WHERE id = ?").run(autor || null, c.id);
+    c = obtener(client.id, id);
+  }
+  let enviados = 0, errores = 0, ultimo = '';
+  for (const e of pendientes) {
+    const lead = db.getLead(client.id, e.lead_id);
+    const marca = (status, error = null) => d().prepare("UPDATE difusion_envios SET status = ?, error = ?, enviado_at = datetime('now') WHERE difusion_id = ? AND lead_id = ?").run(status, error, c.id, e.lead_id);
+    if (!lead || embudo.tagsDe(lead).some((t) => BAJA.test(t))) { marca('omitido'); continue; }
+    try { await mandar(client, c, lead, e.telefono); marca('enviado'); enviados++; }
+    catch (err) { marca('error', String(err.message).slice(0, 300)); errores++; ultimo = err.message; }
+  }
+  if (!c.recurrente) d().prepare("UPDATE difusiones SET estado = 'terminada', updated_at = datetime('now') WHERE id = ?").run(c.id);
+  db.logEvent({ clientId: client.id, tipo: 'difusion_enviar_ahora', detalle: `${c.nombre}: ${enviados} enviados${errores ? `, ${errores} con error` : ''} · ${autor || ''}` });
+  return { enviados, errores, error: ultimo };
+}
+
 /** Reintentar los que fallaron (después de corregir la plantilla o el token). */
 export function reintentarErrores(client, id) {
   const c = obtener(client.id, id);

@@ -1681,7 +1681,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         recordatorios: recordatorios.ajustes(req.client), recRecientes: recordatorios.recientes(req.client.id),
         agente: agente.agenteConfigurado(req.client), embudos: embudo.embudos(req.client), base: base(req), app, form, seg, ESTADOS: difusion.ESTADOS, FUENTES: difusion.FUENTES,
         FRECUENCIA: difusion.FRECUENCIA_DIAS, ok: { creada: 'Campaña creada. Revísala y apruébala para que empiece a enviarse.', aprobar: 'Aprobada: se empieza a enviar en horario (9 a 20 h).', pausar: 'Campaña en pausa.',
-          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.', plantilla_borrada: 'Plantilla borrada de tu cuenta de WhatsApp.', plantilla: 'Plantilla enviada a Meta. Normalmente la aprueban en minutos; su estado aparece en "Tus plantillas".' }[req.query.ok] || '', ...extra }));
+          reanudar: 'Campaña reanudada.', cancelar: 'Campaña cancelada.', reintentar: 'Los que fallaron se vuelven a intentar.', recordatorios: 'Recordatorios guardados.', plantilla_borrada: 'Plantilla borrada de tu cuenta de WhatsApp.', ahora: `Enviada: ${Number(req.query.n) || 0} mensaje(s). Revisa el WhatsApp del contacto.`, plantilla: 'Plantilla enviada a Meta. Normalmente la aprueban en minutos; su estado aparece en "Tus plantillas".' }[req.query.ok] || '', ...extra }));
     };
     router.get(`${prefix}/difusion`, (req, res) => vista(req, res));
     router.post(`${prefix}/difusion/vista`, (req, res) => vista(req, res, { form: leerForm(req.body || {}) }));
@@ -1712,6 +1712,14 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       db.logEvent({ clientId: req.client.id, tipo: 'recordatorios_ajustes', detalle: `${autor(req)}: ${r.activo ? `activos (${r.horas.join(' y ')} h antes)` : 'apagados'}` });
       seg.auditar(req, 'recordatorios_ajustes', req.client.nombre);
       res.redirect(`${base(req)}/difusion?ok=recordatorios`);
+    });
+    router.post(`${prefix}/difusion/:difId/enviar-ahora`, async (req, res) => {
+      try {
+        const r = await difusion.enviarAhora(req.client, req.params.difId, autor(req));
+        seg.auditar(req, 'difusion_enviar_ahora', req.client.nombre);
+        if (r.errores && !r.enviados) return vista(req, res, { error: `No se pudo enviar: ${r.error}` });
+        res.redirect(`${base(req)}/difusion?ok=ahora&n=${r.enviados}`);
+      } catch (e) { vista(req, res, { error: e.message }); }
     });
     router.post(`${prefix}/difusion/:difId/:accion`, (req, res) => {
       if (!['aprobar', 'pausar', 'reanudar', 'cancelar', 'reintentar'].includes(req.params.accion)) return res.status(404).send('No encontrado');
