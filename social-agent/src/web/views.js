@@ -1499,6 +1499,10 @@ export function difusionPage(client, { recordatorios: rec = {}, recRecientes = [
       note: ['Cómo se cuida tu número', `En horario, escalonado, con tope diario, sin repetir a quien recibió otra en ${FRECUENCIA} días y sin escribir a quien pidió su baja`] })}
     ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
     ${!directo && !agente ? html`<div class="err">Esta marca todavía no tiene WhatsApp conectado. Conéctalo en <a href="${base}/agente">Lo que sabe tu agente</a>.</div>` : ''}
+    ${todas === null ? html`<div id="plantillas" class="card" style="margin-bottom:18px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+      <div><span class="mono">Plantillas de WhatsApp</span><p class="small" style="margin:6px 0 0">${errorPlantillas ? `No pude leer tus plantillas: ${errorPlantillas}` : 'Para ver y crear tus plantillas aquí, conecta tu número de WhatsApp desde el panel.'}</p>
+        <p class="muted small" style="margin:4px 0 0">Mientras, puedes escribir abajo el nombre de una plantilla que ya tengas aprobada en tu WhatsApp Manager.</p></div>
+      <a class="btn btn-accent" href="${base}/agente">Conectar WhatsApp</a></div>` : ''}
     ${todas !== null ? (() => { const EST = { APPROVED: ['Aprobada', '#4ade80'], PENDING: ['En revisión', '#fbbf24'], IN_APPEAL: ['En revisión', '#fbbf24'], REJECTED: ['Rechazada', '#f87171'], PAUSED: ['Pausada', '#a39d93'], DISABLED: ['Desactivada', '#a39d93'] };
       const pf = plantillaForm || {};
       return html`<div id="plantillas" style="display:grid;gap:18px;grid-template-columns:minmax(0,1fr) minmax(320px,1fr);align-items:start;margin-bottom:18px" class="pl2">
