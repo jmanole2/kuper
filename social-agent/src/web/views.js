@@ -1049,16 +1049,19 @@ function conectarWhatsapp(wa, { base, app }) {
       <button type="button" class="btn-accent" onclick="waConectar(true)">${e.conectado ? 'Volver a conectar' : 'Conectar mi WhatsApp Business'}</button>
       <button type="button" class="btn-warn" onclick="waConectar(false)">Usar un número nuevo</button></div>
     <p class="muted small" style="margin:8px 0 0"><strong>Mi WhatsApp Business:</strong> conservas tu número y tu app en el celular (escanearás un código QR). <strong>Número nuevo:</strong> un número que no tenga WhatsApp; te llega un código por SMS.</p>
-    <p class="muted small" id="wa-msg" style="margin:6px 0 0"></p>
+    <p id="wa-msg" style="margin:10px 0 0;font-weight:600;color:#fbbf24"></p>
     <form id="wa-form" method="post" action="${base}/agente/whatsapp" hidden><input name="code"><input name="waba_id"><input name="phone_number_id"><input name="evento"></form>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
     <script>${raw(`(function () {
       var sesion = null, msg = function (t) { document.getElementById('wa-msg').textContent = t; };
+      // Diagnóstico: cada paso queda en el registro del servidor (sin códigos ni tokens).
+      var diag = function (paso, extra) { try { fetch('${base}/agente/whatsapp/diag', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ paso: paso }, extra || {})) }); } catch (e) {} };
       window.fbAsyncInit = function () { FB.init({ appId: '${id}', autoLogAppEvents: true, xfbml: false, version: '${ver}' }); };
       window.addEventListener('message', function (ev) {
         try { if (!/(^|\.)facebook\.com$/.test(new URL(ev.origin).hostname)) return; } catch (e) { return; }
         var d; try { d = JSON.parse(ev.data); } catch (e) { return; }
         if (!d || d.type !== 'WA_EMBEDDED_SIGNUP') return;
+        diag('evento_meta', { evento: d.event, con_waba: !!(d.data && d.data.waba_id), con_numero: !!(d.data && d.data.phone_number_id), paso_meta: d.data && d.data.current_step, error: d.data && (d.data.error_message || d.data.error_code) });
         if (/^FINISH/.test(d.event)) sesion = { waba_id: d.data && d.data.waba_id, phone_number_id: d.data && d.data.phone_number_id, evento: d.event };
         else if (d.event === 'CANCEL') msg('Se cerró la ventana antes de terminar' + (d.data && d.data.current_step ? ' (paso: ' + d.data.current_step + ')' : '') + '. Intenta otra vez.');
         else if (d.event === 'ERROR') msg('Meta marcó un error: ' + ((d.data && d.data.error_message) || 'intenta otra vez.'));
@@ -1068,13 +1071,17 @@ function conectarWhatsapp(wa, { base, app }) {
         sesion = null; msg('Abriendo la ventana de Meta…');
         var extras = { setup: {}, sessionInfoVersion: '3' };
         if (coex) extras.featureType = 'whatsapp_business_app_onboarding';
+        diag('abrir', { coexistencia: !!coex });
         FB.login(function (r) {
           var code = r && r.authResponse && r.authResponse.code;
-          if (!code) return msg('No se completó la conexión. Si cerraste la ventana, intenta otra vez.');
+          diag('respuesta_login', { con_code: !!code, estado: r && r.status });
+          if (!code) return msg('No se completó la conexión (Meta no regresó la autorización). Si cerraste la ventana, intenta otra vez.');
           var n = 0, esperar = setInterval(function () {
-            if (sesion || ++n > 20) {
+            if (sesion || ++n > 60) {
               clearInterval(esperar);
-              if (!sesion || !sesion.phone_number_id) return msg('Meta no nos dijo qué número elegiste. Intenta otra vez y termina todos los pasos.');
+              diag('fin_espera', { con_sesion: !!sesion, con_numero: !!(sesion && sesion.phone_number_id), evento: sesion && sesion.evento });
+              if (!sesion) return msg('Meta autorizó pero no nos dijo qué cuenta y número elegiste. Intenta otra vez y termina todos los pasos de la ventana (hasta "Finalizar").');
+              if (!sesion.phone_number_id) return msg('Elegiste la cuenta de WhatsApp pero no un número. Intenta otra vez y elige (o agrega) el número en la ventana de Meta.');
               var f = document.getElementById('wa-form');
               f.code.value = code; f.waba_id.value = sesion.waba_id; f.phone_number_id.value = sesion.phone_number_id; f.evento.value = sesion.evento;
               msg('Conectando tu número…'); f.submit();

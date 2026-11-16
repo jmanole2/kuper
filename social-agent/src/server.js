@@ -1733,6 +1733,13 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       res.status(extra.error ? 400 : 200).send(V.conocimientoPage(req.client, conoc.actual(req.client.id), conoc.versiones(req.client.id), { base: base(req), app, wa, pd, ...extra }));
     };
     // "Conectar WhatsApp": la ventana de Meta regresa el código y el número elegido.
+    // Diagnóstico del botón "Conectar WhatsApp": cada paso de la ventana de Meta queda en el registro (sin códigos ni tokens).
+    router.post(`${prefix}/agente/whatsapp/diag`, express.json({ limit: '4kb' }), (req, res) => {
+      const b = req.body || {};
+      const limpio = Object.fromEntries(Object.entries(b).filter(([k]) => /^[a-z_]{1,20}$/.test(k)).map(([k, v]) => [k, typeof v === 'boolean' || typeof v === 'number' ? v : String(v ?? '').slice(0, 120)]));
+      console.log(`[whatsapp signup] ${req.client.nombre}: ${JSON.stringify(limpio)}`);
+      res.json({ ok: true });
+    });
     router.post(`${prefix}/agente/whatsapp`, async (req, res) => {
       try {
         const r = await waSignup.conectar(req.client, { code: String(req.body.code || ''), waba_id: req.body.waba_id, phone_number_id: req.body.phone_number_id, evento: String(req.body.evento || '') });
