@@ -802,8 +802,12 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const v = String(nv ?? '').replace(/^\s*[A-Z_]+\s*=/, '').replace(/["'\s$]/g, '');
       return v ? v : old;
     };
+    // Se parte de lo que ya tenía: este formulario solo cambia sus campos; lo que se conecta en otras pantallas
+    // (WhatsApp, correo, cobros, Airtable, carritos, conversiones de Meta…) se conserva.
     const credentials = {
+      ...existingCreds,
       meta: {
+        ...(existingCreds.meta || {}),
         page_id: keep(body.meta_page_id, existingCreds.meta?.page_id),
         ig_user_id: keep(body.meta_ig_user_id, existingCreds.meta?.ig_user_id),
         page_token: tok(body.meta_page_token, existingCreds.meta?.page_token),
