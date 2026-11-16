@@ -1747,7 +1747,8 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     router.get(`${prefix}/agente/whatsapp/abrir`, (req, res) => {
       if (!waSignup.configurado()) return vista(req, res, { error: 'WhatsApp: falta configurar la app de Meta de Kuper en el panel.' });
       const state = nodeCrypto.randomBytes(18).toString('hex');
-      db.kvSet(`wa_state:${state}`, JSON.stringify({ c: req.client.id, coex: req.query.coex === '1', n: String(req.query.numero || '').slice(0, 20), t: Date.now() }));
+      db.kvSet(`wa_state:${state}`, JSON.stringify({ c: req.client.id, coex: req.query.coex === '1', n: String(req.query.numero || '').slice(0, 20),
+        w: String(req.query.waba || '').replace(/\D/g, '').slice(0, 25), p: String(req.query.phone || '').replace(/\D/g, '').slice(0, 25), t: Date.now() }));
       console.log(`[whatsapp signup] ${req.client.nombre}: {"paso":"abrir_directo","coexistencia":${req.query.coex === '1'}}`);
       res.redirect(waSignup.urlAutorizacion({ redirect: regresoUrl(req), state, coexistencia: req.query.coex === '1' }));
     });
@@ -1758,7 +1759,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       if (!st || st.c !== req.client.id || Date.now() - st.t > 30 * 60000) return vista(req, res, { error: 'WhatsApp: la conexión caducó o no corresponde a esta marca. Vuelve a tocar "Conectar".' });
       if (req.query.error) return vista(req, res, { error: `WhatsApp: ${String(req.query.error_description || req.query.error_reason || 'se canceló la ventana de Meta').replace(/\+/g, ' ').slice(0, 200)}` });
       try {
-        const r = await waSignup.conectar(req.client, { code: String(req.query.code || ''), evento: st.coex ? 'coexistencia' : '', numero: st.n, redirect: regresoUrl(req) });
+        const r = await waSignup.conectar(req.client, { code: String(req.query.code || ''), evento: st.coex ? 'coexistencia' : '', numero: st.n, waba_id: st.w, phone_number_id: st.p, redirect: regresoUrl(req) });
         seg.auditar(req, 'whatsapp_conectado', `${req.client.nombre}: ${r.numero}`);
         res.redirect(`${base(req)}/agente?aviso=${encodeURIComponent(`WhatsApp conectado: ${r.numero}${r.nombre ? ` (${r.nombre})` : ''}. Tu agente ya contesta en ese número.${r.avisos?.length ? ` ${r.avisos.join(' ')}` : ''}`)}`);
       } catch (e) { console.error('[whatsapp conectar]', e.message); vista(req, res, { error: `WhatsApp: ${e.message}` }); }

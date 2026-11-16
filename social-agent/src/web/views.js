@@ -1051,6 +1051,11 @@ function conectarWhatsapp(wa, { base, app }) {
     <p class="muted small" style="margin:8px 0 0"><strong>Mi WhatsApp Business:</strong> conservas tu número y tu app en el celular (escanearás un código QR). <strong>Número nuevo:</strong> un número que no tenga WhatsApp; te llega un código por SMS.</p>
     <p id="wa-msg" style="margin:10px 0 0;font-weight:600;color:#fbbf24"></p>
     <label class="small muted" style="display:block;margin-top:10px;max-width:320px">Número a conectar (solo si compartes varios)<input id="wa-numero" placeholder="55 1234 5678" inputmode="tel" style="width:100%"></label>
+    <details style="margin-top:8px"><summary class="small muted" style="cursor:pointer">Avanzado: conectar con los IDs de WhatsApp Manager</summary>
+      <div style="display:grid;gap:6px;max-width:420px;margin-top:8px">
+        <label class="small muted">ID de la cuenta de WhatsApp (WABA ID)<input id="wa-waba" inputmode="numeric" placeholder="1632154828399441" style="width:100%"></label>
+        <label class="small muted">ID del número de teléfono (Phone number ID)<input id="wa-phone" inputmode="numeric" placeholder="1374873522382080" style="width:100%"></label>
+        <p class="muted small" style="margin:0">Los ves en WhatsApp Manager → Números de teléfono, o en tu app de Meta → WhatsApp → Configuración de la API. Úsalo solo si Meta no comparte la cuenta sola.</p></div></details>
     <form id="wa-form" method="post" action="${base}/agente/whatsapp" hidden><input name="code"><input name="waba_id"><input name="phone_number_id"><input name="evento"><input name="numero"><input name="pagina"></form>
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
     <script>${raw(`(function () {
@@ -1070,7 +1075,8 @@ function conectarWhatsapp(wa, { base, app }) {
       // Se abre la ventana de Meta en esta misma pestaña y Meta regresa al panel (más confiable que el SDK en ventana emergente).
       window.waAbrir = function (coex) {
         msg('Abriendo Meta…');
-        location.href = '${base}/agente/whatsapp/abrir?coex=' + (coex ? '1' : '0') + '&numero=' + encodeURIComponent((document.getElementById('wa-numero') || {}).value || '');
+        var v = function (id) { return encodeURIComponent((document.getElementById(id) || {}).value || ''); };
+        location.href = '${base}/agente/whatsapp/abrir?coex=' + (coex ? '1' : '0') + '&numero=' + v('wa-numero') + '&waba=' + v('wa-waba') + '&phone=' + v('wa-phone');
       };
       window.waConectar = function (coex) {
         if (!window.FB) return msg('La ventana de Meta todavía está cargando. Espera un segundo y vuelve a tocar el botón.');

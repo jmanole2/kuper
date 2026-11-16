@@ -39,6 +39,8 @@ export function estado(client) {
 export async function resolverActivos(token, { numero = '' } = {}) {
   const dbg = await graph('GET', 'debug_token', { query: { input_token: token, access_token: `${config.whatsappApp.id}|${config.whatsappApp.secret}` } });
   const scopes = dbg.data?.granular_scopes || [];
+  // Diagnóstico sin datos sensibles: qué permisos trae el token y a cuántas cuentas aplica cada uno.
+  console.log(`[whatsapp signup] token: ${JSON.stringify({ tipo: dbg.data?.type || '', valido: !!dbg.data?.is_valid, permisos: scopes.map((s) => `${s.scope}:${(s.target_ids || []).length}`) })}`);
   const wabas = [...new Set(scopes.filter((s) => /^whatsapp_business_(management|messaging)$/.test(s.scope)).flatMap((s) => s.target_ids || []))];
   if (!wabas.length) throw new Error('Meta no compartió ninguna cuenta de WhatsApp con Kuper. En la ventana de Meta elige tu cuenta de WhatsApp Business y tu número, y termina todos los pasos.');
   const numeros = [];
@@ -68,7 +70,7 @@ export async function conectar(client, { code, waba_id, phone_number_id, evento 
   if (!configurado()) throw new Error('Falta configurar la app de Meta de Kuper en el panel (META_APP_ID, META_CONFIG_ID y META_APP_SECRET).');
   const creds = db.clientCredentials(client);
   if (!creds.agente_url || !creds.api_key) throw new Error('Primero pon la URL del agente de WhatsApp de esta marca (Configuración).');
-  let waba = String(waba_id || '').replace(/\D/g, ''), phone = String(phone_number_id || '').replace(/\D/g, '');
+  let waba = String(waba_id || '').replace(/\D/g, '').slice(0, 25), phone = String(phone_number_id || '').replace(/\D/g, '').slice(0, 25);
   if (!code) throw new Error('Meta no regresó la autorización. Intenta otra vez y termina todos los pasos de la ventana.');
   const coexistencia = /WHATSAPP_BUSINESS_APP_ONBOARDING/.test(String(evento)) || String(evento) === 'coexistencia';
 
@@ -88,6 +90,11 @@ export async function conectar(client, { code, waba_id, phone_number_id, evento 
   if (!token) throw ultimo || new Error('Meta no regresó el token. Intenta otra vez.');
   // La ventana no avisó la cuenta y el número: se le pregunta a Meta qué se compartió.
   if (!waba || !phone) { const r = await resolverActivos(token, { numero }); waba = r.waba_id; phone = r.phone_number_id; }
+  else {
+    // IDs escritos a mano (o enviados por la ventana): se comprueba que el token sí tenga acceso a ese número.
+    const p = await graph('GET', phone, { token, query: { fields: 'id,display_phone_number' } }).catch((e) => { throw new Error(`El token de Meta no tiene acceso a ese número (${e.message}). Revisa el ID del número y que esté en esa cuenta de WhatsApp.`); });
+    if (!p.id && !p.display_phone_number) throw new Error('No encontré ese número en Meta. Revisa el ID del número.');
+  }
   const verify = crypto.randomBytes(18).toString('hex');
 
   // 2. El agente recibe la conexión antes de suscribir (Meta verifica su webhook con este verify token).
