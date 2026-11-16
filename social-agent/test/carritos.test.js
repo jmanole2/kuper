@@ -40,7 +40,7 @@ test('recordatorio a la hora, en horario, con nombre y link; segundo a las 24 h'
   assert.equal(enviados[0].plantilla, 'carrito_pendiente'); assert.deepEqual(enviados[0].vals, ['Ana', 'https://tienda.test/checkouts/chk1/recover']);
   assert.equal((await K.revisar(cli())).enviados, 0, 'no repite');
   const x = K.listar(c.id)[0]; assert.equal(x.estado, 'recordado'); assert.ok(x.lead_id);
-  db.getDb().prepare("UPDATE carritos SET recordado_at = datetime('now', '-25 hours') WHERE id = ?").run(x.id);
+  db.getDb().prepare("UPDATE carritos SET recordado_at = '2026-11-13 10:00:00' WHERE id = ?").run(x.id);
   reloj = new Date('2026-11-14T03:30:00Z'); // 21:30 CDMX: fuera de horario
   assert.equal((await K.revisar(cli())).enviados, 0, 'de noche no');
   reloj = new Date('2026-11-14T16:00:00Z');

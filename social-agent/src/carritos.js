@@ -114,7 +114,7 @@ export async function revisar(client) {
       const vals = [x.nombre?.split(' ')[0] || 'Hola', x.url || config.publicBaseUrl];
       await hooks.enviar(client, { telefono: x.telefono, plantilla, idioma: aj.idioma, vals, leadId: lead.id, autor: 'Carrito abandonado',
         texto: `[Carrito abandonado${segundo ? ' · 2º recordatorio' : ''}] ${x.productos || ''} · $${Math.round(x.total)} · ${x.url || ''}`.slice(0, 600) });
-      d().prepare("UPDATE carritos SET estado = 'recordado', recordatorios = recordatorios + 1, recordado_at = datetime('now'), lead_id = ?, error = NULL, updated_at = datetime('now') WHERE id = ?").run(lead.id, x.id);
+      d().prepare("UPDATE carritos SET estado = 'recordado', recordatorios = recordatorios + 1, recordado_at = ?, lead_id = ?, error = NULL, updated_at = datetime('now') WHERE id = ?").run(ts(0), lead.id, x.id);
       enviados++;
     } catch (e) {
       d().prepare("UPDATE carritos SET estado = 'error', error = ?, updated_at = datetime('now') WHERE id = ?").run(String(e.message).slice(0, 300), x.id);
