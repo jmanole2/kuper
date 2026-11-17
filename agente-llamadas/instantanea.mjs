@@ -140,7 +140,14 @@ export function slugDe(d) {
   const s = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '');
   return s && s !== 'd' ? s : 'demo';
 }
-export const linkDe = (d) => `https://kuper.media/demo/?${slugDe(d)}=${d.id}`;
+// Socios con la demo en su dominio: sus propios límites y su link. La marca se reconoce por el Origin de la página.
+export const MARCAS = {
+  kuper: { nombre: 'Kuper Media', base: 'https://kuper.media/demo/', origenes: ['https://kuper.media', 'https://www.kuper.media'] },
+  be: { nombre: 'Agencia BE', base: 'https://beagencia.com/demo/', origenes: ['https://beagencia.com', 'https://www.beagencia.com'],
+    porIp: Number(process.env.DEMO_BE_POR_IP || 1), porDia: Number(process.env.DEMO_BE_DIA || 10) },
+};
+export const marcaDeOrigen = (o) => Object.keys(MARCAS).find((k) => MARCAS[k].origenes.includes(String(o || ''))) || 'kuper';
+export const linkDe = (d) => `${(MARCAS[d.marca] || MARCAS.kuper).base}?${slugDe(d)}=${d.id}`;
 
 // ------------------------------------------------------------ guardar
 export function almacen(dir) {

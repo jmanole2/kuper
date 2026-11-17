@@ -36,19 +36,21 @@ const demoDe = (url) => demos.get(String(url.searchParams.get('demo') || '')) ||
 const instantaneas = inst.almacen(join(process.env.LLAMADAS_DATOS || join(aqui, 'datos'), 'instantaneas'));
 const instDe = (url) => (instCfg && url.searchParams.get('instantanea') ? instantaneas.leer(url.searchParams.get('instantanea')) : null);
 // La página vive en kuper.media/demo y le habla a este servidor: solo esos orígenes pueden.
-const ORIGENES = String(process.env.DEMO_ORIGENES || 'https://kuper.media,https://www.kuper.media').split(',').map((x) => x.trim()).filter(Boolean);
+const ORIGENES = String(process.env.DEMO_ORIGENES || 'https://kuper.media,https://www.kuper.media').split(',').map((x) => x.trim()).filter(Boolean)
+  .concat(Object.values(inst.MARCAS).flatMap((m) => m.origenes)); // los socios siempre pueden
 function cors(req, res) {
   const o = req.headers.origin;
   if (o && ORIGENES.includes(o)) { res.setHeader('Access-Control-Allow-Origin', o); res.setHeader('Vary', 'Origin'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'); }
 }
 const INST_POR_IP = Number(process.env.DEMO_GRATIS_POR_IP || 3), INST_POR_DIA = Number(process.env.DEMO_GRATIS_DIA || 60);
-let instDia = '', instTotal = 0; const instPorIp = new Map();
-function permitirInst(ip) {
+let instDia = ''; const instTotal = new Map(), instPorIp = new Map();
+function permitirInst(ip, marca = 'kuper') {
   const hoy = new Date().toISOString().slice(0, 10);
-  if (hoy !== instDia) { instDia = hoy; instTotal = 0; instPorIp.clear(); }
-  if (instTotal >= INST_POR_DIA) return 'Hoy ya se hicieron muchas demos. Escríbenos por WhatsApp y te la armamos.';
-  if ((instPorIp.get(ip) || 0) >= INST_POR_IP) return 'Ya hiciste varias demos hoy. Escríbenos por WhatsApp y te ayudamos.';
-  instTotal += 1; instPorIp.set(ip, (instPorIp.get(ip) || 0) + 1);
+  if (hoy !== instDia) { instDia = hoy; instTotal.clear(); instPorIp.clear(); }
+  const m = inst.MARCAS[marca] || {}, porIp = m.porIp ?? INST_POR_IP, porDia = m.porDia ?? INST_POR_DIA, llaveIp = `${marca}:${ip}`;
+  if ((instTotal.get(marca) || 0) >= porDia) return 'Hoy ya se hicieron muchas demos. Escríbenos por WhatsApp y te la armamos.';
+  if ((instPorIp.get(llaveIp) || 0) >= porIp) return porIp === 1 ? 'Ya hiciste tu demo de hoy. Escríbenos por WhatsApp y te ayudamos.' : 'Ya hiciste varias demos hoy. Escríbenos por WhatsApp y te ayudamos.';
+  instTotal.set(marca, (instTotal.get(marca) || 0) + 1); instPorIp.set(llaveIp, (instPorIp.get(llaveIp) || 0) + 1);
   return null;
 }
 const ERRORES_INST = { direccion_no_permitida: 'Ese link no se puede abrir. Revisa que sea la página pública de tu negocio.', no_es_negocio: 'No encontramos información de un negocio en esa página. Cuéntanos en dos líneas qué hace tu negocio.',
@@ -63,7 +65,8 @@ async function crearInstantanea(req, res) {
   const url = b.url ? inst.normalizarUrl(b.url) : null;
   if (b.url && !url) return json(res, 400, { error: 'Ese link no parece válido. Ejemplo: minegocio.com' });
   if (!url && descripcion.length < 30) return json(res, 400, { error: 'Pega el link de tu negocio o cuéntanos qué hace (mínimo dos líneas).' });
-  const limite = permitirInst(ipDe(req));
+  const marca = inst.marcaDeOrigen(req.headers.origin);
+  const limite = permitirInst(ipDe(req), marca);
   if (limite) return json(res, 429, { error: limite });
   try {
     let sitio = null;
@@ -73,8 +76,8 @@ async function crearInstantanea(req, res) {
       if (sitio && sitio.texto.length < 200 && !descripcion) return json(res, 422, { error: 'Tu página casi no tiene texto que podamos leer. Cuéntanos en dos líneas qué hace tu negocio.', pedir_descripcion: true });
     }
     const negocio = await inst.armarNegocio({ sitio, descripcion });
-    const d = instantaneas.crear({ negocio, logo: sitio?.logo || '', url: sitio?.url || '', contacto: { nombre, whatsapp: tel, correo } });
-    console.log(`${new Date().toISOString()} demo gratis ${d.id}: ${negocio.negocio} (${sitio?.url || 'descripción'})`);
+    const d = instantaneas.crear({ negocio, marca, logo: sitio?.logo || '', url: sitio?.url || '', contacto: { nombre, whatsapp: tel, correo } });
+    console.log(`${new Date().toISOString()} demo gratis ${d.id}${marca !== 'kuper' ? ` [${marca}]` : ''}: ${negocio.negocio} (${sitio?.url || 'descripción'})`);
     avisarLead(d).catch((e) => console.error('[demo gratis lead]', e.message));
     json(res, 200, { id: d.id, slug: inst.slugDe(d), negocio: negocio.negocio, giro: negocio.giro, servicios: negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(), limites: inst.LIMITES });
   } catch (e) {
@@ -87,11 +90,11 @@ async function avisarLead(d) {
   const url = String(process.env.PANEL_URL || '').replace(/\/+$/, ''), slug = process.env.PANEL_SLUG, key = process.env.PANEL_API_KEY;
   if (!url || !slug || !key) return;
   await fetch(`${url}/api/${encodeURIComponent(slug)}/leads`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({ nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, email: d.contacto.correo || undefined, origen: 'web', empresa: d.negocio.negocio, tags: ['demo gratis'],
+    body: JSON.stringify({ nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, email: d.contacto.correo || undefined, origen: 'web', empresa: d.negocio.negocio, tags: ['demo gratis', ...(d.marca && d.marca !== 'kuper' ? [inst.MARCAS[d.marca]?.nombre || d.marca] : [])],
       resumen: `Hizo su demo gratis: ${d.negocio.negocio} (${d.negocio.giro}). ${d.url || 'Sin página web'}.`, nota: `Demo gratis ${d.url || ''}` }) });
   // Y un correo al aviso de Kuper (Configuración → Notificaciones del panel), con botón para escribirle por WhatsApp.
   await fetch(`${url}/api/${encodeURIComponent(slug)}/avisos`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({ correo: true, nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, origen: 'web', titulo: `Nueva demo gratis: ${d.negocio.negocio}`.slice(0, 160),
+    body: JSON.stringify({ correo: true, nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, origen: 'web', titulo: `Nueva demo gratis${d.marca && d.marca !== 'kuper' ? ` (${inst.MARCAS[d.marca]?.nombre})` : ''}: ${d.negocio.negocio}`.slice(0, 160),
       texto: [`Negocio: ${d.negocio.negocio} (${d.negocio.giro})`, d.url ? `Página: ${d.url}` : 'Sin página web (lo describió)', d.contacto.correo ? `Correo: ${d.contacto.correo}` : '',
         `Su demo: ${inst.linkDe(d)}`].filter(Boolean).join('\n') }) });
 }

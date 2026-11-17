@@ -94,3 +94,10 @@ test('link de la demo con el nombre del negocio', () => {
   assert.equal(inst.linkDe({ id: 'abc12345', url: 'https://chubbiesburger.mx', negocio: { negocio: 'x' } }), 'https://kuper.media/demo/?chubbiesburger=abc12345');
   assert.equal(inst.slugDe({ negocio: { negocio: '' } }), 'demo');
 });
+
+test('socios: la marca sale del dominio de la página y cambia el link', () => {
+  assert.equal(inst.marcaDeOrigen('https://beagencia.com'), 'be');
+  assert.equal(inst.marcaDeOrigen('https://kuper.media'), 'kuper');
+  assert.equal(inst.marcaDeOrigen('https://otro.com'), 'kuper');
+  assert.equal(inst.linkDe({ id: 'abc12345', marca: 'be', url: 'https://peliculas3m.com' }), 'https://beagencia.com/demo/?peliculas3m=abc12345');
+});
