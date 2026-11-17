@@ -87,3 +87,10 @@ test('si la IA falla con JSON, reintenta con menos texto; sin nombre usa uno des
   await assert.rejects(inst.armarNegocio({ descripcion: 'algo' }), /no_es_negocio/);
   inst.hooks.ia = antes;
 });
+
+test('link de la demo con el nombre del negocio', () => {
+  assert.equal(inst.slugDe({ url: 'https://www.peliculas3m.com/', negocio: { negocio: 'SIS 3M' } }), 'peliculas3m');
+  assert.equal(inst.slugDe({ url: '', negocio: { negocio: 'Café Ñandú & Co.' } }), 'cafe-nandu-co');
+  assert.equal(inst.linkDe({ id: 'abc12345', url: 'https://chubbiesburger.mx', negocio: { negocio: 'x' } }), 'https://kuper.media/demo/?chubbiesburger=abc12345');
+  assert.equal(inst.slugDe({ negocio: { negocio: '' } }), 'demo');
+});

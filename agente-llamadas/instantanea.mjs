@@ -132,6 +132,16 @@ export async function armarNegocio({ sitio = null, descripcion = '', env = proce
     tono: /tú|tu\b/i.test(String(d.tono || '')) ? 'de tú' : 'de usted' };
 }
 
+/** Nombre corto para el link de la demo (kuper.media/demo/?peliculas3m=ID): el dominio, o el nombre del negocio. */
+export function slugDe(d) {
+  let base = '';
+  try { if (d?.url) base = new URL(d.url).hostname.replace(/^www\./, '').split('.')[0]; } catch { /* sin url */ }
+  if (!base) base = String((typeof d?.negocio === 'object' ? d.negocio?.negocio : d?.negocio) || '');
+  const s = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '');
+  return s && s !== 'd' ? s : 'demo';
+}
+export const linkDe = (d) => `https://kuper.media/demo/?${slugDe(d)}=${d.id}`;
+
 // ------------------------------------------------------------ guardar
 export function almacen(dir) {
   mkdirSync(dir, { recursive: true });

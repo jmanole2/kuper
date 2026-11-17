@@ -203,7 +203,9 @@
   const $ = (id) => document.getElementById(id);
   const WA_KUPER = '525552173832';
   let demo = null, conversacion = [], enLlamada = false, cronometro = null;
-  const guardarId = (id) => { const u = new URL(location.href); u.searchParams.set('d', id); history.replaceState(null, '', u); };
+  // Link de la demo: ?peliculas3m=ID (nombre del negocio = id). También acepta el formato viejo ?d=ID.
+  const guardarId = (d) => { const u = new URL(location.href); u.search = `?${encodeURIComponent(d.slug || 'd')}=${encodeURIComponent(d.id)}`; history.replaceState(null, '', u); };
+  const idDelLink = () => { const q = new URL(location.href).searchParams; if (q.get('d')) return q.get('d'); for (const [k, v] of q) if (/^[\w-]{6,16}$/.test(v) && !/^(utm_|fbclid|gclid)/.test(k)) return v; return null; };
   const mostrarError = (t) => { $('error').textContent = t; $('error').hidden = !t; };
   const letra = (n) => Object.assign(document.createElement('span'), { className: 'letra', textContent: (n || '?').trim()[0]?.toUpperCase() || '?' });
   const logoDe = (url, n) => { if (!url) return letra(n); const i = Object.assign(document.createElement('img'), { src: url, alt: '' }); i.onerror = () => i.replaceWith(letra(n)); return i; };
@@ -221,12 +223,12 @@
     burbuja('ella', `¡Hola! Soy Sofía, de ${d.negocio}. ¿En qué te puedo ayudar?`);
     conversacion.push({ rol: 'assistant', texto: `¡Hola! Soy Sofía, de ${d.negocio}. ¿En qué te puedo ayudar?` });
     $('loQuiero').href = `https://wa.me/${WA_KUPER}?text=${encodeURIComponent(`Hola, hice la demo gratis de ${d.negocio} y lo quiero en mi negocio (demo ${d.id})`)}`;
-    guardarId(d.id);
+    guardarId(d);
     $('paso3').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Volver a una demo ya creada (?d=…)
-  const previa = new URL(location.href).searchParams.get('d');
+  // Volver a una demo ya creada (?negocio=ID o ?d=ID)
+  const previa = idDelLink();
   if (previa) fetch(`${API}/api/instantanea?instantanea=${encodeURIComponent(previa)}`).then((r) => (r.ok ? r.json() : null)).then((d) => d && verDemo(d)).catch(() => {});
 
   $('form').addEventListener('submit', async (e) => {
@@ -251,7 +253,7 @@
     } finally { clearInterval(avance); $('crear').disabled = false; }
   });
 
-  $('otra').addEventListener('click', () => { if (enLlamada) cliente.stopCall(); demo = null; const u = new URL(location.href); u.searchParams.delete('d'); history.replaceState(null, '', u);
+  $('otra').addEventListener('click', () => { if (enLlamada) cliente.stopCall(); demo = null; const u = new URL(location.href); u.search = ''; history.replaceState(null, '', u);
     $('paso3').hidden = true; $('paso1').hidden = false; $('form').reset(); $('cajaDesc').hidden = true; $('sinWeb').hidden = false; });
 
   for (const b of document.querySelectorAll('.tabs button')) b.addEventListener('click', () => {

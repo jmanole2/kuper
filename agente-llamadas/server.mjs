@@ -76,7 +76,7 @@ async function crearInstantanea(req, res) {
     const d = instantaneas.crear({ negocio, logo: sitio?.logo || '', url: sitio?.url || '', contacto: { nombre, whatsapp: tel, correo } });
     console.log(`${new Date().toISOString()} demo gratis ${d.id}: ${negocio.negocio} (${sitio?.url || 'descripción'})`);
     avisarLead(d).catch((e) => console.error('[demo gratis lead]', e.message));
-    json(res, 200, { id: d.id, negocio: negocio.negocio, giro: negocio.giro, servicios: negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(), limites: inst.LIMITES });
+    json(res, 200, { id: d.id, slug: inst.slugDe(d), negocio: negocio.negocio, giro: negocio.giro, servicios: negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(), limites: inst.LIMITES });
   } catch (e) {
     console.error('[demo gratis]', e.message);
     json(res, e.message === 'no_es_negocio' ? 422 : 502, { error: ERRORES_INST[e.message] || 'No pudimos armar tu demo en este momento. Intenta de nuevo.', pedir_descripcion: e.message === 'no_es_negocio' });
@@ -93,7 +93,7 @@ async function avisarLead(d) {
   await fetch(`${url}/api/${encodeURIComponent(slug)}/avisos`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
     body: JSON.stringify({ correo: true, nombre: d.contacto.nombre, telefono: d.contacto.whatsapp, origen: 'web', titulo: `Nueva demo gratis: ${d.negocio.negocio}`.slice(0, 160),
       texto: [`Negocio: ${d.negocio.negocio} (${d.negocio.giro})`, d.url ? `Página: ${d.url}` : 'Sin página web (lo describió)', d.contacto.correo ? `Correo: ${d.contacto.correo}` : '',
-        `Su demo: https://kuper.media/demo/?d=${d.id}`].filter(Boolean).join('\n') }) });
+        `Su demo: ${inst.linkDe(d)}`].filter(Boolean).join('\n') }) });
 }
 // ?aplicante=<id>: probar la demo "como" un aplicante de la lista (envío de pendientes).
 const aplicanteDe = (demo, url) => (demo ? envios.aplicanteDe(demo, String(url.searchParams.get('aplicante') || '')) : null);
@@ -234,7 +234,7 @@ const server = createServer(async (req, res) => {
   if (ruta === '/api/instantanea' && req.method === 'GET') {
     const d = instDe(new URL(req.url, 'http://x'));
     if (!d) return json(res, 404, { error: 'Tu demo ya no está disponible. Haz una nueva.' });
-    return json(res, 200, { id: d.id, negocio: d.negocio.negocio, giro: d.negocio.giro, servicios: d.negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(),
+    return json(res, 200, { id: d.id, slug: inst.slugDe(d), negocio: d.negocio.negocio, giro: d.negocio.giro, servicios: d.negocio.servicios.slice(0, 4), logo: d.logo, asistente: 'Sofía', chat: chat.chatConfigurado(),
       limites: inst.LIMITES, usadas: { llamadas: d.llamadas, mensajes: d.mensajes } });
   }
   if (ruta === '/salud') return json(res, 200, { ok: true, servicio: 'agente-llamadas', panel: Boolean(sincro), citas: Boolean(funciones), ventas: marcando ? 'marcando' : buscarVentas ? 'solo_pruebas' : false });
