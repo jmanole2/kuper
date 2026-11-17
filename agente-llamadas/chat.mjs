@@ -149,7 +149,28 @@ export async function pedirJSON({ system, texto, env = process.env, maxTokens = 
     if (!r.ok || d.error) throw new Error(`openrouter ${r.status}: ${d?.error?.message || ''}`.trim());
     salida = String(d.choices?.[0]?.message?.content || '');
   } else throw new Error('sin_ia');
-  const m = salida.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('La IA no devolvió JSON');
-  return JSON.parse(m[0]);
+  return leerJSON(salida);
+}
+
+/** Saca el objeto JSON de la respuesta de la IA; si vino cortada, la cierra en el último dato completo. */
+export function leerJSON(salida) {
+  const txt = String(salida || '');
+  const ini = txt.indexOf('{');
+  if (ini < 0) throw new Error('La IA no devolvió JSON');
+  const fin = txt.lastIndexOf('}');
+  if (fin > ini) { try { return JSON.parse(txt.slice(ini, fin + 1)); } catch { /* quizá cortada: abajo */ } }
+  const s = txt.slice(ini);
+  // Recorre la cadena y recuerda la última posición donde el JSON estaba completo hasta un valor.
+  const pila = []; let enCadena = false, esc = false, corte = -1, pilaEnCorte = [];
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (enCadena) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') { enCadena = false; if (pila.at(-1) === '[') { corte = i + 1; pilaEnCorte = [...pila]; } } continue; }
+    if (ch === '"') enCadena = true;
+    else if (ch === '{' || ch === '[') pila.push(ch);
+    else if (ch === '}' || ch === ']') { pila.pop(); corte = i + 1; pilaEnCorte = [...pila]; }
+    else if (ch === ',' && pila.length) { corte = i; pilaEnCorte = [...pila]; }
+  }
+  if (corte < 0) throw new Error('La IA no devolvió JSON');
+  const cierre = pilaEnCorte.reverse().map((x) => (x === '{' ? '}' : ']')).join('');
+  try { return JSON.parse(s.slice(0, corte) + cierre); } catch { throw new Error('La IA no devolvió JSON'); }
 }

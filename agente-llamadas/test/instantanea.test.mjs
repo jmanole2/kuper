@@ -68,3 +68,22 @@ test('arma el negocio con la IA y rechaza lo que no es negocio', async () => {
   // el prompt de la voz deja las variables para Retell
   assert.match(construirPrompt(base), /asistente virtual de \{\{negocio\}\}, \{\{giro\}\}/);
 });
+
+test('respuesta cortada de la IA: se cierra en el último dato completo', async () => {
+  const { leerJSON } = await import('../chat.mjs');
+  assert.deepEqual(leerJSON('```json\n{"a":1,"b":["x"]}\n```'), { a: 1, b: ['x'] });
+  assert.deepEqual(leerJSON('{"negocio":"SIS","servicios":["Control solar","Seguri'), { negocio: 'SIS', servicios: ['Control solar'] });
+  assert.throws(() => leerJSON('lo siento'), /no devolvió JSON/);
+});
+
+test('si la IA falla con JSON, reintenta con menos texto; sin nombre usa uno descriptivo', async () => {
+  const antes = inst.hooks.ia;
+  let intentos = 0;
+  inst.hooks.ia = async ({ texto }) => { intentos++; if (texto.length > 6000) throw new Error('La IA no devolvió JSON'); return { es_negocio: true, negocio: '', giro: 'Cafetería', servicios: ['Café'] }; };
+  const n = await inst.armarNegocio({ descripcion: 'x'.repeat(50), sitio: { url: 'https://a.mx', titulo: 'Café Luna | Inicio', desc: '', sitio: '', texto: 'y'.repeat(9000) } });
+  assert.equal(intentos, 2);
+  assert.equal(n.negocio, 'Café Luna');
+  inst.hooks.ia = async () => ({ es_negocio: true, negocio: '' });
+  await assert.rejects(inst.armarNegocio({ descripcion: 'algo' }), /no_es_negocio/);
+  inst.hooks.ia = antes;
+});

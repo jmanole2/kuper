@@ -104,13 +104,27 @@ para una recepcionista virtual que contestará su teléfono y su WhatsApp. Respo
  "preguntas_frecuentes": ["Pregunta corta: respuesta corta", ...máximo 6], "tipo_de_cita": "el siguiente paso natural (agendar una cita, una visita, una cotización, tomar un pedido…)",
  "tono": "de usted o de tú, según el negocio", "idioma": "es"}
 Reglas: usa solo lo que está en el texto, no inventes precios ni datos. Escribe en español de México, frases cortas.
+Sé breve: cada servicio en una línea corta (máximo 15 palabras); si hay un catálogo largo, agrupa por categoría con un rango de precios.
+Si el dueño no dice el nombre de su negocio, en "negocio" pon un nombre descriptivo corto según el giro (por ejemplo "Tu cafetería").
+Responde solo el JSON, sin texto antes ni después.
 Si el texto no es de un negocio (página vacía, error, contenido para adultos, apuestas, armas, drogas o algo ilegal), responde {"es_negocio": false}.`;
 
 export async function armarNegocio({ sitio = null, descripcion = '', env = process.env }) {
   const texto = [sitio ? `URL: ${sitio.url}\nTítulo: ${sitio.titulo}\nDescripción: ${sitio.desc}\nNombre del sitio: ${sitio.sitio}\n\n${sitio.texto}` : '',
     descripcion ? `Lo que escribió el dueño:\n${String(descripcion).slice(0, 2000)}` : ''].filter(Boolean).join('\n\n');
-  const d = await hooks.ia({ system: SISTEMA, texto, env, maxTokens: 1800 });
-  if (!d || d.es_negocio === false || !String(d.negocio || '').trim()) throw new Error('no_es_negocio');
+  let d;
+  try { d = await hooks.ia({ system: SISTEMA, texto, env, maxTokens: 3000 }); }
+  catch (e) {
+    // Páginas con catálogos largos: la respuesta puede cortarse. Un segundo intento con menos texto.
+    if (!/JSON/.test(e.message)) throw e;
+    console.error('[demo gratis] reintento con menos texto:', e.message);
+    d = await hooks.ia({ system: SISTEMA, texto: texto.slice(0, 6000), env, maxTokens: 3000 });
+  }
+  if (!d || d.es_negocio === false) throw new Error('no_es_negocio');
+  if (!String(d.negocio || '').trim()) {
+    if (!String(d.giro || '').trim() && !(Array.isArray(d.servicios) && d.servicios.length)) throw new Error('no_es_negocio');
+    d.negocio = sitio?.sitio || sitio?.titulo?.split(/[|\-–]/)[0] || 'Tu negocio';
+  }
   const lista = (x, n) => (Array.isArray(x) ? x : []).map((s) => String(s).trim().slice(0, 240)).filter(Boolean).slice(0, n);
   return { negocio: String(d.negocio).trim().slice(0, 80), giro: String(d.giro || '').trim().slice(0, 240) || 'negocio', servicios: lista(d.servicios, 10),
     horario: String(d.horario || '').trim().slice(0, 160), ubicacion: String(d.ubicacion || '').trim().slice(0, 200), contacto: String(d.contacto || '').trim().slice(0, 160),
