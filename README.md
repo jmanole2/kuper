@@ -37,3 +37,9 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Discovery Day by Foresta — landing de registro
+
+`discovery-day/index.html` (HTML + CSS + JS, sin build). Assets en `discovery-day/assets/` (logo SVG extraído del .ai, foto).
+Para guardar registros, poner la URL en `FORM_ENDPOINT` (Apps Script de Google Sheets, Formspree, Make/Zapier). Vacío = modo demo.
+`PRIVACY_URL` apunta al aviso de privacidad oficial (si se deja vacío se abre el modal con texto provisional).
