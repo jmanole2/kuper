@@ -15,7 +15,7 @@
       <label for="code" class="sr-only">Código de verificación</label>
       <input id="code" class="code-input" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
              pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required autofocus>
-      <button class="btn btn-glow btn-block" type="submit" data-busy="Verificando…">Confirmar participación</button>
+      <button class="btn btn-dark btn-block" type="submit" data-busy="Verificando…">Confirmar participación</button>
     </form>
 
     <div class="verify-actions">

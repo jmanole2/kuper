@@ -21,18 +21,18 @@ tools/qr/       generador de QR por origen
 
 ## DreamHost (hosting compartido)
 
-1. **Panel → Websites → Manage → dominio**: *Web directory* = `kvibeplus.mx/kvibe/public`
+1. **Panel → Websites → Manage → dominio**: *Web directory* = `k-vibe.com.mx/kvibe/public`
    (así `app/` y `storage/` quedan fuera del webroot). Activar **Let's Encrypt** (gratis).
 2. **PHP**: elegir 8.2 o superior en el mismo panel. Límites de subida: crear
    `~/.php/8.x/phprc` (8.x = tu versión) con el contenido de `public/.user.ini` (DreamHost lee `phprc`).
-3. **MySQL**: Panel → MySQL Databases. Crea BD, usuario y un *hostname* tipo `mysql.kvibeplus.mx`.
-   Ese hostname va en `db.host` (no funciona `localhost`). Importar: `mysql -h mysql.kvibeplus.mx -u kvibe_app -p kvibe < sql/schema.sql`.
-4. **Correo**: Panel → Mail → crear `no-reply@kvibeplus.mx`. SMTP: `smtp.dreamhost.com`, puerto 465 SSL, usuario = correo completo.
+3. **MySQL**: Panel → MySQL Databases. Crea BD, usuario y un *hostname* tipo `mysql.k-vibe.com.mx`.
+   Ese hostname va en `db.host` (no funciona `localhost`). Importar: `mysql -h mysql.k-vibe.com.mx -u kvibe_app -p kvibe < sql/schema.sql`.
+4. **Correo**: Panel → Mail → crear `no-reply@k-vibe.com.mx`. SMTP: `smtp.dreamhost.com`, puerto 465 SSL, usuario = correo completo.
    Si el DNS está en DreamHost, revisar en *Manage Websites → DNS* que existan SPF y DKIM; agregar DMARC a mano
-   (`_dmarc` TXT `v=DMARC1; p=none; rua=mailto:no-reply@kvibeplus.mx`).
+   (`_dmarc` TXT `v=DMARC1; p=none; rua=mailto:no-reply@k-vibe.com.mx`).
 5. **SSH**: el usuario del sitio debe ser *Shell user* (Panel → Users) para correr `bin/create-user.php`.
-6. **Cron**: Panel → Advanced → Cron Jobs, con los mismos comandos de abajo (ruta `/home/USUARIO/kvibeplus.mx/kvibe/...`).
-   Para `backup.sh`, el `~/.my.cnf` debe incluir `host=mysql.kvibeplus.mx`.
+6. **Cron**: Panel → Advanced → Cron Jobs, con los mismos comandos de abajo (ruta `/home/USUARIO/k-vibe.com.mx/kvibe/...`).
+   Para `backup.sh`, el `~/.my.cnf` debe incluir `host=mysql.k-vibe.com.mx`.
 7. **Dominio**: si DreamHost no vende `.mx`, comprarlo en otro registrador y apuntar los nameservers a
    `ns1/ns2/ns3.dreamhost.com`.
 
@@ -95,7 +95,7 @@ reCAPTCHA v3 también funciona (`provider => 'recaptcha'`).
 ## QR
 ```
 cd tools/qr && npm install
-node qr.mjs https://kvibeplus.mx pantalla redes impreso
+node qr.mjs https://k-vibe.com.mx pantalla redes impreso
 ```
 Genera PNG 3000 px y SVG en `tools/qr/out/`.
 

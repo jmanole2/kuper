@@ -18,6 +18,18 @@
     upd();
   });
 
+  // ---- Barra de correo del hero: pasa el correo al formulario y baja hasta él ----
+  var heroCta = document.querySelector('.hero-cta');
+  if (heroCta) heroCta.addEventListener('submit', function (ev) {
+    var target = document.getElementById('email');
+    if (!target) return;
+    ev.preventDefault();
+    var v = heroCta.querySelector('input').value.trim();
+    if (v) target.value = v;
+    document.getElementById('participa').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function () { document.getElementById('first_name').focus({ preventScroll: true }); }, 500);
+  });
+
   // ---- Quitar marca de error al corregir un campo ----
   document.addEventListener('input', clearInvalid);
   document.addEventListener('change', clearInvalid);

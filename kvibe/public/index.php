@@ -17,6 +17,10 @@ if (random_int(1, 50) === 1) {
 
 $errors = [];
 $old = [];
+// Correo escrito en la barra del hero (?email=) → se precarga en el formulario
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['email'])) {
+    $old['email'] = mb_substr(trim((string) $_GET['email']), 0, 190);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $old = [

@@ -1,7 +1,7 @@
 // Genera los QR en alta resolución (PNG 3000 px + SVG vectorial) para cada origen.
 // Uso:
 //   cd kvibe/tools/qr && npm install
-//   node qr.mjs https://kvibeplus.mx pantalla redes impreso
+//   node qr.mjs https://k-vibe.com.mx pantalla redes impreso
 // Salida: tools/qr/out/kvibe-qr-<origen>.png / .svg
 import QRCode from 'qrcode';
 import { mkdirSync } from 'node:fs';

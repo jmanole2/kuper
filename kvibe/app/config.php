@@ -14,7 +14,7 @@ return [
     // ---------- General ----------
     'debug'       => false,
     'timezone'    => 'America/Mexico_City',
-    'base_url'    => 'https://kvibeplus.mx',   // PENDIENTE: dominio elegido por el cliente
+    'base_url'    => 'https://k-vibe.com.mx',   // PENDIENTE: dominio elegido por el cliente
     'force_https' => true,
     'trust_cloudflare_ip' => false,            // true solo si el sitio está detrás de Cloudflare
 
@@ -35,9 +35,22 @@ return [
         'meta_desc'     => 'Participa en el concurso de K-VIBE+ en el canal 564 de LG Channels. Sube tu foto, crea tu slogan y gana.',
         'channel_pill'  => 'Canal 564 · LG Channels',
         'hero_kicker'   => 'Concurso K-VIBE+',
-        'hero_title'    => '¡Comparte tu K-VIBE+ y gana!',
-        'hero_subtitle' => 'Toma una foto creativa viendo K-VIBE+ en el canal 564, crea un slogan original y participa por increíbles premios.',
-        'hero_cta'      => 'Quiero participar',
+        'hero_title'    => 'Comparte tu K-VIBE+ y gana',
+        'hero_subtitle' => 'Toma una foto creativa viendo K-VIBE+ en el canal 564, crea un slogan original y participa por premios LG.',
+        'hero_cta'      => 'Participar',
+        'hero_email_ph' => 'Escribe tu correo',
+        'hero_meta'     => 'Válido en toda la República Mexicana',
+        // Llamadas con punto sobre la imagen del hero (x/y en % de la imagen; side = lado del texto)
+        'callouts' => [
+            ['label' => 'Sintoniza el canal 564', 'x' => 72, 'y' => 22, 'side' => 'left'],
+            ['label' => 'Toma tu foto creativa', 'x' => 16, 'y' => 66, 'side' => 'right'],
+            ['label' => 'Crea tu slogan',        'x' => 86, 'y' => 77, 'side' => 'right'],
+        ],
+        'nav' => [
+            ['label' => 'Mecánica',        'href' => '#mecanica'],
+            ['label' => 'Cómo participar', 'href' => '#reglas'],
+            ['label' => 'Bases',           'href' => 'legal.php?doc=terminos'],
+        ],
 
         'steps_title' => 'Así de fácil',
         'steps' => [
@@ -151,7 +164,7 @@ return [
     // driver: 'smtp' | 'mail' (función mail() del hosting) | 'log' (pruebas: storage/logs/mail.log)
     'mail' => [
         'driver'    => 'smtp',
-        'from'      => 'no-reply@kvibeplus.mx',
+        'from'      => 'no-reply@k-vibe.com.mx',
         'from_name' => 'K-VIBE+',
         'smtp' => ['host' => '', 'port' => 465, 'secure' => 'ssl', 'user' => '', 'pass' => ''],
     ],
@@ -169,11 +182,11 @@ return [
         'lg_logo'       => null,   // PNG transparente o SVG
     ],
     'theme' => [                   // ajustar con la paleta del cliente
-        'bg'        => '#12062e',
-        'bg2'       => '#1d0b4a',
-        'primary'   => '#a855f7',
-        'secondary' => '#22d3ee',
-        'accent'    => '#ff4fd8',
+        'bg'        => '#2f2a5a',      // degradado del hero (inicio)
+        'bg2'       => '#9fabcc',      // degradado del hero (final)
+        'primary'   => '#4f3fc4',      // botones / acentos
+        'secondary' => '#46b8d4',      // detalles
+        'accent'    => '#b46ad8',
     ],
 
     // ---------- Analítica (opcional) ----------

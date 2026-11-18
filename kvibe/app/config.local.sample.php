@@ -2,10 +2,10 @@
 // Copia este archivo como app/config.local.php y llena los secretos.
 // config.local.php NO se sube al repositorio.
 return [
-    'base_url' => 'https://kvibeplus.mx',
+    'base_url' => 'https://k-vibe.com.mx',
 
     'db' => [
-        'host' => 'mysql.kvibeplus.mx',   // DreamHost: el hostname MySQL del panel, NO 'localhost'
+        'host' => 'mysql.k-vibe.com.mx',   // DreamHost: el hostname MySQL del panel, NO 'localhost'
         'name' => 'kvibe',
         'user' => 'kvibe_app',
         'pass' => 'CAMBIAR',
@@ -13,12 +13,12 @@ return [
 
     'mail' => [
         'driver' => 'smtp',
-        'from'   => 'no-reply@kvibeplus.mx',
+        'from'   => 'no-reply@k-vibe.com.mx',
         'smtp'   => [
             'host'   => 'smtp.dreamhost.com',   // DreamHost
             'port'   => 465,
             'secure' => 'ssl',          // 'ssl' (465) o 'tls' (587, STARTTLS)
-            'user'   => 'no-reply@kvibeplus.mx', // correo completo
+            'user'   => 'no-reply@k-vibe.com.mx', // correo completo
             'pass'   => 'CAMBIAR',
         ],
     ],
