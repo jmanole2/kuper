@@ -30,8 +30,8 @@ $heroM = cfg('assets.hero_mobile');
       <?php foreach (cfg('texts.steps') as $i => $s): ?>
         <li class="step">
           <span class="step-num"><?= $i + 1 ?></span>
-          <h3><?= e($s['title']) ?></h3>
-          <p><?= e($s['text']) ?></p>
+          <h3><?= brand($s['title']) ?></h3>
+          <p><?= brand($s['text']) ?></p>
         </li>
       <?php endforeach; ?>
     </ol>
@@ -47,7 +47,7 @@ $heroM = cfg('assets.hero_mobile');
   <section class="rules card" aria-labelledby="rules-title">
     <h2 id="rules-title" class="section-title"><?= e(t('rules_title')) ?></h2>
     <ul class="rule-list">
-      <?php foreach (cfg('texts.rules') as $r): ?><li><?= e($r) ?></li><?php endforeach; ?>
+      <?php foreach (cfg('texts.rules') as $r): ?><li><?= brand($r) ?></li><?php endforeach; ?>
     </ul>
   </section>
 
@@ -88,7 +88,7 @@ $heroM = cfg('assets.hero_mobile');
         </div>
         <?php if (cfg('category_enabled')): ?>
         <div class="field">
-          <label for="category"><?= e(t('category_label')) ?> <span class="opt">(opcional)</span></label>
+          <label for="category"><?= brand(t('category_label')) ?> <span class="opt">(opcional)</span></label>
           <div class="select">
             <select id="category" name="category"<?= $inv('category') ?>>
               <option value="">Elige una opción</option>
@@ -104,7 +104,7 @@ $heroM = cfg('assets.hero_mobile');
 
       <fieldset>
         <legend><span class="leg-num">2</span> <?= e(t('photo_label')) ?></legend>
-        <p class="hint"><?= e(t('photo_help')) ?></p>
+        <p class="hint"><?= brand(t('photo_help')) ?></p>
         <label class="dropzone<?= isset($errors['photo']) ? ' is-invalid' : '' ?>" for="photo">
           <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required<?= $inv('photo') ?>>
           <span class="dz-empty">
@@ -124,7 +124,7 @@ $heroM = cfg('assets.hero_mobile');
       <fieldset>
         <legend><span class="leg-num">3</span> Tu slogan</legend>
         <div class="field">
-          <label for="slogan"><?= e(t('slogan_label')) ?></label>
+          <label for="slogan"><?= brand(t('slogan_label')) ?></label>
           <textarea id="slogan" name="slogan" rows="3" required maxlength="<?= $sloganMax ?>" placeholder="<?= e(t('slogan_placeholder')) ?>" data-counter="slogan-count"<?= $inv('slogan') ?>><?= $val('slogan') ?></textarea>
           <p class="counter" id="slogan-count" aria-live="polite"><span>0</span> / <?= $sloganMax ?></p>
           <?= $err('slogan') ?>

@@ -37,7 +37,7 @@ function cfg(string $path, mixed $default = null): mixed
 /** Escapa y evita que "K-VIBE+" se parta en dos líneas. */
 function brand(string $s): string
 {
-    return str_replace('K-VIBE+', '<span class="nw">K-VIBE+</span>', e($s));
+    return preg_replace('/K-VIBE\+?/', '<span class="nw">$0</span>', e($s));
 }
 
 function t(string $key): string

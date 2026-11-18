@@ -31,18 +31,18 @@ return [
 
     // ---------- Textos de la landing ----------
     'texts' => [
-        'site_title'    => 'K-VIBE+ · Comparte tu K-VIBE y gana',
+        'site_title'    => 'K-VIBE+ · Comparte tu K-VIBE+ y gana',
         'meta_desc'     => 'Participa en el concurso de K-VIBE+ en el canal 564 de LG Channels. Sube tu foto, crea tu slogan y gana.',
         'channel_pill'  => 'Canal 564 · LG Channels',
         'hero_kicker'   => 'Concurso K-VIBE+',
-        'hero_title'    => '¡Comparte tu K-VIBE y gana!',
+        'hero_title'    => '¡Comparte tu K-VIBE+ y gana!',
         'hero_subtitle' => 'Toma una foto creativa viendo K-VIBE+ en el canal 564, crea un slogan original y participa por increíbles premios.',
         'hero_cta'      => 'Quiero participar',
 
         'steps_title' => 'Así de fácil',
         'steps' => [
             ['title' => 'Escanea',            'text' => 'Escanea el QR y regístrate con tus datos.'],
-            ['title' => 'Comparte tu K-VIBE', 'text' => 'Sube una foto creativa viendo K-VIBE+ en el canal 564 con un toque coreano y crea tu slogan.'],
+            ['title' => 'Comparte tu K-VIBE+','text' => 'Sube una foto creativa viendo K-VIBE+ en el canal 564 con un toque coreano y crea tu slogan.'],
             ['title' => 'Gana',               'text' => 'Un jurado elegirá las participaciones más creativas y originales.'],
         ],
 
