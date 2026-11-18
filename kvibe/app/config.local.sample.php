@@ -29,6 +29,10 @@ return [
         'secret'   => 'CAMBIAR',
     ],
 
+    // Instalación sin SSH: pon aquí una frase larga y aleatoria (mín. 16 caracteres),
+    // entra a https://tudominio/setup.php y al terminar bórrala (o déjala vacía).
+    'setup_token' => '',
+
     // Para pruebas locales:
     // 'debug' => true, 'force_https' => false,
     // 'mail' => ['driver' => 'log'], 'captcha' => ['provider' => 'none'],

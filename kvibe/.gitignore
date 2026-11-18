@@ -4,3 +4,4 @@ storage/logs/*.log
 storage/backups/*.gz
 tools/qr/node_modules/
 tools/qr/out/
+storage/setup.lock

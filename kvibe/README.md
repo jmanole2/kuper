@@ -36,6 +36,21 @@ tools/qr/       generador de QR por origen
 7. **Dominio**: si DreamHost no vende `.mx`, comprarlo en otro registrador y apuntar los nameservers a
    `ns1/ns2/ns3.dreamhost.com`.
 
+## Instalación solo con FTP/SFTP (sin SSH)
+
+1. En el panel crea la BD MySQL y el correo `no-reply@` (pasos 3 y 4 de arriba).
+2. En tu compu copia `app/config.local.sample.php` → `app/config.local.php`, llena MySQL, SMTP, captcha
+   y pon un `setup_token` largo (mín. 16 caracteres).
+3. Sube la carpeta `kvibe/` completa por SFTP (incluido `config.local.php`).
+   Permisos (clic derecho → *File permissions*): `app/config.local.php` = 600, `storage/` y subcarpetas = 755.
+4. Límites de subida: crea `.php/8.x/phprc` en tu carpeta de usuario (FileZilla: activa *Mostrar archivos ocultos*)
+   con el contenido de `public/.user.ini`.
+5. Abre `https://tudominio/setup.php`: revisa el diagnóstico, crea las tablas, tu usuario admin y manda un correo de prueba.
+   Se bloquea sola (`storage/setup.lock`). Después borra el `setup_token` de `config.local.php`.
+6. Sin SSH no hay cron: la limpieza de pendientes ya corre sola de vez en cuando desde la landing.
+   El respaldo diario (`backup.sh`) sí necesita usuario *Shell*; mientras tanto, exporta la BD desde phpMyAdmin
+   (Panel → MySQL Databases) y descarga el CSV del panel.
+
 ## Instalación en el hosting (genérico)
 
 1. Subir la carpeta `kvibe/` completa y apuntar el document root del dominio a `kvibe/public/`.
