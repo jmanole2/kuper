@@ -1,0 +1,6 @@
+app/config.local.php
+storage/uploads/**/*.jpg
+storage/logs/*.log
+storage/backups/*.gz
+tools/qr/node_modules/
+tools/qr/out/

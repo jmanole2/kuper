@@ -1,0 +1,8 @@
+{
+  "name": "kvibe-qr",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "qrcode": "1.5.4"
+  }
+}
