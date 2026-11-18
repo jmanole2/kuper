@@ -17,8 +17,10 @@
   };
   const ORB = window.makeOrb({ particles: 4200, accent: C.lime, accentShare: 0.012 });
 
+  // logo: "kuper" (default, tinted white) or "crowdme" (drawn as-is, brand yellow)
+  const LOGO_KIND = CFG.logo || 'kuper';
   const LOGO = new Image();
-  LOGO.src = window.KUPER_LOGO;
+  LOGO.src = LOGO_KIND === 'crowdme' ? window.CROWDME_LOGO : window.KUPER_LOGO;
 
   // ---------------------------------------------------------------- helpers
   const font = (w, s, f = 'DM Sans') => `${w} ${s}px "${f}"`;
@@ -70,7 +72,10 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
     // header: white logo + pill
-    if (LOGO.naturalWidth) {
+    if (LOGO.naturalWidth && LOGO_KIND === 'crowdme') {
+      const lh = 64, lw = lh * LOGO.naturalWidth / LOGO.naturalHeight;
+      ctx.drawImage(LOGO, M, 61, lw, lh);
+    } else if (LOGO.naturalWidth) {
       const lh = 46, lw = lh * LOGO.naturalWidth / LOGO.naturalHeight;
       const c = document.createElement('canvas'); c.width = Math.ceil(lw); c.height = lh;
       const lg = c.getContext('2d');

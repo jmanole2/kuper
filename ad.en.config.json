@@ -1,0 +1,55 @@
+{
+  "width": 1080,
+  "height": 1350,
+  "fps": 20,
+  "duration": 6,
+  "gifWidth": 1080,
+  "text": {
+    "pill": "NEW SERVICE · AI FOR BUSINESS",
+    "headline": [
+      "How many customers are you",
+      "losing by ",
+      "not answering?"
+    ],
+    "sub": [
+      "Your business can now be open 24/7. AI agents that",
+      "reply instantly, at any hour, every single day."
+    ],
+    "orbLabel": "AI AGENT · ONLINE",
+    "orbBig": "24/7",
+    "orbSmall": [
+      "No business hours.",
+      "No more left on read."
+    ],
+    "benefits": [
+      [
+        "chat",
+        "Answer calls and messages",
+        "WhatsApp, social media and phone."
+      ],
+      [
+        "bolt",
+        "Resolve questions instantly",
+        "Prices, hours, services and more."
+      ],
+      [
+        "target",
+        "Qualify potential customers",
+        "Spot who's ready to buy."
+      ],
+      [
+        "calendar",
+        "Book appointments and visits",
+        "Straight into your calendar, hands-free."
+      ]
+    ],
+    "ctaKicker": "DON'T MISS A SINGLE LEAD",
+    "cta": [
+      "Want to automate",
+      "your business?"
+    ],
+    "ctaButton": "Send us a DM",
+    "footerLeft": "AI agents for business",
+    "footerRight": "kuper.mx"
+  }
+}

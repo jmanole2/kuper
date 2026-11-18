@@ -57,3 +57,14 @@ node render.mjs --page src/panel.html --config panel.config.json --fps 30 --out 
 node render.mjs --page src/ad.html --config ad.config.json --out out/kuper-anuncio-24-7.gif
 node render.mjs --page src/ad.html --config ad.config.json --fps 30 --out out/kuper-anuncio-24-7.mp4
 ```
+
+## Variantes del anuncio 24/7
+
+- Inglés (Kuper): `ad.en.config.json` → `out/kuper-ad-24-7-en.{gif,mp4}`
+- CrowdMe (español / inglés): `ad.crowdme.config.json`, `ad.crowdme.en.config.json` → `out/crowdme-anuncio-24-7.*`, `out/crowdme-ad-24-7-en.*`.
+  `"logo": "crowdme"` en el config usa `assets/crowdme-logo.png` (logo de crowdme.mx, recortado, sin alterar el color).
+
+```bash
+node render.mjs --page src/ad.html --config ad.en.config.json --out out/kuper-ad-24-7-en.gif
+node render.mjs --page src/ad.html --config ad.crowdme.config.json --fps 30 --out out/crowdme-anuncio-24-7.mp4
+```

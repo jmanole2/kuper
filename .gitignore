@@ -3,3 +3,6 @@ out/*
 !out/claude-academy.mp4
 !out/kuper-media.mp4
 !out/kuper-agente.mp4
+!out/kuper-ad-24-7-en.*
+!out/crowdme-*.gif
+!out/crowdme-*.mp4
