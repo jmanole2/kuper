@@ -19,7 +19,24 @@ bin/            create-user.php, cleanup.php, backup.sh
 tools/qr/       generador de QR por origen
 ```
 
-## Instalación en el hosting
+## DreamHost (hosting compartido)
+
+1. **Panel → Websites → Manage → dominio**: *Web directory* = `kvibeplus.mx/kvibe/public`
+   (así `app/` y `storage/` quedan fuera del webroot). Activar **Let's Encrypt** (gratis).
+2. **PHP**: elegir 8.2 o superior en el mismo panel. Límites de subida: crear
+   `~/.php/8.x/phprc` (8.x = tu versión) con el contenido de `public/.user.ini` (DreamHost lee `phprc`).
+3. **MySQL**: Panel → MySQL Databases. Crea BD, usuario y un *hostname* tipo `mysql.kvibeplus.mx`.
+   Ese hostname va en `db.host` (no funciona `localhost`). Importar: `mysql -h mysql.kvibeplus.mx -u kvibe_app -p kvibe < sql/schema.sql`.
+4. **Correo**: Panel → Mail → crear `no-reply@kvibeplus.mx`. SMTP: `smtp.dreamhost.com`, puerto 465 SSL, usuario = correo completo.
+   Si el DNS está en DreamHost, revisar en *Manage Websites → DNS* que existan SPF y DKIM; agregar DMARC a mano
+   (`_dmarc` TXT `v=DMARC1; p=none; rua=mailto:no-reply@kvibeplus.mx`).
+5. **SSH**: el usuario del sitio debe ser *Shell user* (Panel → Users) para correr `bin/create-user.php`.
+6. **Cron**: Panel → Advanced → Cron Jobs, con los mismos comandos de abajo (ruta `/home/USUARIO/kvibeplus.mx/kvibe/...`).
+   Para `backup.sh`, el `~/.my.cnf` debe incluir `host=mysql.kvibeplus.mx`.
+7. **Dominio**: si DreamHost no vende `.mx`, comprarlo en otro registrador y apuntar los nameservers a
+   `ns1/ns2/ns3.dreamhost.com`.
+
+## Instalación en el hosting (genérico)
 
 1. Subir la carpeta `kvibe/` completa y apuntar el document root del dominio a `kvibe/public/`.
    Si el hosting obliga a usar `public_html/`, poner el contenido de `public/` ahí y `app/`, `storage/`, etc. un nivel arriba

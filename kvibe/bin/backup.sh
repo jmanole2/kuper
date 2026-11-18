@@ -3,6 +3,7 @@
 # Cron sugerido:  30 3 * * * /ruta/kvibe/bin/backup.sh >> /ruta/kvibe/storage/logs/backup.log 2>&1
 # Credenciales: crear ~/.my.cnf con permisos 600:
 #   [mysqldump]
+#   host=mysql.kvibeplus.mx   (DreamHost: hostname MySQL del panel)
 #   user=kvibe_app
 #   password=...
 set -euo pipefail

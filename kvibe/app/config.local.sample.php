@@ -5,7 +5,7 @@ return [
     'base_url' => 'https://kvibeplus.mx',
 
     'db' => [
-        'host' => 'localhost',
+        'host' => 'mysql.kvibeplus.mx',   // DreamHost: el hostname MySQL del panel, NO 'localhost'
         'name' => 'kvibe',
         'user' => 'kvibe_app',
         'pass' => 'CAMBIAR',
@@ -15,10 +15,10 @@ return [
         'driver' => 'smtp',
         'from'   => 'no-reply@kvibeplus.mx',
         'smtp'   => [
-            'host'   => 'mail.kvibeplus.mx',
+            'host'   => 'smtp.dreamhost.com',   // DreamHost
             'port'   => 465,
             'secure' => 'ssl',          // 'ssl' (465) o 'tls' (587, STARTTLS)
-            'user'   => 'no-reply@kvibeplus.mx',
+            'user'   => 'no-reply@kvibeplus.mx', // correo completo
             'pass'   => 'CAMBIAR',
         ],
     ],
