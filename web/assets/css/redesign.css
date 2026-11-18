@@ -1707,3 +1707,7 @@ html.is-bucket-dragging * {
   /* Botón de cotización en una sola línea */
   .contact-submit span { font-size: 13px; letter-spacing: 0.08em; white-space: nowrap; }
 }
+
+/* Valores: espacio a la derecha para que no se corte el pico de la tarjeta activa */
+.brand-values-rail { padding-right: 40px !important; }
+.brand-value-card { cursor: pointer; }

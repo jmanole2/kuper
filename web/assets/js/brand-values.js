@@ -133,6 +133,21 @@
     requestAnimationFrame(centerActiveCard);
   });
 
+  // Clic en una tarjeta: scroll suave hasta el tramo de ese valor.
+  cards.forEach((card, i) => {
+    card.style.cursor = 'pointer';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    const go = () => {
+      const total = Math.max(section.offsetHeight - window.innerHeight, 1);
+      const top = section.getBoundingClientRect().top + window.scrollY;
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: top + total * ((i + 0.5) / cards.length), behavior: reduce ? 'auto' : 'smooth' });
+    };
+    card.addEventListener('click', go);
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+
   activateCard(0);
   update();
 })();
