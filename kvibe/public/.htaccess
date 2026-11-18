@@ -4,10 +4,15 @@ DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  # Forzar HTTPS
+  # Si el dominio apunta a la carpeta raíz (no a /public) y alguien entra por /kvibe/public/...,
+  # mandarlo a la URL limpia. Si el dominio ya apunta a /public esta regla nunca aplica.
+  RewriteCond %{THE_REQUEST} \s/kvibe/public/?([^\s?]*) [NC]
+  RewriteRule ^ https://%{HTTP_HOST}/%1 [L,R=301,NE]
+  # Forzar HTTPS (usa la URL original del navegador)
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  RewriteCond %{THE_REQUEST} \s([^\s?]+)
+  RewriteRule ^ https://%{HTTP_HOST}%1 [L,R=301,NE]
   # Bloquear archivos ocultos
   RewriteRule (^|/)\. - [F]
 </IfModule>

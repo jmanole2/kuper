@@ -1,0 +1,19 @@
+# K-VIBE+ · .htaccess para la RAÍZ del dominio (/home/USUARIO/k-vibe.com.mx/.htaccess)
+# Úsalo solo si NO puedes cambiar el "Web directory" del dominio a k-vibe.com.mx/kvibe/public.
+# Hace que https://k-vibe.com.mx/ sirva lo que está en kvibe/public sin mostrar esa ruta.
+Options -Indexes
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1) Si alguien entra por /kvibe/public/..., mandarlo a la URL limpia
+  RewriteCond %{THE_REQUEST} \s/kvibe/public/?([^\s?]*) [NC]
+  RewriteRule ^ https://%{HTTP_HOST}/%1 [R=301,L,NE]
+
+  # 2) Bloquear todo lo demás dentro de /kvibe (código, fotos, respaldos)
+  RewriteCond %{THE_REQUEST} \s/kvibe(/|\s|\?) [NC]
+  RewriteRule ^ - [F]
+
+  # 3) Servir todo desde kvibe/public
+  RewriteCond %{REQUEST_URI} !^/kvibe/public/
+  RewriteRule ^(.*)$ kvibe/public/$1 [L]
+</IfModule>

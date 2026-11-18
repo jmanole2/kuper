@@ -36,6 +36,12 @@ tools/qr/       generador de QR por origen
 7. **Dominio**: si DreamHost no vende `.mx`, comprarlo en otro registrador y apuntar los nameservers a
    `ns1/ns2/ns3.dreamhost.com`.
 
+### Si el "Web directory" no se puede cambiar
+Sube `deploy/raiz-dominio.htaccess` a la raíz del dominio con el nombre `.htaccess`
+(`/home/USUARIO/k-vibe.com.mx/.htaccess`). Sirve `kvibe/public` en `https://k-vibe.com.mx/`,
+redirige `/kvibe/public/...` a la URL limpia y bloquea el resto de `/kvibe/`. El sitio detecta solo la ruta base.
+Si después cambias el Web directory a `kvibe/public`, borra ese `.htaccess` de la raíz.
+
 ## Instalación solo con FTP/SFTP (sin SSH)
 
 1. En el panel crea la BD MySQL y el correo `no-reply@` (pasos 3 y 4 de arriba).

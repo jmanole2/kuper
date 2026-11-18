@@ -62,6 +62,12 @@ function base_path(): string
     if (str_ends_with($dir, '/admin')) {
         $dir = substr($dir, 0, -6);
     }
+    // Si un .htaccess en la raíz reescribe todo hacia /kvibe/public, la URL pública no incluye
+    // esa carpeta: en ese caso los enlaces van desde la raíz del dominio.
+    $uri = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+    if ($dir !== '' && !str_starts_with($uri, $dir . '/') && $uri !== $dir) {
+        return '';
+    }
     return $dir;
 }
 
