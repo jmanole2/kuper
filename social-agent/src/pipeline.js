@@ -20,6 +20,7 @@ import * as recordatorios from './recordatorios.js';
 import * as cobros from './pagos-clientes.js';
 import * as correo from './correo.js';
 import * as carritos from './carritos.js';
+import * as pedidos from './pedidos.js';
 import * as equipo from './equipo.js';
 import { tiene } from './plan.js';
 import { recolectarSiToca, enviarReporteSiToca } from './metricas.js';
@@ -521,7 +522,7 @@ export async function tick(now = new Date()) {
     // Cobros por chat: cada 2 minutos se pregunta al proveedor si ya pagaron.
     if (cobros.listo(client) && !(cobrosPausa.get(client.id) > now.getTime())) {
       cobrosPausa.set(client.id, now.getTime() + 2 * 60_000);
-      enqueue(`cob-${client.id}`, () => cobros.revisar(client, { ahora: now }).catch((e) => db.logEvent({ clientId: client.id, tipo: 'cobro_error', detalle: e.message })));
+      enqueue(`cob-${client.id}`, () => cobros.revisar(client, { ahora: now }).then(() => pedidos.sincronizarPagos(client)).catch((e) => db.logEvent({ clientId: client.id, tipo: 'cobro_error', detalle: e.message })));
     }
     // Carritos abandonados: cada 5 minutos se recuerda a quien dejó su compra a medias.
     if (carritos.ajustes(client).activo && !(carritoPausa.get(client.id) > now.getTime())) {

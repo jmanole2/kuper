@@ -51,6 +51,7 @@ import * as ayuda from './ayuda.js';
 import * as pruebasAgente from './pruebas-agente.js';
 import * as anuncios from './anuncios.js';
 import * as carritos from './carritos.js';
+import * as pedidos from './pedidos.js';
 import * as atribucion from './atribucion.js';
 import * as equipo from './equipo.js';
 import * as push from './push.js';
@@ -274,6 +275,29 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const h = (k) => { try { return decodeURIComponent(String(req.get(k) || '')); } catch { return ''; } };
       res.json({ ok: true, ...(await docs.guardar(req.client, { telefono: h('x-telefono'), nombre: h('x-nombre'), caption: h('x-caption'), mime: req.get('content-type'), buf: req.body })) });
     } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  // Pedidos por chat: el agente busca en el catálogo, arma el carrito del contacto y confirma el pedido.
+  //   GET  /catalogo?q=&categoria=        productos disponibles (y categorías)
+  //   GET  /carrito?telefono=             carrito actual con total y sugerencias de complementos
+  //   POST /carrito { telefono, accion: agregar|quitar|vaciar, producto: id o nombre, cantidad, nota }
+  //   POST /pedidos { telefono, nombre, entrega: domicilio|recoger, direccion, notas }  → pedido + link de pago
+  //   GET  /pedidos?telefono=             sus pedidos recientes y su estado
+  api.get('/catalogo', (req, res) => {
+    const q = (k) => String(req.query[k] || '').slice(0, 80);
+    res.set('Cache-Control', 'no-store').json({ activo: pedidos.ajustes(req.client).activo, productos: pedidos.buscar(req.client, { q: q('q'), categoria: q('categoria'), limite: Number(req.query.limite) || 12 }), categorias: pedidos.categorias(req.client.id) });
+  });
+  api.get('/carrito', (req, res) => {
+    try { res.set('Cache-Control', 'no-store').json(pedidos.verCarrito(req.client, req.query.telefono)); } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  api.post('/carrito', (req, res) => {
+    try { res.json(pedidos.carrito(req.client, req.body || {})); } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  api.post('/pedidos', async (req, res) => {
+    try { const r = await pedidos.confirmar(req.client, req.body || {}); res.json({ ok: true, numero: r.pedido.numero, total: r.pedido.total, envio: r.pedido.envio, estado: r.pedido.estado, pago_url: r.pago_url, error_pago: r.error_pago }); }
+    catch (e) { res.status(400).json({ error: e.message }); }
+  });
+  api.get('/pedidos', (req, res) => {
+    res.set('Cache-Control', 'no-store').json({ pedidos: pedidos.deContacto(req.client, req.query.telefono).map((p) => ({ numero: p.numero, fecha: p.created_at, total: p.total, estado: pedidos.ESTADOS[p.estado], entrega: p.entrega, pago_url: p.estado === 'nuevo' ? p.pago_url : null })) });
   });
   // Link de pago (lo pide el agente con crear_link_pago): Mercado Pago o Stripe con la cuenta de la marca.
   api.post('/cobros/link', async (req, res) => {
@@ -624,6 +648,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   appR.use('/correo', servicio('chat'));
   appR.use('/anuncios', servicio('chat'));
   appR.use('/carritos', servicio('chat'));
+  appR.use('/pedidos', servicio('chat'));
   // Chat de ayuda de Kuper (burbuja "¿Dudas?" en todo el panel).
   appR.post('/ayuda', express.json({ limit: '40kb' }), async (req, res) => {
     try { res.json(await ayuda.preguntar(req.client, req.sesion?.user, req.body?.pregunta, req.body?.historial)); }
@@ -637,6 +662,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   correoRoutes(appR, () => '/app', { app: true });
   anunciosRoutes(appR, () => '/app', { app: true });
   carritosRoutes(appR, () => '/app', { app: true });
+  pedidosRoutes(appR, () => '/app', { app: true });
   cuponesRoutes(appR, () => '/app', { app: true });
   difusionRoutes(appR, () => '/app', { app: true });
   appR.get('/citas', async (req, res) => {
@@ -1073,6 +1099,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   correoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   anunciosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   carritosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
+  pedidosRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   equipoRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   asistenteRoutes(admin, (req) => `/admin/clientes/${req.client.id}`, { prefix: '/clientes/:cid' });
   admin.post('/clientes/:cid/agente-url', (req, res) => {
@@ -1538,6 +1565,52 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         credentials: { ...creds, ...(secretoNuevo ? { carritos: { shopify_secret: secretoNuevo } } : {}) } });
       seg.auditar(req, 'carritos_ajustes', req.client.nombre);
       res.redirect(`${base(req)}/carritos?ok=1`);
+    });
+  }
+
+  // Pedidos por chat: lista de pedidos con su estado, catálogo (a mano, CSV o Shopify) y ajustes.
+  function pedidosRoutes(router, base, { app = false, prefix = '' } = {}) {
+    const subir = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+    const lista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.pedidosPage(req.client, { lista: pedidos.listar(req.client.id, { estado: String(req.query.estado || '') }),
+      estado: String(req.query.estado || ''), resumen: pedidos.resumenPedidos(req.client.id), aj: pedidos.ajustes(req.client), cobros: cobros.listo(req.client), base: base(req), app, ok: req.query.ok ? 'Listo.' : '', ...extra }));
+    const cat = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.catalogoPage(req.client, { productos: pedidos.productos(req.client.id, { todos: true }), aj: pedidos.ajustes(req.client),
+      api: `${config.publicBaseUrl}/api/${req.client.slug}/catalogo`, base: base(req), app, ok: req.query.ok ? String(req.query.ok).slice(0, 200) : '', ...extra }));
+    router.get(`${prefix}/pedidos`, (req, res) => lista(req, res));
+    router.post(`${prefix}/pedidos/:pedido/estado`, (req, res) => {
+      try { pedidos.cambiarEstado(req.client, req.params.pedido, String(req.body.estado || '')); res.redirect(`${base(req)}/pedidos?ok=1${req.body.volver ? `&estado=${encodeURIComponent(String(req.body.volver).slice(0, 20))}` : ''}`); }
+      catch (e) { lista(req, res, { error: e.message }); }
+    });
+    router.get(`${prefix}/pedidos/catalogo`, (req, res) => cat(req, res));
+    router.post(`${prefix}/pedidos/catalogo/producto`, (req, res) => {
+      try { const b = req.body || {}; pedidos.guardarProducto(req.client, { id: b.id || undefined, nombre: b.nombre, precio: b.precio, categoria: b.categoria, descripcion: b.descripcion, foto: b.foto, disponible: b.disponible === '1' ? 1 : 0 });
+        res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent('Producto guardado.')}`); }
+      catch (e) { cat(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/pedidos/catalogo/:prod/borrar`, (req, res) => { pedidos.borrarProducto(req.client, req.params.prod); res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent('Producto borrado.')}`); });
+    router.post(`${prefix}/pedidos/catalogo/:prod/disponible`, (req, res) => { pedidos.disponible(req.client, req.params.prod, req.body.si === '1'); res.redirect(`${base(req)}/pedidos/catalogo`); });
+    router.post(`${prefix}/pedidos/catalogo/csv`, (req, res, next) => subir.single('archivo')(req, res, (e) => (e ? cat(req, res, { error: e.message }) : next())), (req, res) => {
+      try {
+        const texto = req.file ? req.file.buffer.toString('utf8') : String(req.body.texto || '');
+        if (!texto.trim()) throw new Error('Sube un archivo CSV o pega las filas.');
+        const r = pedidos.importarCSV(req.client, texto);
+        seg.auditar(req, 'catalogo_csv', `${r.importados} productos`);
+        if (r.errores.length) return cat(req, res, { ok: `Se importaron ${r.importados} productos.`, error: r.errores.join(' · ') });
+        res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent(`Se importaron ${r.importados} productos.`)}`);
+      } catch (e) { cat(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/pedidos/catalogo/shopify`, async (req, res) => {
+      try { const r = await pedidos.importarShopify(req.client, String(req.body.tienda || '')); seg.auditar(req, 'catalogo_shopify', `${r.tienda}: ${r.importados}`);
+        res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent(`Se importaron ${r.importados} productos de ${r.tienda}.`)}`); }
+      catch (e) { cat(req, res, { error: e.message }); }
+    });
+    router.post(`${prefix}/pedidos/ajustes`, (req, res) => {
+      const b = req.body || {};
+      const sugerencias = String(b.sugerencias || '').split(/\r?\n/).map((l) => l.split(/\s*(?:->|→|=>|>)\s*/)).filter((x) => x.length === 2 && x[0].trim() && x[1].trim())
+        .slice(0, 20).map(([si, ofrece]) => ({ si: si.trim().slice(0, 60), ofrece: ofrece.trim().slice(0, 60) }));
+      db.updateClient(req.client.id, { config: { ...req.client.config, pedidos: { activo: b.activo === '1', envio: Math.max(0, Math.min(5000, Number(b.envio) || 0)), minimo: Math.max(0, Math.min(100000, Number(b.minimo) || 0)),
+        entrega: ['ambos', 'domicilio', 'recoger'].includes(b.entrega) ? b.entrega : 'ambos', sugerencias } } });
+      seg.auditar(req, 'pedidos_ajustes', req.client.nombre);
+      res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent('Ajustes guardados.')}`);
     });
   }
 

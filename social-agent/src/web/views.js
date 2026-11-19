@@ -166,6 +166,7 @@ const sideApp = (on, client) => (client?._caja ? [
   ...(tiene(client, 'chat') ? [{ href: '/app/correo', icon: 'mail', label: 'Correo', on: on === 'correo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/anuncios', icon: 'chart', label: 'Anuncios', on: on === 'anuncios' }] : []),
   ...(tiene(client, 'chat') && client?.config?.carritos ? [{ href: '/app/carritos', icon: 'ticket', label: 'Carritos abandonados', on: on === 'carritos' }] : []),
+  ...(tiene(client, 'chat') && client?.config?.pedidos ? [{ href: '/app/pedidos', icon: 'ticket', label: 'Pedidos', on: on === 'pedidos' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/equipo', icon: 'users', label: 'Equipo', on: on === 'equipo' }] : []),
   ...(tiene(client, 'chat') ? [{ href: '/app/asistente', icon: 'brain', label: 'Pregúntale a tu panel', on: on === 'asistente' }] : []),
   ...(tiene(client, 'llamadas') ? [{ href: '/app/llamadas', icon: 'phone', label: 'Llamadas', on: on === 'llamadas' }] : []),
@@ -346,7 +347,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
   const fSel = FILTROS.find((f) => f[0] === filtro) || FILTROS.find((f) => count(f[2])) || FILTROS[0];
   const shown = deRed.filter((p) => fSel[2].includes(p.status)).slice(0, 60);
   const url = (q) => `/admin/clientes/${client?.id}?${new URLSearchParams(Object.entries({ tab, f: fSel[0], red, ...q }).filter(([, v]) => v)).toString()}`;
-  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['anuncios', 'Anuncios'], ['carritos', 'Carritos'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
+  const TABS = [['posts', 'Posts'], ['leads', 'Leads'], ['embudo', 'Embudo'], ['analitica', 'Analítica'], ['agente', 'Agente'], ['citas', 'Citas'], ['llamadas', 'Llamadas'], ['ventas', 'Ventas'], ['blog', 'Blog'], ['competencia', 'Competencia'], ['palabra', `Palabra clave`], ['comentarios', 'Comentarios'], ['difusion', 'Campañas WA'], ['cupones', 'Cupones'], ['cobros', 'Cobros'], ['correo', 'Correo'], ['anuncios', 'Anuncios'], ['carritos', 'Carritos'], ['pedidos', 'Pedidos'], ['equipo', 'Equipo'], ['reporte', 'Reporte'], ['config', 'Configuración']].filter(([k]) => isNew || tabActiva(client, k) || (k === 'blog' && tab === 'blog'));
   const t = isNew ? 'config' : TABS.some(([k]) => k === tab) ? tab : TABS[0][0];
   const body = html`
   ${isNew ? hero({ kicker: 'Nueva marca', title: 'Nuevo cliente', sub: 'Pon el nombre y los servicios que contrató. Lo demás (precios, forma de pago, redes) se ajusta después.' }) : hero({
@@ -359,7 +360,7 @@ export function clientFormPage(client, { error, notice, tab = 'posts', filtro = 
       [posts.filter((p) => p.status === 'publicado').length, 'Publicados', '#c9f53a', `/admin/clientes/${client.id}?tab=posts&f=publicados`],
       [leadsCount, 'Leads', '#93b4ff', `/admin/clientes/${client.id}?tab=leads`],
     ],
-    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'anuncios' || k === 'carritos' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
+    tabs: TABS.map(([k, l]) => [k === 'agente' || k === 'embudo' || k === 'analitica' || k === 'comentarios' || k === 'difusion' || k === 'cupones' || k === 'cobros' || k === 'correo' || k === 'anuncios' || k === 'carritos' || k === 'pedidos' || k === 'equipo' ? `/admin/clientes/${client.id}/${k}` : k === 'blog' ? `/admin/clientes/${client.id}/blog` : `/admin/clientes/${client.id}?tab=${k}`, l, k === t]),
     note: (() => {
       const next = posts.filter((p) => ['aprobado', 'publicando'].includes(p.status) && p.scheduled_at).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
       return next ? ['Próxima publicación', `${PLAT[next.plataforma]} · ${fmtDate(next.scheduled_at)}`] : ['Próxima publicación', 'Nada programado todavía'];
@@ -1946,4 +1947,84 @@ export function asistentePage(client, { base, app = false }) {
     document.getElementById('as-ej').addEventListener('click', (e) => { const b = e.target.closest('[data-ej]'); if (b) preguntar(b.dataset.ej); });
   })();</script>`;
   return page({ title: `Asistente · ${client.nombre}`, side: app ? sideApp('asistente', client) : side('clientes'), body });
+}
+
+// ------------------------------------------------------------ pedidos por chat (catálogo + pedidos)
+const ESTADOS_PEDIDO = { nuevo: ['Nuevo', '#93b4ff'], pagado: ['Pagado', '#4ade80'], preparacion: ['En preparación', '#fbbf24'], entregado: ['Entregado', '#a39d93'], cancelado: ['Cancelado', '#f87171'] };
+const pesos = (n) => `$${Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 2 })}`;
+export function pedidosPage(client, { lista = [], estado = '', resumen = {}, aj = {}, cobros = false, base, app = false, ok = '', error = '' }) {
+  const fecha = (t) => (t ? new Date(String(t).replace(' ', 'T') + 'Z').toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
+  const SIG = { nuevo: ['pagado', 'preparacion', 'cancelado'], pagado: ['preparacion', 'entregado', 'cancelado'], preparacion: ['entregado', 'cancelado'], entregado: [], cancelado: ['nuevo'] };
+  const body = html`${hero({ kicker: 'Pedidos por chat', title: 'Pedidos', letra: client.nombre, sub: 'Tu agente de WhatsApp toma el pedido con tu catálogo, sugiere complementos y manda el link de pago. Aquí los ves y les cambias el estado.',
+      note: ['Últimos 30 días', `${resumen.pedidos || 0} pedidos · ${resumen.nuevos || 0} por atender · ${pesos(resumen.vendido)} pagado`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    ${!aj.activo ? html`<div class="card" style="margin-bottom:14px"><b>Los pedidos por chat están apagados.</b> <span class="muted small">Carga tu catálogo y actívalos en <a href="${base}/pedidos/catalogo">Catálogo y ajustes</a>.</span></div>` : ''}
+    ${aj.activo && !cobros ? html`<div class="card" style="margin-bottom:14px"><span class="muted small">Sin <a href="${base}/cobros">Cobros por chat</a> los pedidos se crean sin link de pago y se cobran como acuerden.</span></div>` : ''}
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <a class="badge" href="${base}/pedidos" style="${!estado ? 'outline:2px solid currentColor' : ''}">Todos</a>
+      ${Object.entries(ESTADOS_PEDIDO).map(([k, [t, col]]) => html`<a class="badge" href="${base}/pedidos?estado=${k}" style="color:${col};${estado === k ? 'outline:2px solid currentColor' : ''}">${t}</a>`)}
+      <a class="badge" href="${base}/pedidos/catalogo" style="margin-left:auto">Catálogo y ajustes →</a>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      ${lista.length ? html`<table style="font-size:14px">${lista.map((p) => { const [t, col] = ESTADOS_PEDIDO[p.estado] || [p.estado, '#a39d93'];
+        return html`<tr style="vertical-align:top"><td style="white-space:nowrap"><b>#${p.numero}</b><div class="muted small">${fecha(p.created_at)}</div></td>
+          <td><b>${p.nombre || p.telefono}</b>${p.lead_id ? html` · <a class="small" href="${base}/leads/${p.lead_id}/chat">chat</a>` : ''}
+            <div class="small">${p.items.map((i) => `${i.cantidad} × ${i.nombre}${i.nota ? ` (${i.nota})` : ''}`).join(', ')}</div>
+            <div class="muted small">${p.entrega === 'domicilio' ? `A domicilio: ${p.direccion || ''}` : 'Para recoger'}${p.notas ? ` · ${p.notas}` : ''}${p.pago_url ? ' · link de pago enviado' : ''}</div></td>
+          <td style="white-space:nowrap"><b>${pesos(p.total)}</b>${p.envio ? html`<div class="muted small">envío ${pesos(p.envio)}</div>` : ''}</td>
+          <td style="text-align:right;white-space:nowrap"><span class="badge" style="color:${col}">${t}</span>
+            <div style="margin-top:6px;display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">${(SIG[p.estado] || []).map((s) => html`<form method="post" action="${base}/pedidos/${p.id}/estado" class="inline"><input type="hidden" name="estado" value="${s}"><input type="hidden" name="volver" value="${estado}"><button class="small" style="padding:4px 10px">${ESTADOS_PEDIDO[s][0]}</button></form>`)}</div></td></tr>`; })}</table>`
+        : html`<p class="muted small">${estado ? 'No hay pedidos en este estado.' : 'Todavía no hay pedidos. Cuando alguien confirme un pedido por WhatsApp aparece aquí y te llega un aviso.'}</p>`}
+    </div>`;
+  return page({ title: `Pedidos · ${client.nombre}`, side: app ? sideApp('pedidos', client) : side('clientes'), body });
+}
+
+export function catalogoPage(client, { productos = [], aj = {}, api = '', base, app = false, ok = '', error = '' }) {
+  const cats = [...new Set(productos.map((p) => p.categoria).filter(Boolean))];
+  const reglas = (aj.sugerencias || []).map((r) => `${r.si} -> ${r.ofrece}`).join('\n');
+  const body = html`${hero({ kicker: 'Pedidos por chat', title: 'Catálogo y ajustes', letra: client.nombre, sub: 'Lo que tu agente puede vender por WhatsApp. Solo ofrece lo que está disponible, con el precio de aquí.',
+      note: ['Catálogo', `${productos.length} productos · ${productos.filter((p) => p.disponible).length} disponibles · ${cats.length} categorías`] })}
+    ${ok ? html`<div class="okmsg">${ok}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
+    <p><a href="${base}/pedidos">← Pedidos</a></p>
+    <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);align-items:start" class="ct">
+      <style>@media (max-width:980px){.ct{grid-template-columns:1fr!important}} .ct input,.ct select,.ct textarea{width:100%}</style>
+      <div class="card" style="overflow-x:auto"><span class="mono">Productos</span>
+        ${productos.length ? html`<table style="margin-top:8px;font-size:14px">${productos.map((p) => html`<tr style="vertical-align:top;${p.disponible ? '' : 'opacity:.55'}">
+          <td style="width:48px">${p.foto ? html`<img src="${p.foto}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px">` : ''}</td>
+          <td><b>${p.nombre}</b><div class="muted small">${p.categoria || 'Sin categoría'}${p.descripcion ? ` · ${p.descripcion.slice(0, 90)}` : ''}</div></td>
+          <td style="white-space:nowrap">${pesos(p.precio)}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <form method="post" action="${base}/pedidos/catalogo/${p.id}/disponible" class="inline"><input type="hidden" name="si" value="${p.disponible ? '0' : '1'}"><button class="small" style="padding:4px 10px">${p.disponible ? 'Agotado' : 'Disponible'}</button></form>
+            <form method="post" action="${base}/pedidos/catalogo/${p.id}/borrar" class="inline" onsubmit="return confirm('¿Borrar este producto?')"><button class="small" style="padding:4px 10px">Borrar</button></form></td></tr>`)}</table>`
+          : html`<p class="muted small">Sin productos todavía. Agrégalos a mano, sube un CSV o impórtalos de tu tienda Shopify.</p>`}</div>
+      <div style="display:grid;gap:18px">
+        <form class="card" method="post" action="${base}/pedidos/ajustes" style="display:grid;gap:10px"><span class="mono">Ajustes</span>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Tomar pedidos por chat</label>
+          <label class="small muted">Entrega<select name="entrega">${[['ambos', 'A domicilio y para recoger'], ['domicilio', 'Solo a domicilio'], ['recoger', 'Solo para recoger']].map(([v, t]) => html`<option value="${v}" ${aj.entrega === v ? 'selected' : ''}>${t}</option>`)}</select></label>
+          <label class="small muted">Costo de envío a domicilio ($)<input name="envio" type="number" min="0" step="1" value="${aj.envio || 0}"></label>
+          <label class="small muted">Pedido mínimo ($, 0 = sin mínimo)<input name="minimo" type="number" min="0" step="1" value="${aj.minimo || 0}"></label>
+          <label class="small muted">Sugerencias (una por línea: categoría -> categoría que ofrece)<textarea name="sugerencias" rows="4" placeholder="Hamburguesas -> Papas&#10;Hamburguesas -> Bebidas">${reglas}</textarea></label>
+          <p class="muted small" style="margin:0">Si en el pedido hay algo de la primera categoría y nada de la segunda, el agente ofrece algo de la segunda.</p>
+          <div><button class="btn-accent">Guardar</button></div></form>
+        <form class="card" method="post" action="${base}/pedidos/catalogo/producto" style="display:grid;gap:10px"><span class="mono">Agregar producto</span>
+          <label class="small muted">Nombre<input name="nombre" required maxlength="120"></label>
+          <label class="small muted">Precio ($, con IVA)<input name="precio" type="number" min="0" step="0.01" required></label>
+          <label class="small muted">Categoría<input name="categoria" list="cats" maxlength="60"><datalist id="cats">${cats.map((c) => html`<option value="${c}">`)}</datalist></label>
+          <label class="small muted">Descripción (opcional)<input name="descripcion" maxlength="600"></label>
+          <label class="small muted">Foto (link https, opcional)<input name="foto" type="url" placeholder="https://…"></label>
+          <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="disponible" value="1" checked style="width:18px;height:18px">Disponible</label>
+          <div><button class="btn-accent">Agregar</button></div></form>
+        <form class="card" method="post" action="${base}/pedidos/catalogo/shopify" style="display:grid;gap:10px"><span class="mono">Importar de Shopify</span>
+          <label class="small muted">Dirección de la tienda<input name="tienda" placeholder="mitienda.com" required></label>
+          <p class="muted small" style="margin:0">Trae nombre, precio, categoría, foto y si hay existencias. Volver a importar actualiza los precios.</p>
+          <div><button class="btn-accent">Importar</button></div></form>
+        <form class="card" method="post" action="${base}/pedidos/catalogo/csv" enctype="multipart/form-data" style="display:grid;gap:10px"><span class="mono">Importar CSV</span>
+          <p class="muted small" style="margin:0">Columnas: <b>nombre</b>, <b>precio</b> y opcionales categoria, descripcion, foto, disponible (sí/no), sku. Se abre y guarda desde Excel como CSV.</p>
+          <input type="file" name="archivo" accept=".csv,text/csv">
+          <div><button class="btn-accent">Subir</button></div></form>
+        <div class="card"><span class="mono">Para el agente</span><p class="small" style="margin:8px 0 4px">El agente de WhatsApp consulta el catálogo y arma el pedido con la llave API del panel:</p>
+          <input readonly value="${api}" onclick="this.select()" style="font-size:12px"></div>
+      </div>
+    </div>`;
+  return page({ title: `Catálogo · ${client.nombre}`, side: app ? sideApp('pedidos', client) : side('clientes'), body });
 }
