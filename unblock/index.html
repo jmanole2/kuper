@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="media/f/valley.jpg">
+<link rel="preload" as="image" href="media/f/porch.jpg">
 <script>document.documentElement.classList.add('js')</script>
 <script type="application/ld+json">
 {
@@ -51,6 +51,7 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--green-deep); color: var(--ivory); font: 400 var(--t-body)/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; }
@@ -74,7 +75,8 @@ img { display: block; max-width: 100%; }
 .scene { position: absolute; inset: 0; opacity: 0; transform: translateZ(0); backface-visibility: hidden; }
 .scene img { width: 100%; height: 100%; object-fit: cover; }
 .scene::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,22,16,.35) 0%, rgba(8,22,16,0) 30%, rgba(8,22,16,.55) 100%); }
-.scene[data-s="valley"] img { object-position: 50% 60%; }
+.scene[data-s="valley"] img { object-position: 58% 50%; }
+.scene[data-s="valley"]::after { background: linear-gradient(90deg, rgba(8,22,16,.62) 0%, rgba(8,22,16,.28) 38%, rgba(8,22,16,.2) 60%, rgba(8,22,16,.58) 100%), linear-gradient(180deg, rgba(8,22,16,.4) 0%, rgba(8,22,16,0) 25%, rgba(8,22,16,.5) 100%); }
 .scene[data-s="pine"]::after { background: linear-gradient(90deg, rgba(8,22,16,.15) 0%, rgba(8,22,16,.35) 45%, rgba(8,22,16,.78) 100%); }
 .scene[data-s="vista"]::after { background: linear-gradient(90deg, rgba(8,22,16,.7) 0%, rgba(8,22,16,.35) 50%, rgba(8,22,16,.1) 100%), linear-gradient(180deg, rgba(8,22,16,.35), rgba(8,22,16,0) 40%); }
 @media (max-width: 700px) { .scene[data-s="pine"]::after, .scene[data-s="vista"]::after { background: linear-gradient(180deg, rgba(8,22,16,.2) 0%, rgba(8,22,16,.3) 40%, rgba(8,22,16,.82) 100%); } }
@@ -125,8 +127,8 @@ main { position: relative; z-index: 2; }
 
 /* hero, after Nexora: a promise on the left, the title on the right, cards and tags below */
 .hero { min-height: 100vh; min-height: 100svh; padding: 120px var(--m) 32px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 28px; align-items: center; }
-.hero .lede { align-self: center; max-width: 330px; }
-.hero .lede b { display: block; font-weight: 500; font-size: 20px; letter-spacing: .02em; line-height: 1.25; }
+.hero .lede { align-self: center; max-width: 380px; }
+.hero .lede b { display: block; font-weight: 500; font-size: 20px; letter-spacing: .01em; line-height: 1.3; }
 .hero .lede p { margin-top: 12px; font-size: 15px; opacity: .9; }
 .hero .title { justify-self: end; text-align: right; }
 .hero h1 { font-size: var(--t-display); }
@@ -271,7 +273,8 @@ main { position: relative; z-index: 2; }
 
 /* cases open into a detail sheet */
 .case { cursor: pointer; text-align: left; font: inherit; color: inherit; border: 0; padding: 0; overflow: hidden; }
-.case .thumb { height: 150px; overflow: hidden; }
+.case .thumb { height: 170px; overflow: hidden; }
+.case .thumb img, .sheet .ph img { object-position: 50% 22%; }
 .case .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 900ms var(--ease-out); }
 .case .cbody { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
 .case .open { margin-top: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--green); }
@@ -320,7 +323,8 @@ main { position: relative; z-index: 2; }
 .trio-p { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 56px; }
 .person { display: flex; flex-direction: column; gap: 10px; }
 .person .pp { aspect-ratio: 4 / 5; border-radius: 24px; background: linear-gradient(160deg, #13604f, #0b3a31); display: grid; place-items: center; overflow: hidden; margin-bottom: 10px; }
-.person .pp img { width: 100%; height: 100%; object-fit: cover; }
+.person .pp img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
+.duo-p { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 980px; gap: clamp(18px, 3vw, 40px); }
 .person .ini { font-weight: 300; font-size: 96px; color: rgba(247,244,239,.35); }
 .person h3 { font-weight: 700; font-size: 26px; letter-spacing: -0.02em; color: var(--green); }
 .person .role { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #666; }
@@ -431,12 +435,13 @@ main { position: relative; z-index: 2; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 1ms !important; }
 }
+@media (max-width: 700px) { .duo-p { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <div class="stage" aria-hidden="true">
-  <div class="scene" data-s="valley" style="opacity:1"><img src="media/f/valley-m.jpg" srcset="media/f/valley-m.jpg 1200w, media/f/valley.jpg 2400w" sizes="100vw" alt=""></div>
+  <div class="scene" data-s="valley" style="opacity:1"><img src="media/f/porch-m.jpg" srcset="media/f/porch-m.jpg 1200w, media/f/porch.jpg 1672w" sizes="100vw" alt=""></div>
   <div class="scene" data-s="pine"><img src="media/f/pine-m.jpg" srcset="media/f/pine-m.jpg 1200w, media/f/pine.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
   <div class="scene" data-s="vista"><img src="media/f/vista-m.jpg" srcset="media/f/vista-m.jpg 1200w, media/f/vista.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
   <div class="scene" data-s="night"><img src="media/f/night-m.jpg" srcset="media/f/night-m.jpg 1200w, media/f/night.jpg 2400w" sizes="100vw" alt="" loading="lazy"></div>
@@ -460,8 +465,8 @@ main { position: relative; z-index: 2; }
 <header class="top glass" id="top">
   <a class="brand" href="/" aria-label="UNBLOCK, inicio"><svg aria-hidden="true"><use href="#mark"/></svg><span>UNBLOCK</span></a>
   <nav class="nav" aria-label="Principal">
-    <a href="/para-ti">Para ti</a>
-    <a href="/para-empresas">Para empresas</a>
+    <a href="#empresas">Para empresas</a>
+    <a href="#constelaciones">Para ti</a>
     <a href="/experiencias">Experiencias</a>
     <a class="opt" href="/sobre-unblock">Sobre UNBLOCK</a>
     <a class="opt" href="/el-libro">El libro</a>
@@ -470,8 +475,8 @@ main { position: relative; z-index: 2; }
   <details class="menu">
     <summary>Menú</summary>
     <ul>
-      <li><a href="/para-ti">Para ti</a></li>
-      <li><a href="/para-empresas">Para empresas</a></li>
+      <li><a href="#empresas">Para empresas</a></li>
+      <li><a href="#constelaciones">Para ti</a></li>
       <li><a href="/experiencias">Experiencias</a></li>
       <li><a href="/sobre-unblock">Sobre UNBLOCK</a></li>
       <li><a href="/el-libro">El libro</a></li>
@@ -482,23 +487,23 @@ main { position: relative; z-index: 2; }
 
 <main>
   <!-- 1 · dawn over the valley -->
-  <section class="hero" data-scene="valley" data-fog="1" data-light=".7" aria-labelledby="h-hero">
+  <section class="hero" data-scene="valley" data-fog=".12" data-light=".55" aria-labelledby="h-hero">
     <div class="lede shade" data-reveal>
-      <b>Una pausa.<br>Otra perspectiva.</b>
-      <p>Experiencias para personas y organizaciones en Ciudad de México y otros destinos de México.</p>
+      <b>Experiencias para equipos, líderes y personas que necesitan mirar algo desde otra perspectiva.</b>
+      <p>Diseñamos team buildings, offsites, experiencias de liderazgo, intervenciones de cultura y retiros que hacen visible lo que está limitando el siguiente movimiento.</p>
     </div>
     <div class="title shade" data-reveal>
       <h1 class="ttl" id="h-hero"><span>See what you’ve</span> <span><b>stopped seeing.</b></span></h1>
       <p>UNBLOCK diseña experiencias que crean una pausa, cambian la perspectiva y hacen visible algo que desde adentro puede ser difícil de ver.</p>
       <div class="row">
-        <a class="btn btn--cream" href="#para-ti">Explorar experiencias para mí <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
-        <a class="btn" href="#empresas">Para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn btn--cream" href="#empresas">Diseñar una experiencia para mi empresa <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
+        <a class="btn" href="#constelaciones">Explorar experiencias para mí <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
     </div>
     <div class="hero-foot" data-reveal>
       <div class="minis">
-        <a class="mini solid glass" href="#para-ti"><img src="media/u/hike.jpg" alt="Un grupo de UNBLOCK caminando entre pinos"><span><b>Slow Morning</b><span>Hike, fotografía y presencia</span></span></a>
-        <a class="mini glass" href="#slow-weekend"><img src="media/c/retreat.jpg" alt="Casa de piedra y madera entre árboles"><span><b>Slow Weekend</b><span>Una noche fuera de la rutina</span></span></a>
+        <a class="mini solid glass" href="#team-building"><img src="media/u/hike.jpg" alt="Un grupo de UNBLOCK caminando entre pinos"><span><b>Team Building</b><span>Better connections. Stronger teams.</span></span></a>
+        <a class="mini glass" href="#constelaciones"><img src="media/u/meadow.jpg" alt="Pradera al atardecer"><span><b>Constelaciones</b><span>Workshops y retiros</span></span></a>
       </div>
       <nav class="tags" aria-label="Formatos">
         <a href="/team-building-cdmx">Team building</a><a href="/offsites-empresas">Offsites</a><a href="/retiros-mexico">Retiros</a><a href="/constelaciones-organizacionales">Constelaciones</a><a href="/family-day-cdmx">Family Days</a>
@@ -517,7 +522,7 @@ main { position: relative; z-index: 2; }
   </section>
 
   <!-- 3 · para ti, on paper -->
-  <section class="paper" id="para-ti" aria-labelledby="h-ti">
+  <section class="paper" id="para-ti" hidden aria-labelledby="h-ti">
     <div class="lead-wrap" data-reveal>
       <svg class="star" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2v36M2 20h36M7 7l26 26M33 7L7 33" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>
       <div>
@@ -540,7 +545,7 @@ main { position: relative; z-index: 2; }
   </section>
 
   <!-- 4 · the valley at dusk -->
-  <section class="sec" id="slow-weekend" data-scene="vista" data-fog=".55" data-light=".45" aria-labelledby="h-weekend">
+  <section class="sec" id="slow-weekend" hidden data-scene="vista" data-fog=".55" data-light=".45" aria-labelledby="h-weekend">
     <div class="col shade" data-reveal>
       <h2 class="ttl" id="h-weekend">Slow Weekend <b>&amp; Slow Retreat</b></h2>
       <p class="sub">Para cuando necesitas más que una mañana.</p>
@@ -550,17 +555,6 @@ main { position: relative; z-index: 2; }
         <div class="glass"><b>Dos noches</b><span>para bajar el ruido y observar con más profundidad</span></div>
       </div>
       <div class="row"><a class="btn btn--cream" href="/para-ti#slow-weekend">Conocer Slow Weekend y Slow Retreat <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
-    </div>
-  </section>
-
-  <!-- 5 · night: the stars draw the pattern -->
-  <section class="sec right" data-scene="night" data-fog=".1" data-light="0" data-stars="1" aria-labelledby="h-const">
-    <div class="col shade" data-reveal>
-      <h2 class="ttl" id="h-const">Sometimes the pattern started <b>long before you noticed it.</b></h2>
-      <p class="sub">Constelaciones.</p>
-      <span class="rule" aria-hidden="true"></span>
-      <p class="body">Workshops grupales de 3 o 4 sesiones y retiros inmersivos para observar dinámicas, relaciones y patrones desde una perspectiva sistémica.</p>
-      <div class="row"><a class="btn btn--cream" href="/para-ti#proximas">Ver próximas experiencias <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 
@@ -689,11 +683,11 @@ main { position: relative; z-index: 2; }
   <section class="voices-sec" aria-labelledby="h-cases">
     <div data-reveal><h2 class="ttl" id="h-cases">Things we’ve already <b>made happen.</b></h2></div>
     <div class="cases" data-reveal>
-      <button class="case" type="button" data-case="liderazgo" aria-haspopup="dialog"><span class="thumb"><img src="media/u/guide.jpg" alt="Facilitadora guiando una sesión al aire libre" loading="lazy"></span><span class="cbody"><strong class="ct">Liderazgo estratégico para supervisores</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="liderazgo" aria-haspopup="dialog"><span class="thumb"><img src="media/u/talk.jpg" alt="Facilitación con un equipo en un salón" loading="lazy"></span><span class="cbody"><strong class="ct">Liderazgo estratégico para supervisores</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
       <button class="case" type="button" data-case="colaborativos" aria-haspopup="dialog"><span class="thumb"><img src="media/u/outdoors.jpg" alt="Un equipo en una dinámica al aire libre" loading="lazy"></span><span class="cbody"><strong class="ct">Equipos colaborativos de alto impacto</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
       <button class="case" type="button" data-case="paint" aria-haspopup="dialog"><span class="thumb"><img src="media/u/paint.jpg" alt="Participantes mostrando sus pinturas" loading="lazy"></span><span class="cbody"><strong class="ct">Paint &amp; Connect</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
       <button class="case" type="button" data-case="cook" aria-haspopup="dialog"><span class="thumb"><img src="media/u/cook.jpg" alt="Participantes cocinando juntas" loading="lazy"></span><span class="cbody"><strong class="ct">Cook it like you mean it</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
-      <button class="case" type="button" data-case="sistemica" aria-haspopup="dialog"><span class="thumb"><img src="media/u/talk.jpg" alt="Facilitación con un equipo en un salón" loading="lazy"></span><span class="cbody"><strong class="ct">Intervención sistémica para equipos</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
+      <button class="case" type="button" data-case="sistemica" aria-haspopup="dialog"><span class="thumb"><img src="media/u/guide.jpg" alt="Facilitadora guiando una sesión al aire libre" loading="lazy"></span><span class="cbody"><strong class="ct">Intervención sistémica para equipos</strong><span class="open"><i aria-hidden="true">+</i>Ver detalle</span></span></button>
     </div>
     <div class="voices" aria-label="Testimoniales" data-reveal>
       <blockquote class="voice big"><p>“Es de esas experiencias que sigues pensando días después.”</p><cite>Paola Figueroa, Sr. HRBP, AVEVA</cite></blockquote>
@@ -709,25 +703,19 @@ main { position: relative; z-index: 2; }
       <h2 class="ttl" id="h-people">Different formats. <b>Same idea.</b></h2>
       <p class="intro">UNBLOCK nace de más de diez años diseñando experiencias para personas, equipos y organizaciones. Estas son las personas detrás de cada una.</p>
     </div>
-    <div class="trio-p" data-reveal>
+    <div class="trio-p duo-p" data-reveal>
       <article class="person">
-        <div class="pp"><span class="ini" aria-hidden="true">D</span></div>
+        <div class="pp"><img src="media/u/daniela.jpg" alt="Daniela, fundadora de UNBLOCK" loading="lazy"></div>
         <h3>Daniela</h3>
         <p class="role">Fundadora de UNBLOCK</p>
         <p class="bio">Durante años creyó que para cambiar su vida necesitaba modificar todo lo que estaba afuera. Entendió que muchas cosas seguían apareciendo porque las observaba desde los mismos patrones. Hoy diseña espacios suficientemente distintos para que personas y organizaciones puedan ver lo que, desde adentro, quizá ya dejaron de ver.</p>
         <a class="more" href="/sobre-unblock#daniela">Leer más <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </article>
       <article class="person">
-        <div class="pp"><span class="ini" aria-hidden="true">S</span></div>
-        <h3>Socia</h3>
-        <p class="role">Nombre y cargo por confirmar</p>
-        <p class="bio">Espacio para su bio y su foto.</p>
-      </article>
-      <article class="person">
-        <div class="pp"><span class="ini" aria-hidden="true">S</span></div>
-        <h3>Socia</h3>
-        <p class="role">Nombre y cargo por confirmar</p>
-        <p class="bio">Espacio para su bio y su foto.</p>
+        <div class="pp"><img src="media/u/rebeca.jpg" alt="Rebeca Vargas Lugo Gaytán, socia y directora de experiencias" loading="lazy"></div>
+        <h3>Rebeca Vargas Lugo Gaytán</h3>
+        <p class="role">Socia y Directora de Experiencias</p>
+        <p class="bio">Durante más de 20 años ha creado experiencias para acercar a las personas dentro de las organizaciones. Entendió que cuando un equipo participa, juega y construye en conjunto, aparecen conversaciones y formas de relacionarse que difícilmente surgen en lo cotidiano. Hoy transforma objetivos organizacionales en experiencias creativas que fortalecen la comunicación, la colaboración y el sentido de pertenencia.</p>
       </article>
     </div>
   </section>
@@ -756,6 +744,16 @@ main { position: relative; z-index: 2; }
         <a class="alt" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20me%20interesa%20una%20experiencia%20para%20m%C3%AD." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Para mí</b><span>Slow Morning, Slow Weekend, retiros, constelaciones</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
         <a class="alt" href="https://wa.me/525543938152?text=Hola%20UNBLOCK%2C%20quiero%20saber%20las%20pr%C3%B3ximas%20fechas%20de%20experiencias." target="_blank" rel="noopener"><span class="ic"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><b>Próximas fechas</b><span>Recibe el calendario de experiencias</span></span><svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a>
       </div>
+    </div>
+  </section>
+  <!-- 5 · night: the stars draw the pattern -->
+  <section class="sec right" id="constelaciones" data-scene="night" data-fog=".1" data-light="0" data-stars="1" aria-labelledby="h-const">
+    <div class="col shade" data-reveal>
+      <h2 class="ttl" id="h-const">Sometimes the pattern started <b>long before you noticed it.</b></h2>
+      <p class="sub">Constelaciones.</p>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="body">Workshops grupales de 3 o 4 sesiones y retiros inmersivos para observar dinámicas, relaciones y patrones desde una perspectiva sistémica.</p>
+      <div class="row"><a class="btn btn--cream" href="/para-ti#proximas">Ver próximas experiencias <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg></a></div>
     </div>
   </section>
 </main>
@@ -801,11 +799,11 @@ main { position: relative; z-index: 2; }
 
   // ---------------- case detail sheet ----------------
   const CASES = {
-    liderazgo: { img: 'u/guide', kind: 'LIDERAZGO · EMPRESA', t: 'Liderazgo estratégico <b>para supervisores</b>', rows: [['Para quién', 'Supervisores y líderes de equipo'], ['Enfoque', 'Ejecución, comunicación, influencia y manejo de conflictos'], ['Experiencia diseñada', 'Diseño y facilitación de una experiencia de liderazgo a la medida del equipo']] },
+    liderazgo: { img: 'u/talk', kind: 'LIDERAZGO · EMPRESA', t: 'Liderazgo estratégico <b>para supervisores</b>', rows: [['Para quién', 'Supervisores y líderes de equipo'], ['Enfoque', 'Ejecución, comunicación, influencia y manejo de conflictos'], ['Experiencia diseñada', 'Diseño y facilitación de una experiencia de liderazgo a la medida del equipo']] },
     colaborativos: { img: 'u/outdoors', kind: 'EQUIPOS · EMPRESA', t: 'Equipos colaborativos <b>de alto impacto</b>', rows: [['Para quién', 'Equipos de trabajo'], ['Enfoque', 'Comportamientos cotidianos de colaboración'], ['Experiencia diseñada', 'Una experiencia para observarlos y fortalecerlos en la práctica']] },
     paint: { img: 'u/paint', kind: 'EXPERIENCIA CREATIVA', t: 'Paint <b>&amp; Connect</b>', rows: [['Para quién', 'Equipos que buscan integrarse'], ['Formato', 'Experiencia creativa con la pintura como vehículo'], ['Enfoque', 'Integración, conversación y conexión fuera de lo cotidiano']] },
     cook: { img: 'u/cook', kind: 'EXPERIENCIA CREATIVA', t: 'Cook it <b>like you mean it</b>', rows: [['Para quién', 'Equipos de trabajo'], ['Formato', 'Cocina colaborativa'], ['Enfoque', 'Comunicación, coordinación y roles']] },
-    sistemica: { img: 'u/talk', kind: 'INTERVENCIÓN SISTÉMICA', t: 'Intervención sistémica <b>para equipos</b>', rows: [['Situación', 'Un equipo atravesando un proceso de cambio organizacional'], ['Experiencia diseñada', 'Trabajo sistémico diseñado alrededor de ese momento'], ['Enfoque', 'Relaciones, posiciones y dinámicas del equipo']] }
+    sistemica: { img: 'u/guide', kind: 'INTERVENCIÓN SISTÉMICA', t: 'Intervención sistémica <b>para equipos</b>', rows: [['Situación', 'Un equipo atravesando un proceso de cambio organizacional'], ['Experiencia diseñada', 'Trabajo sistémico diseñado alrededor de ese momento'], ['Enfoque', 'Relaciones, posiciones y dinámicas del equipo']] }
   };
   const sheet = $('#sheet');
   if (sheet && sheet.showModal) {
@@ -824,7 +822,7 @@ main { position: relative; z-index: 2; }
   }
 
   // ---------------- which scene, how much fog and light ----------------
-  const secs = [...document.querySelectorAll('[data-scene]')];
+  const secs = [...document.querySelectorAll('[data-scene]:not([hidden])')];
   const scenes = {}; document.querySelectorAll('.scene').forEach(s => scenes[s.dataset.s] = s);
   const lights = [...document.querySelectorAll('.paper, .voices-sec, .teams, .contact, .clients, .people')];
   const top = $('#top');
