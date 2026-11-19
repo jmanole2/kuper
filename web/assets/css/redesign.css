@@ -1711,3 +1711,5 @@ html.is-bucket-dragging * {
 /* Valores: espacio a la derecha para que no se corte el pico de la tarjeta activa */
 .brand-values-rail { padding-right: 40px !important; }
 .brand-value-card { cursor: pointer; }
+/* La sección ignora los clics (para girar la cubeta detrás); las tarjetas sí los reciben */
+.brand-values-sticky.active .brand-value-card { pointer-events: auto; }
