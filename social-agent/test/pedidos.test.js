@@ -145,6 +145,91 @@ test('API del agente: catálogo, carrito, pedido y su estado; sin llave no entra
   } finally { srv.close(); }
 });
 
+test('fuente externa: Google Sheets (CSV) se copia al panel, existencias 0 = agotado y lo descontinuado se quita', async () => {
+  assert.equal(P.urlDeHoja('https://docs.google.com/spreadsheets/d/AbC-123/edit#gid=456'), 'https://docs.google.com/spreadsheets/d/AbC-123/export?format=csv&gid=456');
+  P.hooks.lookup = async () => [{ address: '142.250.1.1' }];
+  const pedidas = [];
+  let csv = 'Producto,Precio,Linea,Existencia,Clave\nCombo Familiar,399,Combos,10,CF1\nCombo Pareja,249,Combos,0,CP1\n';
+  P.hooks.fetch = async (u, o) => { pedidas.push({ url: String(u), headers: o.headers }); return new Response(csv, { status: 200, headers: { 'Content-Type': 'text/csv' } }); };
+  db.updateClient(c.id, { config: { ...cl().config, pedidos: { ...cl().config.pedidos, fuente: { tipo: 'archivo', url: 'https://docs.google.com/spreadsheets/d/AbC-123/edit#gid=456', cada_min: 15 } } } });
+  const manual = P.guardarProducto(cl(), { nombre: 'Salsa extra', precio: 15, categoria: 'Extras' });
+  const r = await P.sincronizarFuente(cl());
+  assert.equal(r.productos, 2); assert.match(pedidas[0].url, /export\?format=csv&gid=456/);
+  const cf = P.productos(c.id, { todos: true }).find((x) => x.nombre === 'Combo Familiar');
+  assert.equal(cf.precio, 399); assert.equal(cf.categoria, 'Combos'); assert.equal(cf.sku, 'archivo:CF1'); assert.equal(cf.disponible, true);
+  assert.equal(P.productos(c.id, { todos: true }).find((x) => x.nombre === 'Combo Pareja').disponible, false, 'existencia 0');
+  csv = 'Producto,Precio,Linea,Existencia,Clave\nCombo Familiar,419,Combos,3,CF1\n';
+  const r2 = await P.sincronizarFuente(cl());
+  assert.equal(r2.quitados, 1);
+  assert.equal(P.productos(c.id, { todos: true }).find((x) => x.nombre === 'Combo Familiar').precio, 419, 'precio actualizado');
+  assert.ok(!P.productos(c.id, { todos: true }).some((x) => x.nombre === 'Combo Pareja'), 'descontinuado');
+  assert.ok(P.producto(c.id, manual.id), 'lo cargado a mano se queda');
+  assert.equal(P.estadoFuente(c.id).ok, true);
+  assert.equal(P.tocaSincronizar(cl(), Date.now() + 60_000), false); assert.equal(P.tocaSincronizar(cl(), Date.now() + 16 * 60_000), true);
+  csv = '<html>Inicia sesión</html>';
+  await assert.rejects(P.sincronizarFuente(cl()), /Cualquier persona con el link/);
+  assert.equal(P.estadoFuente(c.id).ok, false);
+});
+
+test('fuente externa: API tipo Odoo con llave (campos [id, nombre]), la llave no se manda si redirige a otro dominio', async () => {
+  const pedidas = [];
+  P.hooks.fetch = async (u, o) => {
+    pedidas.push({ url: String(u), headers: o.headers });
+    if (String(u).startsWith('https://erp.test/')) return new Response(null, { status: 302, headers: { Location: 'https://cdn.test/productos.json' } });
+    return new Response(JSON.stringify({ jsonrpc: '2.0', result: { records: [
+      { display_name: 'Torta Cubana', list_price: 95, categ_id: [3, 'Tortas'], qty_available: 12, default_code: 'TC', description_sale: '<p>Con <b>todo</b></p>' },
+      { display_name: 'Torta Ahogada', list_price: 89, categ_id: [3, 'Tortas'], qty_available: 0, default_code: 'TA' }] } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  db.updateClient(c.id, { config: { ...cl().config, pedidos: { ...cl().config.pedidos, fuente: { tipo: 'api', url: 'https://erp.test/api/productos', header: 'Authorization', cada_min: 5 } } }, credentials: { ...db.clientCredentials(cl()), pedidos: { token: 'tok-secreto' } } });
+  const r = await P.sincronizarFuente(cl());
+  assert.equal(r.productos, 2);
+  assert.equal(pedidas[0].headers.Authorization, 'Bearer tok-secreto');
+  assert.equal(pedidas[1].headers.Authorization, undefined, 'no reenvía la llave a otro dominio');
+  const t = P.productos(c.id, { todos: true }).find((x) => x.nombre === 'Torta Cubana');
+  assert.equal(t.categoria, 'Tortas'); assert.equal(t.precio, 95); assert.equal(t.descripcion, 'Con todo'); assert.equal(t.sku, 'api:TC');
+  assert.equal(P.productos(c.id, { todos: true }).find((x) => x.nombre === 'Torta Ahogada').disponible, false);
+  assert.ok(!P.productos(c.id, { todos: true }).some((x) => x.sku.startsWith('archivo:')), 'lo de la fuente anterior se quita');
+  assert.ok(P.productos(c.id, { todos: true }).some((x) => x.nombre === 'Playera Aventura'), 'lo importado una vez de Shopify se queda');
+  P.hooks.fetch = async () => new Response('{}', { status: 401 });
+  await assert.rejects(P.sincronizarFuente(cl()), /rechazó la llave/);
+});
+
+test('pedido de regreso al sistema del cliente: webhook firmado con HMAC en pedido nuevo y cambio de estado', async () => {
+  const crypto = await import('node:crypto');
+  db.updateClient(c.id, { config: { ...cl().config, pedidos: { ...cl().config.pedidos, activo: true, entrega: 'ambos', minimo: 0, webhook: 'https://erp.test/webhooks/pedidos' } },
+    credentials: { ...db.clientCredentials(cl()), pedidos: { ...db.clientCredentials(cl()).pedidos, webhook_secret: 'firma-123' } } });
+  const enviados = [];
+  P.hooks.fetch = async (u, o) => { enviados.push({ url: String(u), headers: o.headers, body: o.body }); return new Response('{}', { status: 200 }); };
+  P.carrito(cl(), { telefono: '5544443333', producto: 'torta cubana', cantidad: 2 });
+  const r = await P.confirmar(cl(), { telefono: '5544443333', nombre: 'Mar', entrega: 'recoger' });
+  await new Promise((s) => setTimeout(s, 20));
+  const w = enviados.find((e) => e.url === 'https://erp.test/webhooks/pedidos');
+  assert.ok(w, 'se mandó al sistema');
+  assert.equal(w.headers['X-Kuper-Evento'], 'pedido_nuevo');
+  assert.equal(w.headers['X-Kuper-Firma'], crypto.createHmac('sha256', 'firma-123').update(w.body).digest('hex'));
+  const b = JSON.parse(w.body);
+  assert.equal(b.pedido.numero, r.pedido.numero); assert.equal(b.pedido.items[0].sku, 'TC'); assert.equal(b.pedido.items[0].cantidad, 2); assert.equal(b.pedido.total, 190);
+  P.cambiarEstado(cl(), r.pedido.id, 'entregado');
+  await new Promise((s) => setTimeout(s, 20));
+  assert.equal(enviados.at(-1).headers['X-Kuper-Evento'], 'pedido_estado'); assert.equal(JSON.parse(enviados.at(-1).body).pedido.estado, 'entregado');
+});
+
+test('panel: guardar la fuente conecta y guarda la llave cifrada sin mostrarla', async () => {
+  const srv = createApp().listen(0); const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    P.hooks.fetch = async () => new Response('nombre,precio\nTaco,25\n', { status: 200, headers: { 'Content-Type': 'text/csv' } });
+    const login = await fetch(`${base}/entrar`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: base }, body: new URLSearchParams({ email: 'dueno@burger.mx', password: 'ClaveBurger2030' }) });
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const r = await fetch(`${base}/app/pedidos/fuente`, { method: 'POST', redirect: 'manual', headers: { Cookie: cookie, 'Content-Type': 'application/x-www-form-urlencoded', Origin: base },
+      body: new URLSearchParams({ tipo: 'archivo', url: 'https://mi-erp.test/export.csv', token: 'NO-MOSTRAR', cada_min: '30', webhook: 'https://mi-erp.test/hook' }) });
+    assert.equal(r.status, 302); assert.match(decodeURIComponent(r.headers.get('location')), /Conectado: 1 productos/);
+    assert.equal(P.fuenteDe(cl()).cada_min, 30); assert.equal(db.clientCredentials(cl()).pedidos.token, 'NO-MOSTRAR');
+    const h = await (await fetch(`${base}/app/pedidos/catalogo`, { headers: { Cookie: cookie } })).text();
+    assert.doesNotMatch(h, /NO-MOSTRAR/); assert.match(h, /ya guardada/); assert.match(h, /X-Kuper-Firma/); assert.match(h, /Taco/);
+    assert.equal(P.ajustes(cl()).activo, true, 'guardar la fuente no apaga los pedidos');
+  } finally { srv.close(); }
+});
+
 test('con los pedidos apagados el agente no puede armar carritos', () => {
   db.updateClient(c.id, { config: { ...cl().config, pedidos: { ...cl().config.pedidos, activo: false } } });
   assert.throws(() => P.carrito(cl(), { telefono: '5512345678', producto: 'papas' }), /no están activos/);

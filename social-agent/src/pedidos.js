@@ -11,6 +11,7 @@ import { parseCSV } from './importar.js';
 import { normalizarUrl } from './sitioweb.js';
 import { isIP } from 'node:net';
 import { lookup } from 'node:dns/promises';
+import crypto from 'node:crypto';
 
 export const hooks = { fetch: (...a) => fetch(...a), lookup: (h) => lookup(h, { all: true }), aviso: (...a) => avisosAgente.recibir(...a) }; // pruebas
 export const ESTADOS = { nuevo: 'Nuevo', pagado: 'Pagado', preparacion: 'En preparación', entregado: 'Entregado', cancelado: 'Cancelado' };
@@ -98,26 +99,35 @@ const privada = (ip) => {
   const [a, b] = ip.split('.').map(Number);
   return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
 };
-async function jsonPublico(u) {
-  for (let i = 0; i < 3; i++) {
+/** Descarga de una dirección pública (nunca red interna), revisando cada redirección. Devuelve { texto, tipo }. */
+async function descargarPublico(u, headers = {}, { max = 8_000_000 } = {}) {
+  for (let i = 0; i < 4; i++) {
     const ips = isIP(u.hostname) ? [{ address: u.hostname }] : await hooks.lookup(u.hostname);
     if (!ips.length || ips.some((x) => privada(x.address)) || /^(localhost|.*\.local|.*\.internal)$/i.test(u.hostname)) throw new Error('Esa dirección no se puede abrir.');
-    const r = await hooks.fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; KuperPanel/1.0)' } });
+    // Los encabezados con llave solo van al dominio original (no se reenvían si redirige a otro).
+    const mismos = i === 0 ? headers : Object.fromEntries(Object.entries(headers).filter(([k]) => !/authorization|key|token/i.test(k)));
+    const r = await hooks.fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(20000), headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KuperPanel/1.0)', ...mismos } });
     if (r.status >= 300 && r.status < 400 && r.headers.get('location')) { u = new URL(r.headers.get('location'), u); if (u.protocol !== 'https:') throw new Error('Esa dirección no se puede abrir.'); continue; }
-    if (!r.ok) throw new Error(r.status === 404 ? 'Esa tienda no publica su catálogo (¿es Shopify?).' : `La tienda respondió ${r.status}.`);
+    if (!r.ok) { const e = new Error(r.status === 401 || r.status === 403 ? 'El sistema rechazó la llave (revisa que tenga permiso de lectura).' : `El sistema respondió ${r.status}.`); e.status = r.status; throw e; }
     const t = await r.text();
-    if (t.length > 8_000_000) throw new Error('El catálogo es demasiado grande.');
-    try { return JSON.parse(t); } catch { throw new Error('Esa tienda no publica su catálogo (¿es Shopify?).'); }
+    if (t.length > max) throw new Error('El catálogo es demasiado grande.');
+    return { texto: t, tipo: r.headers.get('content-type') || '' };
   }
   throw new Error('Demasiadas redirecciones.');
+}
+async function jsonPublico(u) {
+  let r;
+  try { r = await descargarPublico(u, { Accept: 'application/json' }); }
+  catch (e) { if (e.status === 404) throw new Error('Esa tienda no publica su catálogo (¿es Shopify?).'); throw e; }
+  try { return JSON.parse(r.texto); } catch { throw new Error('Esa tienda no publica su catálogo (¿es Shopify?).'); }
 }
 const sinHtml = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
 /** Importa los productos de una tienda Shopify (hasta 1,000). Un producto por modelo; las variantes van en la descripción. */
-export async function importarShopify(client, dominio) {
+export async function importarShopify(client, dominio, { origen = 'importado' } = {}) {
   const base = normalizarUrl(dominio);
   if (!base) throw new Error('Escribe la dirección de la tienda, ej. mitienda.com');
-  let ok = 0;
+  let ok = 0; const vistos = [];
   for (let page = 1; page <= 4; page++) {
     const u = new URL(`/products.json?limit=250&page=${page}`, `https://${base.hostname}`);
     const j = await jsonPublico(u);
@@ -132,14 +142,14 @@ export async function importarShopify(client, dominio) {
       const desc = [opciones.length ? `Opciones disponibles: ${opciones.slice(0, 25).join(', ')}` : '', sinHtml(p.body_html).slice(0, 300)].filter(Boolean).join('. ');
       try {
         guardarProducto(client, { sku: `shopify-${p.id}`, nombre: p.title, precio: Math.min(...precios), categoria: p.product_type || (Array.isArray(p.tags) ? p.tags[0] : String(p.tags || '').split(',')[0]) || '',
-          descripcion: `${Math.min(...precios) !== Math.max(...precios) ? `Desde ${dinero(Math.min(...precios))}. ` : ''}${desc}`, foto: p.images?.[0]?.src || '', disponible: disponibles.length > 0, origen: 'shopify' });
-        ok++;
+          descripcion: `${Math.min(...precios) !== Math.max(...precios) ? `Desde ${dinero(Math.min(...precios))}. ` : ''}${desc}`, foto: p.images?.[0]?.src || '', disponible: disponibles.length > 0, origen });
+        ok++; vistos.push(`shopify-${p.id}`);
       } catch { /* producto incompleto */ }
     }
     if (lista.length < 250) break;
   }
   db.logEvent({ clientId: client.id, tipo: 'catalogo_importado', detalle: `Shopify ${base.hostname}: ${ok} productos` });
-  return { importados: ok, tienda: base.hostname };
+  return { importados: ok, tienda: base.hostname, vistos };
 }
 
 /** Búsqueda para el agente: por nombre, categoría o descripción (sin acentos). Solo disponibles. */
@@ -265,7 +275,9 @@ export async function confirmar(client, { telefono, nombre, entrega, direccion, 
   hooks.aviso(client, { titulo: `Pedido nuevo #${numero} · ${dinero(total)}`, nombre, telefono: t, origen: 'whatsapp', correo: true,
     texto: [...lineas, envio ? `Envío: ${dinero(envio)}` : '', `Total: ${dinero(total)}`, tipo === 'domicilio' ? `A domicilio: ${dir}` : 'Para recoger', notas ? `Notas: ${notas}` : '', pago ? 'Se le mandó link de pago.' : 'Sin link de pago: cobrar como acuerden.'].filter(Boolean).join('\n') })
     .catch((e) => console.error('[pedido aviso]', e.message));
-  return { pedido: obtener(client.id, id), pago_url: pago?.url || null, error_pago: errorPago };
+  const pedido = obtener(client.id, id);
+  avisarSistema(client, 'pedido_nuevo', pedido).catch(() => {});
+  return { pedido, pago_url: pago?.url || null, error_pago: errorPago };
 }
 
 export function obtener(clientId, id) {
@@ -287,19 +299,162 @@ export function cambiarEstado(client, id, estado) {
   if (!r.changes) throw new Error('Ese pedido no existe.');
   const p = obtener(client.id, id);
   db.logEvent({ clientId: client.id, tipo: 'pedido_estado', detalle: `#${p.numero} → ${ESTADOS[estado]}` });
+  avisarSistema(client, 'pedido_estado', p).catch(() => {});
   return p;
 }
 
 /** Pedidos con link de pago: si el cobro ya se pagó, el pedido pasa a "pagado" (corre después de revisar los cobros). */
 export function sincronizarPagos(client) {
   cobros.listar(client.id, 1); // asegura la tabla de cobros
-  const r = d().prepare(`UPDATE pedidos SET estado = 'pagado', updated_at = datetime('now') WHERE client_id = ? AND estado = 'nuevo' AND cobro_ref IS NOT NULL
-    AND cobro_ref IN (SELECT ref FROM cobros WHERE client_id = ? AND status = 'pagado')`).run(client.id, client.id);
-  return { pagados: r.changes };
+  const pagados = d().prepare(`SELECT id FROM pedidos WHERE client_id = ? AND estado = 'nuevo' AND cobro_ref IS NOT NULL
+    AND cobro_ref IN (SELECT ref FROM cobros WHERE client_id = ? AND status = 'pagado')`).all(client.id, client.id);
+  for (const { id } of pagados) {
+    d().prepare("UPDATE pedidos SET estado = 'pagado', updated_at = datetime('now') WHERE id = ?").run(id);
+    avisarSistema(client, 'pedido_pagado', obtener(client.id, id)).catch(() => {});
+  }
+  return { pagados: pagados.length };
 }
 
 export function resumenPedidos(clientId, dias = 30) {
   const r = d().prepare(`SELECT COUNT(*) n, SUM(estado <> 'cancelado') validos, SUM(CASE WHEN estado IN ('pagado','preparacion','entregado') THEN total ELSE 0 END) vendido,
     SUM(estado = 'nuevo') nuevos FROM pedidos WHERE client_id = ? AND datetime(created_at) >= datetime('now', ?)`).get(clientId, `-${dias} days`);
   return { pedidos: r.n || 0, nuevos: r.nuevos || 0, vendido: r.vendido || 0 };
+}
+
+// ------------------------------------------------------------ catálogo desde el sistema del cliente (CRM / ERP / hoja)
+// client.config.pedidos.fuente = { tipo: 'panel'|'archivo'|'api'|'shopify', url, lista, campos: { nombre, precio, … }, header, cada_min }
+// credentials.pedidos = { token, webhook_secret }
+// El catálogo de la fuente se copia al panel cada `cada_min` minutos (mínimo 5): así el agente contesta rápido aunque el
+// sistema del cliente esté lento o caído, y precios y existencias quedan al día. Lo que se cargó a mano no se toca.
+export const FUENTES = { panel: 'Solo el panel (a mano o CSV)', archivo: 'Link a un archivo CSV o JSON (Google Sheets, exportación de tu ERP)', api: 'API de tu sistema (JSON con llave)', shopify: 'Tienda Shopify' };
+export const fuenteDe = (client) => ({ tipo: 'panel', url: '', lista: '', campos: {}, header: 'Authorization', cada_min: 15, ...(ajustes(client).fuente || {}) });
+const credsPedidos = (client) => db.clientCredentials(client).pedidos || {};
+
+/** Link de Google Sheets "compartido" → su exportación en CSV. */
+export function urlDeHoja(u) {
+  const m = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([\w-]+)/.exec(String(u || ''));
+  if (!m) return u;
+  const gid = /[#&?]gid=(\d+)/.exec(String(u))?.[1];
+  return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid ? `&gid=${gid}` : ''}`;
+}
+
+const SINONIMOS = {
+  nombre: ['nombre', 'name', 'title', 'titulo', 'producto', 'product', 'descripcion_corta', 'display_name', 'articulo', 'item'],
+  precio: ['precio', 'price', 'list_price', 'lst_price', 'sale_price', 'precio_venta', 'precio_publico', 'regular_price', 'unit_price', 'pvp'],
+  categoria: ['categoria', 'category', 'categ_id', 'product_type', 'type', 'linea', 'familia', 'departamento', 'grupo'],
+  descripcion: ['descripcion', 'description', 'description_sale', 'body_html', 'detalle', 'short_description'],
+  foto: ['foto', 'imagen', 'image', 'image_url', 'imagen_url', 'picture', 'thumbnail', 'image src'],
+  disponible: ['disponible', 'available', 'activo', 'active', 'sale_ok', 'in_stock', 'stock_status'],
+  existencias: ['existencias', 'existencia', 'stock', 'qty_available', 'quantity', 'cantidad', 'inventory_quantity', 'stock_quantity', 'inventario'],
+  sku: ['sku', 'clave', 'codigo', 'code', 'default_code', 'id', 'item_code', 'referencia', 'barcode'],
+};
+const ruta = (obj, camino) => String(camino || '').split('.').filter(Boolean).reduce((o, k) => (o == null ? undefined : o[k]), obj);
+function valor(item, campo, mapeo) {
+  if (mapeo?.[campo]) return ruta(item, mapeo[campo]);
+  const claves = Object.keys(item || {});
+  for (const s of SINONIMOS[campo]) { const k = claves.find((x) => norm(x).replace(/\s+/g, '_') === s.replace(/\s+/g, '_')); if (k !== undefined) return item[k]; }
+  return undefined;
+}
+const plano = (v) => (Array.isArray(v) ? (v.length === 2 && typeof v[1] === 'string' ? v[1] : v.map(plano).join(', ')) : v && typeof v === 'object' ? (v.name ?? v.nombre ?? v.title ?? v.src ?? v.url ?? '') : v); // Odoo: [id, "Nombre"]
+/** Encuentra la lista de productos dentro de un JSON: la ruta indicada, o el primer arreglo de objetos. */
+function lista(json, camino) {
+  if (camino) { const x = ruta(json, camino); if (Array.isArray(x)) return x; throw new Error(`No encontré una lista en "${camino}".`); }
+  if (Array.isArray(json)) return json;
+  const cola = [json];
+  for (let n = 0; cola.length && n < 200; n++) {
+    const o = cola.shift();
+    for (const v of Object.values(o || {})) { if (Array.isArray(v) && v.length && typeof v[0] === 'object') return v; if (v && typeof v === 'object') cola.push(v); }
+  }
+  throw new Error('No encontré la lista de productos en la respuesta.');
+}
+
+/** Convierte las filas de la fuente en productos del panel. Devuelve los sku vistos. */
+function cargarFilas(client, filas, { campos = {}, origen }) {
+  let ok = 0; const errores = [], vistos = [];
+  for (const [i, f] of filas.slice(0, 5000).entries()) {
+    try {
+      const ex = plano(valor(f, 'existencias', campos)), disp = plano(valor(f, 'disponible', campos));
+      const disponible = disp !== undefined && disp !== '' ? !/^(0|no|false|inactivo|outofstock|agotado)$/i.test(String(disp).trim()) && (ex === undefined || ex === '' || Number(ex) > 0)
+        : ex !== undefined && ex !== '' ? Number(ex) > 0 : true;
+      const sku = `${origen}:${String(plano(valor(f, 'sku', campos)) ?? '').trim() || norm(plano(valor(f, 'nombre', campos))).replace(/[^a-z0-9]+/g, '-')}`.slice(0, 80);
+      const p = guardarProducto(client, { sku, nombre: plano(valor(f, 'nombre', campos)), precio: plano(valor(f, 'precio', campos)), categoria: plano(valor(f, 'categoria', campos)),
+        descripcion: sinHtml(plano(valor(f, 'descripcion', campos))), foto: plano(valor(f, 'foto', campos)), disponible, origen });
+      vistos.push(p.sku); ok++;
+    } catch (e) { if (errores.length < 5) errores.push(`Fila ${i + 1}: ${e.message}`); }
+  }
+  return { ok, errores, vistos };
+}
+
+/** Trae el catálogo de la fuente del cliente y lo deja en el panel. Lo que ya no viene de la fuente se quita. */
+export async function sincronizarFuente(client) {
+  const f = fuenteDe(client);
+  if (f.tipo === 'panel') return { tipo: 'panel', productos: 0 };
+  let r;
+  try {
+    if (f.tipo === 'shopify') {
+      const x = await importarShopify(client, f.url, { origen: 'shopify' });
+      r = { ok: x.importados, errores: [], vistos: x.vistos };
+    } else {
+      const u = normalizarUrl(urlDeHoja(f.url));
+      if (!u || u.protocol !== 'https:') throw new Error('Pon la dirección completa con https://');
+      const tk = credsPedidos(client).token;
+      const headers = { Accept: 'application/json, text/csv;q=0.9, */*;q=0.5' };
+      if (f.tipo === 'api' && tk) { const h = /^[A-Za-z0-9-]{1,40}$/.test(f.header || '') ? f.header : 'Authorization'; headers[h] = h.toLowerCase() === 'authorization' && !/\s/.test(tk) ? `Bearer ${tk}` : tk; }
+      const { texto, tipo } = await descargarPublico(u, headers);
+      const esJson = /json/i.test(tipo) || /^\s*[[{]/.test(texto);
+      let filas;
+      if (esJson) { let j; try { j = JSON.parse(texto); } catch { throw new Error('La respuesta no es un JSON válido.'); } filas = lista(j, f.lista); }
+      else { if (/^\s*</.test(texto)) throw new Error('La dirección regresó una página web, no un CSV. Si es Google Sheets, compártela como "Cualquier persona con el link".'); filas = parseCSV(texto); }
+      if (!filas.length) throw new Error('La fuente no trae productos.');
+      r = cargarFilas(client, filas, { campos: f.campos || {}, origen: f.tipo });
+      if (!r.ok) throw new Error(`No pude leer ningún producto. ${r.errores[0] || 'Revisa los nombres de las columnas (nombre y precio).'}`);
+    }
+    // Quita lo de esta fuente que ya no vino (descontinuado). Lo cargado a mano o de otras fuentes no se toca.
+    const vistos = new Set(r.vistos);
+    // (también lo de otra fuente externa anterior, si cambió de fuente)
+    const viejos = d().prepare("SELECT id, sku, origen FROM catalogo WHERE client_id = ? AND origen IN ('archivo', 'api', 'shopify')").all(client.id).filter((x) => x.origen !== f.tipo || !vistos.has(x.sku));
+    for (const x of viejos) d().prepare('DELETE FROM catalogo WHERE id = ?').run(x.id);
+    const estado = { ok: true, at: new Date().toISOString(), productos: r.ok, quitados: viejos.length, avisos: r.errores.slice(0, 3) };
+    db.kvSet(`pedidos_fuente_${client.id}`, JSON.stringify(estado));
+    return estado;
+  } catch (e) {
+    const estado = { ok: false, at: new Date().toISOString(), error: String(e.message).slice(0, 300) };
+    db.kvSet(`pedidos_fuente_${client.id}`, JSON.stringify(estado));
+    db.logEvent({ clientId: client.id, tipo: 'catalogo_error', detalle: estado.error });
+    throw e;
+  }
+}
+export const estadoFuente = (clientId) => { try { return JSON.parse(db.kvGet(`pedidos_fuente_${clientId}`) || 'null'); } catch { return null; } };
+/** ¿Toca sincronizar? (para el scheduler) */
+export function tocaSincronizar(client, ahora = Date.now()) {
+  const f = fuenteDe(client);
+  if (f.tipo === 'panel' || !ajustes(client).activo) return false;
+  const e = estadoFuente(client.id);
+  const espera = Math.max(5, Number(f.cada_min) || 15) * 60_000 * (e && !e.ok ? 2 : 1); // si falló, espera el doble
+  return !e || ahora - Date.parse(e.at) >= espera;
+}
+
+// ------------------------------------------------------------ pedidos de regreso al sistema del cliente (webhook firmado)
+// client.config.pedidos.webhook = 'https://su-sistema/…'. Cada pedido nuevo o cambio de estado se manda en JSON con
+// X-Kuper-Evento y X-Kuper-Firma = HMAC-SHA256 (hex) del cuerpo con credentials.pedidos.webhook_secret.
+export async function avisarSistema(client, evento, pedido) {
+  const url = ajustes(client).webhook;
+  const secreto = credsPedidos(client).webhook_secret;
+  if (!url || !secreto || !pedido) return { enviado: false };
+  const u = normalizarUrl(url);
+  if (!u || u.protocol !== 'https:') return { enviado: false };
+  const cuerpo = JSON.stringify({ evento, marca: client.slug, pedido: { numero: pedido.numero, estado: pedido.estado, fecha: pedido.created_at, cliente: { nombre: pedido.nombre, telefono: pedido.telefono },
+    entrega: pedido.entrega, direccion: pedido.direccion, notas: pedido.notas, items: (pedido.items || []).map((i) => ({ sku: producto(client.id, i.id)?.sku?.replace(/^(archivo|api|shopify):/, '') || null, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio, nota: i.nota || '' })),
+    subtotal: pedido.subtotal, envio: pedido.envio, total: pedido.total, pago_url: pedido.pago_url } });
+  const firma = crypto.createHmac('sha256', secreto).update(cuerpo).digest('hex');
+  try {
+    const ips = isIP(u.hostname) ? [{ address: u.hostname }] : await hooks.lookup(u.hostname);
+    if (!ips.length || ips.some((x) => privada(x.address))) throw new Error('dirección no permitida');
+    const r = await hooks.fetch(u, { method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(10000), headers: { 'Content-Type': 'application/json', 'X-Kuper-Evento': evento, 'X-Kuper-Firma': firma }, body: cuerpo });
+    if (!r.ok) throw new Error(`respondió ${r.status}`);
+    return { enviado: true };
+  } catch (e) {
+    db.logEvent({ clientId: client.id, tipo: 'pedido_webhook_error', detalle: `#${pedido.numero} ${evento}: ${e.message}` });
+    return { enviado: false, error: e.message };
+  }
 }

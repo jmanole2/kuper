@@ -1574,7 +1574,8 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     const lista = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.pedidosPage(req.client, { lista: pedidos.listar(req.client.id, { estado: String(req.query.estado || '') }),
       estado: String(req.query.estado || ''), resumen: pedidos.resumenPedidos(req.client.id), aj: pedidos.ajustes(req.client), cobros: cobros.listo(req.client), base: base(req), app, ok: req.query.ok ? 'Listo.' : '', ...extra }));
     const cat = (req, res, extra = {}) => res.status(extra.error ? 400 : 200).send(V.catalogoPage(req.client, { productos: pedidos.productos(req.client.id, { todos: true }), aj: pedidos.ajustes(req.client),
-      api: `${config.publicBaseUrl}/api/${req.client.slug}/catalogo`, base: base(req), app, ok: req.query.ok ? String(req.query.ok).slice(0, 200) : '', ...extra }));
+      api: `${config.publicBaseUrl}/api/${req.client.slug}/catalogo`, fuente: pedidos.fuenteDe(req.client), estadoFuente: pedidos.estadoFuente(req.client.id),
+      hayToken: !!db.clientCredentials(req.client).pedidos?.token, secretoWebhook: db.clientCredentials(req.client).pedidos?.webhook_secret || '', base: base(req), app, ok: req.query.ok ? String(req.query.ok).slice(0, 200) : '', ...extra }));
     router.get(`${prefix}/pedidos`, (req, res) => lista(req, res));
     router.post(`${prefix}/pedidos/:pedido/estado`, (req, res) => {
       try { pedidos.cambiarEstado(req.client, req.params.pedido, String(req.body.estado || '')); res.redirect(`${base(req)}/pedidos?ok=1${req.body.volver ? `&estado=${encodeURIComponent(String(req.body.volver).slice(0, 20))}` : ''}`); }
@@ -1603,11 +1604,33 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent(`Se importaron ${r.importados} productos de ${r.tienda}.`)}`); }
       catch (e) { cat(req, res, { error: e.message }); }
     });
+    // De dónde sale el catálogo (su CRM/ERP, una hoja o Shopify) y a dónde se mandan los pedidos.
+    router.post(`${prefix}/pedidos/fuente`, async (req, res) => {
+      const b = req.body || {}, creds = db.clientCredentials(req.client), prev = creds.pedidos || {};
+      const tipo = pedidos.FUENTES[b.tipo] ? b.tipo : 'panel';
+      const url = String(b.url || '').trim().slice(0, 600);
+      if (tipo !== 'panel' && !url) return cat(req, res, { error: tipo === 'shopify' ? 'Escribe la dirección de la tienda.' : 'Pega la dirección (https://…) de donde sale tu catálogo.' });
+      const webhook = String(b.webhook || '').trim().slice(0, 600);
+      if (webhook && !/^https:\/\//.test(webhook)) return cat(req, res, { error: 'La dirección para mandar pedidos debe empezar con https://' });
+      const campos = Object.fromEntries(['nombre', 'precio', 'categoria', 'descripcion', 'foto', 'existencias', 'disponible', 'sku'].map((k) => [k, String(b[`campo_${k}`] || '').trim().slice(0, 80)]).filter(([, v]) => /^[\w.\- ]+$/.test(v)));
+      const token = String(b.token || '').trim().slice(0, 2000);
+      db.updateClient(req.client.id, { config: { ...req.client.config, pedidos: { ...(req.client.config.pedidos || {}), webhook,
+        fuente: { tipo, url, lista: String(b.lista || '').trim().slice(0, 120), header: /^[A-Za-z0-9-]{1,40}$/.test(String(b.header || '')) ? b.header : 'Authorization', cada_min: Math.max(5, Math.min(1440, Number(b.cada_min) || 15)), campos } } },
+        credentials: { ...creds, pedidos: { ...prev, ...(token ? { token } : {}), ...(b.quitar_token === '1' ? { token: '' } : {}), webhook_secret: prev.webhook_secret || randomToken(24) } } });
+      seg.auditar(req, 'pedidos_fuente', `${tipo} ${url.slice(0, 80)}`);
+      if (tipo === 'panel') return res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent('Guardado.')}`);
+      try { const r = await pedidos.sincronizarFuente(db.getClient(req.client.id)); res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent(`Conectado: ${r.productos} productos.${r.quitados ? ` Se quitaron ${r.quitados} que ya no vienen.` : ''}`)}`); }
+      catch (e) { req.client = db.getClient(req.client.id); cat(req, res, { error: `Se guardó, pero no pude leer el catálogo: ${e.message}` }); }
+    });
+    router.post(`${prefix}/pedidos/fuente/sincronizar`, async (req, res) => {
+      try { const r = await pedidos.sincronizarFuente(req.client); res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent(`Actualizado: ${r.productos} productos.`)}`); }
+      catch (e) { cat(req, res, { error: e.message }); }
+    });
     router.post(`${prefix}/pedidos/ajustes`, (req, res) => {
       const b = req.body || {};
       const sugerencias = String(b.sugerencias || '').split(/\r?\n/).map((l) => l.split(/\s*(?:->|→|=>|>)\s*/)).filter((x) => x.length === 2 && x[0].trim() && x[1].trim())
         .slice(0, 20).map(([si, ofrece]) => ({ si: si.trim().slice(0, 60), ofrece: ofrece.trim().slice(0, 60) }));
-      db.updateClient(req.client.id, { config: { ...req.client.config, pedidos: { activo: b.activo === '1', envio: Math.max(0, Math.min(5000, Number(b.envio) || 0)), minimo: Math.max(0, Math.min(100000, Number(b.minimo) || 0)),
+      db.updateClient(req.client.id, { config: { ...req.client.config, pedidos: { ...(req.client.config.pedidos || {}), activo: b.activo === '1', envio: Math.max(0, Math.min(5000, Number(b.envio) || 0)), minimo: Math.max(0, Math.min(100000, Number(b.minimo) || 0)),
         entrega: ['ambos', 'domicilio', 'recoger'].includes(b.entrega) ? b.entrega : 'ambos', sugerencias } } });
       seg.auditar(req, 'pedidos_ajustes', req.client.nombre);
       res.redirect(`${base(req)}/pedidos/catalogo?ok=${encodeURIComponent('Ajustes guardados.')}`);

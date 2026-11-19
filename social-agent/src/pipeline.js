@@ -488,7 +488,7 @@ const kwPause = new Map();
 const comPausa = new Map();
 const cobrosPausa = new Map();
 const correoPausa = new Map();
-const carritoPausa = new Map();
+const carritoPausa = new Map(); const fuentePausa = new Map();
 const slaPausa = new Map();
 /** Al guardar los ajustes de comentarios, revisa de inmediato. */
 export const resetComentariosPausa = (clientId) => comPausa.delete(clientId);
@@ -523,6 +523,11 @@ export async function tick(now = new Date()) {
     if (cobros.listo(client) && !(cobrosPausa.get(client.id) > now.getTime())) {
       cobrosPausa.set(client.id, now.getTime() + 2 * 60_000);
       enqueue(`cob-${client.id}`, () => cobros.revisar(client, { ahora: now }).then(() => pedidos.sincronizarPagos(client)).catch((e) => db.logEvent({ clientId: client.id, tipo: 'cobro_error', detalle: e.message })));
+    }
+    // Pedidos por chat: el catálogo del sistema del cliente (CRM/ERP, hoja, Shopify) se copia al panel cada X minutos.
+    if (pedidos.tocaSincronizar(client, now.getTime()) && !(fuentePausa.get(client.id) > now.getTime())) {
+      fuentePausa.set(client.id, now.getTime() + 5 * 60_000);
+      enqueue(`cat-${client.id}`, () => pedidos.sincronizarFuente(client).catch(() => { /* queda en el estado de la fuente */ }));
     }
     // Carritos abandonados: cada 5 minutos se recuerda a quien dejó su compra a medias.
     if (carritos.ajustes(client).activo && !(carritoPausa.get(client.id) > now.getTime())) {

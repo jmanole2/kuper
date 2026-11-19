@@ -1979,7 +1979,7 @@ export function pedidosPage(client, { lista = [], estado = '', resumen = {}, aj 
   return page({ title: `Pedidos · ${client.nombre}`, side: app ? sideApp('pedidos', client) : side('clientes'), body });
 }
 
-export function catalogoPage(client, { productos = [], aj = {}, api = '', base, app = false, ok = '', error = '' }) {
+export function catalogoPage(client, { productos = [], aj = {}, api = '', fuente = { tipo: 'panel', campos: {} }, estadoFuente = null, hayToken = false, secretoWebhook = '', base, app = false, ok = '', error = '' }) {
   const cats = [...new Set(productos.map((p) => p.categoria).filter(Boolean))];
   const reglas = (aj.sugerencias || []).map((r) => `${r.si} -> ${r.ofrece}`).join('\n');
   const body = html`${hero({ kicker: 'Pedidos por chat', title: 'Catálogo y ajustes', letra: client.nombre, sub: 'Lo que tu agente puede vender por WhatsApp. Solo ofrece lo que está disponible, con el precio de aquí.',
@@ -1998,6 +1998,23 @@ export function catalogoPage(client, { productos = [], aj = {}, api = '', base, 
             <form method="post" action="${base}/pedidos/catalogo/${p.id}/borrar" class="inline" onsubmit="return confirm('¿Borrar este producto?')"><button class="small" style="padding:4px 10px">Borrar</button></form></td></tr>`)}</table>`
           : html`<p class="muted small">Sin productos todavía. Agrégalos a mano, sube un CSV o impórtalos de tu tienda Shopify.</p>`}</div>
       <div style="display:grid;gap:18px">
+        <form class="card" method="post" action="${base}/pedidos/fuente" style="display:grid;gap:10px"><span class="mono">De dónde sale tu catálogo</span>
+          <label class="small muted">Fuente<select name="tipo">${[['panel', 'Solo el panel (a mano o CSV)'], ['archivo', 'Link a un CSV o JSON (Google Sheets, exportación de tu ERP)'], ['api', 'API de tu sistema / ERP / CRM (JSON con llave)'], ['shopify', 'Tienda Shopify']].map(([v, t]) => html`<option value="${v}" ${fuente.tipo === v ? 'selected' : ''}>${t}</option>`)}</select></label>
+          <label class="small muted">Dirección (https://…, o la tienda Shopify)<input name="url" value="${fuente.url || ''}" placeholder="https://docs.google.com/spreadsheets/d/… · https://mi-erp.com/api/productos"></label>
+          <details><summary class="small">Opciones de la API (llave, campos)</summary><div style="display:grid;gap:8px;margin-top:8px">
+            <label class="small muted">Llave de solo lectura ${hayToken ? '(ya guardada)' : ''}<input name="token" type="password" autocomplete="off" placeholder="${hayToken ? '••••••••' : 'Token o API key'}"></label>
+            ${hayToken ? html`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="quitar_token" value="1" style="width:16px;height:16px">Quitar la llave guardada</label>` : ''}
+            <label class="small muted">Encabezado de la llave<input name="header" value="${fuente.header || 'Authorization'}" placeholder="Authorization · X-Api-Key"></label>
+            <label class="small muted">Dónde viene la lista en el JSON (opcional)<input name="lista" value="${fuente.lista || ''}" placeholder="data.items"></label>
+            <p class="muted small" style="margin:0">Los campos se reconocen solos (nombre, precio, categoría, existencias…). Si tu sistema usa otros nombres, escríbelos:</p>
+            ${['nombre', 'precio', 'categoria', 'existencias', 'disponible', 'descripcion', 'foto', 'sku'].map((k) => html`<label class="small muted">${k}<input name="campo_${k}" value="${fuente.campos?.[k] || ''}" placeholder="ej. ${({ nombre: 'display_name', precio: 'list_price', categoria: 'categ_id', existencias: 'qty_available', disponible: 'active', descripcion: 'description_sale', foto: 'image_url', sku: 'default_code' })[k]}"></label>`)}
+          </div></details>
+          <label class="small muted">Actualizar cada (minutos)<input name="cada_min" type="number" min="5" max="1440" value="${fuente.cada_min || 15}"></label>
+          <label class="small muted">Mandar cada pedido a tu sistema (webhook https, opcional)<input name="webhook" value="${aj.webhook || ''}" placeholder="https://mi-erp.com/webhooks/pedidos"></label>
+          ${aj.webhook && secretoWebhook ? html`<p class="muted small" style="margin:0">Cada pedido llega en JSON con <b>X-Kuper-Firma</b> = HMAC-SHA256 del cuerpo con esta clave: <input readonly value="${secretoWebhook}" onclick="this.select()" style="font-size:12px"></p>` : ''}
+          ${estadoFuente ? html`<p class="small" style="margin:0;color:${estadoFuente.ok ? '#4ade80' : '#f87171'}">${estadoFuente.ok ? `Última actualización: ${estadoFuente.productos} productos` : `Último intento falló: ${estadoFuente.error}`} · ${new Date(estadoFuente.at).toLocaleString('es-MX', { timeZone: config.timezone, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</p>` : ''}
+          <p class="muted small" style="margin:0">Google Sheets: compártela como "Cualquier persona con el link". El catálogo se copia aquí y se actualiza solo; lo que cargues a mano se queda.</p>
+          <div class="row" style="gap:8px"><button class="btn-accent">Guardar y conectar</button>${fuente.tipo !== 'panel' ? html`<button formaction="${base}/pedidos/fuente/sincronizar">Actualizar ahora</button>` : ''}</div></form>
         <form class="card" method="post" action="${base}/pedidos/ajustes" style="display:grid;gap:10px"><span class="mono">Ajustes</span>
           <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="activo" value="1" ${aj.activo ? 'checked' : ''} style="width:18px;height:18px">Tomar pedidos por chat</label>
           <label class="small muted">Entrega<select name="entrega">${[['ambos', 'A domicilio y para recoger'], ['domicilio', 'Solo a domicilio'], ['recoger', 'Solo para recoger']].map(([v, t]) => html`<option value="${v}" ${aj.entrega === v ? 'selected' : ''}>${t}</option>`)}</select></label>
