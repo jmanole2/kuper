@@ -513,6 +513,24 @@ function send_code_email(string $to, string $name, string $code): void
     send_mail($to, $subject, $html, $text);
 }
 
+/** Correo de confirmación con el folio (se manda al verificar el código). */
+function send_confirmation_email(string $to, string $name, string $folio, string $slogan): void
+{
+    $announce = (string) cfg('winners_announce_date');
+    $contact = (string) cfg('contact_email');
+    $subject = 'Tu folio de participación K-VIBE+: ' . $folio;
+    $text = "Hola {$name}:\n\n¡Gracias por participar en «Muestra tu lado K-VIBE+ más creativo y gana»!\n\n"
+          . "Tu participación quedó registrada.\nFolio: {$folio}\nTu slogan: \"{$slogan}\"\n\n"
+          . "Los ganadores se publicarán el {$announce} en " . rtrim((string) cfg('base_url'), '/') . "\n"
+          . "Guarda este correo: tu folio identifica tu participación.\n"
+          . ($contact ? "Dudas: {$contact}\n" : '')
+          . "\nK-VIBE+ · Canal 564";
+    ob_start();
+    require APP_DIR . '/views/email_confirm.php';
+    $html = ob_get_clean();
+    send_mail($to, $subject, $html, $text);
+}
+
 function send_mail(string $to, string $subject, string $html, string $text): void
 {
     $driver = cfg('mail.driver');

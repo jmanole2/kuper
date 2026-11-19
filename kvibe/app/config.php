@@ -22,8 +22,9 @@ return [
     // 'auto' usa las fechas de abajo. 'open' / 'closed' fuerzan el estado.
     'contest_mode' => 'auto',
     'opens_at'     => null,                    // p. ej. '2026-11-20 00:00:00' (null = abierto ya)
-    'closes_at'    => null,                    // PENDIENTE: fecha de cierre (null = sin cierre automático)
-    'winners_announce_date' => 'XX-XX-2026',   // PENDIENTE: texto tal cual se muestra en la confirmación
+    'closes_at'    => '2026-12-05 00:00:00',   // vigencia según bases: 20 nov – 4 dic 2026 (cierra al terminar el 4 dic)
+    'winners_announce_date' => '11 de diciembre de 2026',   // publicación de resultados según bases
+    'contact_email' => 'glopez@vinter.mx',     // contacto de las bases (va en el correo de confirmación)
 
     // ---------- Origen del QR (?src=) ----------
     'sources'        => ['pantalla', 'redes', 'impreso'],  // extensible
@@ -52,10 +53,11 @@ return [
 
         'rules_title' => 'Cómo participar',
         'rules' => [
-            'Concurso válido en toda la República Mexicana.',
+            'Vigencia: del 20 de noviembre al 4 de diciembre de 2026. Válido en toda la República Mexicana.',
+            'Solo para mayores de 18 años con residencia en México.',
             'Solo se permite una participación por persona (correo y celular únicos).',
             'Tu foto debe mostrar que estás viendo K-VIBE+ en el canal 564 de LG Channels e incluir un elemento inspirado en Corea.',
-            'Tu slogan debe ser original y de tu autoría.',
+            'Tu slogan debe ser original y de tu autoría. No se aceptan participaciones hechas con inteligencia artificial.',
             'Un jurado elegirá a los 12 ganadores por creatividad y originalidad.',
             'Consulta los Términos y Condiciones para conocer las bases completas.',
         ],
@@ -118,7 +120,7 @@ return [
     // ---------- Legales ----------
     // url: null = se muestra app/legal/*.html; o URL externa del cliente.
     'legal' => [
-        'terms'   => ['version' => 'v1-borrador', 'url' => null],
+        'terms'   => ['version' => 'v1-2026-11-19', 'url' => null],
         'privacy' => ['version' => 'v1-borrador', 'url' => null],
     ],
 

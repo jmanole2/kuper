@@ -248,6 +248,14 @@ main.narrow { max-width: 560px; padding-top: 16px; }
 .announce strong { color: #fff; }
 .legal { line-height: 1.7; }
 .legal h2 { font-size: 1.15rem; margin-top: 1.4em; }
+.legal p { margin: 0 0 12px; color: var(--muted); }
+.legal strong { color: #fff; }
+.legal-sub { font-weight: 700; font-style: italic; color: #fff !important; }
+.legal table { width: 100%; border-collapse: collapse; margin: 6px 0 18px; font-size: .92rem; }
+.legal td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.legal td p { margin: 0; }
+.legal tr:first-child td { font-weight: 700; color: #fff; }
+.legal ul { color: var(--muted); }
 
 /* ---------- Footer ---------- */
 .footer { padding: 30px 16px 44px; text-align: center; font-size: .9rem; color: var(--muted); }

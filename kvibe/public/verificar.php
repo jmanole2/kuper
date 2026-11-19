@@ -109,6 +109,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw $ex;
             }
 
+            try {
+                send_confirmation_email($p['email'], $p['first_name'], $publicId, $p['slogan']);
+            } catch (Throwable $ex) {
+                error_log('mail confirmación ' . $publicId . ': ' . $ex->getMessage());
+            }
+
             unset($_SESSION['pending']);
             session_regenerate_id(true);
             $_SESSION['done'] = $publicId;

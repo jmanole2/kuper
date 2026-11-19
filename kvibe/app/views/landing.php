@@ -139,7 +139,7 @@ $heroM = cfg('assets.hero_mobile');
       <fieldset class="consents">
         <label class="check">
           <input type="checkbox" name="terms" value="1" required<?= !empty($old['terms']) ? ' checked' : '' ?><?= $inv('terms') ?>>
-          <span>Acepto los <a href="<?= e(url('legal.php?doc=terminos')) ?>" target="_blank" rel="noopener">Términos y Condiciones</a></span>
+          <span>Soy mayor de 18 años y acepto las <a href="<?= e(url('legal.php?doc=terminos')) ?>" target="_blank" rel="noopener">Bases y Términos y Condiciones</a></span>
         </label>
         <?= $err('terms') ?>
         <label class="check">

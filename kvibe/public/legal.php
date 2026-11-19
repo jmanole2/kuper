@@ -11,7 +11,7 @@ if ($url) {
 
 $file = APP_DIR . '/legal/' . ($doc === 'privacy' ? 'privacidad' : 'terminos') . '.html';
 view('legal', [
-    'title'   => $doc === 'privacy' ? 'Aviso de Privacidad' : 'Términos y Condiciones',
+    'title'   => $doc === 'privacy' ? 'Aviso de Privacidad' : 'Bases de participación',
     'version' => cfg("legal.{$doc}.version"),
     'html'    => is_file($file) ? file_get_contents($file) : '<p>Documento pendiente.</p>',
 ]);

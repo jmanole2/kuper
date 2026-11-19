@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sloganLen = mb_strlen($old['slogan']);
         if ($sloganLen === 0) $errors['slogan'] = 'Escribe tu slogan.';
         elseif ($sloganLen > (int) cfg('slogan_max')) $errors['slogan'] = 'Tu slogan puede tener máximo ' . cfg('slogan_max') . ' caracteres.';
-        if (!$old['terms'])   $errors['terms'] = 'Debes aceptar los Términos y Condiciones.';
+        if (!$old['terms'])   $errors['terms'] = 'Debes ser mayor de 18 años y aceptar las Bases y Términos y Condiciones.';
         if (!$old['privacy']) $errors['privacy'] = 'Debes aceptar el Aviso de Privacidad.';
         if (empty($_FILES['photo']) || ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             $errors['photo'] = 'Sube tu foto para participar.';
