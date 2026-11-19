@@ -10,73 +10,37 @@ $heroD = cfg('assets.hero_desktop');
 $heroM = cfg('assets.hero_mobile');
 ?>
 <main class="landing">
-  <section class="hero">
-    <div class="hero-inner">
-      <div class="hero-copy">
-        <p class="kicker"><?= e(t('hero_kicker')) ?></p>
-        <h1 class="display"><?= brand(t('hero_title')) ?>
-          <span class="icon-pill" aria-hidden="true">
-            <span title="K-POP"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></span>
-            <span title="Dramas y películas"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="m3 9 2.5-5 3.5.8L6.5 9.6M9 4.8l3.5.8L10 10.4M12.5 5.6l3.5.8-2.5 4.8M16 6.4l3.5.8L17 12"/></svg></span>
-            <span title="Comida"><svg viewBox="0 0 24 24"><path d="M3 12h18a9 9 0 0 1-18 0Z"/><path d="M8 3.5 11 10M15 3l-2 7M6 21h12"/></svg></span>
-            <span title="Belleza"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/></svg></span>
-          </span>
-        </h1>
-        <p class="lead"><?= brand(t('hero_subtitle')) ?></p>
+  <section class="hero" aria-labelledby="hero-title">
+    <img class="deco d-gusano" src="<?= e(asset('assets/img/v3/deco-gusano.webp')) ?>" alt="" aria-hidden="true">
+    <img class="deco d-estrellas" src="<?= e(asset('assets/img/v3/deco-estrellas.webp')) ?>" alt="" aria-hidden="true">
+    <img class="deco d-nota" src="<?= e(asset('assets/img/v3/deco-nota.webp')) ?>" alt="" aria-hidden="true">
+    <img class="deco d-espiral" src="<?= e(asset('assets/img/v3/deco-espiral.webp')) ?>" alt="" aria-hidden="true">
 
-        <form class="hero-cta" method="get" action="<?= e(url('')) ?>#participa">
-          <label class="sr-only" for="hero-email"><?= e(t('hero_email_ph')) ?></label>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>
-          <input id="hero-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="<?= e(t('hero_email_ph')) ?>">
-          <button class="btn btn-dark" type="submit"><?= e(t('hero_cta')) ?></button>
-        </form>
+    <h1 id="hero-title" class="hero-head">
+      <span class="over"><?= e(t('hero_over')) ?></span>
+      <img class="hero-logo" src="<?= e(asset(cfg('assets.logo'))) ?>" alt="K-VIBE+" width="1000" height="460" fetchpriority="high">
+      <span class="pill-hero"><span><?= e(t('hero_pill')) ?></span></span>
+    </h1>
 
-        <div class="hero-meta">
-          <span class="chip-ch"><b>564</b> Canal LG Channels</span>
-          <span><?= e(t('hero_meta')) ?></span>
-        </div>
-      </div>
-
-      <div class="hero-visual<?= $heroD ? ' has-photo' : '' ?>">
-        <?php if ($heroD): ?>
-          <picture>
-            <?php if ($heroM): ?><source media="(max-width: 860px)" srcset="<?= e(asset($heroM)) ?>"><?php endif; ?>
-            <img src="<?= e(asset($heroD)) ?>" alt="" fetchpriority="high">
-          </picture>
-        <?php else: ?>
-          <div class="tv" aria-hidden="true">
-            <div class="tv-screen">
-              <span class="tv-live">EN VIVO</span>
-              <span class="tv-ch">CH 564</span>
-              <span class="tv-logo">K-VIBE<b>+</b></span>
-              <span class="tv-sub">Canal 564 · LG Channels</span>
-              <span class="tv-bar"><i></i></span>
-            </div>
-            <div class="tv-stand"></div>
-          </div>
-        <?php endif; ?>
-        <?php foreach (cfg('texts.callouts', []) as $c): ?>
-          <span class="callout <?= $c['side'] === 'left' ? 'to-left' : 'to-right' ?><?= $c['x'] >= 50 ? ' m-left' : '' ?>" style="left:<?= (float) $c['x'] ?>%;top:<?= (float) $c['y'] ?>%">
-            <i class="dot"></i><i class="line"></i><span class="txt"><?= e($c['label']) ?></span>
-          </span>
-        <?php endforeach; ?>
-      </div>
-    </div>
-  </section>
-
-  <div class="sheet">
-  <section class="steps" id="mecanica" aria-labelledby="steps-title">
-    <h2 id="steps-title" class="section-title"><?= e(t('steps_title')) ?></h2>
-    <ol class="step-list">
+    <ol class="step-list" id="mecanica" aria-label="<?= e(t('steps_title')) ?>">
       <?php foreach (cfg('texts.steps') as $i => $s): ?>
-        <li class="step">
-          <span class="step-num"><?= sprintf('%02d', $i + 1) ?></span>
-          <h3><?= brand($s['title']) ?></h3>
-          <p><?= brand($s['text']) ?></p>
+        <li class="step<?= $i % 2 ? ' is-right' : '' ?>">
+          <img class="step-img" src="<?= e(asset('assets/img/v3/' . $s['image'])) ?>" alt="" width="600" height="590" loading="<?= $i ? 'lazy' : 'eager' ?>">
+          <p class="glass step-text"><?= brand($s['text']) ?></p>
         </li>
       <?php endforeach; ?>
     </ol>
+
+    <div class="claim">
+      <p><span class="light"><?= e(t('claim_light')) ?></span><br><b><?= e(t('claim_bold')) ?></b></p>
+      <i class="claim-sep" aria-hidden="true"></i>
+      <img class="claim-lg" src="<?= e(asset(cfg('assets.lg_logo'))) ?>" alt="LG Channels" width="520" height="92">
+    </div>
+
+    <a class="btn btn-neon btn-lg" href="#participa"><?= e(t('hero_cta')) ?></a>
   </section>
+
+  <div class="sheet">
 
   <?php if (cfg('show_prizes')): ?>
   <section class="prizes card">
@@ -85,8 +49,8 @@ $heroM = cfg('assets.hero_mobile');
   </section>
   <?php endif; ?>
 
-  <section class="rules" id="reglas" aria-labelledby="rules-title">
-    <div><h2 id="rules-title" class="section-title"><?= e(t('rules_title')) ?></h2></div>
+  <section class="rules card" id="reglas" aria-labelledby="rules-title">
+    <h2 id="rules-title" class="section-title"><?= e(t('rules_title')) ?></h2>
     <ul class="rule-list">
       <?php foreach (cfg('texts.rules') as $r): ?><li><?= brand($r) ?></li><?php endforeach; ?>
     </ul>
@@ -191,7 +155,7 @@ $heroM = cfg('assets.hero_mobile');
         <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
       <?php endif; ?>
 
-      <button class="btn btn-dark btn-block" type="submit" data-busy="Subiendo tu foto…"><?= e(t('submit')) ?></button>
+      <button class="btn btn-neon btn-block" type="submit" data-busy="Subiendo tu foto…"><?= e(t('submit')) ?></button>
       <p class="fine">Una participación por persona. Al enviar te mandaremos un código a tu correo.</p>
     </form>
   </section>

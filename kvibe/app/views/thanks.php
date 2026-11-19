@@ -10,7 +10,10 @@
       <?php if (cfg('assets.lg_banner')): ?>
         <img src="<?= e(asset(cfg('assets.lg_banner'))) ?>" alt="LG Channels · K-VIBE+ en el canal 564" width="1200" height="400">
       <?php else: ?>
-        <div class="lg-banner-ph"><span>LG Channels</span><small>Sintoniza K-VIBE+ en el canal 564</small></div>
+        <div class="lg-banner-ph">
+          <?php if (cfg('assets.lg_logo')): ?><img src="<?= e(asset(cfg('assets.lg_logo'))) ?>" alt="LG Channels" width="520" height="92"><?php else: ?><span>LG Channels</span><?php endif; ?>
+          <small>Sintoniza K-VIBE+ en el canal 564</small>
+        </div>
       <?php endif; ?>
     </div>
 

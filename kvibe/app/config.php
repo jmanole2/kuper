@@ -31,33 +31,24 @@ return [
 
     // ---------- Textos de la landing ----------
     'texts' => [
-        'site_title'    => 'K-VIBE+ · Comparte tu K-VIBE+ y gana',
-        'meta_desc'     => 'Participa en el concurso de K-VIBE+ en el canal 564 de LG Channels. Sube tu foto, crea tu slogan y gana.',
+        'site_title'    => 'K-VIBE+ · Muestra tu lado K-VIBE+ más creativo y gana',
+        'meta_desc'     => 'Participa en el concurso de K-VIBE+ en el canal 564 de LG Channels. Sube tu foto, crea tu slogan y sé uno de los ganadores.',
         'channel_pill'  => 'Canal 564 · LG Channels',
-        'hero_kicker'   => 'Concurso K-VIBE+',
-        'hero_title'    => 'Comparte tu K-VIBE+ y gana',
-        'hero_subtitle' => 'Toma una foto creativa viendo K-VIBE+ en el canal 564, crea un slogan original y participa por premios LG.',
-        'hero_cta'      => 'Participar',
-        'hero_email_ph' => 'Escribe tu correo',
-        'hero_meta'     => 'Válido en toda la República Mexicana',
-        // Llamadas con punto sobre la imagen del hero (x/y en % de la imagen; side = lado del texto)
-        'callouts' => [
-            ['label' => 'Sintoniza el canal 564', 'x' => 72, 'y' => 22, 'side' => 'left'],
-            ['label' => 'Toma tu foto creativa', 'x' => 16, 'y' => 66, 'side' => 'right'],
-            ['label' => 'Crea tu slogan',        'x' => 86, 'y' => 77, 'side' => 'right'],
-        ],
-        'nav' => [
-            ['label' => 'Mecánica',        'href' => '#mecanica'],
-            ['label' => 'Cómo participar', 'href' => '#reglas'],
-            ['label' => 'Bases',           'href' => 'legal.php?doc=terminos'],
-        ],
 
-        'steps_title' => 'Así de fácil',
+        // Encabezado (diseño aprobado)
+        'hero_over'  => 'Muestra tu lado',          // va sobre el logo
+        'hero_pill'  => 'Más creativo y gana',      // píldora bajo el logo
+        'hero_cta'   => '¡Quiero participar!',
+        'nav_cta'    => 'Participar',
+
+        // Pasos con personaje (image: archivo en public/assets/img/v3/)
+        'steps_title' => 'Así se participa',
         'steps' => [
-            ['title' => 'Escanea',            'text' => 'Escanea el QR y regístrate con tus datos.'],
-            ['title' => 'Comparte tu K-VIBE+','text' => 'Sube una foto creativa viendo K-VIBE+ en el canal 564 con un toque coreano y crea tu slogan.'],
-            ['title' => 'Gana',               'text' => 'Un jurado elegirá las participaciones más creativas y originales.'],
+            ['image' => 'chica.webp', 'text' => 'Sube tu foto más creativa viendo K-VIBE+ en el canal 564, incorporando elementos inspirados en la cultura coreana que reflejen tu mejor K-VIBE.'],
+            ['image' => 'chico.webp', 'text' => 'Además, crea un slogan original para K-VIBE+ que invite a más personas a sintonizar el canal.'],
         ],
+        'claim_light' => '¡Demuestra tu creatividad',
+        'claim_bold'  => 'y sé uno de los 12 ganadores!',
 
         'rules_title' => 'Cómo participar',
         'rules' => [
@@ -65,7 +56,7 @@ return [
             'Solo se permite una participación por persona (correo y celular únicos).',
             'Tu foto debe mostrar que estás viendo K-VIBE+ en el canal 564 de LG Channels e incluir un elemento inspirado en Corea.',
             'Tu slogan debe ser original y de tu autoría.',
-            'Las participaciones se califican por creatividad y originalidad.',
+            'Un jurado elegirá a los 12 ganadores por creatividad y originalidad.',
             'Consulta los Términos y Condiciones para conocer las bases completas.',
         ],
 
@@ -175,23 +166,23 @@ return [
     // ---------- Imágenes / tema ----------
     // Rutas relativas a public/. null = placeholder generado por CSS.
     'assets' => [
-        'logo'          => null,   // p. ej. 'assets/img/kvibe-logo.png' (PNG del cliente)
+        'logo'          => 'assets/img/v3/logo-kvibe.webp',
         'hero_desktop'  => null,   // 1920×1080
         'hero_mobile'   => null,   // 1080×1350
         'lg_banner'     => null,   // ~1200×400 (confirmación)
-        'lg_logo'       => null,   // PNG transparente o SVG
+        'lg_logo'       => 'assets/img/v3/lg-channels.webp',
     ],
     'theme' => [                   // ajustar con la paleta del cliente
-        'bg'        => '#2f2a5a',      // degradado del hero (inicio)
-        'bg2'       => '#9fabcc',      // degradado del hero (final)
-        'primary'   => '#4f3fc4',      // botones / acentos
-        'secondary' => '#46b8d4',      // detalles
-        'accent'    => '#b46ad8',
+        'bg'        => '#3a0ca3',      // violeta profundo
+        'bg2'       => '#c21fd1',      // magenta
+        'primary'   => '#8b3dff',      // violeta brillante
+        'secondary' => '#4fd6ff',      // cian
+        'accent'    => '#ff3fd2',      // rosa neón
     ],
 
     // ---------- Analítica (opcional) ----------
     'analytics' => ['ga4_id' => '', 'meta_pixel_id' => ''],
 
     // ---------- Panel (Fase 2) ----------
-    'winners_count' => 10,   // PENDIENTE: 10 o 12
+    'winners_count' => 12,   // confirmado en el diseño aprobado
 ];

@@ -20,7 +20,16 @@ $provider = cfg('captcha.provider');
 <link rel="icon" href="<?= e(asset('assets/img/favicon.svg')) ?>" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,300;1,600;1,700;1,800&display=swap" rel="stylesheet">
+<?php
+// Tipografía de marca LG EI Headline (opcional): si existen los archivos en public/assets/fonts/ se usan.
+$fontDir = APP_ROOT . '/public/assets/fonts/';
+if (is_file($fontDir . 'LGEIHeadline-Bold.woff2')): ?>
+<style>
+@font-face{font-family:'LG EI Headline';src:url('<?= e(url('assets/fonts/LGEIHeadline-Bold.woff2')) ?>') format('woff2');font-weight:600 900;font-display:swap}
+<?php if (is_file($fontDir . 'LGEIHeadline-Light.woff2')): ?>@font-face{font-family:'LG EI Headline';src:url('<?= e(url('assets/fonts/LGEIHeadline-Light.woff2')) ?>') format('woff2');font-weight:100 400;font-display:swap}<?php endif; ?>
+</style>
+<?php endif; ?>
 <link rel="stylesheet" href="<?= e(asset('assets/css/app.css')) ?>">
 <style>:root{--bg:<?= e($th['bg']) ?>;--bg2:<?= e($th['bg2']) ?>;--primary:<?= e($th['primary']) ?>;--secondary:<?= e($th['secondary']) ?>;--accent:<?= e($th['accent']) ?>}</style>
 <?php if ($withCaptcha && $provider === 'turnstile'): ?>
@@ -37,16 +46,13 @@ $provider = cfg('captcha.provider');
 <?php endif; ?>
 </head>
 <body class="<?= e($bodyClass ?? '') ?>">
+<div class="fx" aria-hidden="true">
+  <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span><span class="orb o4"></span>
+</div>
+
 <header class="site-head">
-  <div class="topbar">
-    <a class="brand" href="<?= e(url('')) ?>" aria-label="K-VIBE+ inicio"><?php require APP_DIR . '/views/_logo.php'; ?></a>
-    <nav class="nav" aria-label="Principal">
-      <?php foreach (cfg('texts.nav', []) as $n): $h = str_starts_with($n['href'], '#') ? url('') . $n['href'] : url($n['href']); ?>
-        <a href="<?= e($h) ?>"><?= e($n['label']) ?></a>
-      <?php endforeach; ?>
-    </nav>
-    <a class="btn btn-outline btn-sm" href="<?= e(url('') . '#participa') ?>"><?= e(t('hero_cta')) ?></a>
-  </div>
+  <a class="brand" href="<?= e(url('')) ?>" aria-label="K-VIBE+ inicio"><?php require APP_DIR . '/views/_logo.php'; ?></a>
+  <a class="btn btn-neon btn-sm" href="<?= e(url('') . '#participa') ?>"><?= e(t('nav_cta')) ?></a>
 </header>
 
 <?= $content ?>
