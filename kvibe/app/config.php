@@ -121,7 +121,7 @@ return [
     // url: null = se muestra app/legal/*.html; o URL externa del cliente.
     'legal' => [
         'terms'   => ['version' => 'v1-2026-11-19', 'url' => null],
-        'privacy' => ['version' => 'v1-borrador', 'url' => null],
+        'privacy' => ['version' => 'v1-2026-11-20', 'url' => null],
     ],
 
     // ---------- Verificación por correo ----------
