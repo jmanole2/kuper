@@ -1,0 +1,8 @@
+# Solo archivos subidos: nunca ejecutar código aquí.
+Options -Indexes -ExecCGI
+<FilesMatch "\.(php|php\d|phtml|phar|pl|py|cgi|sh|htaccess)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
