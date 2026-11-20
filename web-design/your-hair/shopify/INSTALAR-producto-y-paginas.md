@@ -51,6 +51,6 @@ Configuración → Datos personalizados → Productos → Agregar definición:
 | Contenido | `custom.net_content` | Texto de una línea | Fila "Contenido" |
 | Rendimiento | `custom.duration` | Texto de una línea | Fila "Rinde" |
 | Modo de uso | `custom.how_to_use` | Texto de varias líneas | Desplegable "Modo de uso" |
-| Ingredientes INCI | `custom.ingredients` | Texto enriquecido | Desplegable "Ingredientes" |
+| Ingredientes INCI | `custom.ingredients` | Texto de varias líneas | Desplegable "Ingredientes" |
 
 Si un producto no tiene el metafield, se usa el texto que pongas en el personalizador.
