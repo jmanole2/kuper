@@ -3,6 +3,7 @@
 import * as db from './db.js';
 import { localDate } from './schedule.js';
 import { config } from './config.js';
+import { numerosEnCifras } from './numeros.js';
 
 const getDb = () => db.getDb();
 export const TIPOS = { web: 'Prueba web', entrante: 'Entrante', saliente: 'Saliente' };
@@ -44,8 +45,8 @@ export function registrar(client, body = {}, { sinLead = false } = {}) {
   const tipo = TIPOS[body.tipo] ? body.tipo : 'web';
   const turnos = (Array.isArray(body.transcripcion) ? body.transcripcion : [])
     .filter((t) => ['lead', 'agente'].includes(t?.rol) && String(t?.texto ?? '').trim())
-    .slice(0, 300).map((t) => ({ rol: t.rol, texto: String(t.texto).trim().slice(0, 2000) }));
-  const resumen = txt(body.resumen, 1500), cita = !!body.cita;
+    .slice(0, 300).map((t) => ({ rol: t.rol, texto: numerosEnCifras(String(t.texto).trim().slice(0, 2000)) }));
+  const resumen = body.resumen ? numerosEnCifras(txt(body.resumen, 1500)) : txt(body.resumen, 1500), cita = !!body.cita;
 
   // Lead: por teléfono (llamadas reales) o por correo (pruebas desde la web). Sin ninguno, la llamada se guarda sin lead.
   let lead = null;

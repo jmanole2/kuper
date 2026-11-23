@@ -41,6 +41,7 @@ import * as comentarios from './engage/comentarios.js';
 import * as difusion from './difusion.js';
 import * as recordatorios from './recordatorios.js';
 import * as paises from './paises.js';
+import { numerosEnCifras } from './numeros.js';
 import * as docs from './documentos.js';
 import * as cupones from './cupones.js';
 import * as cobros from './pagos-clientes.js';
@@ -192,7 +193,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     const ia = embudo.horarioIA(req.client); // cuándo contesta la IA (lo elige el cliente en el panel)
     const pausado = req.client.config.agente_pausado === true; // botón "Pausar agente" del panel
     // Disponibilidad leída de su Airtable (si lo conectaron): va al final, con prioridad sobre la lista general.
-    const disp = [airtable.bloque(req.client), conoc.bloqueAvisos(req.client), cupones.bloqueAgente(req.client)].filter(Boolean).join('\n\n');
+    const disp = [airtable.bloque(req.client), conoc.bloqueAvisos(req.client), cupones.bloqueAgente(req.client), embudo.bloqueCierre(req.client)].filter(Boolean).join('\n\n');
     if (disp && k) k.texto = `${k.texto}\n\n${disp}`;
     if (disp && !k) return res.set('Cache-Control', 'no-store').json({ version: 0, texto: disp, datos: {}, archivos, ia, pausado, campanas_ajenas: campanas.ajenasParaAgente(req.client) });
     const campanas_ajenas = campanas.ajenasParaAgente(req.client); // el agente les contesta que se equivocaron de número
@@ -214,7 +215,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   api.post('/mensajes', (req, res) => {
     const { telefono, usuario, origen, rol, texto, autor } = req.body || {};
     try {
-      db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto, autor });
+      db.addLeadMessage(req.client.id, { telefono, usuario, origen: origen || 'whatsapp' }, { rol, texto: /^\[Nota de voz\]/.test(String(texto || '')) ? numerosEnCifras(texto) : texto, autor });
       paises.clasificarTelefono(req.client, telefono); equipo.repartirTelefono(req.client, telefono);
       if (rol === 'lead') {
         equipo.capturar(req.client, telefono, texto); // respuesta a la encuesta (1 a 5)
@@ -632,7 +633,12 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   };
   appR.use('/campana-ajena', servicio('chat'));
   rutasAjenas(appR, '', () => '/app/leads');
-  appR.get('/leads', (req, res) => res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id, { ajenas: req.query.ajenas === '1' }), db.leadMessageCounts(req.client.id), appPosts(req.client), String(req.query.campana || ''), { verAjenas: req.query.ajenas === '1', aviso: String(req.query.aviso || '').slice(0, 200) })));
+  appR.get('/leads', (req, res) => {
+    const q = (k, n = 80) => String(req.query[k] || '').slice(0, n);
+    const filtros = { estado: q('ver', 20), desde: q('desde', 10), hasta: q('hasta', 10), etapa: q('etapa', 120), t: q('t') };
+    res.send(V.appLeadsPage(req.client, db.listLeads(req.client.id, { ajenas: req.query.ajenas === '1' }), db.leadMessageCounts(req.client.id), appPosts(req.client), String(req.query.campana || ''),
+      { verAjenas: req.query.ajenas === '1', aviso: String(req.query.aviso || '').slice(0, 200), filtros, ultimos: db.ultimosMensajes(req.client.id), enChats: filtros.t ? db.buscarEnChats(req.client.id, filtros.t) : null }));
+  });
   appR.get('/leads.csv', servicio('chat'), (req, res) => enviarCsv(req, res));
   appR.post('/leads/:leadId', (req, res) => { db.setLeadEstado(req.client.id, Number(req.params.leadId), String(req.body.estado)); res.redirect('/app/leads'); });
   chatRoutes(appR, () => '/app', { app: true, prefix: '' });
@@ -1319,7 +1325,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       const b = `${base(req)}/leads/${lead.id}`;
       const dcfg = docs.ajustes(req.client);
       const tarjetaDocs = dcfg.activo ? documentosCard({ docs: docs.listar(req.client.id, lead.id), faltan: docs.faltantes(req.client, lead.id), requeridos: dcfg.requeridos, base: b }) : '';
-      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client) || (correo.esCorreo(lead) && !!correo.cuenta(req.client)?.usuario), estado, ficha: html`${fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client) })}${tarjetaDocs}`, ...extra };
+      const opts = { base: b, puedeResponder: agente.agenteConfigurado(req.client) || (correo.esCorreo(lead) && !!correo.cuenta(req.client)?.usuario), estado, ficha: html`${fichaLead(req.client, lead, { base: b, asesores: embudo.asesores(req.client), etiquetas: embudo.etiquetasMarca(req.client) })}${tarjetaDocs}`, ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appChatPage(req.client, lead, db.leadMessages(lead.id), opts) : V.leadChatPage(req.client, lead, db.leadMessages(lead.id), opts));
     };
     router.get(`${prefix}/leads/:leadId/chat`, (req, res) => ver(req, res));
@@ -1370,6 +1376,16 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         await ver(req, res, { ok: 'Datos guardados.' });
       } catch (e) { await ver(req, res, { error: e.message }); }
     });
+    // Foto del contacto (WhatsApp no comparte la foto de perfil: se sube a mano).
+    const subirFoto = multer({ storage: multer.diskStorage({ destination: mediaDir(), filename: (_r, f, cb) => cb(null, `contacto-${Date.now()}-${randomToken(8)}${({ 'image/png': '.png', 'image/webp': '.webp' })[f.mimetype] || '.jpg'}`) }),
+      limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_r, f, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(f.mimetype)) });
+    router.post(`${prefix}/leads/:leadId/foto`, (req, res, next) => subirFoto.single('foto')(req, res, (e) => (e ? ver(req, res, { error: e.message.includes('large') ? 'La foto pesa más de 5 MB.' : e.message }) : next())), async (req, res) => {
+      const lead = leadDe(req, res); if (!lead) return;
+      if (req.body.quitar !== '1' && !req.file) return ver(req, res, { error: 'Elige una foto JPG, PNG o WEBP.' });
+      if (lead.foto) fs.rm(path.join(mediaDir(), path.basename(lead.foto)), { force: true }, () => {});
+      db.getDb().prepare('UPDATE leads SET foto = ? WHERE id = ?').run(req.file ? req.file.filename : null, lead.id);
+      res.redirect(`${base(req)}/leads/${lead.id}/chat`);
+    });
     router.post(`${prefix}/leads/:leadId/control`, async (req, res) => {
       const lead = leadDe(req, res); if (!lead) return;
       const humano = req.body.humano === '1';
@@ -1387,7 +1403,8 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     const verEmbudo = (req, res, extra = {}) => {
       const f = (k, n = 40) => String(req.query[k] || '').slice(0, n);
       const opts = { asesores: embudo.asesores(req.client), embudo: f('e'), ultimos: db.ultimosMensajes(req.client.id), importar: !app,
-        filtros: { q: f('q', 80), asesor: f('asesor'), pais: f('pais', 30), prioridad: f('prioridad', 12), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10) },
+        filtros: { q: f('q', 80), asesor: f('asesor'), pais: f('pais', 30), prioridad: f('prioridad', 12), canal: f('canal'), estatus: f('estatus'), mensajes: f('mensajes'), fecha: f('fecha'), desde: f('desde', 10), hasta: f('hasta', 10), etapa: f('etapa', 60), t: f('t', 80) },
+        enChats: req.query.t ? db.buscarEnChats(req.client.id, f('t', 80)) : null,
         vista: f('vista') === 'extendida' ? 'extendida' : 'compacta', ...extra };
       res.status(extra.error ? 400 : 200).send(app ? V.appEmbudoPage(req.client, leadsDe(req.client), opts) : V.adminEmbudoPage(req.client, leadsDe(req.client), opts));
     };
@@ -1401,6 +1418,11 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
         db.logEvent({ clientId: req.client.id, tipo: 'resultado_lead', detalle: `${l.nombre || l.telefono || l.id}: ${req.body.resultado}${l.valor ? ` $${l.valor}` : ''}` });
         res.json({ ok: true, etapa: l.etapa });
       } catch (e) { res.status(400).json({ error: e.message }); }
+    });
+    // Cambiar de lugar un embudo (el primero recibe los leads nuevos).
+    router.post(`${prefix}/embudo/orden`, (req, res) => {
+      try { embudo.moverEmbudo(req.client, String(req.body.embudo || ''), Number(req.body.dir) || 1); res.redirect(`${base(req)}/embudo?e=${encodeURIComponent(String(req.body.embudo || ''))}`); }
+      catch (e) { verEmbudo(req, res, { error: e.message }); }
     });
     // Menú de cada columna (renombrar, agregar etapa, tipo, estancado, al entrar, eliminar).
     router.post(`${prefix}/embudo/etapa`, (req, res) => {
@@ -1930,7 +1952,10 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       for (const [k, v] of Object.entries(b)) if (k.startsWith('asesor_') && Number(v)) asesores[decodeURIComponent(k.slice(7))] = Number(v);
       const carpeta = String(b.drive_carpeta || '').trim().match(/folders\/([\w-]+)/)?.[1] || String(b.drive_carpeta || '').trim().replace(/[^\w-]/g, '').slice(0, 80);
       const requeridos = String(b.requeridos || '').split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 15).map((x) => x.slice(0, 60));
+      if (paises.ajustes(req.client).activo && b.paises_activo !== '1') paises.quitarEtiquetas(req.client); // al apagarlo se quitan las etiquetas de país
       db.updateClient(req.client.id, { config: { ...req.client.config, paises: { activo: b.paises_activo === '1', asesores },
+        cierre_pregunta: { activo: b.cierre_activo === '1', texto: String(b.cierre_texto || '').replace(/\s+/g, ' ').trim().slice(0, 200) },
+        etiquetas: [...new Set(String(b.etiquetas || '').split('\n').map((x) => x.trim().slice(0, 30)).filter(Boolean))].slice(0, 60),
         documentos: { activo: b.docs_activo === '1', requeridos, drive_carpeta: carpeta, etapa_completos: String(b.etapa_completos || '').slice(0, 60) } } });
       db.logEvent({ clientId: req.client.id, tipo: 'paises_documentos', detalle: `${req.sesion?.user?.nombre || 'Kuper'}: países ${b.paises_activo === '1' ? 'sí' : 'no'}, documentos ${b.docs_activo === '1' ? 'sí' : 'no'}` });
       res.redirect(`${base(req)}/agente?ok=1`);

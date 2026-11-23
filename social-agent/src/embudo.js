@@ -186,9 +186,10 @@ export function guardarFicha(client, leadId, body = {}) {
   if (valor && !(Number(valor) >= 0)) throw new Error('El valor debe ser un número');
   const asignado = Number(body.asignado_id) || null;
   if (asignado && !asesores(client).some((a) => a.id === asignado)) throw new Error('Ese asesor no es de esta cuenta');
-  const tags = String(body.tags || '').split(',').map((t) => t.trim()).filter(Boolean).slice(0, 12).map((t) => t.slice(0, 30));
+  const tags = [...new Set(String(body.tags || '').split(',').map((t) => t.trim().slice(0, 30)).filter(Boolean))].slice(0, 30);
   const resultado = RESULTADOS[body.resultado] ? body.resultado : null;
   if (body.prioridad !== undefined) db.getDb().prepare('UPDATE leads SET prioridad = ? WHERE id = ?').run(PRIORIDADES[body.prioridad] && body.prioridad !== 'neutral' ? body.prioridad : null, leadId);
+  if (body.giro !== undefined) db.getDb().prepare('UPDATE leads SET giro = ? WHERE id = ?').run(txt(body.giro, 120), leadId);
   db.getDb().prepare(`UPDATE leads SET nombre = COALESCE(?, nombre), email = ?, empresa = ?, valor = ?, nota = ?, tags_json = ?, asignado_id = ?, resultado = ?, updated_at = datetime('now')
     WHERE id = ? AND client_id = ?`).run(txt(body.nombre, 80), email ? email.toLowerCase() : null, txt(body.empresa, 120), valor ? Number(valor) : null, txt(body.nota, 1000),
     JSON.stringify(tags), asignado, resultado, leadId, client.id);
@@ -241,6 +242,11 @@ export function editarEtapa(client, embudoId, etapaId, accion, valor = '') {
     emb.etapas.splice(i + 1, 0, { id, nombre: v.slice(0, 40), tipo: et.tipo === 'nuevo' ? 'conversacion' : et.tipo });
   } else if (accion === 'tipo') { if (!TIPOS[v]) throw new Error('Tipo no válido'); et.tipo = v; }
   else if (accion === 'estancado') { const d = Number(v); if (v && !(d >= 1 && d <= 365)) throw new Error('Pon un número de días entre 1 y 365.'); if (d) et.estancado_dias = d; else delete et.estancado_dias; }
+  else if (accion === 'izquierda' || accion === 'derecha') {
+    const j = accion === 'izquierda' ? i - 1 : i + 1;
+    if (j < 0 || j >= emb.etapas.length) throw new Error(accion === 'izquierda' ? 'Ya es la primera etapa.' : 'Ya es la última etapa.');
+    [emb.etapas[i], emb.etapas[j]] = [emb.etapas[j], emb.etapas[i]];
+  }
   else if (accion === 'solo_equipo') { if (et.solo_equipo) delete et.solo_equipo; else et.solo_equipo = true; }
   else if (accion === 'al_entrar') { if (v && !RESULTADOS[v]) throw new Error('Opción no válida'); if (v && et.al_entrar !== v) et.al_entrar = v; else delete et.al_entrar; }
   else if (accion === 'eliminar') {
@@ -253,6 +259,36 @@ export function editarEtapa(client, embudoId, etapaId, accion, valor = '') {
   } else throw new Error('Acción no válida');
   return guardarEmbudos(client, lista);
 }
+/** Cambia de lugar un embudo (dir: -1 izquierda, 1 derecha). El primero es el que recibe los leads nuevos. */
+export function moverEmbudo(client, embudoId, dir) {
+  const lista = embudos(client).map((e) => ({ ...e, etapas: e.etapas.map((x) => ({ ...x })) }));
+  const i = lista.findIndex((e) => e.id === embudoId), j = i + (Number(dir) < 0 ? -1 : 1);
+  if (i < 0) throw new Error('Embudo no encontrado');
+  if (j < 0 || j >= lista.length) return db.getClient(client.id);
+  // Los leads sin embudo guardado son del primero: se les fija antes de reordenar para que no se muevan solos.
+  db.getDb().prepare('UPDATE leads SET embudo = ? WHERE client_id = ? AND embudo IS NULL').run(lista[0].id, client.id);
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  return guardarEmbudos(client, lista);
+}
+/** Etiquetas para elegir con un clic: las que la marca definió y las que ya usa (las más usadas primero). */
+export function etiquetasMarca(client, limite = 40) {
+  const propias = Array.isArray(client?.config?.etiquetas) ? client.config.etiquetas : [];
+  const cuenta = {};
+  for (const r of db.getDb().prepare("SELECT tags_json FROM leads WHERE client_id = ? AND tags_json IS NOT NULL AND tags_json <> '[]' ORDER BY updated_at DESC LIMIT 3000").all(client.id)) {
+    try { for (const t of JSON.parse(r.tags_json)) cuenta[t] = (cuenta[t] || 0) + 1; } catch { /* json viejo */ }
+  }
+  const usadas = Object.entries(cuenta).sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  return [...new Set([...propias, ...usadas])].slice(0, limite);
+}
+/** Al terminar de resolver una duda, el agente pregunta si quedó bien o si quiere que lo contacte un asesor. */
+export const CIERRE_TEXTO = '¿Te sirvió la respuesta o prefieres que un asesor te contacte?';
+export function bloqueCierre(client) {
+  const c = client?.config?.cierre_pregunta;
+  if (!c?.activo) return '';
+  const frase = String(c.texto || CIERRE_TEXTO).slice(0, 200);
+  return `CIERRE DE CADA RESPUESTA (regla de la marca): cuando termines de contestar una duda o de dar información (no a media conversación, ni si la persona sigue preguntando), pregunta de forma natural: "${frase}". Si dice que prefiere un asesor, toma su nombre si falta y avisa al equipo como cuando piden hablar con una persona. No lo repitas más de una vez cada tres respuestas.`;
+}
+
 /** ¿El lead lleva más días sin moverse de los que permite su etapa? */
 export function estancado(client, lead, ahora = Date.now()) {
   const d = etapaDe(client, lead).estancado_dias;

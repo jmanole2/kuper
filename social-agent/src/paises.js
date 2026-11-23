@@ -38,6 +38,16 @@ export function clasificarTelefono(client, telefono) {
   const l = db.getDb().prepare("SELECT * FROM leads WHERE client_id = ? AND telefono LIKE ? ORDER BY updated_at DESC LIMIT 1").get(client.id, `%${d.slice(-10)}`);
   return l ? clasificar(client, l) : null;
 }
+/** Al apagar la clasificación: quita de todos los leads las etiquetas de país que puso. Devuelve cuántos cambió. */
+export function quitarEtiquetas(client) {
+  const nombres = new Set(LADAS.map(([, p]) => p));
+  let n = 0;
+  for (const l of db.getDb().prepare("SELECT id, tags_json FROM leads WHERE client_id = ? AND tags_json IS NOT NULL AND tags_json <> '[]'").all(client.id)) {
+    const t = tags(l), limpias = t.filter((x) => !nombres.has(x));
+    if (limpias.length !== t.length) { db.getDb().prepare('UPDATE leads SET tags_json = ? WHERE id = ?').run(JSON.stringify(limpias), l.id); n++; }
+  }
+  return n;
+}
 /** Países presentes en los leads de la marca (para los filtros). */
 export function presentes(client) {
   const cuenta = {};

@@ -1,6 +1,6 @@
 // Vistas del embudo de ventas (tablero), la ficha del lead y la analítica.
 import { html, raw } from './html.js';
-import { paisDeTelefono } from '../paises.js';
+import { paisDeTelefono, ajustes as paisesAjustes } from '../paises.js';
 import { config } from '../config.js';
 import { embudos, embudoDe, etapaDe, tagsDe, TIPOS, RESULTADOS, PRIORIDADES, colorTipo, embudosTexto, estancado, puntaje, caliente } from '../embudo.js';
 
@@ -84,11 +84,12 @@ const ic = (k, n = 16, color = 'currentColor') => raw(`<svg viewBox="0 0 24 24" 
 
 const LADAS = [['52', '🇲🇽 +52'], ['1', '🇺🇸 +1'], ['34', '🇪🇸 +34'], ['57', '🇨🇴 +57'], ['54', '🇦🇷 +54'], ['56', '🇨🇱 +56'], ['51', '🇵🇪 +51'], ['593', '🇪🇨 +593'], ['502', '🇬🇹 +502'], ['506', '🇨🇷 +506'], ['58', '🇻🇪 +58'], ['55', '🇧🇷 +55']];
 
-function filtrarLeads(client, leads, f, ultimos) {
+function filtrarLeads(client, leads, f, ultimos, enChats = null) {
   const t = (f.q || '').toLowerCase().trim();
   const desde = /^\d{4}-\d\d-\d\d$/.test(f.desde || '') ? f.desde : '', hasta = /^\d{4}-\d\d-\d\d$/.test(f.hasta || '') ? f.hasta : '';
   return leads.filter((l) => {
-    if (t && !`${nombreDe(l)} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase().includes(t)) return false;
+    if (t && !`${nombreDe(l)} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${l.giro || ''} ${tagsDe(l).join(' ')}`.toLowerCase().includes(t)) return false;
+    if (enChats && !enChats.has(l.id)) return false;
     if (f.asesor && (f.asesor === '-' ? l.asignado_id : String(l.asignado_id) !== f.asesor)) return false;
     if (f.canal && l.origen !== f.canal) return false;
     if (f.pais && paisDeTelefono(l.telefono) !== f.pais) return false;
@@ -105,16 +106,16 @@ function filtrarLeads(client, leads, f, ultimos) {
   });
 }
 
-export function embudoSection(client, leads, { base, asesores = [], aviso = '', error = '', embudo = '', importar = false, filtros = {}, vista = 'compacta', ultimos = {} } = {}) {
+export function embudoSection(client, leads, { base, asesores = [], aviso = '', error = '', embudo = '', importar = false, filtros = {}, vista = 'compacta', ultimos = {}, enChats = null } = {}) {
   const todos = embudos(client);
   const emb = todos.find((x) => x.id === embudo) || todos[0];
   const cuenta = Object.fromEntries(todos.map((x) => [x.id, 0]));
   for (const l of leads) cuenta[embudoDe(client, l).id] += 1;
   const origenes = [...new Set(leads.map((l) => l.origen))];
-  const paisesHay = [...new Set(leads.map((l) => paisDeTelefono(l.telefono)).filter(Boolean))];
-  leads = filtrarLeads(client, leads.filter((l) => embudoDe(client, l).id === emb.id), filtros, ultimos);
-  const activos = ['asesor', 'pais', 'prioridad', 'canal', 'estatus', 'mensajes', 'desde', 'hasta'].filter((k) => filtros[k]).length;
-  const lista = emb.etapas;
+  const paisesHay = paisesAjustes(client).activo ? [...new Set(leads.map((l) => paisDeTelefono(l.telefono)).filter(Boolean))] : [];
+  leads = filtrarLeads(client, leads.filter((l) => embudoDe(client, l).id === emb.id), filtros, ultimos, enChats);
+  const activos = ['asesor', 'pais', 'prioridad', 'canal', 'estatus', 'mensajes', 'desde', 'hasta', 'etapa', 't'].filter((k) => filtros[k]).length;
+  const lista = filtros.etapa && emb.etapas.some((x) => x.id === filtros.etapa) ? emb.etapas.filter((x) => x.id === filtros.etapa) : emb.etapas;
   const nombreAsesor = Object.fromEntries(asesores.map((a) => [a.id, a.nombre]));
   const cols = lista.map((e) => ({ e, leads: leads.filter((l) => etapaDe(client, l).id === e.id) }));
   // Enlaces que conservan embudo, filtros y vista.
@@ -124,8 +125,8 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
     const n = nombreDe(l), a = nombreAsesor[l.asignado_id], pri = PRIORIDADES[l.prioridad], est = estancado(client, l);
     const u = ultimos[l.id];
     return html`<a class="emb-card" draggable="true" data-id="${l.id}" data-q="${`${n} ${l.telefono || ''} ${l.email || ''} ${l.empresa || ''} ${tagsDe(l).join(' ')}`.toLowerCase()}" href="${base}/leads/${l.id}/chat"><span class="ck"></span>
-      <span class="emb-av" style="background:${oCol}">${iniciales(n)}<i style="background:${oCol}" title="${oTxt}"></i></span>
-      <span style="min-width:0"><strong>${caliente(puntaje(client, l, u)) ? html`<span title="Prioridad ${puntaje(client, l, u)}: cerca de comprar">🔥 </span>` : ''}${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${ic(pri[1], 14, pri[2])}</span>` : ''}</strong><small>${ic('persona', 12)} ${a || 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}</small>
+      <span class="emb-av" style="background:${oCol}">${l.foto ? html`<img src="/media/${l.foto}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">` : iniciales(n)}<i style="background:${oCol}" title="${oTxt}"></i></span>
+      <span style="min-width:0"><strong>${caliente(puntaje(client, l, u)) ? html`<span title="Prioridad ${puntaje(client, l, u)}: cerca de comprar">🔥 </span>` : ''}${n}${pri && pri[1] ? html`<span class="pri" title="${pri[0]}">${ic(pri[1], 14, pri[2])}</span>` : ''}</strong><small>${ic('persona', 12)} ${a || 'No asignado'}${l.empresa ? ` · ${l.empresa}` : ''}${l.giro ? ` · ${l.giro}` : ''}</small>
         <small>${l.control === 'humano' ? raw('<span class="emb-yo">Equipo</span>') : raw('<span class="emb-ia">IA</span>')}${u && u.rol === 'lead' ? raw(' <span class="emb-yo" style="background:rgba(248,113,113,.15);color:#f87171">Espera respuesta</span>') : ''}${est ? html`<span class="emb-est">${ic('campana', 11)} Estancado</span>` : ''}${l.valor ? html` <span class="emb-v">${mxn(l.valor)}</span>` : ''}</small></span>
       <time>${cuando(l.updated_at)}</time>
       ${vista === 'extendida' ? html`<span class="ext">${tagsDe(l).map((t) => html`<i>${t}</i>`)}${tagsDe(l).length ? html`<br>` : ''}${u ? html`<b>${u.rol === 'lead' ? 'Lead' : u.rol === 'humano' ? 'Equipo' : 'IA'}:</b> ${u.texto}` : l.nota ? String(l.nota).slice(0, 160) : html`<span class="muted">${l.telefono || l.email || ''}</span>`}</span>` : ''}</a>`;
@@ -133,12 +134,15 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   const radio = (name, opciones, actual) => html`<div class="rad">${opciones.map(([v, t]) => html`<label><input type="radio" name="${name}" value="${v}" ${raw((actual || '') === v ? 'checked' : '')}><span>${t}</span></label>`)}</div>`;
   return html`<style>${raw(CSS)}${raw(TCSS)}</style>
   ${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}${error ? html`<div class="err">${error}</div>` : ''}
-  ${todos.length > 1 ? html`<div class="pills" style="margin-bottom:12px">${todos.map((x) => html`<a class="${x.id === emb.id ? 'on' : ''}" href="${base}/embudo?e=${encodeURIComponent(x.id)}&vista=${vista}">${x.nombre} <em>${cuenta[x.id].toLocaleString('es-MX')}</em></a>`)}</div>` : ''}
+  ${todos.length > 1 ? html`<div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><div class="pills" style="margin:0">${todos.map((x) => html`<a class="${x.id === emb.id ? 'on' : ''}" href="${base}/embudo?e=${encodeURIComponent(x.id)}&vista=${vista}">${x.nombre} <em>${cuenta[x.id].toLocaleString('es-MX')}</em></a>`)}</div>
+    <form method="post" action="${base}/embudo/orden" class="inline" title="Cambiar de lugar este embudo (el primero recibe los leads nuevos)"><input type="hidden" name="embudo" value="${emb.id}"><button name="dir" value="-1" class="btn-ghost" style="padding:6px 12px" ${raw(todos[0].id === emb.id ? 'disabled' : '')}>← Mover</button> <button name="dir" value="1" class="btn-ghost" style="padding:6px 12px" ${raw(todos.at(-1).id === emb.id ? 'disabled' : '')}>Mover →</button></form></div>` : ''}
   <div class="emb-tools">
     <input type="search" id="emb-q" placeholder="Buscar nombre, teléfono, empresa…" value="${filtros.q || ''}">
     <details class="pop"><summary>${ic('filtro')} Filtros${activos ? html` <span class="dot"></span> ${activos}` : ''}</summary><form class="pnl" method="get" action="${base}/embudo" style="width:340px">
       <input type="hidden" name="e" value="${emb.id}"><input type="hidden" name="vista" value="${vista}">
-      <h4>Mensajes</h4>${radio('mensajes', [['', 'Todos'], ['esperando', 'Esperan respuesta'], ['respondidos', 'Respondidos']], filtros.mensajes)}
+      <h4>Mensajes</h4>${radio('mensajes', [['', 'Todos'], ['esperando', 'No contestados'], ['respondidos', 'Respondidos']], filtros.mensajes)}
+      <h4 style="margin-top:12px">Buscar en conversaciones</h4><input name="t" value="${filtros.t || ''}" placeholder="Palabra o frase exacta, ej. factura">
+      <h4 style="margin-top:12px">Etapa</h4><select name="etapa"><option value="">Todas</option>${emb.etapas.map((x) => html`<option value="${x.id}" ${raw(filtros.etapa === x.id ? 'selected' : '')}>${x.nombre}</option>`)}</select>
       <h4 style="margin-top:12px">Fecha</h4>
       <select name="fecha"><option value="">Fecha en que llegó</option><option value="actividad" ${raw(filtros.fecha === 'actividad' ? 'selected' : '')}>Última actividad</option></select>
       <div class="row" style="gap:8px;margin-top:6px"><input type="date" name="desde" value="${filtros.desde || ''}"><input type="date" name="hasta" value="${filtros.hasta || ''}"></div>
@@ -203,7 +207,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
   emb.querySelectorAll('.dots').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();cerrar();const col=b.closest('.emb-col'),al=col.dataset.al,est=col.dataset.est;
     menu=document.createElement('div');menu.className='cmenu';
     const op=(k,ic,t,sub='',cls='')=>'<button type="button" data-k="'+k+'" class="'+cls+'">'+ic+'<span>'+t+(sub?'<small>'+sub+'</small>':'')+'</span></button>';
-    menu.innerHTML=op('sel',ICS.sel,'Seleccionar leads','Elige varios · Shift para un rango')+op('ren',ICS.lapiz,'Cambiar nombre')+op('add',ICS.mas,'Agregar etapa','Se agrega después de esta')
+    menu.innerHTML=op('sel',ICS.sel,'Seleccionar leads','Elige varios · Shift para un rango')+op('ren',ICS.lapiz,'Cambiar nombre')+op('add',ICS.mas,'Agregar etapa','Se agrega después de esta')+op('izq',ICS.lapiz,'Mover a la izquierda')+op('der',ICS.lapiz,'Mover a la derecha')
       +op('eq',ICS.sel,col.dataset.eq?'Que la IA vuelva a contestar aquí':'Que aquí solo conteste el equipo',col.dataset.eq?'Ahora: solo equipo':'Al entrar un lead, la IA deja de contestarle')
       +op('est',ICS.campana,'Marcar lead estancado',est?'Después de '+est+' días sin moverse':'Avisa si se queda quieto varios días')
       +'<div class="it">'+ICS.engrane+'<span style="flex:1">Configuración de la etapa<small>Qué significa esta etapa</small><select data-k="tipo">'+Object.entries(TIPOS).map(([k,t])=>'<option value="'+k+'"'+(k===col.dataset.tipo?' selected':'')+'>'+t+'</option>').join('')+'</select></span></div>'
@@ -217,6 +221,7 @@ export function embudoSection(client, leads, { base, asesores = [], aviso = '', 
       if(k==='sel'){sel=true;emb.classList.add('sel');pintar();}
       else if(k==='ren'){const v=prompt('Nuevo nombre de la etapa',col.dataset.nombre);if(v)etapa(col,'renombrar',v);}
       else if(k==='add'){const v=prompt('Nombre de la nueva etapa');if(v)etapa(col,'agregar',v);}
+      else if(k==='izq')etapa(col,'izquierda');else if(k==='der')etapa(col,'derecha');
       else if(k==='est'){const v=prompt('¿Después de cuántos días sin moverse se marca como estancado? (vacío = no marcar)',est||'3');if(v!==null)etapa(col,'estancado',v);}
       else if(k==='al')etapa(col,'al_entrar',x.dataset.v);
       else if(k==='eq')etapa(col,'solo_equipo','1');
@@ -253,28 +258,33 @@ export const FICHA_CSS = `.chat-wrap .chat,.chat-wrap .resp,.chat-wrap .ctl,.cha
 .ficha .resu{font-size:13px;color:#d9d3c9;background:rgba(215,255,63,.06);border:1px solid rgba(215,255,63,.18);border-radius:14px;padding:10px 12px;margin-top:10px;white-space:pre-wrap}
 .ficha .tagl{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.ficha .tagl span{font-size:11px;padding:2px 9px;border-radius:99px;background:rgba(147,180,255,.14);color:#93b4ff}`;
 
-export function fichaLead(client, lead, { base, asesores = [] }) {
+export function fichaLead(client, lead, { base, asesores = [], etiquetas = [] }) {
   const e = etapaDe(client, lead), tags = tagsDe(lead);
   return html`<form class="card ficha" method="post" action="${base}/ficha">
-    <div class="row spread"><h3>Datos del lead</h3><span class="badge" style="color:${colorTipo(e.tipo)}">${e.nombre}</span></div>
+    <div class="row spread"><div class="row" style="gap:10px;align-items:center">${lead.foto ? html`<img src="/media/${lead.foto}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover">` : ''}<h3 style="margin:0">Datos del lead</h3></div><span class="badge" style="color:${colorTipo(e.tipo)}">${e.nombre}</span></div>
     ${lead.resumen ? html`<div class="resu"><span class="mono" style="color:#d7ff3f">Resumen IA</span><br>${lead.resumen}</div>` : ''}
     <label>Nombre</label><input name="nombre" value="${lead.nombre || ''}" maxlength="80">
     <label>Teléfono / usuario</label><input value="${[lead.telefono, lead.usuario ? '@' + lead.usuario : ''].filter(Boolean).join(' · ') || '—'}" disabled>
     <label>Correo</label><input name="email" type="email" value="${lead.email || ''}" placeholder="correo@empresa.com">
     <label>Empresa</label><input name="empresa" value="${lead.empresa || ''}" maxlength="120">
+    <label>Giro</label><input name="giro" value="${lead.giro || ''}" maxlength="120" placeholder="Restaurante, despacho, constructora…">
     <label>Etapa</label><select name="etapa">${(() => { const todos = embudos(client), mio = embudoDe(client, lead);
       const op = (emb) => emb.etapas.map((x) => html`<option value="${emb.id}/${x.id}" ${raw(emb.id === mio.id && x.id === e.id ? 'selected' : '')}>${x.nombre}</option>`);
       return todos.length > 1 ? todos.map((emb) => html`<optgroup label="${emb.nombre}">${op(emb)}</optgroup>`) : op(todos[0]); })()}</select>
     <label>Asesor</label><select name="asignado_id"><option value="">No asignado</option>${asesores.map((a) => html`<option value="${a.id}" ${raw(a.id === lead.asignado_id ? 'selected' : '')}>${a.nombre}</option>`)}</select>
     ${!asesores.length ? html`<span class="muted small">Da de alta a tus asesores como usuarios del panel para asignarles leads.</span>` : ''}
-    <label>Estatus</label><select name="prioridad">${Object.entries(PRIORIDADES).map(([k, [t, e]]) => html`<option value="${k}" ${raw((lead.prioridad || 'neutral') === k ? 'selected' : '')}>${t}</option>`)}</select>
     <label>Valor (MXN)</label><input name="valor" inputmode="decimal" value="${lead.valor ?? ''}" placeholder="0">
     <label>Resultado</label><div class="res">${[['', 'Abierto'], ...Object.entries(RESULTADOS)].map(([k, t]) => html`<label><input type="radio" name="resultado" value="${k}" ${raw((lead.resultado || '') === k ? 'checked' : '')}><span>${t}</span></label>`)}</div>
-    <label>Etiquetas (separadas por coma)</label><input name="tags" value="${tags.join(', ')}" placeholder="oficina, polanco, 6 personas">
+    <label>Etiquetas (separadas por coma)</label><input name="tags" id="ficha-tags" value="${tags.join(', ')}" placeholder="oficina, polanco, 6 personas">
+    ${etiquetas.filter((t) => !tags.includes(t)).length ? html`<div class="tagl" style="opacity:.8">${etiquetas.filter((t) => !tags.includes(t)).map((t) => html`<span style="cursor:pointer" data-tag="${t}" onclick="const i=document.getElementById('ficha-tags');const v=i.value.split(',').map(x=>x.trim()).filter(Boolean);if(!v.includes(this.dataset.tag)){v.push(this.dataset.tag);i.value=v.join(', ');}this.remove()">+ ${t}</span>`)}</div><span class="muted small">Toca una para agregarla.</span>` : ''}
     ${tags.length ? html`<div class="tagl">${tags.map((t) => html`<span>${t}</span>`)}</div>` : ''}
     <label>Notas</label><textarea name="nota" rows="3" maxlength="1000">${lead.nota || ''}</textarea>
     <p class="muted small" style="margin:8px 0 0">Canal: ${origen(lead.origen)[0]} · Llegó ${cuando(lead.created_at)}</p>
-    <p><button class="btn-accent" style="width:100%;justify-content:center">Guardar</button></p></form>`;
+    <p><button class="btn-accent" style="width:100%;justify-content:center">Guardar</button></p></form>
+  <form class="card" method="post" action="${base}/foto" enctype="multipart/form-data" style="display:grid;gap:8px;margin-top:12px"><span class="mono">Foto del contacto</span>
+    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
+    <div class="row" style="gap:8px"><button class="btn-accent">Subir foto</button>${lead.foto ? html`<button class="btn-ghost" name="quitar" value="1" formnovalidate>Quitar</button>` : ''}</div>
+    <span class="muted small">WhatsApp no comparte la foto de perfil; súbela si quieres verla en el embudo.</span></form>`;
 }
 
 // ------------------------------------------------------------ analítica

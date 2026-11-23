@@ -9,7 +9,7 @@ import { config } from '../config.js';
 import { FONTS } from '../animator/render.js';
 import { controlCenter, hero, heroCss, orbTag } from './control.js';
 import { embudoSection, analiticaSection, FICHA_CSS } from './embudo.js';
-import { horarioIA, MODOS_IA } from '../embudo.js';
+import { horarioIA, MODOS_IA, embudos as embudosDe, embudoDe, etapaDe, colorTipo, CIERRE_TEXTO } from '../embudo.js';
 import * as AT from '../airtable.js';
 import * as CONOC from '../conocimiento.js';
 import { ESTADOS as PROS_ESTADOS, REGLAS as PROS_REGLAS } from '../prospeccion.js';
@@ -299,25 +299,45 @@ function ajenasUI(client, base, urlLeads, campanaSel, verAjenas) {
     : html`<p class="muted small" style="margin:0 0 10px">¿Llegan leads de una campaña que no es tuya? Da clic en esa campaña aquí abajo y márcala como “No es nuestra”.</p>`;
   return html`${marcar}${lista.length ? html`<p class="small" style="margin:0 0 10px"><a href="${urlLeads}${sep}ajenas=1">Ver campañas que no son tuyas (${lista.length})</a></p>` : ''}`;
 }
-export function leadsSection(client, leads, chats, base, { campanaSel = '', urlLeads = `${base}/leads`, verAjenas = false, aviso = '' } = {}) {
+export function leadsSection(client, leads, chats, base, { campanaSel = '', urlLeads = `${base}/leads`, verAjenas = false, aviso = '', filtros = null, ultimos = {}, enChats = null } = {}) {
+  // Filtros de la lista (panel del cliente): no contestados, fechas, etapa y palabra exacta en las conversaciones.
+  const fl = filtros || {};
+  const dia = (s) => new Intl.DateTimeFormat('en-CA', { timeZone: config.timezone }).format(new Date(String(s).replace(' ', 'T') + 'Z'));
+  const noContestado = (l) => ultimos[l.id]?.rol === 'lead';
+  if (filtros) {
+    if (fl.estado === 'no_contestados') leads = leads.filter(noContestado);
+    if (/^\d{4}-\d\d-\d\d$/.test(fl.desde || '')) leads = leads.filter((l) => dia(l.created_at) >= fl.desde);
+    if (/^\d{4}-\d\d-\d\d$/.test(fl.hasta || '')) leads = leads.filter((l) => dia(l.created_at) <= fl.hasta);
+    if (fl.etapa) leads = leads.filter((l) => `${embudoDe(client, l).id}/${etapaDe(client, l).id}` === fl.etapa);
+    if (enChats) leads = leads.filter((l) => enChats.has(l.id));
+  }
+  const filtrosUI = filtros ? html`<form method="get" action="${urlLeads}" class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;padding:12px 14px">
+    ${campanaSel ? html`<input type="hidden" name="campana" value="${campanaSel}">` : ''}
+    <label class="small muted" style="margin:0">Mostrar<select name="ver" style="width:auto"><option value="">Todos</option><option value="no_contestados" ${raw(fl.estado === 'no_contestados' ? 'selected' : '')}>No contestados</option></select></label>
+    <label class="small muted" style="margin:0">Llegó desde<input type="date" name="desde" value="${fl.desde || ''}" style="width:auto"></label>
+    <label class="small muted" style="margin:0">Hasta<input type="date" name="hasta" value="${fl.hasta || ''}" style="width:auto"></label>
+    <label class="small muted" style="margin:0">Etapa<select name="etapa" style="width:auto"><option value="">Todas</option>${embudosDe(client).map((emb) => html`<optgroup label="${emb.nombre}">${emb.etapas.map((x) => html`<option value="${emb.id}/${x.id}" ${raw(fl.etapa === `${emb.id}/${x.id}` ? 'selected' : '')}>${x.nombre}</option>`)}</optgroup>`)}</select></label>
+    <label class="small muted" style="margin:0;flex:1;min-width:200px">Buscar en conversaciones (palabra exacta)<input name="t" value="${fl.t || ''}" placeholder="ej. factura, Polanco, cotización"></label>
+    <button class="btn-accent">Filtrar</button>${Object.values(fl).some(Boolean) ? html`<a class="btn btn-ghost" href="${urlLeads}">Limpiar</a>` : ''}
+    <span class="muted small" style="width:100%">${leads.length.toLocaleString('es-MX')} contactos${fl.estado === 'no_contestados' ? ' sin contestar' : ''}</span></form>` : '';
   // Campañas de Meta de las que llegaron los leads (con cuántos cada una), para filtrar y descargar.
   const conteo = {};
   for (const l of leads) { const c = etiquetaCampana(l); conteo[c] = (conteo[c] || 0) + 1; }
   const campanas = Object.entries(conteo).sort((a, b) => (a[0] === 'Orgánico') - (b[0] === 'Orgánico') || b[1] - a[1]);
   const sep = urlLeads.includes('?') ? '&' : '?';
   if (campanaSel) leads = leads.filter((l) => etiquetaCampana(l) === campanaSel);
-  return html`${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}${ajenasUI(client, base, urlLeads, campanaSel, verAjenas)}<div class="row spread" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
+  return html`${aviso ? html`<div class="okmsg">${aviso}</div>` : ''}${ajenasUI(client, base, urlLeads, campanaSel, verAjenas)}${filtrosUI}<div class="row spread" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
     <div class="pills" style="margin:0">${campanas.length > 1 || campanaSel ? html`<a class="${campanaSel ? '' : 'on'}" href="${urlLeads}">Todas <em>${Object.values(conteo).reduce((a, b) => a + b, 0)}</em></a>${campanas.map(([c, n]) => html`<a class="${c === campanaSel ? 'on' : ''}" href="${urlLeads}${sep}campana=${encodeURIComponent(c)}">${c} <em>${n}</em></a>`)}` : ''}</div>
     ${leads.length ? html`<a class="btn btn-warn" href="${base}/leads.csv${campanaSel ? `?campana=${encodeURIComponent(campanaSel)}` : ''}">Descargar CSV</a>` : ''}
   </div>
   ${kpis(Object.entries(LEAD_ESTADOS).map(([k, l], i) => [leads.filter((x) => x.estado === k).length, l, ['#93b4ff', '#fbbf24', '#c6ff3d', '#4ade80', '#f87171'][i], k === 'nuevo' && leads.some((x) => x.estado === 'nuevo')]))}
   ${leads.length ? html`<div class="card" style="padding:8px 14px;overflow-x:auto"><table>
-    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Campaña</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">Estado</th></tr>
-    ${leads.map((l) => html`<tr><td><strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono || l.email)}</strong><div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : '', l.email].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}${l.control === 'humano' ? html` <span class="badge" style="color:#93b4ff">Atiende una persona</span>` : ''}</td>
+    <tr><th class="small muted">Contacto</th><th class="small muted">Origen</th><th class="small muted">Campaña</th><th class="small muted">Nota</th><th class="small muted">Cita</th><th class="small muted">Actualizado</th><th class="small muted">${filtros ? 'Etapa' : 'Estado'}</th></tr>
+    ${leads.map((l) => html`<tr><td>${l.foto ? html`<img src="/media/${l.foto}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px">` : ''}<strong>${l.nombre || (l.usuario ? '@' + l.usuario : l.telefono || l.email)}</strong>${l.empresa || l.giro ? html`<div class="muted small">${[l.empresa, l.giro].filter(Boolean).join(' · ')}</div>` : ''}<div class="muted small">${[l.telefono, l.usuario && l.nombre ? '@' + l.usuario : '', l.email].filter(Boolean).join(' · ')}</div>${chats[l.id] ? html`<a class="small" href="${base}/leads/${l.id}/chat" style="color:var(--accent)">Ver chat (${chats[l.id]})</a>` : ''}${l.control === 'humano' ? html` <span class="badge" style="color:#93b4ff">Atiende una persona</span>` : ''}</td>
       <td><span class="badge" style="color:${ORIGEN_COL[l.origen] || '#93b4ff'}">${ORIGEN_TXT[l.origen] || l.origen}</span></td>
       <td class="small">${etiquetaCampana(l) === 'Orgánico' ? html`<span class="muted">Orgánico</span>` : html`<b>${etiquetaCampana(l)}</b>${l.campana && l.anuncio ? html`<div class="muted">${l.conjunto ? `${l.conjunto} · ` : ''}${l.anuncio}</div>` : ''}`}</td>
       <td class="small">${l.nota || ''}</td><td class="small">${l.cita_inicio ? fmtDate(l.cita_inicio) : '—'}</td><td class="small muted">${fmtDate(l.updated_at.replace(' ', 'T') + 'Z')}</td>
-      <td><form method="post" action="${base}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form></td></tr>`)}
+      <td>${filtros ? (() => { const e = etapaDe(client, l); return html`<span class="badge" style="color:${colorTipo(e.tipo)}">${e.nombre}</span>${noContestado(l) ? html`<div class="small" style="color:#f87171;margin-top:4px">No contestado</div>` : ''}`; })() : html`<form method="post" action="${base}/leads/${l.id}"><select name="estado" onchange="this.form.submit()" style="padding:6px 10px;width:auto">${Object.entries(LEAD_ESTADOS).map(([k, lab]) => html`<option value="${k}" ${raw(k === l.estado ? 'selected' : '')}>${lab}</option>`)}</select></form>`}</td></tr>`)}
   </table></div>` : html`<div class="card muted">Todavía no hay leads. Llegan solos cuando alguien comenta la palabra clave en Instagram, le escribe al agente de WhatsApp o habla con el agente de llamadas.</div>`}`;
 }
 
@@ -724,7 +744,14 @@ export function usersPage(users, clients, { error = '', creado = null, filtro = 
 export function appHomePage(client, pulso, billing = null) {
   const aviso = modoCobro(client) === 'stripe' && billing?.estado === 'pago_fallido' ? html`<a class="err" href="/app/pagos" style="display:block;text-decoration:none">Tu banco rechazó el último cobro. Toca aquí para actualizar tu tarjeta y no pausar tus servicios.</a>`
  : modoCobro(client) === 'stripe' && planDe(client).conceptos.length && billing?.estado === 'sin_tarjeta' ? html`<a class="warn" href="/app/pagos" style="display:block;text-decoration:none">Domicilia tu tarjeta para activar el cobro mensual de tu plan →</a>` : '';
-  return page({ title: `${client.nombre} · Panel`, side: sideApp('inicio', client), body: html`${aviso}${controlCenter(pulso, [client], { cliente: client })}` });
+  const filtro = tiene(client, 'chat') ? html`<form method="get" action="/app/embudo" class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:0 0 16px;padding:12px 14px">
+    <span class="mono" style="width:100%">Buscar contactos</span>
+    <label class="small muted" style="margin:0;flex:1;min-width:200px">Nombre, teléfono, empresa o etiqueta<input type="search" name="q" placeholder="Buscar…"></label>
+    <label class="small muted" style="margin:0">Mostrar<select name="mensajes" style="width:auto"><option value="">Todos</option><option value="esperando">No contestados</option><option value="respondidos">Respondidos</option></select></label>
+    <label class="small muted" style="margin:0">Llegó desde<input type="date" name="desde" style="width:auto"></label><label class="small muted" style="margin:0">Hasta<input type="date" name="hasta" style="width:auto"></label>
+    <label class="small muted" style="margin:0;min-width:180px">En conversaciones<input name="t" placeholder="Palabra exacta"></label>
+    <button class="btn-accent">Buscar</button></form>` : '';
+  return page({ title: `${client.nombre} · Panel`, side: sideApp('inicio', client), body: html`${aviso}${filtro}${controlCenter(pulso, [client], { cliente: client })}` });
 }
 const appHero = (client, t, posts = [], leadsN = 0, extra = {}) => hero({
   kicker: 'Tu panel', title: client.nombre, letra: client.nombre,
@@ -935,8 +962,8 @@ export function appProximamentePage(client, servicio) {
   return page({ title: `${s.nombre} · ${client.nombre}`, side: sideApp(servicio, client), body });
 }
 
-export function appLeadsPage(client, leads, chats, posts = [], campanaSel = '', { verAjenas = false, aviso = '' } = {}) {
-  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app', { campanaSel, urlLeads: '/app/leads', verAjenas, aviso })}` });
+export function appLeadsPage(client, leads, chats, posts = [], campanaSel = '', { verAjenas = false, aviso = '', filtros = {}, ultimos = {}, enChats = null } = {}) {
+  return page({ title: `Leads · ${client.nombre}`, side: sideApp('leads', client), body: html`${appHero(client, 'leads', posts, leads.length)}${leadsSection(client, leads, chats, '/app', { campanaSel, urlLeads: '/app/leads', verAjenas, aviso, filtros, ultimos, enChats })}` });
 }
 export function appCitasPage(client, view, posts = [], leadsN = 0) {
   return page({ title: `Citas · ${client.nombre}`, side: sideApp('citas', client), body: html`${appHero(client, 'citas', posts, leadsN)}${citasSection({ ...view, admin: false, url: '/app/citas' })}` });
@@ -1158,7 +1185,10 @@ export function conocimientoPage(client, k, versiones, { base, app = false, ok =
   ${pd ? (() => { const paises = [...new Set([...pd.presentes.map(([p]) => p), ...Object.keys(pd.paises.asesores || {}), ...(pd.presentes.length ? [] : ['México', 'Colombia', 'Perú', 'Argentina'])])];
     const chk = (name, on, label, ayuda) => html`<label style="display:flex;gap:10px;align-items:flex-start;margin:6px 0"><input type="checkbox" name="${name}" value="1" ${on ? 'checked' : ''} style="width:18px;height:18px;margin-top:2px"><span>${label}<br><span class="muted small">${ayuda}</span></span></label>`;
     return html`<form class="card" method="post" action="${base}/agente/paises-documentos" style="margin-top:18px;display:grid;gap:12px">
-      <span class="mono">Países y documentos</span>
+      <span class="mono">Países, documentos y cierre de respuestas</span>
+      ${chk('cierre_activo', client.config?.cierre_pregunta?.activo, 'Preguntar si la respuesta sirvió', 'Al terminar de resolver una duda, el agente pregunta si quedó bien o si prefiere que un asesor lo contacte (y si dice que sí, avisa al equipo).')}
+      <label class="small muted" style="margin-top:-6px">Frase que usa<input name="cierre_texto" maxlength="200" value="${client.config?.cierre_pregunta?.texto || ''}" placeholder="${CIERRE_TEXTO}"></label>
+      <label class="small muted">Etiquetas de tu marca (una por línea; aparecen para elegirlas con un clic en cada contacto)<textarea name="etiquetas" style="min-height:80px" placeholder="Cliente frecuente&#10;Factura&#10;Mayoreo&#10;Evento">${(Array.isArray(client.config?.etiquetas) ? client.config.etiquetas : []).join('\n')}</textarea></label>
       ${chk('paises_activo', pd.paises.activo, 'Clasificar por país según la lada del WhatsApp', '+52 México, +57 Colombia, +51 Perú, +54 Argentina… Cada contacto queda con la etiqueta de su país para filtrar el embudo y las campañas.')}
       ${pd.asesores.length ? html`<div class="small"><span class="muted">Asignar automáticamente a la persona de cada país</span>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:6px">${paises.map((p) => html`<label class="small muted">${p}<select name="asesor_${encodeURIComponent(p)}"><option value="">— nadie —</option>${pd.asesores.map((a) => html`<option value="${a.id}" ${Number(pd.paises.asesores?.[p]) === a.id ? 'selected' : ''}>${a.nombre}</option>`)}</select></label>`)}</div></div>` : ''}

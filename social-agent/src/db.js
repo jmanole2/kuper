@@ -226,6 +226,8 @@ export function openDb(file = path.join(config.dataDir, 'agente.db')) {
   ensure('leads', 'embudo', 'TEXT');
   ensure('leads', 'etapa', 'TEXT');
   ensure('leads', 'empresa', 'TEXT');
+  ensure('leads', 'giro', 'TEXT'); // giro o industria de la empresa del contacto
+  ensure('leads', 'foto', 'TEXT'); // foto del contacto (archivo en /media)
   ensure('leads', 'valor', 'REAL');
   ensure('leads', 'resultado', 'TEXT'); // vendido | perdido | resuelto
   ensure('leads', 'tags_json', 'TEXT');
@@ -503,6 +505,16 @@ export const leadMessages = (leadId, limit = 400) => getDb()
 /** Último mensaje de cada lead del cliente: { lead_id: { rol, texto, created_at } } (para el embudo). */
 export const ultimosMensajes = (clientId) => Object.fromEntries(getDb().prepare(`SELECT m.lead_id, m.rol, substr(m.texto, 1, 160) texto, m.created_at FROM lead_mensajes m
   JOIN (SELECT lead_id, MAX(m2.id) mid FROM lead_mensajes m2 JOIN leads l ON l.id = m2.lead_id WHERE l.client_id = ? GROUP BY lead_id) u ON u.mid = m.id`).all(clientId).map((r) => [r.lead_id, r]));
+/** Leads cuya conversación contiene la palabra o frase exacta (sin importar mayúsculas). Devuelve un Set de ids. */
+export function buscarEnChats(clientId, frase) {
+  const f = String(frase || '').trim().replace(/^"(.*)"$/, '$1').trim();
+  if (f.length < 2) return new Set();
+  const esc = f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  const re = new RegExp(`(^|[^\\p{L}\\p{N}])${esc}($|[^\\p{L}\\p{N}])`, 'iu');
+  const filas = getDb().prepare(`SELECT m.lead_id, m.texto FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ? AND m.texto LIKE ? ESCAPE '\\'`)
+    .all(clientId, `%${f.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+  return new Set(filas.filter((r) => re.test(r.texto)).map((r) => r.lead_id));
+}
 export const leadMessageCounts = (clientId) => Object.fromEntries(getDb()
   .prepare('SELECT m.lead_id, COUNT(*) n FROM lead_mensajes m JOIN leads l ON l.id = m.lead_id WHERE l.client_id = ? GROUP BY m.lead_id').all(clientId).map((r) => [r.lead_id, r.n]));
 
