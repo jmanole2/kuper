@@ -19,6 +19,7 @@
     "probar-agenda": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/probar-agenda.js",
     "respaldo": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/respaldo.js",
     "demo-newventures": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/demo-newventures.js",
+    "demo-amg": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/demo-amg.js",
     "alta-cliente-agente": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/alta-cliente-agente.js",
     "diagnostico-posts": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/diagnostico-posts.js",
     "limpiar": "node --no-warnings=ExperimentalWarning --env-file-if-exists=.env scripts/limpiar.js"
