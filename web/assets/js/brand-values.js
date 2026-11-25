@@ -2,42 +2,20 @@
 // SECCIÓN VALORES: tarjetas sincronizadas con el scroll
 // ==========================================
 (function () {
+  // Valores organizacionales y sus comportamientos observables.
   const values = [
-    {
-      icon: 'assets/images/values/quality.png',
-      title: 'Calidad y Excelencia',
-      text: 'Cumplir con las especificaciones del producto, así como en cada una de las actividades que se realizan en Novaplastica, asegurando la satisfacción de nuestros clientes.'
-    },
-    {
-      icon: 'assets/images/values/innovation.png',
-      title: 'Innovación',
-      text: 'Proponer diferentes formas de trabajo y nuevas formas de producción, orientándolas siempre a la mejora continua.'
-    },
-    {
-      icon: 'assets/images/values/teamwork.png',
-      title: 'Trabajo en Equipo',
-      text: 'Apoyar a los colaboradores con una actitud positiva y unión ante diversas situaciones, para lograr los objetivos planteados por Novaplastica.'
-    },
-    {
-      icon: 'assets/images/values/passion.png',
-      title: 'Pasión por el Trabajo',
-      text: 'Lograr la excelencia en cada una de nuestras actividades, asegurando el cumplimiento de los objetivos de Novaplastica.'
-    },
-    {
-      icon: 'assets/images/values/responsibility.png',
-      title: 'Responsabilidad y Compromiso',
-      text: 'Cumplir con nuestros valores, los objetivos establecidos, la calidad, el servicio y los procedimientos en tiempo y forma, con sentido de urgencia.'
-    },
-    {
-      icon: 'assets/images/values/loyalty.png',
-      title: 'Lealtad',
-      text: 'Ser fiel hacia tu persona, trabajo y empresa, cuidando la confidencialidad y permanencia.'
-    },
-    {
-      icon: 'assets/images/values/respect.png',
-      title: 'Respeto',
-      text: 'Reconocer, aceptar, apreciar y valorar las cualidades de toda la familia Novaplastica y su entorno.'
-    }
+    { icon: 'assets/images/values/innovation.png', title: 'Busca siempre la mejora continua',
+      behaviors: ['No quites el dedo del renglón', 'Busca el cómo sí y ve por más'] },
+    { icon: 'assets/images/values/quality.png', title: 'Haz lo correcto',
+      behaviors: ['Sé congruente', 'Habla con la verdad'] },
+    { icon: 'assets/images/values/loyalty.png', title: 'Construye y cuida la confianza',
+      behaviors: ['Cumple lo que dices y respeta los tiempos', 'Confía en el equipo'] },
+    { icon: 'assets/images/values/respect.png', title: 'Cuida a las personas',
+      behaviors: ['Escucha para entender', 'Busca que ganen todas las partes'] },
+    { icon: 'assets/images/values/responsibility.png', title: 'Ve al grano',
+      behaviors: ['Enfócate en lo importante', 'Si me opongo, ¿qué propongo?'] },
+    { icon: 'assets/images/values/passion.png', title: 'Haz todo lo posible',
+      behaviors: ['Cree en lo que haces', 'Siempre busca cómo sí'] }
   ];
 
   const section = document.getElementById('brandValues');
@@ -58,7 +36,7 @@
           <span>${String(index + 1).padStart(2, '0')}</span>
           <h3>${value.title}</h3>
         </div>
-        <p>${value.text}</p>
+        <p>${value.behaviors.map((b) => `• ${b}`).join('<br>')}</p>
       </div>
     </article>
   `).join('');
