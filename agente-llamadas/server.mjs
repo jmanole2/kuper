@@ -31,6 +31,9 @@ if (existsSync(dirDemos)) for (const f of readdirSync(dirDemos).filter((x) => /^
     if (d.instantanea) instCfg = d; else demos.set(f.slice(0, -5), d); // la demo instantánea no tiene página propia
   } catch (e) { console.error(`demos/${f}: ${e.message}`); }
 }
+// Grupos (grupos.json): llamadas.kuper.media/<grupo> junta el chat de varias demos en una página tipo WhatsApp, sin llamadas.
+const grupos = (() => { try { return JSON.parse(readFileSync(join(aqui, 'grupos.json'), 'utf8')); } catch { return {}; } })();
+const grupoDe = (g) => (Object.hasOwn(grupos, g) && !demos.has(g) ? grupos[g] : null);
 const demoDe = (url) => demos.get(String(url.searchParams.get('demo') || '')) || null;
 // "Haz tu demo gratis" (kuper.media/demo): cada demo vive 7 días en datos/instantaneas.
 const instantaneas = inst.almacen(join(process.env.LLAMADAS_DATOS || join(aqui, 'datos'), 'instantaneas'));
@@ -262,6 +265,12 @@ const server = createServer(async (req, res) => {
       chat: chat.chatConfigurado(),
     });
   }
+  if (ruta === '/api/grupo') {
+    const g = grupoDe(String(new URL(req.url, 'http://x').searchParams.get('g') || ''));
+    if (!g) return json(res, 404, { error: 'No existe ese grupo.' });
+    return json(res, 200, { nombre: g.nombre, sub: g.sub || '', chat: chat.chatConfigurado(),
+      marcas: (g.marcas || []).filter((m) => demos.has(m)).map((m) => { const d = demos.get(m); return { demo: m, negocio: d.negocio, asistente: d.asistente, logo: d.pagina?.logo || '', logo_oscuro: d.pagina?.logo_oscuro === true, fondo: /^#[0-9a-f]{3,8}$/i.test(g.fondos?.[m] || '') ? g.fondos[m] : '' }; }) });
+  }
   if (ruta === '/api/llamada' && req.method === 'POST') return crearLlamada(req, res);
   if (ruta === '/funciones/disponibilidad' && req.method === 'POST') return consultarDisponibilidad(req, res);
   if (ruta === '/retell/entrante' && req.method === 'POST') return llamadaEntrante(req, res);
@@ -271,6 +280,7 @@ const server = createServer(async (req, res) => {
   if (fn && req.method === 'POST') return atenderFuncion(req, res, fn[1]);
   const conEnvios = /^\/([a-z0-9-]+)\/envios\/?$/.exec(ruta);
   const archivo = archivos[ruta] || (demos.has(ruta.slice(1)) ? archivos['/'] : null)
+    || (grupoDe(ruta.replace(/^\/+|\/+$/g, '')) ? ['public/grupo.html', 'text/html; charset=utf-8'] : null)
     || (conEnvios && demos.get(conEnvios[1])?.aplicantes ? ['public/envios.html', 'text/html; charset=utf-8'] : null);
   if (archivo && req.method === 'GET') {
     const p = resolve(aqui, archivo[0]);

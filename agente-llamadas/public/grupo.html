@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agentes de WhatsApp</title>
+<meta name="description" content="Prueba en vivo de los agentes de WhatsApp con inteligencia artificial de cada marca.">
+<meta name="theme-color" content="#0b141a">
+<link rel="icon" href="/logo.png">
+<style>
+  :root { --fondo:#efeae2; --panel:#ffffff; --linea:#e9edef; --texto:#111b21; --suave:#667781; --verde:#00a884; --burbuja:#d9fdd3; --cabeza:#f0f2f5; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texto); background: #d1d7db; display: grid; place-items: center; }
+  main { width: min(1100px, 100%); height: min(760px, 100dvh); display: grid; grid-template-columns: 340px 1fr; background: var(--panel); box-shadow: 0 20px 60px rgba(0,0,0,.18); overflow: hidden; }
+  @media (min-width: 900px) { main { border-radius: 14px; } }
+  /* lista de marcas */
+  .lista { display: flex; flex-direction: column; border-right: 1px solid var(--linea); min-height: 0; }
+  .lista header { background: var(--cabeza); padding: 16px; }
+  .lista h1 { font-size: 19px; margin: 0 0 4px; }
+  .lista p { margin: 0; color: var(--suave); font-size: 13px; }
+  .marcas { overflow-y: auto; flex: 1; }
+  .marca { width: 100%; display: flex; gap: 12px; align-items: center; padding: 12px 16px; border: 0; border-bottom: 1px solid var(--linea); background: #fff; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+  .marca:hover { background: #f5f6f6; }
+  .marca[aria-current="true"] { background: #f0f2f5; }
+  .marca b { display: block; font-weight: 600; }
+  .marca small { color: var(--suave); font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .marca div { min-width: 0; }
+  .avatar { flex: none; width: 46px; height: 46px; border-radius: 50%; background: #dfe5e7 center / 78% no-repeat; display: grid; place-items: center; font-weight: 700; color: #54656f; overflow: hidden; }
+  .avatar { position: relative; }
+  .avatar img { position: absolute; inset: 10%; width: 80%; height: 80%; object-fit: contain; opacity: 0; }
+  .avatar.con-logo { color: transparent !important; }
+  .pie { padding: 10px 16px; color: var(--suave); font-size: 11.5px; border-top: 1px solid var(--linea); }
+  /* conversación */
+  .chat { display: flex; flex-direction: column; min-height: 0; background: var(--fondo); }
+  .chat header { background: var(--cabeza); display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--linea); }
+  .chat header .avatar { width: 40px; height: 40px; }
+  .chat header b { display: block; }
+  .chat header small { color: var(--suave); font-size: 12.5px; }
+  .volver { display: none; border: 0; background: none; font-size: 24px; cursor: pointer; color: #54656f; padding: 0 6px 0 0; }
+  #mensajes { flex: 1; overflow-y: auto; padding: 18px 6%; display: flex; flex-direction: column; gap: 6px;
+    background-image: radial-gradient(rgba(0,0,0,.035) 1px, transparent 1px); background-size: 18px 18px; }
+  .msg { max-width: 75%; padding: 7px 10px; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 1px .5px rgba(11,20,26,.13); background: #fff; align-self: flex-start; }
+  .msg.yo { background: var(--burbuja); align-self: flex-end; }
+  .msg.error { background: #fde8e8; color: #9b1c1c; }
+  .aviso { align-self: center; background: #fff5c4; color: #54656f; font-size: 12.5px; padding: 6px 12px; border-radius: 8px; text-align: center; max-width: 90%; }
+  .escribiendo { color: var(--verde); font-size: 12.5px; min-height: 1.2em; padding: 0 6%; }
+  form { display: flex; gap: 8px; padding: 10px 16px; background: var(--cabeza); }
+  form input { flex: 1; min-width: 0; border: 0; border-radius: 8px; padding: 12px 14px; font: inherit; background: #fff; outline: none; }
+  form button { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--verde); color: #fff; cursor: pointer; display: grid; place-items: center; }
+  form button:disabled { opacity: .5; cursor: wait; }
+  .vacio { margin: auto; text-align: center; color: var(--suave); padding: 24px; }
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; height: 100dvh; }
+    .abierta .lista { display: none; }
+    main:not(.abierta) .chat { display: none; }
+    .volver { display: block; }
+    #mensajes { padding: 14px 12px; }
+    .msg { max-width: 85%; }
+  }
+</style>
+</head>
+<body>
+<main id="app">
+  <section class="lista">
+    <header><h1 id="grupo">Agentes de WhatsApp</h1><p id="sub">Elige una marca y escríbele como cliente.</p></header>
+    <nav class="marcas" id="marcas" aria-label="Marcas"></nav>
+    <div class="pie">Demo de Kuper Media. Son asistentes de inteligencia artificial.</div>
+  </section>
+  <section class="chat" id="chat">
+    <header>
+      <button class="volver" id="volver" aria-label="Volver a las marcas">‹</button>
+      <span class="avatar" id="avatar"></span>
+      <div><b id="nombre">Elige una marca</b><small id="estado">en línea</small></div>
+    </header>
+    <div id="mensajes" aria-live="polite"><p class="vacio">Elige una marca de la lista para empezar.</p></div>
+    <div class="escribiendo" id="escribiendo"></div>
+    <form id="form" autocomplete="off">
+      <input id="entrada" maxlength="1000" placeholder="Escribe un mensaje" aria-label="Escribe un mensaje" disabled>
+      <button id="enviar" aria-label="Enviar" disabled><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></svg></button>
+    </form>
+  </section>
+</main>
+<script type="module">
+  const $ = (id) => document.getElementById(id);
+  const g = location.pathname.replace(/^\/+|\/+$/g, '');
+  const conversaciones = new Map();
+  let marcas = [], actual = null, ocupado = false;
+
+  // Iniciales siempre debajo; el logo encima si carga (si no carga, quedan las iniciales).
+  const avatar = (el, m) => {
+    el.replaceChildren(m.negocio.split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase());
+    el.style.background = m.fondo || ''; el.style.color = m.fondo ? '#f0eee0' : '';
+    if (m.logo) { const i = document.createElement('img'); i.alt = ''; if (m.logo_oscuro) i.style.filter = 'brightness(0)'; i.onload = () => { i.style.opacity = 1; el.classList.add('con-logo'); }; i.onerror = () => i.remove(); i.src = m.logo; el.append(i); }
+  };
+  const burbuja = (clase, texto) => { const d = document.createElement('div'); d.className = `msg ${clase}`; d.textContent = texto; $('mensajes').append(d); $('mensajes').scrollTop = $('mensajes').scrollHeight; };
+  const ultimo = (m) => { const c = conversaciones.get(m.demo); return c?.length ? c[c.length - 1].texto : `${m.asistente} · asistente de WhatsApp`; };
+
+  function pintarLista() {
+    $('marcas').replaceChildren(...marcas.map((m) => {
+      const b = document.createElement('button'); b.className = 'marca'; b.type = 'button'; b.setAttribute('aria-current', String(actual?.demo === m.demo));
+      const a = document.createElement('span'); a.className = 'avatar'; avatar(a, m);
+      const t = document.createElement('div'); t.append(Object.assign(document.createElement('b'), { textContent: m.negocio }), Object.assign(document.createElement('small'), { textContent: ultimo(m) }));
+      b.append(a, t); b.addEventListener('click', () => abrir(m)); return b;
+    }));
+  }
+
+  function abrir(m) {
+    actual = m;
+    if (!conversaciones.has(m.demo)) conversaciones.set(m.demo, [{ rol: 'assistant', texto: `¡Hola! Soy ${m.asistente}, de ${m.negocio}. ¿En qué te puedo ayudar?` }]);
+    $('app').classList.add('abierta');
+    $('nombre').textContent = m.negocio; $('estado').textContent = `${m.asistente} · en línea`; avatar($('avatar'), m);
+    $('mensajes').replaceChildren(Object.assign(document.createElement('div'), { className: 'aviso', textContent: 'Demo: escribe como si fueras cliente. Es un asistente de IA.' }));
+    for (const x of conversaciones.get(m.demo)) burbuja(x.rol === 'user' ? 'yo' : '', x.texto);
+    $('entrada').disabled = false; $('enviar').disabled = ocupado; $('entrada').focus();
+    pintarLista();
+  }
+
+  $('volver').addEventListener('click', () => { $('app').classList.remove('abierta'); });
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const texto = $('entrada').value.trim();
+    if (!texto || !actual || ocupado) return;
+    const m = actual, conv = conversaciones.get(m.demo);
+    $('entrada').value = ''; conv.push({ rol: 'user', texto }); burbuja('yo', texto);
+    ocupado = true; $('enviar').disabled = true; $('escribiendo').textContent = 'escribiendo…';
+    try {
+      const r = await fetch(`/api/chat?demo=${encodeURIComponent(m.demo)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensajes: conv.slice(-30) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'No pude contestar. Intenta de nuevo.');
+      conv.push({ rol: 'assistant', texto: d.texto });
+      if (actual === m) burbuja('', d.texto);
+    } catch (err) {
+      conv.pop();
+      if (actual === m) burbuja('error', err.message);
+    } finally {
+      ocupado = false; $('enviar').disabled = false; $('escribiendo').textContent = ''; pintarLista(); if (actual === m) $('entrada').focus();
+    }
+  });
+
+  fetch(`/api/grupo?g=${encodeURIComponent(g)}`).then((r) => r.json()).then((c) => {
+    if (!c.marcas) throw new Error(c.error);
+    document.title = `WhatsApp · ${c.nombre}`;
+    $('grupo').textContent = c.nombre; if (c.sub) $('sub').textContent = c.sub;
+    marcas = c.marcas; pintarLista();
+    if (!c.chat) $('mensajes').replaceChildren(Object.assign(document.createElement('p'), { className: 'vacio', textContent: 'El chat no está disponible en este momento.' }));
+    else if (matchMedia('(min-width: 761px)').matches && marcas[0]) abrir(marcas[0]);
+  }).catch(() => { $('mensajes').replaceChildren(Object.assign(document.createElement('p'), { className: 'vacio', textContent: 'No se pudo cargar la página. Recarga en un momento.' })); });
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "amg": {
+    "nombre": "AMG Hospitality",
+    "sub": "Prueba los agentes de WhatsApp de cada marca: pregunta por el menú, sucursales, pedidos o facturación.",
+    "marcas": [
+      "chubbies",
+      "muygallito",
+      "fatbastard",
+      "bassmonkey"
+    ],
+    "fondos": {
+      "muygallito": "#1d1b18",
+      "bassmonkey": "#1d1b18"
+    }
+  }
+}
