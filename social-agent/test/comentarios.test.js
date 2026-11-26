@@ -143,6 +143,7 @@ test('si Facebook falla (permiso), Instagram sigue y la primera vuelta de Facebo
 });
 
 test('un post viejo que entra a la lista: solo se contesta lo comentado después de activar', async () => {
+  db.updateClient(client.id, { config: { ...fresco().config, comentarios: { activo: true, revision: true } } });
   const antes = ig;
   ig = [...antes, { id: 'OLD1', text: '¿precio?', username: 'vieja', timestamp: '2020-01-01T00:00:00+0000' }, cIG('NEW9', '¿Qué precio tiene la especial?', 'mercie')];
   const r = await com.revisar(fresco());
