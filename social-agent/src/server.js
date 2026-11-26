@@ -1,5 +1,6 @@
 // Servidor web: panel de agencia (/admin), portal de aprobación del cliente (/p/:token)
 // y archivos de medios públicos (/media) que Instagram/Facebook descargan al publicar.
+import * as metaRouter from './metaRouter.js';
 import nodeCrypto from 'node:crypto';
 import express from 'express';
 import multer from 'multer';
@@ -138,6 +139,20 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
     if (!billing.verificarFirma(raw, req.headers['stripe-signature'])) return res.status(400).send('Firma no válida');
     try { await billing.procesarEvento(JSON.parse(raw)); res.json({ received: true }); }
     catch (e) { console.error('[stripe]', e.message); res.status(500).json({ error: 'No se pudo procesar' }); }
+  });
+
+  // ------------------------------------------------------------ mensajes directos de Meta (Messenger e Instagram)
+  // La app de Kuper manda aquí todos sus mensajes y se reparten al agente de cada marca (src/metaRouter.js).
+  app.get('/webhooks/meta', (req, res) => {
+    const t = config.metaWebhook.verifyToken;
+    if (req.query['hub.mode'] === 'subscribe' && t && String(req.query['hub.verify_token'] || '') === t) return res.status(200).send(String(req.query['hub.challenge'] || ''));
+    res.sendStatus(403);
+  });
+  app.post('/webhooks/meta', express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
+    const raw = Buffer.isBuffer(req.body) ? req.body : Buffer.from('');
+    if (!metaRouter.firmaValida(raw, req.get('x-hub-signature-256'), config.whatsappApp.secret)) { console.error('[meta router] firma no válida (¿META_APP_SECRET?)'); return res.sendStatus(401); }
+    res.sendStatus(200); // Meta quiere respuesta rápida; se reenvía en segundo plano
+    metaRouter.reenviar(metaRouter.repartir(raw, req.get('x-hub-signature-256'), { secreto: config.whatsappApp.secret, porDefecto: config.metaWebhook.porDefecto })).catch(() => {});
   });
 
   // ------------------------------------------------------------ carritos abandonados de Shopify (firma HMAC de su tienda)

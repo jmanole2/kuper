@@ -49,6 +49,8 @@ export const config = {
   metaGraphVersion: env('META_GRAPH_VERSION', 'v24.0'),
   // App de Meta de Kuper (Tech Provider) para el botón "Conectar WhatsApp" (Embedded Signup).
   whatsappApp: { id: env('META_APP_ID', ''), configId: env('META_CONFIG_ID', ''), secret: env('META_APP_SECRET', ''), graph: env('WHATSAPP_GRAPH_VERSION', 'v23.0') },
+  // Repartidor de mensajes directos (Messenger/Instagram) de esa app: /webhooks/meta (ver src/metaRouter.js).
+  metaWebhook: { verifyToken: env('META_WEBHOOK_VERIFY_TOKEN', ''), porDefecto: env('META_WEBHOOK_DEFAULT', '') },
   linkedinApiVersion: env('LINKEDIN_API_VERSION', '202609'),
 
   // DRY_RUN=1: no publica de verdad, solo registra lo que haría.
