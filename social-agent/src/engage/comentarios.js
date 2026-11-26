@@ -9,7 +9,7 @@
 //
 // Configuración (client.config.comentarios):
 //   { activo, pausado, instagram, facebook, anuncios, publico, dm, ocultar, revision, instrucciones }
-// Permisos del token de la página: instagram_manage_comments, pages_manage_engagement, pages_read_engagement,
+// Permisos del token de la página: instagram_manage_comments, pages_manage_engagement, pages_read_engagement, pages_read_user_content,
 // pages_messaging e instagram_manage_messages (para el mensaje directo).
 import { graphCall } from '../publishers/meta.js';
 import { config } from '../config.js';

@@ -22,7 +22,7 @@ const datos = JSON.parse(readFileSync(new URL('./datos/amg.json', import.meta.ur
 db.openDb();
 
 // 1) Permisos del token.
-const necesarios = ['pages_show_list', 'pages_read_engagement', 'pages_manage_engagement', 'pages_manage_metadata', 'pages_messaging',
+const necesarios = ['pages_show_list', 'pages_read_engagement', 'pages_read_user_content', 'pages_manage_engagement', 'pages_manage_metadata', 'pages_messaging',
   'instagram_basic', 'instagram_manage_comments', 'instagram_manage_messages', 'business_management'];
 let otorgados = [];
 try { otorgados = (await graphCall('GET', 'me/permissions', {}, token)).data.filter((p) => p.status === 'granted').map((p) => p.permission); }
