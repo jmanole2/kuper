@@ -141,3 +141,12 @@ test('si Facebook falla (permiso), Instagram sigue y la primera vuelta de Facebo
   assert.equal(r.error, undefined);
   com.hooks.graph = antes;
 });
+
+test('un post viejo que entra a la lista: solo se contesta lo comentado después de activar', async () => {
+  const antes = ig;
+  ig = [...antes, { id: 'OLD1', text: '¿precio?', username: 'vieja', timestamp: '2020-01-01T00:00:00+0000' }, cIG('NEW9', '¿Qué precio tiene la especial?', 'mercie')];
+  const r = await com.revisar(fresco());
+  assert.equal(r.nuevos, 1);
+  assert.equal(db.getDb().prepare("SELECT status FROM comentarios WHERE comment_id = 'OLD1'").get().status, 'base');
+  ig = antes;
+});

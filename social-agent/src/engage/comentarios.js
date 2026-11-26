@@ -90,9 +90,12 @@ export function resumen(clientId, dias = 30) {
 }
 
 // ------------------------------------------------------------ leer comentarios de Meta
+// Se revisan varias publicaciones hacia atrás: la gente comenta en posts fijados o de hace semanas.
+// Solo se contesta lo que llegó después de activar el agente (ver "desde" en revisar).
+export const POSTS_IG = 30, POSTS_FB = 25;
 async function deInstagram(meta, own) {
   const r = await hooks.graph('GET', `${meta.ig_user_id}/media`, {
-    fields: 'id,permalink,caption,timestamp,comments.limit(50){id,text,timestamp,username,from,replies{username}}', limit: '12' }, meta.page_token);
+    fields: 'id,permalink,caption,timestamp,comments.limit(50){id,text,timestamp,username,from,replies{username}}', limit: String(POSTS_IG) }, meta.page_token);
   const out = [];
   for (const m of r.data || []) {
     for (const c of m.comments?.data || []) {
@@ -110,7 +113,7 @@ async function deFacebook(meta, { anuncios }) {
   const out = [];
   for (const [edge, anuncio] of fuentes) {
     let r;
-    try { r = await hooks.graph('GET', `${meta.page_id}/${edge}`, { fields, limit: '12' }, meta.page_token); }
+    try { r = await hooks.graph('GET', `${meta.page_id}/${edge}`, { fields, limit: String(POSTS_FB) }, meta.page_token); }
     catch (e) { if (anuncio) continue; throw e; } // los posts de anuncios pueden no estar permitidos; los normales sí deben leerse
     for (const p of r.data || []) {
       for (const c of p.comments?.data || []) {
@@ -225,12 +228,16 @@ export async function revisar(client, { now = new Date() } = {}) {
   for (const e of errores) db.logEvent({ clientId: client.id, tipo: 'comentario_error', detalle: e });
 
   const primeraDe = (canal) => !hayBase(client.id) && !db.kvGet(`comentarios_base_${client.id}_${canal}`);
+  // Desde cuándo se contesta en cada red: lo comentado antes de esa fecha es viejo aunque aparezca hasta ahora
+  // (p. ej. un post más antiguo que entra a la lista).
+  const desde = (canal) => { const t = Date.parse(db.kvGet(`comentarios_base_${client.id}_${canal}`) || db.kvGet(`comentarios_base_${client.id}`) || ''); return Number.isNaN(t) ? null : t; };
+  const viejo = (c) => { const t = Date.parse(c.comentado_at || ''), d0 = desde(c.canal); return d0 !== null && !Number.isNaN(t) && t < d0; };
   const primeras = Object.fromEntries(leidas.map((c) => [c, primeraDe(c)]));
   const kw = client.config?.respuesta_palabra_clave;
   const nuevos = [];
   for (const c of todos) {
     if (visto(c.id)) continue;
-    const base = primeras[c.canal] || c.propio || c.yaContestado || (kw?.activo && c.canal === 'instagram' && matchesKeyword(c.texto, kw.palabra));
+    const base = primeras[c.canal] || viejo(c) || c.propio || c.yaContestado || (kw?.activo && c.canal === 'instagram' && matchesKeyword(c.texto, kw.palabra));
     if (base) { guardar(client.id, c, { status: 'base' }); continue; }
     nuevos.push(c);
   }
