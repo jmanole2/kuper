@@ -1512,7 +1512,7 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
       res.redirect(`${base(req)}/comentarios?ok=pausa`);
     });
     router.post(`${prefix}/comentarios/revisar`, async (req, res) => {
-      try { const r = await comentarios.revisar(req.client); res.redirect(`${base(req)}/comentarios?ok=revisado&n=${r.nuevos || 0}`); }
+      try { const r = await comentarios.revisar(req.client); if (r.error) return vista(req, res, { error: `Revisado: ${r.nuevos || 0} comentarios nuevos, pero no se pudo leer ${r.error}` }); res.redirect(`${base(req)}/comentarios?ok=revisado&n=${r.nuevos || 0}`); }
       catch (e) { vista(req, res, { error: `No se pudieron revisar los comentarios: ${e.message}` }); }
     });
     router.post(`${prefix}/comentarios/:comId/aprobar`, async (req, res) => {

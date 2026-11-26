@@ -117,3 +117,27 @@ test('las instrucciones respetan los ajustes', () => {
   assert.match(t, /déjalo siempre vacío/);
   assert.match(t, /No des precios en público/);
 });
+
+test('si Facebook falla (permiso), Instagram sigue y la primera vuelta de Facebook es aparte', async () => {
+  const c2 = db.createClient({ slug: 'c2', nombre: 'Otra', perfil: { cliente: 'Otra', pilares_de_contenido: [{ nombre: 'x' }] },
+    config: { plan: { servicios: { comentarios: true } }, comentarios: { activo: true, anuncios: false } }, credentials: { meta: { page_id: 'P2', ig_user_id: 'IG', page_token: 'T' } } });
+  conoc.guardar(c2.id, { texto: '# Otra' }, 'test');
+  const antes = com.hooks.graph;
+  let fbRoto = true;
+  com.hooks.graph = async (m, ruta, p) => {
+    if (ruta === 'P2/published_posts') { if (fbRoto) throw new Error("Meta 400: requires the 'pages_read_user_content' permission (code 10)"); return { data: [{ id: 'P2_1', comments: { data: fb } }] }; }
+    return antes(m, ruta, p);
+  };
+  ig = [cIG('J0', 'viejo')]; fb = [cFB('G0', 'viejo de facebook')];
+  let r = await com.revisar(db.getClient(c2.id));
+  assert.match(r.error, /Facebook: .*pages_read_user_content/);
+  assert.equal(r.nuevos, 0); // primera vuelta de Instagram: solo registra
+  ig = [cIG('J0', 'viejo'), cIG('J1', '@pepe vamos', 'mau')];
+  r = await com.revisar(db.getClient(c2.id));
+  assert.equal(r.nuevos, 1); // Instagram ya contesta aunque Facebook siga fallando
+  fbRoto = false; fb = [cFB('G0', 'viejo de facebook')];
+  r = await com.revisar(db.getClient(c2.id));
+  assert.equal(r.nuevos, 0); // cuando Facebook se arregla, lo viejo de Facebook no se contesta
+  assert.equal(r.error, undefined);
+  com.hooks.graph = antes;
+});

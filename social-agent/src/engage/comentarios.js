@@ -212,24 +212,31 @@ export async function revisar(client, { now = new Date() } = {}) {
   if (!meta.page_token || (!meta.page_id && !meta.ig_user_id)) return { revisados: 0, nuevos: 0, error: 'faltan credenciales de Meta' };
   ensureTables();
 
-  const todos = [];
-  if (aj.instagram && meta.ig_user_id) {
-    const own = (await hooks.graph('GET', meta.ig_user_id, { fields: 'username' }, meta.page_token)).username;
-    todos.push(...await deInstagram(meta, own));
-  }
-  if (aj.facebook && meta.page_id) todos.push(...await deFacebook(meta, aj));
+  // Cada red se lee por separado: si una falla (p. ej. a Facebook le falta un permiso), la otra sigue funcionando.
+  // La "primera vez" (registrar lo que ya existía sin contestarlo) también es por red.
+  const todos = [], leidas = [], errores = [];
+  const leer = async (canal, fn) => {
+    try { todos.push(...await fn()); leidas.push(canal); }
+    catch (e) { errores.push(`${canal === 'instagram' ? 'Instagram' : 'Facebook'}: ${e.message}`); }
+  };
+  if (aj.instagram && meta.ig_user_id) await leer('instagram', async () => deInstagram(meta, (await hooks.graph('GET', meta.ig_user_id, { fields: 'username' }, meta.page_token)).username));
+  if (aj.facebook && meta.page_id) await leer('facebook', () => deFacebook(meta, aj));
+  if (errores.length && !leidas.length) throw new Error(errores.join(' · '));
+  for (const e of errores) db.logEvent({ clientId: client.id, tipo: 'comentario_error', detalle: e });
 
-  const primera = !hayBase(client.id);
+  const primeraDe = (canal) => !hayBase(client.id) && !db.kvGet(`comentarios_base_${client.id}_${canal}`);
+  const primeras = Object.fromEntries(leidas.map((c) => [c, primeraDe(c)]));
   const kw = client.config?.respuesta_palabra_clave;
   const nuevos = [];
   for (const c of todos) {
     if (visto(c.id)) continue;
-    const base = primera || c.propio || c.yaContestado || (kw?.activo && c.canal === 'instagram' && matchesKeyword(c.texto, kw.palabra));
+    const base = primeras[c.canal] || c.propio || c.yaContestado || (kw?.activo && c.canal === 'instagram' && matchesKeyword(c.texto, kw.palabra));
     if (base) { guardar(client.id, c, { status: 'base' }); continue; }
     nuevos.push(c);
   }
-  if (primera) db.kvSet(`comentarios_base_${client.id}`, now.toISOString());
-  if (!nuevos.length) return { revisados: todos.length, nuevos: 0 };
+  for (const [canal, primera] of Object.entries(primeras)) if (primera) db.kvSet(`comentarios_base_${client.id}_${canal}`, now.toISOString());
+  const error = errores.join(' · ') || undefined;
+  if (!nuevos.length) return { revisados: todos.length, nuevos: 0, error };
 
   const lote = nuevos.sort((a, b) => String(a.comentado_at).localeCompare(String(b.comentado_at))).slice(0, MAX_POR_VUELTA);
   const decisiones = await decidir(client, aj, lote);
@@ -253,7 +260,7 @@ export async function revisar(client, { now = new Date() } = {}) {
     }
     if ((await enviar(client, row)) === 'enviado') enviados++;
   }
-  return { revisados: todos.length, nuevos: lote.length, enviados, por_aprobar: porAprobar };
+  return { revisados: todos.length, nuevos: lote.length, enviados, por_aprobar: porAprobar, error };
 }
 
 /** El equipo aprueba (con o sin cambios) o descarta un comentario que estaba por aprobar. */
