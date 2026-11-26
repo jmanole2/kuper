@@ -12,7 +12,7 @@ import { graphCall } from '../src/publishers/meta.js';
 
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : ''; };
 const soloProbar = process.argv.includes('--probar');
-const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); // sin espacios: "FatBastard" = "Fat Bastard"
 const corto = (e) => String(e?.message || e).replace(/access_token=[^&\s]+/g, 'access_token=…').slice(0, 220);
 
 const token = (readFileSync(0, 'utf8') || '').replace(/["'\s]/g, '');

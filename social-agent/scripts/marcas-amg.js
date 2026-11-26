@@ -31,6 +31,7 @@ for (const m of datos.marcas) {
   const nueva = !c;
   if (nueva) c = db.createClient({ slug: m.slug, nombre: m.nombre, perfil: { cliente: m.nombre, pilares_de_contenido: [{ nombre: 'Menú' }] },
     config: { plan, embudos, etiquetas: ['Pedido', 'Factura', 'Queja', 'Sucursal', 'Evento'] }, credentials: {} });
+  if (!nueva && c.nombre === 'Bass Monkey' && m.nombre === 'Brass Monkey') c = db.updateClient(c.id, { nombre: m.nombre }); // se llama Brass Monkey
   if (!conocimiento.actual(c.id)) conocimiento.guardar(c.id, { texto: m.conocimiento }, 'Kuper');
   ids.push(c.id);
   console.log(`${nueva ? 'Creada ' : 'Ya existía'}  ${m.nombre.padEnd(16)} /admin/clientes/${c.id}`);
