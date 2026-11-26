@@ -4,17 +4,17 @@
 (function () {
   // Valores organizacionales y sus comportamientos observables.
   const values = [
-    { icon: 'assets/images/values/innovation.png', title: 'Busca siempre la mejora continua',
+    { icon: 'assets/images/values/mejora-continua.svg', title: 'Busca siempre la mejora continua',
       behaviors: ['No quites el dedo del renglón', 'Busca el cómo sí y ve por más'] },
-    { icon: 'assets/images/values/quality.png', title: 'Haz lo correcto',
+    { icon: 'assets/images/values/haz-lo-correcto.svg', title: 'Haz lo correcto',
       behaviors: ['Sé congruente', 'Habla con la verdad'] },
-    { icon: 'assets/images/values/loyalty.png', title: 'Construye y cuida la confianza',
+    { icon: 'assets/images/values/confianza.svg', title: 'Construye y cuida la confianza',
       behaviors: ['Cumple lo que dices y respeta los tiempos', 'Confía en el equipo'] },
-    { icon: 'assets/images/values/respect.png', title: 'Cuida a las personas',
+    { icon: 'assets/images/values/cuida-personas.svg', title: 'Cuida a las personas',
       behaviors: ['Escucha para entender', 'Busca que ganen todas las partes'] },
-    { icon: 'assets/images/values/responsibility.png', title: 'Ve al grano',
+    { icon: 'assets/images/values/ve-al-grano.svg', title: 'Ve al grano',
       behaviors: ['Enfócate en lo importante', 'Si me opongo, ¿qué propongo?'] },
-    { icon: 'assets/images/values/passion.png', title: 'Haz todo lo posible',
+    { icon: 'assets/images/values/todo-lo-posible.svg', title: 'Haz todo lo posible',
       behaviors: ['Cree en lo que haces', 'Siempre busca cómo sí'] }
   ];
 
