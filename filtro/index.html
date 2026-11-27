@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Filtro Bigotón 70s</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=DM+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: one-screen camera app — 9:16 stage on top, controls in a warm bottom bar */
+:root {
+  --bg: #1a100b;
+  --panel: #2a1a12;
+  --fg: #fbeedd;
+  --muted: #c9a98a;
+  --accent: #f08a24;
+  --gold: #e9b949;
+  --rec: #e5432f;
+  --display: "Shrikhand", Georgia, serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body);
+  display: flex; flex-direction: column; overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px));
+}
+h1 { font-family: var(--display); font-weight: 400; font-size: 1.5rem; margin: 0; color: var(--accent); letter-spacing: .01em; }
+#status { font-size: .8rem; color: var(--muted); text-align: right; }
+#stage {
+  flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+}
+#out {
+  max-width: 100%; max-height: 100%; aspect-ratio: 9 / 16; border-radius: 18px;
+  background: #000; box-shadow: 0 0 0 2px #3b2619;
+}
+#out.photo { aspect-ratio: auto; }
+#recbadge {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--rec); color: #fff; font-weight: 700; font-size: .85rem;
+  padding: 4px 12px; border-radius: 99px; font-variant-numeric: tabular-nums;
+}
+#intro {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; text-align: center; padding: 24px;
+}
+#intro p { max-width: 32ch; color: var(--muted); margin: 0; line-height: 1.45; }
+#intro .big { font-family: var(--display); font-size: 2.2rem; color: var(--fg); line-height: 1.05; text-wrap: balance; }
+.controls {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px));
+}
+.chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.chip {
+  font: 600 .85rem var(--body); color: var(--muted); background: transparent;
+  border: 1.5px solid #5a3a26; border-radius: 99px; padding: 6px 14px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { color: var(--bg); background: var(--gold); border-color: var(--gold); }
+.row { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.round {
+  width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--panel); color: var(--fg); display: grid; place-items: center;
+}
+.round svg { width: 22px; height: 22px; }
+#shutter {
+  width: 76px; height: 76px; border-radius: 50%; border: 4px solid var(--fg); background: var(--accent);
+  cursor: pointer; position: relative;
+}
+#shutter.recording { background: var(--rec); }
+#shutter.recording::after {
+  content: ""; position: absolute; inset: 22px; border-radius: 6px; background: #fff;
+}
+.modes { display: flex; justify-content: center; gap: 18px; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+.mode { background: none; border: 0; color: var(--muted); font: 700 .8rem var(--body); letter-spacing: .08em; cursor: pointer; padding: 4px; }
+.mode[aria-pressed="true"] { color: var(--gold); }
+.btn {
+  font: 700 1rem var(--body); border: 0; border-radius: 99px; padding: 12px 22px; cursor: pointer;
+  background: var(--accent); color: #1a100b;
+}
+.btn.ghost { background: transparent; color: var(--fg); border: 1.5px solid #5a3a26; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+#sheet {
+  position: fixed; inset: 0; background: rgba(15, 9, 6, .94); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px; z-index: 20;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+#preview { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; width: 100%; }
+#preview img, #preview video { max-width: 100%; max-height: 100%; border-radius: 14px; }
+#sheet .row { flex-wrap: wrap; gap: 12px; }
+#hint { color: var(--muted); font-size: .85rem; text-align: center; max-width: 40ch; margin: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  #shutter { transition: transform .12s; }
+  #shutter:active { transform: scale(.92); }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bigotón 70s</h1>
+  <div id="status">Cargando filtro…</div>
+</header>
+
+<div id="stage">
+  <canvas id="out" width="720" height="1280"></canvas>
+  <div id="recbadge" hidden>● 0.0 s</div>
+  <div id="intro">
+    <div class="big">Bigote, aviadores y mullet</div>
+    <p>El filtro sigue tu cara en vivo. Toma foto o graba un video y compártelo en Instagram.</p>
+    <button class="btn" id="startCam" type="button">Abrir cámara</button>
+    <button class="btn ghost" id="pickPhoto" type="button">Usar una foto</button>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="chips" role="group" aria-label="Accesorios">
+    <button class="chip" type="button" data-k="stache" aria-pressed="true">Bigote</button>
+    <button class="chip" type="button" data-k="glasses" aria-pressed="true">Aviadores</button>
+    <button class="chip" type="button" data-k="hair" aria-pressed="true">Mullet</button>
+    <button class="chip" type="button" data-k="grade" aria-pressed="true">Tono 70s</button>
+  </div>
+  <div class="row">
+    <button class="round" id="upload" type="button" aria-label="Usar una foto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>
+    </button>
+    <button id="shutter" type="button" aria-label="Tomar foto"></button>
+    <button class="round" id="flip" type="button" aria-label="Cambiar cámara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+    </button>
+  </div>
+  <div class="modes" role="group" aria-label="Modo">
+    <button class="mode" type="button" data-mode="photo" aria-pressed="true">Foto</button>
+    <button class="mode" type="button" data-mode="video" aria-pressed="false">Video</button>
+  </div>
+</div>
+
+<div id="sheet" hidden>
+  <div id="preview"></div>
+  <p id="hint"></p>
+  <div class="row">
+    <button class="btn" id="share" type="button">Compartir</button>
+    <button class="btn ghost" id="save" type="button">Guardar</button>
+    <button class="btn ghost" id="again" type="button">Otra</button>
+  </div>
+</div>
+
+<input type="file" id="file" accept="image/*" hidden>
+<video id="cam" playsinline muted autoplay hidden></video>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const MODEL_LOCAL = "./face_landmarker.task";
+const MODEL_REMOTE = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+
+const $ = (s) => document.querySelector(s);
+const out = $("#out"), ctx = out.getContext("2d");
+const video = $("#cam");
+const statusEl = $("#status");
+const on = { stache: true, glasses: true, hair: true, grade: true };
+
+let landmarker = null, runMode = "VIDEO";
+let stream = null, facing = "user", source = null; // "cam" | "photo"
+let photoImg = null, photoLm = null;
+let mode = "photo", recorder = null, recChunks = [], recStart = 0, recTimer = null;
+let result = null; // { blob, name, type }
+let smooth = null, lostFrames = 0, lastTs = -1;
+
+/* ---------- seeded random so curls & whiskers don't flicker ---------- */
+function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* ---------- model ---------- */
+async function loadModel() {
+  const files = await FilesetResolver.forVisionTasks(WASM);
+  let modelBuf;
+  try {
+    const r = await fetch(MODEL_LOCAL);
+    if (!r.ok) throw 0;
+    modelBuf = new Uint8Array(await r.arrayBuffer());
+  } catch { modelBuf = null; }
+  const base = modelBuf ? { modelAssetBuffer: modelBuf } : { modelAssetPath: MODEL_REMOTE };
+  const opts = (delegate) => ({ baseOptions: { ...base, delegate }, runningMode: "VIDEO", numFaces: 1 });
+  try { landmarker = await FaceLandmarker.createFromOptions(files, opts("GPU")); }
+  catch { landmarker = await FaceLandmarker.createFromOptions(files, opts("CPU")); }
+  runMode = "VIDEO";
+}
+const modelReady = loadModel().then(
+  () => { statusEl.textContent = "Listo"; },
+  (e) => { statusEl.textContent = "No se pudo cargar el filtro. Revisa tu conexión y recarga."; console.error(e); throw e; }
+);
+async function setMode(m) { if (runMode !== m) { await landmarker.setOptions({ runningMode: m }); runMode = m; } }
+
+/* ---------- geometry helpers ---------- */
+const OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const mid = (a, b, t = 0.5) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+function frame(origin, ang, unit) {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  return {
+    apply(g) { g.setTransform(c * unit, s * unit, -s * unit, c * unit, origin.x, origin.y); },
+    toLocal(p) { const dx = p.x - origin.x, dy = p.y - origin.y; return { x: (dx * c + dy * s) / unit, y: (-dx * s + dy * c) / unit }; },
+  };
+}
+
+/* ---------- mullet: precomputed silhouette + curls in face units ---------- */
+// Local space: origin = top of forehead, x to the right, y down, 1 unit = face width.
+function hairSilhouette(H) {
+  const p = new Path2D();
+  p.ellipse(0, 0.1, 0.7, 0.6, 0, Math.PI, 0);             // crown volume
+  p.lineTo(0.74, 0.35);
+  p.bezierCurveTo(0.82, 0.8, 0.86, H, 0.98, H + 0.5);       // right lock down to the shoulder
+  p.bezierCurveTo(0.8, H + 0.62, 0.6, H + 0.5, 0.46, H + 0.42);
+  p.bezierCurveTo(0.5, H, 0.5, 0.5, 0.42, 0.3);
+  p.lineTo(-0.42, 0.3);
+  p.bezierCurveTo(-0.5, 0.5, -0.5, H, -0.46, H + 0.42);
+  p.bezierCurveTo(-0.6, H + 0.5, -0.8, H + 0.62, -0.98, H + 0.5);
+  p.bezierCurveTo(-0.86, H, -0.82, 0.8, -0.74, 0.35);
+  p.closePath();
+  return p;
+}
+const H_NOM = 1.25;
+const hairPath = hairSilhouette(H_NOM);
+const CURLS = (() => {
+  const test = document.createElement("canvas").getContext("2d");
+  const big = new Path2D(); big.addPath(hairPath, new DOMMatrix().scale(100));
+  const r = rng(7), list = [];
+  while (list.length < 340) {
+    const x = (r() * 2 - 1) * 1.05, y = -0.6 + r() * (H_NOM + 1.3);
+    if (!test.isPointInPath(big, x * 100, y * 100)) continue;
+    list.push({ x, y, r: 0.045 + r() * 0.04, a: r() * Math.PI * 2, tone: r() });
+  }
+  return list.sort((a, b) => a.y - b.y);
+})();
+const hairLayer = document.createElement("canvas"), hctx = hairLayer.getContext("2d");
+
+function curl(g, c) {
+  const rr = c.r, lift = 0.75 + c.tone * 0.5;
+  const gr = g.createRadialGradient(c.x - rr * 0.35, c.y - rr * 0.35, rr * 0.05, c.x, c.y, rr);
+  gr.addColorStop(0, `rgb(${Math.round(118 * lift)},${Math.round(76 * lift)},${Math.round(44 * lift)})`);
+  gr.addColorStop(0.5, "#2b1a10");
+  gr.addColorStop(1, "#110905");
+  g.fillStyle = gr;
+  g.beginPath(); g.arc(c.x, c.y, rr, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "rgba(10,5,2,.45)"; g.lineWidth = rr * 0.14;
+  g.beginPath(); g.arc(c.x + rr * 0.08, c.y + rr * 0.08, rr * 0.5, c.a, c.a + Math.PI * 1.1); g.stroke();
+}
+
+// The big mass of hair is drawn once into a sprite; each frame only places it and cuts the face out.
+const PX = 400, SX0 = -1.15, SY0 = -0.78;
+const hairSprite = (() => {
+  const c = document.createElement("canvas");
+  c.width = Math.round(2.3 * PX); c.height = Math.round((H_NOM + 1.55) * PX);
+  const g = c.getContext("2d");
+  g.setTransform(PX, 0, 0, PX, -SX0 * PX, -SY0 * PX);
+  g.fillStyle = "#1a0f09"; g.fill(hairPath);
+  for (const cu of CURLS) curl(g, cu);
+  return c;
+})();
+const FRINGE = (() => { const r = rng(3), a = []; for (let i = 0; i < 80; i++) a.push({ r: 0.035 + r() * 0.025, a: r() * 6, tone: r(), j: r() }); return a; })();
+
+function drawHair(g, P, L, R) {
+  const W = dist(L(234), R(454));
+  const ang = Math.atan2(R(454).y - L(234).y, R(454).x - L(234).x);
+  const F = frame(P(10), ang, W);
+  if (hairLayer.width !== out.width || hairLayer.height !== out.height) { hairLayer.width = out.width; hairLayer.height = out.height; }
+  const h = hctx;
+  h.setTransform(1, 0, 0, 1, 0, 0); h.clearRect(0, 0, hairLayer.width, hairLayer.height);
+  F.apply(h);
+  h.drawImage(hairSprite, SX0, SY0, hairSprite.width / PX, hairSprite.height / PX);
+  // cut out the face (keeping a short fringe over the forehead) and the neck
+  const oval = OVAL.map((i) => F.toLocal(P(i))).map((p) => ({ x: p.x * 0.97, y: p.y + 0.08 * Math.max(0, 1 - p.y / 0.35) }));
+  h.globalCompositeOperation = "destination-out";
+  h.beginPath(); oval.forEach((p, i) => (i ? h.lineTo(p.x, p.y) : h.moveTo(p.x, p.y))); h.closePath(); h.fill();
+  const jl = F.toLocal(L(172)), jr = F.toLocal(R(397)), chin = F.toLocal(P(152));
+  h.beginPath();
+  h.moveTo(jl.x + 0.04, jl.y); h.lineTo(jr.x - 0.04, jr.y);
+  h.lineTo(jr.x + 0.02, chin.y + 1.2); h.lineTo(jl.x - 0.02, chin.y + 1.2); h.closePath(); h.fill();
+  h.globalCompositeOperation = "source-over";
+  // curly hairline so the cut edge doesn't look sharp
+  let k = 0;
+  for (let i = 0; i < oval.length; i++) {
+    const p = oval[i], n = oval[(i + 1) % oval.length];
+    if (p.y > 0.3 || n.y > 0.3) continue;
+    for (let t = 0; t < 1; t += 0.5) {
+      const f = FRINGE[k++ % FRINGE.length];
+      curl(h, { x: p.x + (n.x - p.x) * t, y: p.y + (n.y - p.y) * t - 0.015 - f.j * 0.02, r: f.r, a: f.a, tone: f.tone });
+    }
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.drawImage(hairLayer, 0, 0);
+}
+
+/* ---------- moustache ---------- */
+const WHISKERS = (() => { const r = rng(11), a = []; for (let i = 0; i < 160; i++) { const side = r() < 0.5 ? -1 : 1; const x = side * r() * 0.68; a.push({ x, y: -0.3 + r() * 0.85, len: 0.08 + r() * 0.1, ang: Math.PI / 2 + side * (0.2 + Math.abs(x) * 0.9), lw: 0.008 + r() * 0.01, light: r() < 0.35 }); } return a; })();
+function stachePath() {
+  const p = new Path2D();
+  p.moveTo(0, -0.24);
+  p.bezierCurveTo(-0.34, -0.36, -0.62, -0.2, -0.72, 0.1);
+  p.bezierCurveTo(-0.77, 0.3, -0.72, 0.5, -0.66, 0.66);
+  p.bezierCurveTo(-0.57, 0.42, -0.52, 0.22, -0.38, 0.12);
+  p.bezierCurveTo(-0.22, 0.03, -0.08, 0.08, 0, 0.05);
+  p.bezierCurveTo(0.08, 0.08, 0.22, 0.03, 0.38, 0.12);
+  p.bezierCurveTo(0.52, 0.22, 0.57, 0.42, 0.66, 0.66);
+  p.bezierCurveTo(0.72, 0.5, 0.77, 0.3, 0.72, 0.1);
+  p.bezierCurveTo(0.62, -0.2, 0.34, -0.36, 0, -0.24);
+  p.closePath();
+  return p;
+}
+const STACHE = stachePath();
+function drawStache(g, P, L, R) {
+  const mw = dist(L(61), R(291));
+  const ang = Math.atan2(R(291).y - L(61).y, R(291).x - L(61).x);
+  const anchor = mid(P(2), P(0), 0.6);
+  const F = frame(anchor, ang, mw * 1.12);
+  F.apply(g);
+  g.save();
+  g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 6; g.shadowOffsetY = 2;
+  const grd = g.createLinearGradient(0, -0.35, 0, 0.6);
+  grd.addColorStop(0, "#2e1d13"); grd.addColorStop(1, "#120a06");
+  g.fillStyle = grd; g.fill(STACHE);
+  g.restore();
+  g.save(); g.clip(STACHE); g.lineCap = "round";
+  for (const w of WHISKERS) {
+    g.strokeStyle = w.light ? "rgba(120,80,50,.55)" : "rgba(8,4,2,.6)";
+    g.lineWidth = w.lw;
+    g.beginPath(); g.moveTo(w.x, w.y); g.lineTo(w.x + Math.cos(w.ang) * w.len, w.y + Math.sin(w.ang) * w.len); g.stroke();
+  }
+  g.restore();
+}
+
+/* ---------- aviators ---------- */
+function lensPath() { // right lens, outer side = +x, 1 unit = eye-to-eye distance
+  const p = new Path2D();
+  p.moveTo(-0.24, -0.17);
+  p.bezierCurveTo(-0.05, -0.21, 0.18, -0.21, 0.27, -0.15);
+  p.bezierCurveTo(0.33, -0.08, 0.31, 0.1, 0.2, 0.2);
+  p.bezierCurveTo(0.1, 0.29, -0.1, 0.27, -0.18, 0.17);
+  p.bezierCurveTo(-0.26, 0.06, -0.27, -0.1, -0.24, -0.17);
+  p.closePath();
+  return p;
+}
+const LENS = lensPath();
+function drawGlasses(g, P, L, R) {
+  const eL = L(33), eR = R(263);
+  const E = dist(eL, eR);
+  const ang = Math.atan2(eR.y - eL.y, eR.x - eL.x);
+  const cL = mid(L(33), L(133)), cR = mid(R(263), R(362));
+  const gold = (x0, x1) => { const gr = g.createLinearGradient(x0, -0.2, x1, 0.2); gr.addColorStop(0, "#f6dc8a"); gr.addColorStop(0.5, "#b8862c"); gr.addColorStop(1, "#f1cf6e"); return gr; };
+  for (const [c, flip] of [[cL, -1], [cR, 1]]) {
+    const F = frame(c, ang, E); F.apply(g);
+    g.translate(0, 0.07); g.scale(flip * 1.22, 1.22);
+    const tint = g.createLinearGradient(0, -0.2, 0, 0.27);
+    tint.addColorStop(0, "rgba(58,30,14,.86)"); tint.addColorStop(0.55, "rgba(120,70,34,.62)"); tint.addColorStop(1, "rgba(196,130,70,.38)");
+    g.fillStyle = tint; g.fill(LENS);
+    g.save(); g.clip(LENS);
+    g.fillStyle = "rgba(255,240,220,.18)";
+    g.beginPath(); g.moveTo(-0.2, 0.1); g.lineTo(0.05, -0.2); g.lineTo(0.13, -0.2); g.lineTo(-0.12, 0.12); g.closePath(); g.fill();
+    g.restore();
+    g.strokeStyle = gold(-0.3, 0.3); g.lineWidth = 0.022; g.stroke(LENS);
+    g.lineWidth = 0.018; g.lineCap = "round";
+    g.beginPath(); g.moveTo(0.27, -0.15); g.lineTo(0.46, -0.13); g.stroke(); // temple arm
+  }
+  // double bridge between the lenses
+  const m = mid(cL, cR); const F = frame(m, ang, E); F.apply(g);
+  const half = dist(cL, cR) / E / 2, k = 1.22;
+  g.strokeStyle = gold(-0.3, 0.3); g.lineCap = "round";
+  g.lineWidth = 0.02;
+  g.beginPath(); g.moveTo(-half + 0.22 * k, 0.07 - 0.15 * k); g.quadraticCurveTo(0, 0.07 - 0.18 * k, half - 0.22 * k, 0.07 - 0.15 * k); g.stroke();
+  g.lineWidth = 0.024;
+  g.beginPath(); g.moveTo(-half + 0.25 * k, 0.07 - 0.04 * k); g.quadraticCurveTo(0, 0.07 - 0.12 * k, half - 0.25 * k, 0.07 - 0.04 * k); g.stroke();
+}
+
+/* ---------- compose a frame ---------- */
+function drawFilters(lm, map, mirrored) {
+  const P = (i) => map(lm[i]);
+  // "L/R" = the landmark that lands on screen left/right, regardless of mirroring
+  // (unmirrored image: 234/33/133/61/172 sit on the left; a selfie mirror swaps them)
+  const L = (i) => map(lm[mirrored ? PAIR[i] : i]);
+  const R = (i) => map(lm[mirrored ? PAIR_R[i] : i]);
+  if (on.hair) drawHair(ctx, P, L, R);
+  if (on.stache) drawStache(ctx, P, L, R);
+  if (on.glasses) drawGlasses(ctx, P, L, R);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+// left-side index -> matching right-side index, and back
+const PAIRS = [[234, 454], [33, 263], [133, 362], [61, 291], [172, 397]];
+const PAIR = {}, PAIR_R = {};
+for (const [a, b] of PAIRS) { PAIR[a] = b; PAIR_R[b] = a; }
+
+function grade() {
+  if (!on.grade) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = "soft-light";
+  ctx.fillStyle = "rgba(255,150,60,.55)"; ctx.fillRect(0, 0, out.width, out.height);
+  ctx.globalCompositeOperation = "multiply";
+  const v = ctx.createRadialGradient(out.width / 2, out.height / 2, out.height * 0.3, out.width / 2, out.height / 2, out.height * 0.75);
+  v.addColorStop(0, "rgba(255,255,255,1)"); v.addColorStop(1, "rgba(120,80,50,1)");
+  ctx.fillStyle = v; ctx.fillRect(0, 0, out.width, out.height);
+  ctx.restore();
+}
+
+/* ---------- camera loop ---------- */
+async function startCamera() {
+  stopCamera();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (e) {
+    statusEl.textContent = "Sin acceso a la cámara. Permítelo en el navegador o usa una foto.";
+    return;
+  }
+  video.srcObject = stream; await video.play();
+  source = "cam"; photoImg = null; out.classList.remove("photo");
+  out.width = 720; out.height = 1280;
+  $("#intro").hidden = true;
+  statusEl.textContent = "Busca tu cara…";
+  await modelReady; await setMode("VIDEO");
+  requestAnimationFrame(loop);
+}
+function stopCamera() { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; }
+
+function loop() {
+  if (source !== "cam" || !stream) return;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (vw) {
+    const W = out.width, H = out.height;
+    const s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s, dx = (W - dw) / 2, dy = (H - dh) / 2;
+    const mirrored = facing === "user";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (mirrored) ctx.setTransform(-1, 0, 0, 1, W, 0);
+    ctx.drawImage(video, dx, dy, dw, dh);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    grade();
+    let ts = performance.now(); if (ts <= lastTs) ts = lastTs + 1; lastTs = ts;
+    const res = landmarker.detectForVideo(video, ts);
+    const lm = res.faceLandmarks?.[0];
+    if (lm) {
+      if (!smooth) smooth = lm.map((p) => ({ x: p.x, y: p.y }));
+      else for (let i = 0; i < lm.length; i++) { smooth[i].x += (lm[i].x - smooth[i].x) * 0.55; smooth[i].y += (lm[i].y - smooth[i].y) * 0.55; }
+      lostFrames = 0;
+      if (statusEl.textContent !== "Listo") statusEl.textContent = "Listo";
+    } else if (++lostFrames > 8) { smooth = null; statusEl.textContent = "Busca tu cara…"; }
+    if (smooth) {
+      const map = (p) => { const x = dx + p.x * dw; return { x: mirrored ? W - x : x, y: dy + p.y * dh }; };
+      drawFilters(smooth, map, mirrored);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- photo upload ---------- */
+async function usePhoto(file) {
+  if (!file) return;
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
+  await img.decode();
+  stopCamera(); source = "photo"; photoImg = img;
+  const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+  out.width = Math.round(img.naturalWidth * k); out.height = Math.round(img.naturalHeight * k);
+  out.classList.add("photo");
+  $("#intro").hidden = true;
+  statusEl.textContent = "Analizando foto…";
+  await modelReady; await setMode("IMAGE");
+  photoLm = landmarker.detect(img).faceLandmarks?.[0] || null;
+  statusEl.textContent = photoLm ? "Listo" : "No encontré una cara en esa foto. Prueba otra de frente.";
+  renderPhoto();
+  setVideoModeAvailable(false);
+}
+function renderPhoto() {
+  if (!photoImg) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(photoImg, 0, 0, out.width, out.height);
+  grade();
+  if (photoLm) drawFilters(photoLm, (p) => ({ x: p.x * out.width, y: p.y * out.height }), false);
+}
+
+/* ---------- capture ---------- */
+function stamp() { const d = new Date(); return `bigoton-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${d.getHours()}${d.getMinutes()}${d.getSeconds()}`; }
+function takePhoto() {
+  out.toBlob((blob) => showResult({ blob, name: stamp() + ".jpg", type: "image/jpeg" }), "image/jpeg", 0.92);
+}
+function pickMime() {
+  const opts = ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm"];
+  return opts.find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+}
+function startRec() {
+  const mime = pickMime();
+  if (!mime) { statusEl.textContent = "Este navegador no puede grabar video. Usa modo Foto."; return; }
+  const s = out.captureStream(30);
+  recorder = new MediaRecorder(s, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+  recChunks = [];
+  recorder.ondataavailable = (e) => e.data.size && recChunks.push(e.data);
+  recorder.onstop = () => {
+    const type = mime.split(";")[0];
+    showResult({ blob: new Blob(recChunks, { type }), name: stamp() + (type === "video/mp4" ? ".mp4" : ".webm"), type });
+  };
+  recorder.start(250);
+  recStart = performance.now();
+  $("#shutter").classList.add("recording"); $("#shutter").setAttribute("aria-label", "Detener grabación");
+  $("#recbadge").hidden = false;
+  recTimer = setInterval(() => {
+    const t = (performance.now() - recStart) / 1000;
+    $("#recbadge").textContent = `● ${t.toFixed(1)} s / 15 s`;
+    if (t >= 15) stopRec();
+  }, 100);
+}
+function stopRec() {
+  if (!recorder) return;
+  clearInterval(recTimer); recorder.stop(); recorder = null;
+  $("#shutter").classList.remove("recording"); $("#shutter").setAttribute("aria-label", "Grabar video");
+  $("#recbadge").hidden = true;
+}
+
+function showResult(r) {
+  result = r;
+  const pv = $("#preview"); pv.textContent = "";
+  const url = URL.createObjectURL(r.blob);
+  const el = r.type.startsWith("video") ? Object.assign(document.createElement("video"), { src: url, controls: true, loop: true, playsInline: true, autoplay: true, muted: true }) : Object.assign(document.createElement("img"), { src: url, alt: "Tu foto con el filtro" });
+  pv.append(el);
+  const canShare = navigator.canShare?.({ files: [new File([r.blob], r.name, { type: r.type })] });
+  $("#share").hidden = !canShare;
+  $("#hint").textContent = r.name.endsWith(".webm")
+    ? "Este navegador graba en WebM, que Instagram no acepta. Para subirlo a Instagram, graba desde Safari o Chrome en el celular (MP4)."
+    : canShare ? "Toca Compartir y elige Instagram (Historia, Reel o Feed)." : "Guárdalo y súbelo desde la app de Instagram.";
+  $("#sheet").hidden = false;
+}
+async function share() {
+  try { await navigator.share({ files: [new File([result.blob], result.name, { type: result.type })] }); }
+  catch (e) { if (e.name !== "AbortError") $("#hint").textContent = "No se pudo compartir. Usa Guardar y súbelo desde Instagram."; }
+}
+function save() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(result.blob); a.download = result.name;
+  document.body.append(a); a.click(); a.remove();
+}
+
+/* ---------- UI wiring ---------- */
+document.querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => {
+  const k = b.dataset.k; on[k] = !on[k]; b.setAttribute("aria-pressed", on[k]);
+  if (source === "photo") renderPhoto();
+}));
+function setVideoModeAvailable(ok) {
+  const vb = document.querySelector('[data-mode="video"]');
+  vb.disabled = !ok; vb.style.opacity = ok ? 1 : 0.35;
+  if (!ok) selectMode("photo");
+}
+function selectMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === m));
+  $("#shutter").setAttribute("aria-label", m === "photo" ? "Tomar foto" : "Grabar video");
+}
+document.querySelectorAll(".mode").forEach((b) => b.addEventListener("click", () => selectMode(b.dataset.mode)));
+$("#shutter").addEventListener("click", () => {
+  if (!source) return startCamera();
+  if (mode === "photo") return takePhoto();
+  recorder ? stopRec() : startRec();
+});
+$("#startCam").addEventListener("click", () => { setVideoModeAvailable(true); startCamera(); });
+$("#flip").addEventListener("click", () => { facing = facing === "user" ? "environment" : "user"; smooth = null; setVideoModeAvailable(true); startCamera(); });
+for (const id of ["#upload", "#pickPhoto"]) $(id).addEventListener("click", () => $("#file").click());
+$("#file").addEventListener("change", (e) => { usePhoto(e.target.files[0]); e.target.value = ""; });
+$("#share").addEventListener("click", share);
+$("#save").addEventListener("click", save);
+$("#again").addEventListener("click", () => { $("#sheet").hidden = true; });
+
+// draw an idle backdrop until something starts
+ctx.fillStyle = "#24160e"; ctx.fillRect(0, 0, out.width, out.height);
+window.__filtro = { usePhoto, startCamera, state: () => ({ source, hasFace: !!(smooth || photoLm) }) };
+</script>
+</body>
+</html>

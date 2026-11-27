@@ -37,3 +37,15 @@ The logo (`assets/kuper-logo.png`) is embedded via `assets/kuper-logo.js` and dr
 ```bash
 node render.mjs --page src/agent.html --config agent.config.json --out out/kuper-agente.mp4
 ```
+
+# Filtro "Bigotón 70s" (mostacho, aviadores y mullet)
+
+`filtro/index.html`: a web camera filter. MediaPipe Face Landmarker tracks the face live and draws a mustache, aviator glasses, a curly mullet and a warm 70s tone. It takes photos (JPG) and 15 s videos (MP4 on iPhone/Android), shares them straight to Instagram with the share sheet, and also works on an uploaded photo. The face model is vendored at `filtro/face_landmarker.task`.
+
+The camera needs HTTPS or localhost:
+
+```bash
+cd filtro && python3 -m http.server 8000   # then open http://localhost:8000
+```
+
+To use it from a phone, publish the repo with GitHub Pages and open `https://<user>.github.io/kuper/filtro/`.
