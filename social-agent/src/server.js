@@ -145,12 +145,13 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   // La app de Kuper manda aquí todos sus mensajes y se reparten al agente de cada marca (src/metaRouter.js).
   app.get('/webhooks/meta', (req, res) => {
     const t = config.metaWebhook.verifyToken;
-    if (req.query['hub.mode'] === 'subscribe' && t && String(req.query['hub.verify_token'] || '') === t) return res.status(200).send(String(req.query['hub.challenge'] || ''));
+    if (req.query['hub.mode'] === 'subscribe' && t && String(req.query['hub.verify_token'] || '') === t) { console.log('[meta router] Meta verificó el webhook'); return res.status(200).send(String(req.query['hub.challenge'] || '')); }
+    console.error('[meta router] verificación rechazada (token distinto)');
     res.sendStatus(403);
   });
   app.post('/webhooks/meta', express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
     const raw = Buffer.isBuffer(req.body) ? req.body : Buffer.from('');
-    if (!metaRouter.firmaValida(raw, req.get('x-hub-signature-256'), config.whatsappApp.secret)) { console.error('[meta router] firma no válida (¿META_APP_SECRET?)'); return res.sendStatus(401); }
+    if (!metaRouter.firmaValida(raw, req.get('x-hub-signature-256'), config.whatsappApp.secret)) { console.error(`[meta router] firma no válida (¿META_APP_SECRET?) ${raw.length} bytes`); return res.sendStatus(401); }
     res.sendStatus(200); // Meta quiere respuesta rápida; se reenvía en segundo plano
     metaRouter.reenviar(metaRouter.repartir(raw, req.get('x-hub-signature-256'), { secreto: config.whatsappApp.secret, porDefecto: config.metaWebhook.porDefecto })).catch(() => {});
   });

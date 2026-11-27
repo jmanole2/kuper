@@ -51,6 +51,7 @@ export function repartir(raw, firmaOriginal, { secreto, porDefecto }) {
 }
 
 export async function reenviar(envios) {
+  for (const x of envios) { let ids = ''; try { const b = JSON.parse(x.cuerpo.toString('utf8')); ids = `${b.object} ${(b.entry || []).map((e) => e.id).join(',')}`; } catch { /* sin detalle */ } console.log(`[meta router] ${ids} → ${x.marca || 'agente de siempre'}`); }
   await Promise.all(envios.map(async (x) => {
     try {
       const r = await hooks.fetch(x.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': x.firma }, body: x.cuerpo, signal: AbortSignal.timeout(10000) });
