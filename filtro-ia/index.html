@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Camaney IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=DM+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: single column on phones, settings left / result right on desktop */
+:root {
+  --bg: #1a100b;
+  --panel: #26170f;
+  --line: #4a3020;
+  --fg: #fbeedd;
+  --muted: #c9a98a;
+  --accent: #f08a24;
+  --gold: #e9b949;
+  --bad: #ff7a5c;
+  --display: "Shrikhand", Georgia, serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body);
+  padding: calc(20px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(32px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 24px; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); align-items: start; }
+@media (max-width: 820px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+h1 { font: 400 2.1rem/1 var(--display); color: var(--accent); margin: 0 0 4px; }
+.lede { color: var(--muted); margin: 0; max-width: 60ch; }
+header { max-width: 1100px; margin: 0 auto 22px; }
+form { display: flex; flex-direction: column; gap: 18px; }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+legend, .label { font-weight: 700; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); padding: 0; margin-bottom: 6px; }
+input[type=password], input[type=text], select {
+  width: 100%; font: inherit; color: var(--fg); background: var(--panel); border: 1.5px solid var(--line);
+  border-radius: 10px; padding: 10px 12px;
+}
+.small { font-size: .82rem; color: var(--muted); margin: 0; }
+.small a { color: var(--gold); }
+.drop {
+  display: grid; place-items: center; text-align: center; gap: 6px; min-height: 150px; padding: 14px;
+  border: 2px dashed var(--line); border-radius: 14px; background: var(--panel); cursor: pointer; color: var(--muted);
+}
+.drop.has { padding: 6px; }
+.drop img { max-width: 100%; max-height: 260px; border-radius: 10px; }
+.drop.ref { min-height: 90px; }
+.drop.ref img { max-height: 140px; }
+.drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.checks label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.checks input { accent-color: var(--accent); width: 18px; height: 18px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn {
+  font: 700 1.05rem var(--body); border: 0; border-radius: 99px; padding: 14px 22px; cursor: pointer;
+  background: var(--accent); color: #1a100b;
+}
+.btn[disabled] { opacity: .5; cursor: progress; }
+.btn.ghost { background: transparent; color: var(--fg); border: 1.5px solid var(--line); }
+.stage {
+  background: var(--panel); border-radius: 18px; min-height: 420px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; padding: 18px; text-align: center;
+}
+.stage img { max-width: 100%; max-height: 72vh; border-radius: 12px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.pair figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pair figcaption { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.err { color: var(--bad); max-width: 52ch; margin: 0; }
+.spinner { width: 46px; height: 46px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .spinner { animation: spin .9s linear infinite; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+details { color: var(--muted); }
+details summary { cursor: pointer; font-weight: 600; color: var(--fg); }
+textarea { width: 100%; min-height: 160px; font: .82rem/1.45 ui-monospace, Menlo, monospace; color: var(--fg); background: var(--panel); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Camaney IA</h1>
+  <p class="lede">Sube tu foto y la IA te pone el mullet chino, los aviadores y el bigotón como si fueran de verdad. Tu cara, tu ropa y tu fondo se quedan igual.</p>
+</header>
+
+<div class="wrap">
+  <form id="form">
+    <fieldset>
+      <legend>1 · Tu clave de Gemini</legend>
+      <input type="password" id="key" autocomplete="off" placeholder="Pega aquí tu API key (empieza con AIza…)">
+      <p class="small">Sácala gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Se guarda solo en este navegador y viaja únicamente a Google. Generar imágenes puede tener costo según tu cuenta.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>2 · Tu foto</legend>
+      <div class="drop" id="dropMain" tabindex="0" role="button" aria-label="Elegir tu foto">
+        <span>Toca para elegir una foto o arrástrala aquí<br><small>De frente y con buena luz sale mejor</small></span>
+      </div>
+      <input type="file" id="fileMain" accept="image/*" hidden>
+    </fieldset>
+
+    <fieldset>
+      <legend>3 · El look</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="optHair" checked> Mullet chino</label>
+        <label><input type="checkbox" id="optGlasses" checked> Aviadores</label>
+        <label><input type="checkbox" id="optStache" checked> Bigotón</label>
+        <label><input type="checkbox" id="optOutfit"> Ropa 70s y cadena</label>
+      </div>
+      <div class="row2">
+        <div>
+          <label class="label" for="aspect">Formato</label>
+          <select id="aspect">
+            <option value="">Igual que tu foto</option>
+            <option value="9:16">Historia / Reel 9:16</option>
+            <option value="4:5">Feed 4:5</option>
+            <option value="1:1">Cuadrada 1:1</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="model">Modelo</label>
+          <select id="model">
+            <option value="gemini-2.5-flash-image">Nano Banana (2.5 Flash)</option>
+            <option value="gemini-3-pro-image-preview">Nano Banana Pro (preview)</option>
+            <option value="gemini-3.1-flash-image-preview">Nano Banana 2 (preview)</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Foto de referencia (opcional)</legend>
+      <div class="drop ref" id="dropRef" tabindex="0" role="button" aria-label="Elegir foto de referencia del look">
+        <span>Una foto del personaje para copiar el estilo del pelo, lentes y bigote. Solo el estilo, no la cara.</span>
+      </div>
+      <input type="file" id="fileRef" accept="image/*" hidden>
+    </fieldset>
+
+    <details>
+      <summary>Ver o ajustar las instrucciones para la IA</summary>
+      <p class="small">Se arman solas con tus opciones. Si las editas, se usa tu texto.</p>
+      <textarea id="prompt" aria-label="Instrucciones para la IA"></textarea>
+    </details>
+
+    <button class="btn" id="go" type="submit">Generar</button>
+  </form>
+
+  <section class="stage" id="stage" aria-live="polite">
+    <p class="small" id="idle">Aquí aparece tu foto con el look.</p>
+  </section>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+let mainImg = null, refImg = null; // { data (base64), mime, url }
+let lastResult = null;            // { blob, url }
+let promptEdited = false;
+
+/* ---------- key ---------- */
+$("#key").value = store.get("gemini-key") || "";
+$("#key").addEventListener("change", () => store.set("gemini-key", $("#key").value.trim()));
+const savedModel = store.get("gemini-model"); if (savedModel) $("#model").value = savedModel;
+$("#model").addEventListener("change", () => store.set("gemini-model", $("#model").value));
+
+/* ---------- photos: shrink to 1536 px JPEG before sending ---------- */
+async function readImage(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image(); img.src = url; await img.decode();
+  const k = Math.min(1, 1536 / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const dataUrl = c.toDataURL("image/jpeg", 0.92);
+  return { data: dataUrl.split(",")[1], mime: "image/jpeg", url: dataUrl };
+}
+function wireDrop(dropId, inputId, set) {
+  const drop = $(dropId), input = $(inputId);
+  const show = async (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const im = await readImage(file); set(im);
+    drop.classList.add("has"); drop.textContent = "";
+    const el = new Image(); el.src = im.url; el.alt = "Foto elegida"; drop.append(el);
+  };
+  drop.addEventListener("click", () => input.click());
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); });
+  drop.addEventListener("drop", (e) => { e.preventDefault(); show(e.dataTransfer.files[0]); });
+  input.addEventListener("change", () => { show(input.files[0]); input.value = ""; });
+}
+wireDrop("#dropMain", "#fileMain", (im) => { mainImg = im; });
+wireDrop("#dropRef", "#fileRef", (im) => { refImg = im; buildPrompt(); });
+
+/* ---------- prompt ---------- */
+function buildPrompt() {
+  if (promptEdited) return;
+  const parts = [];
+  if ($("#optHair").checked) parts.push("a big, voluminous 1970s curly mullet in dark brown-black: tight natural ringlet curls with height on top, short-ish on the crown and noticeably longer curly hair falling to the shoulders at the back and sides, framing the face and partly covering the ears; individual curls, flyaways and realistic shadows where the hair meets the forehead, neck and shoulders");
+  if ($("#optGlasses").checked) parts.push("classic thin gold metal aviator sunglasses with a double bridge, sitting naturally on the nose and ears, with brown gradient lenses (dark at the top, lighter amber at the bottom) so the eyes are faintly visible, with subtle realistic reflections");
+  if ($("#optStache").checked) parts.push("a thick, dense, dark horseshoe/chevron mustache that covers the upper lip and droops down past the corners of the mouth, with real individual hairs");
+  if ($("#optOutfit").checked) parts.push("a 1970s outfit: a shirt unbuttoned halfway with a wide pointed collar and a thin gold chain with a small medallion");
+  const look = parts.length ? parts.map((p) => "- " + p).join("\n") : "- (no changes)";
+  const ref = refImg ? "\n\nThe second image is ONLY a style reference for the hairstyle, glasses and mustache. Do not copy that man's face, body, clothes or background." : "";
+  $("#prompt").value =
+`Edit the first photo. It is the same real person and must stay recognisably them: keep their face shape, eyes, nose, skin tone, age, expression, head pose${$("#optOutfit").checked ? "" : ", clothing"}, body and background exactly as they are.
+
+Add this look:
+${look}
+
+The result must look like an untouched real photograph taken with the same camera: match the original lighting direction, colour temperature, grain and focus; hair and accessories cast correct shadows on the skin. No cartoon, no painting, no filter or sticker look, no text or watermark.${ref}`;
+}
+["#optHair", "#optGlasses", "#optStache", "#optOutfit"].forEach((id) => $(id).addEventListener("change", buildPrompt));
+$("#prompt").addEventListener("input", () => { promptEdited = true; });
+buildPrompt();
+
+/* ---------- call Gemini ---------- */
+function setStage(...nodes) { const s = $("#stage"); s.textContent = ""; s.append(...nodes); }
+function el(tag, props = {}, ...kids) { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; }
+function showError(msg) { setStage(el("p", { className: "err", textContent: msg })); }
+
+async function generate() {
+  const key = $("#key").value.trim();
+  if (!key) return showError("Falta tu API key de Gemini (paso 1).");
+  if (!mainImg) return showError("Falta tu foto (paso 2).");
+  store.set("gemini-key", key);
+  const model = $("#model").value;
+  const parts = [{ text: $("#prompt").value }, { inline_data: { mime_type: mainImg.mime, data: mainImg.data } }];
+  if (refImg) parts.push({ inline_data: { mime_type: refImg.mime, data: refImg.data } });
+  const generationConfig = { responseModalities: ["TEXT", "IMAGE"] };
+  if ($("#aspect").value) generationConfig.imageConfig = { aspectRatio: $("#aspect").value };
+
+  $("#go").disabled = true;
+  const t0 = Date.now();
+  const timer = el("p", { className: "small", textContent: "Generando… 0 s" });
+  const tick = setInterval(() => { timer.textContent = `Generando… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+  setStage(el("div", { className: "spinner" }), timer);
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig }),
+    });
+    const json = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(explain(r.status, json));
+    const outParts = json.candidates?.[0]?.content?.parts || [];
+    const img = outParts.find((p) => p.inlineData || p.inline_data);
+    if (!img) {
+      const why = json.candidates?.[0]?.finishReason || json.promptFeedback?.blockReason;
+      const said = outParts.map((p) => p.text).filter(Boolean).join(" ");
+      throw new Error("La IA no devolvió imagen" + (why ? ` (${why})` : "") + (said ? `: «${said.slice(0, 300)}»` : ".") + " Prueba otra foto o vuelve a generar.");
+    }
+    const d = img.inlineData || img.inline_data;
+    const mime = d.mimeType || d.mime_type || "image/png";
+    const bytes = Uint8Array.from(atob(d.data), (c) => c.charCodeAt(0));
+    showResult(new Blob([bytes], { type: mime }));
+  } catch (e) {
+    showError(e.message || "No se pudo conectar con Gemini. Revisa tu internet.");
+  } finally {
+    clearInterval(tick); $("#go").disabled = false;
+  }
+}
+function explain(status, json) {
+  const m = json.error?.message || "";
+  if (/API key not valid|API_KEY_INVALID/i.test(m)) return "Tu API key no es válida. Cópiala de nuevo desde aistudio.google.com/apikey.";
+  if (status === 429) return "Llegaste al límite de tu cuenta de Gemini (o el modelo no tiene uso gratis). Espera un momento o activa la facturación en Google AI Studio. Detalle: " + m;
+  if (status === 404) return "Ese modelo no está disponible para tu clave. Elige otro en «Modelo». Detalle: " + m;
+  if (status === 403) return "Tu clave no tiene permiso para este modelo o región. Detalle: " + m;
+  return `Error ${status} de Gemini: ${m || "sin detalle"}`;
+}
+
+/* ---------- result ---------- */
+function showResult(blob) {
+  if (lastResult) URL.revokeObjectURL(lastResult.url);
+  lastResult = { blob, url: URL.createObjectURL(blob) };
+  const after = el("figure", {}, el("img", { src: lastResult.url, alt: "Tu foto con el look 70s" }), el("figcaption", { textContent: "Con el look" }));
+  const before = el("figure", {}, el("img", { src: mainImg.url, alt: "Tu foto original" }), el("figcaption", { textContent: "Antes" }));
+  const ext = blob.type.includes("jpeg") ? "jpg" : "png";
+  const name = `camaney-${Date.now()}.${ext}`;
+  const save = el("button", { className: "btn", type: "button", textContent: "Descargar" });
+  save.onclick = () => { const a = el("a", { href: lastResult.url, download: name }); document.body.append(a); a.click(); a.remove(); };
+  const again = el("button", { className: "btn ghost", type: "button", textContent: "Otra versión" });
+  again.onclick = generate;
+  const actions = el("div", { className: "actions" }, save, again);
+  const file = new File([blob], name, { type: blob.type });
+  if (navigator.canShare?.({ files: [file] })) {
+    const share = el("button", { className: "btn ghost", type: "button", textContent: "Compartir" });
+    share.onclick = () => navigator.share({ files: [file] }).catch(() => {});
+    actions.prepend(share);
+  }
+  setStage(el("div", { className: "pair" }, before, after), actions,
+    el("p", { className: "small", textContent: "Cada vez sale distinto: si algo no te gusta, dale «Otra versión». Para hacer video, sube esta imagen a un generador de imagen a video y úsala como primer cuadro." }));
+}
+
+$("#form").addEventListener("submit", (e) => { e.preventDefault(); generate(); });
+</script>
+</body>
+</html>

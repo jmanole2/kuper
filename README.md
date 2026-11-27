@@ -57,3 +57,7 @@ To use it from a phone, publish the repo with GitHub Pages and open `https://<us
 ```bash
 cd filtro-real && python3 -m http.server 8000
 ```
+
+## Camaney IA (photo → character with Gemini image editing)
+
+`filtro-ia/index.html`: a single file. Open it by double-clicking; no server needed. Paste a Gemini API key (from aistudio.google.com/apikey; it is kept in localStorage only), upload a photo, pick the look options (mullet, aviators, mustache, 70s outfit), the format (original, 9:16, 4:5, 1:1) and the model (`gemini-2.5-flash-image` or the preview models), and generate. An optional reference photo is sent as a style-only reference. The prompt can be edited in the page.
