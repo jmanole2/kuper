@@ -49,3 +49,11 @@ cd filtro && python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
 To use it from a phone, publish the repo with GitHub Pages and open `https://<user>.github.io/kuper/filtro/`.
+
+## Filtro "Bigotón Real" (versión realista)
+
+`filtro-real/`: same app, photo-real look. The mullet is real hair cut out of the reference photo with MediaPipe's multiclass selfie segmenter (`assets/pelo.png`); WebGL warps it onto the user's face outline with a ring mesh. The mustache (`assets/bigote.png`) is ~16k rendered strands in a horseshoe shape. The aviators are drawn with a multiplied brown tint so the eyes show through, gold rims, reflections, skin shadows and temple arms. Each side scales separately, so turning the head foreshortens them. Hair brightness follows the room light.
+
+```bash
+cd filtro-real && python3 -m http.server 8000
+```
