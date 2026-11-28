@@ -45,3 +45,9 @@ test('Messenger usa el id de página y no se cruza con Instagram', () => {
   assert.equal(mr.destinoDe('instagram', 'P1'), null);
   assert.equal(mr.destinoDe('page', 'IG1'), null);
 });
+
+test('acepta mensajes de otra app de Kuper (la de mensajes directos)', () => {
+  const b = raw({ object: 'page', entry: [{ id: 'P1' }] });
+  assert.equal(mr.secretoQueFirmo(b, mr.firmar(b, 'nueva'), [S, 'nueva']), 'nueva');
+  assert.equal(mr.secretoQueFirmo(b, mr.firmar(b, 'otra'), [S, 'nueva']), null);
+});

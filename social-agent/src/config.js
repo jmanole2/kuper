@@ -50,7 +50,9 @@ export const config = {
   // App de Meta de Kuper (Tech Provider) para el botón "Conectar WhatsApp" (Embedded Signup).
   whatsappApp: { id: env('META_APP_ID', ''), configId: env('META_CONFIG_ID', ''), secret: env('META_APP_SECRET', ''), graph: env('WHATSAPP_GRAPH_VERSION', 'v23.0') },
   // Repartidor de mensajes directos (Messenger/Instagram) de esa app: /webhooks/meta (ver src/metaRouter.js).
-  metaWebhook: { verifyToken: env('META_WEBHOOK_VERIFY_TOKEN', ''), porDefecto: env('META_WEBHOOK_DEFAULT', '') },
+  metaWebhook: { verifyToken: env('META_WEBHOOK_VERIFY_TOKEN', ''), porDefecto: env('META_WEBHOOK_DEFAULT', ''),
+    // Otras apps de Meta de Kuper que también mandan mensajes aquí (p. ej. la de mensajes directos): sus claves secretas, separadas por coma.
+    otrosSecretos: env('META_OTRAS_APPS_SECRETS', '').split(',').map((x) => x.trim()).filter(Boolean) },
   linkedinApiVersion: env('LINKEDIN_API_VERSION', '202609'),
 
   // DRY_RUN=1: no publica de verdad, solo registra lo que haría.

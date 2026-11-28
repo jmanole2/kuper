@@ -5,13 +5,15 @@
 //
 //   read -rsp "Token: " T; echo; printf %s "$T" | sudo -u agente /opt/agente-social/node/bin/node --env-file=.env scripts/meta-amg.js; unset T
 //
-// Opcional: --solo amg-chubbies (una sola marca) · --probar (solo revisa, no guarda nada)
+// Opcional: --solo amg-chubbies (una sola marca) · --probar (solo revisa, no guarda nada) · --dm (token de la app de mensajes directos)
 import { readFileSync } from 'node:fs';
 import * as db from '../src/db.js';
 import { graphCall } from '../src/publishers/meta.js';
 
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : ''; };
 const soloProbar = process.argv.includes('--probar');
+// --dm: el token es de la app de mensajes directos (Messenger/Instagram). Se guarda como page_token_dm y NO cambia el de comentarios.
+const paraDm = process.argv.includes('--dm');
 const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); // sin espacios: "FatBastard" = "Fat Bastard"
 const corto = (e) => String(e?.message || e).replace(/access_token=[^&\s]+/g, 'access_token=…').slice(0, 220);
 
@@ -22,7 +24,7 @@ const datos = JSON.parse(readFileSync(new URL('./datos/amg.json', import.meta.ur
 db.openDb();
 
 // 1) Permisos del token.
-const necesarios = ['pages_show_list', 'pages_read_engagement', 'pages_read_user_content', 'pages_manage_engagement', 'pages_manage_metadata', 'pages_messaging',
+const necesarios = paraDm ? ['pages_show_list', 'pages_manage_metadata', 'pages_messaging', 'instagram_basic', 'instagram_manage_messages', 'business_management'] : ['pages_show_list', 'pages_read_engagement', 'pages_read_user_content', 'pages_manage_engagement', 'pages_manage_metadata', 'pages_messaging',
   'instagram_basic', 'instagram_manage_comments', 'instagram_manage_messages', 'business_management'];
 let otorgados = [];
 try { otorgados = (await graphCall('GET', 'me/permissions', {}, token)).data.filter((p) => p.status === 'granted').map((p) => p.permission); }
@@ -58,7 +60,8 @@ for (const m of datos.marcas) {
   else pruebas.push('sin Instagram ligado a la página');
   if (!soloProbar) {
     const creds = db.clientCredentials(client);
-    db.updateClient(client.id, { credentials: { ...creds, meta: { ...(creds.meta || {}), page_id: p.id, page_token: p.access_token, ...(ig ? { ig_user_id: ig.id } : {}) } } });
+    const nuevo = paraDm ? { page_token_dm: p.access_token } : { page_token: p.access_token };
+    db.updateClient(client.id, { credentials: { ...creds, meta: { ...(creds.meta || {}), page_id: p.id, ...nuevo, ...(ig ? { ig_user_id: ig.id } : {}) } } });
     db.logEvent({ clientId: client.id, tipo: 'meta_conectado', detalle: `${p.name}${ig ? ` + @${ig.username}` : ''}` });
   }
   console.log(`${pruebas.some((x) => /error/.test(x)) ? '⚠' : '✔'} ${nombre} → ${p.name} (${p.id})${ig ? ` + @${ig.username}` : ''} · ${pruebas.join(' · ')}${soloProbar ? ' · (no se guardó)' : ' · guardado'}`);

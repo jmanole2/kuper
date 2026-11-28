@@ -1,6 +1,7 @@
 // Conecta una marca del panel con un agente de mensajes directos que corre en ESTE servidor (http://127.0.0.1:<puerto>):
 // genera la llave del panel si no tiene, guarda la URL del agente, prende el reenvío de Messenger/Instagram
 // (src/metaRouter.js) y suscribe su página de Facebook a los mensajes de la app.
+// Si la marca tiene token de la app de mensajes directos (meta.page_token_dm, de scripts/meta-amg.js --dm), se usa ese.
 // Lo usa deploy/instalar-amg.sh del agente de AMG; imprime en JSON lo que el instalador escribe en el .env del
 // agente (llaves incluidas), así que NO se corre a mano en una terminal que alguien esté viendo.
 //
@@ -36,8 +37,8 @@ db.logEvent({ clientId: c.id, tipo: 'agente_local', detalle: `agente de mensajes
 // Que la app reciba los mensajes de esta página (Messenger) y de su Instagram.
 let suscrita = false, error = '';
 try {
-  await graphCall('POST', `${meta.page_id}/subscribed_apps`, { subscribed_fields: 'messages,messaging_postbacks,messaging_referrals' }, meta.page_token);
+  await graphCall('POST', `${meta.page_id}/subscribed_apps`, { subscribed_fields: 'messages,messaging_postbacks,messaging_referrals' }, meta.page_token_dm || meta.page_token);
   suscrita = true;
 } catch (e) { error = e.message.slice(0, 200); }
 
-process.stdout.write(JSON.stringify({ nombre: c.nombre, panel_url: `${config.publicBaseUrl}/api/${c.slug}`, api_key, page_token: meta.page_token, ig: !!meta.ig_user_id, suscrita, error }));
+process.stdout.write(JSON.stringify({ nombre: c.nombre, panel_url: `${config.publicBaseUrl}/api/${c.slug}`, api_key, page_token: meta.page_token_dm || meta.page_token, app_dm: !!meta.page_token_dm, ig: !!meta.ig_user_id, suscrita, error }));

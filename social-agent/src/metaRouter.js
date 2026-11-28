@@ -16,6 +16,8 @@ export function firmaValida(raw, header, secreto) {
   const a = Buffer.from(firmar(raw, secreto)), b = Buffer.from(String(header || ''));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
+/** Clave de la app que firmó el mensaje (la principal o alguna de las otras apps de Kuper), o null. */
+export const secretoQueFirmo = (raw, header, secretos) => secretos.filter(Boolean).find((s) => firmaValida(raw, header, s)) || null;
 
 /** Marca (cliente) que atiende un id de página o de Instagram, si tiene el reenvío activo. */
 export function destinoDe(objeto, id) {

@@ -151,9 +151,13 @@ self.addEventListener('notificationclick', (e) => { e.notification.close(); cons
   });
   app.post('/webhooks/meta', express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
     const raw = Buffer.isBuffer(req.body) ? req.body : Buffer.from('');
-    if (!metaRouter.firmaValida(raw, req.get('x-hub-signature-256'), config.whatsappApp.secret)) { console.error(`[meta router] firma no válida (¿META_APP_SECRET?) ${raw.length} bytes`); return res.sendStatus(401); }
+    const principal = config.whatsappApp.secret;
+    const firmo = metaRouter.secretoQueFirmo(raw, req.get('x-hub-signature-256'), [principal, ...config.metaWebhook.otrosSecretos]);
+    if (!firmo) { console.error(`[meta router] firma no válida (¿META_APP_SECRET / META_OTRAS_APPS_SECRETS?) ${raw.length} bytes`); return res.sendStatus(401); }
     res.sendStatus(200); // Meta quiere respuesta rápida; se reenvía en segundo plano
-    metaRouter.reenviar(metaRouter.repartir(raw, req.get('x-hub-signature-256'), { secreto: config.whatsappApp.secret, porDefecto: config.metaWebhook.porDefecto })).catch(() => {});
+    // Los agentes conocen la clave principal: si lo firmó otra app de Kuper, se vuelve a firmar con la principal.
+    const firma = firmo === principal ? req.get('x-hub-signature-256') : metaRouter.firmar(raw, principal);
+    metaRouter.reenviar(metaRouter.repartir(raw, firma, { secreto: principal, porDefecto: config.metaWebhook.porDefecto })).catch(() => {});
   });
 
   // ------------------------------------------------------------ carritos abandonados de Shopify (firma HMAC de su tienda)
